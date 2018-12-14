@@ -1,0 +1,187 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: state1
+  namespace: default123
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: state1
+    uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: kubecompute-probes--svcacc
+    spec:
+      object:
+        apiVersion: v1
+        kind: ServiceAccount
+        imagePullSecrets:
+        - name: kubecompute-docker-atl-paas
+        metadata:
+          name: kubecompute-probes--svcacc
+  - name: kubecompute-probes
+    references:
+    - name: kubecompute-probes--svcacc-metadata-name
+      path: metadata.name
+      resource: kubecompute-probes--svcacc
+    spec:
+      object:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: kubecompute-probes
+        spec:
+          selector:
+            matchLabels:
+              resourceName: kubecompute-probes
+              stateName: state1
+          progressDeadlineSeconds: 600
+          revisionHistoryLimit: 0
+          replicas: 1
+          strategy:
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 25%
+            type: RollingUpdate
+          template:
+            metadata:
+              annotations:
+                atlassian.com/business_unit: some_unit
+                atlassian.com/logging_id: logging-id-from-configmap
+                atlassian.com/resource_owner: an_owner
+              creationTimestamp: null
+              labels:
+                resourceName: kubecompute-probes
+                stateName: state1
+            spec:
+              serviceAccountName: '!{kubecompute-probes--svcacc-metadata-name}'
+              containers:
+              - env:
+                - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
+                  value: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
+                  value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                name: microservice
+                image: "docker.atl-paas.net/atlassian/micros-analytics:0.1"
+                imagePullPolicy: IfNotPresent
+                ports:
+                - containerPort: 8080
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 250m
+                    memory: 64Mi
+                terminationMessagePath: /dev/termination-log
+                terminationMessagePolicy: File
+                livenessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /healthcheck
+                    port: 8080
+                    scheme: HTTP
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  successThreshold: 1
+                  timeoutSeconds: 1
+                readinessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /readiness
+                    port: 8080
+                    scheme: HTTP
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  successThreshold: 1
+                  timeoutSeconds: 5
+              - env:
+                - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
+                  value: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
+                  value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                name: pgbouncer
+                image: "docker.atl-paas.net/my_pgbouncer:abcxyz"
+                imagePullPolicy: IfNotPresent
+                ports:
+                - containerPort: 5432
+                  protocol: UDP
+                livenessProbe:
+                  failureThreshold: 3
+                  tcpSocket:
+                    port: 5432
+                  initialDelaySeconds: 5
+                  periodSeconds: 30
+                  successThreshold: 1
+                  timeoutSeconds: 1
+                resources:
+                  limits:
+                    cpu: 250m
+                    memory: 150Mi
+                  requests:
+                    cpu: 50m
+                    memory: 50Mi
+                terminationMessagePath: /dev/termination-log
+                terminationMessagePolicy: File
+              - env:
+                - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
+                  value: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
+                  value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                name: sidecar
+                image: "docker.atl-paas.net/my_sidecar:abcxyz"
+                imagePullPolicy: IfNotPresent
+                ports:
+                - containerPort: 8080
+                  protocol: TCP
+                livenessProbe:
+                  exec:
+                    command:
+                    - cat
+                    - /tmp/healthy
+                  failureThreshold: 3
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  successThreshold: 1
+                  timeoutSeconds: 1
+                resources:
+                  limits:
+                    cpu: 250m
+                    memory: 150Mi
+                  requests:
+                    cpu: 50m
+                    memory: 50Mi
+                terminationMessagePath: /dev/termination-log
+                terminationMessagePolicy: File
+              dnsPolicy: ClusterFirst
+              restartPolicy: Always
+              schedulerName: default-scheduler
+              securityContext: {}
+              terminationGracePeriodSeconds: 30
+  - name: kubecompute-probes--hpa
+    references:
+      - name: kubecompute-probes-metadata-name
+        path: metadata.name
+        resource: kubecompute-probes
+    spec:
+      object:
+        apiVersion: autoscaling/v2beta1
+        kind: HorizontalPodAutoscaler
+        metadata:
+          name: kubecompute-probes--hpa
+        spec:
+          minReplicas: 1
+          maxReplicas: 5
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: '!{kubecompute-probes-metadata-name}'
+          metrics:
+          - type: Resource
+            resource:
+              name: cpu
+              targetAverageUtilization: 80

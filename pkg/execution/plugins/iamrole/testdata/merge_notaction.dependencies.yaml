@@ -1,0 +1,91 @@
+dynamo:
+  Actual:
+    apiVersion: servicecatalog.k8s.io/v1beta1
+    kind: ServiceBinding
+    metadata: {name: binding2, namespace: myapp}
+    spec: {secretName: dynamoSecret}
+  Outputs:
+  - metadata: {name: dynamoSecret, namespace: myapp}
+    kind: Secret
+    apiVersion: v1
+    stringData:
+      # We have to insert this as a string, because that's what service
+      # catalog does...
+      IamPolicySnippet: >
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:BatchGetItem",
+              "dynamodb:BatchWriteItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:DescribeTable",
+              "dynamodb:GetItem",
+              "dynamodb:ListTables",
+              "dynamodb:PutItem",
+              "dynamodb:Query",
+              "dynamodb:Scan",
+              "dynamodb:UpdateItem",
+              "dynamodb:UpdateTable",
+              "dynamodb:DescribeStream",
+              "dynamodb:GetRecords",
+              "dynamodb:GetShardIterator",
+              "dynamodb:ListStreams"
+            ],
+            "Resource": ["arn:aws:dynamodb:us-west-2:444455556666:table/Books"]
+          }]
+        }
+sqs:
+  Actual:
+    apiVersion: servicecatalog.k8s.io/v1beta1
+    kind: ServiceBinding
+    metadata: {name: binding1, namespace: myapp}
+    spec: {secretName: sqsSecret}
+  Outputs:
+  - metadata: {name: sqsSecret, namespace: myapp}
+    kind: Secret
+    apiVersion: v1
+    stringData:
+      IamPolicySnippet: >
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "sqs:DeleteMessage*",
+              "sqs:GetQueue*",
+              "sqs:ListDeadLetterSourceQueues",
+              "sqs:ListQueues",
+              "sqs:PurgeQueue",
+              "sqs:ReceiveMessage",
+              "sqs:SendMessage*"
+            ],
+            "Resource": ["arn:aws:sqs:us-east-2:444455556666:queue2"]
+          }]
+        }
+sqs2:
+  Actual:
+    apiVersion: servicecatalog.k8s.io/v1beta1
+    kind: ServiceBinding
+    metadata: {name: binding2, namespace: myapp}
+    spec: {secretName: sqsSecret}
+  Outputs:
+  - metadata: {name: sqsSecret, namespace: myapp}
+    kind: Secret
+    apiVersion: v1
+    stringData:
+      IamPolicySnippet: >
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "NotAction": [
+              "sqs:DeleteMessage*",
+              "sqs:GetQueue*",
+              "sqs:ListDeadLetterSourceQueues",
+              "sqs:ListQueues",
+              "sqs:PurgeQueue",
+              "sqs:ReceiveMessage",
+              "sqs:SendMessage*"
+            ],
+            "Resource": ["arn:aws:sqs:us-east-2:444455556666:queue3"]
+          }]
+        }

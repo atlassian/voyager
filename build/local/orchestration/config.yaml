@@ -1,0 +1,18 @@
+tagNames:
+  serviceName: "service_name"
+  businessUnit: "business_unit"
+  resourceOwner: "resource_owner"
+  platform: "platform"
+  environmentType: "environment_type"
+
+location:
+  region: "ap-southeast-2"
+  envType: "dev"
+  account: "123456789012"
+
+cluster:
+  clusterDomainName: "local"
+
+serverConfig:
+  tlsCert: /etc/certs/tls.crt
+  tlsKey: /etc/certs/tls.key

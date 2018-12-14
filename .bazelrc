@@ -1,0 +1,16 @@
+build --workspace_status_command=build/print-workspace-status.sh
+
+test --test_output=errors
+test --test_verbose_timeout_warnings
+
+# :ci configuration is used in CI. Triggered by the --config=ci flag
+# https://docs.bazel.build/versions/master/user-manual.html#flag--config
+
+build:ci --verbose_failures
+build:ci --curses=no
+build:ci --experimental_sandbox_base=/dev/shm
+
+test:ci --test_output=all
+test:ci --test_verbose_timeout_warnings
+
+try-import user.bazelrc

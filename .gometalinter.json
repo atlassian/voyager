@@ -1,0 +1,38 @@
+{
+  "Aggregate": true,
+  "Concurrency": 4,
+  "__Concurrency__": "non-maximum concurrency seems to be faster",
+  "Deadline": "10m",
+  "Disable": [
+    "gocyclo",
+    "interfacer"
+  ],
+  "__Disable__": [
+    "TODO: enable 'gocyclo'"
+  ],
+  "Exclude": [
+    "_test\\.go",
+    "\\.deepcopy\\.go",
+    "comment .* should be of the form",
+    "should have comment",
+    "Potential file inclusion via variable"
+  ],
+  "__Exclude__": [
+    "TODO: fix bad sync usage in tests, then linting tests",
+    "TODO: enable comment checks and fix errors"
+  ],
+  "Skip": [
+    "apis",
+    "client"
+  ],
+  "__Skip__": "build generates contents of 'client', some content in 'apis'",
+  "Sort": [
+    "path",
+    "line"
+  ],
+  "Tests": false,
+  "__Tests__": "TODO: goes with 'Exclude'ing tests above...",
+  "Vendor": true,
+  "WarnUnmatchedDirective": false,
+  "__WarnUnmatchedDirective__": "TODO: enable this once all/more linters are active"
+}

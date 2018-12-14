@@ -1,0 +1,19 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: cfn-test
+  namespace: migration
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: test-cfn-elasticsearch
+    type: CloudFormation
+    spec:
+      instanceId: abcd-123456789
+      template: elasticsearch-v3
+      parameters:
+        ElasticsearchVersion: 5.1
+        DedicatedMasterCount: 3
+        InstanceCount: 2
+
+

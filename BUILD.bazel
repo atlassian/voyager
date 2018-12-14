@@ -1,0 +1,94 @@
+# Disable build files generation for these directories
+# gazelle:exclude vendor/github.com/bazelbuild/buildtools/buildifier2
+# gazelle:exclude vendor/golang.org/x/tools/cmd/fiximports/testdata
+# gazelle:exclude vendor/golang.org/x/tools/go/gcimporter15/testdata
+# gazelle:exclude vendor/golang.org/x/tools/go/internal/gccgoimporter/testdata
+# gazelle:exclude vendor/golang.org/x/tools/go/loader/testdata
+# gazelle:exclude vendor/golang.org/x/tools/go/internal/gcimporter/testdata
+# gazelle:exclude vendor/github.com/docker/docker/daemon/logger/journald
+# gazelle:exclude vendor/github.com/docker/docker/pkg/devicemapper
+# gazelle:proto disable_global
+
+load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@com_github_atlassian_bazel_tools//buildozer:def.bzl", "buildozer")
+load("@com_github_atlassian_bazel_tools//goimports:def.bzl", "goimports")
+load("@com_github_atlassian_bazel_tools//gometalinter:def.bzl", "gometalinter")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+gometalinter(
+    name = "gometalinter",
+    config = "//:.gometalinter.json",
+    paths = [
+        "./...",
+    ],
+    prefix = "github.com/atlassian/voyager",
+)
+
+gometalinter(
+    name = "gometalinterfast",
+    config = "//:.gometalinter.json",
+    paths = [],
+    prefix = "github.com/atlassian/voyager",
+)
+
+gazelle(
+    name = "gazelle",
+    external = "vendored",
+    prefix = "github.com/atlassian/voyager",
+)
+
+gazelle(
+    name = "gazelle_fix",
+    command = "fix",
+    external = "vendored",
+    prefix = "github.com/atlassian/voyager",
+)
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = ["./vendor/*"],
+)
+
+buildifier(
+    name = "buildifier_check",
+    exclude_patterns = ["./vendor/*"],
+    mode = "check",
+)
+
+buildifier(
+    name = "buildifier_lint",
+    lint_mode = "warn",
+)
+
+buildifier(
+    name = "buildifier_fix",
+    lint_mode = "fix",
+)
+
+buildozer(
+    name = "buildozer",
+    commands = "//build/bazel:buildozer_commands.txt",
+)
+
+goimports(
+    name = "goimports",
+    display_diffs = True,
+    exclude_files = [
+        "zz_generated.*",
+    ],
+    exclude_paths = [
+        "./vendor/*",
+        "./pkg/orchestration/client/*",
+    ],
+    prefix = "github.com/atlassian/voyager",
+    write = True,
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["types.go"],
+    importpath = "github.com/atlassian/voyager",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1:go_default_library"],
+)

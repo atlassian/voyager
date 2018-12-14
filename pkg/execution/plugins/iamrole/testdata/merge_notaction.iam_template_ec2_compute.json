@@ -1,0 +1,176 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Voyager Smith Plugin generated IAM policy",
+  "Outputs": {
+    "IAMRole": {
+      "Value": {"Ref": "IAMRole"}
+    },
+    "IAMRoleARN": {
+      "Value": {"Fn::GetAtt" : ["IAMRole", "Arn"]}
+    }
+  },
+  "Resources": {
+    "IAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com",
+                  "lambda.amazonaws.com",
+                  "autoscaling.amazonaws.com",
+                  "redshift.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-UTMFBJ2IWZSK"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": ["arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-11210HMV0LWK"],
+        "Policies": [
+          {
+            "PolicyName": "default.json",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:GetObjectVersion",
+                    "s3:GetObject",
+                    "s3:ListBucket"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:s3:::config-store.*.atl-inf.io",
+                    "arn:aws:s3:::config-store.*.atl-inf.io/never/*"
+                  ]
+                },
+                {
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:GetObjectVersion"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:s3:::micros-runcmd-*/never/*",
+                    "arn:aws:s3:::access-logs.*/service-logs/never/*"
+                  ]
+                },
+                {
+                  "Action": [
+                    "s3:ListBucket"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:s3:::micros-runcmd-*",
+                    "arn:aws:s3:::micros-runcmd-*/never/*"
+                  ]
+                },
+                {
+                  "Action": [
+                    "sns:Publish",
+                    "sns:Subscribe",
+                    "sns:Unsubscribe",
+                    "sqs:*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:sns:*:*:stk-evts--never--*",
+                    "arn:aws:sqs:*:*:stk-evts--never--*"
+                  ]
+                },
+                {
+                  "Action": [
+                    "autoscaling:SetInstanceHealth"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "*"
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "autoscaling:ResourceTag/micros_service_id": "never"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "voyager-merge",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable",
+                    "dynamodb:GetItem",
+                    "dynamodb:ListTables",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:UpdateTable",
+                    "dynamodb:DescribeStream",
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:ListStreams"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:dynamodb:us-west-2:444455556666:table/Books"
+                  ]
+                },
+                {
+                  "Action": [
+                    "sqs:DeleteMessage*",
+                    "sqs:GetQueue*",
+                    "sqs:ListDeadLetterSourceQueues",
+                    "sqs:ListQueues",
+                    "sqs:PurgeQueue",
+                    "sqs:ReceiveMessage",
+                    "sqs:SendMessage*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:sqs:us-east-2:444455556666:queue2"
+                  ]
+                },
+                {
+                  "NotAction": [
+                    "sqs:DeleteMessage*",
+                    "sqs:GetQueue*",
+                    "sqs:ListDeadLetterSourceQueues",
+                    "sqs:ListQueues",
+                    "sqs:PurgeQueue",
+                    "sqs:ReceiveMessage",
+                    "sqs:SendMessage*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:sqs:us-east-2:444455556666:queue3"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

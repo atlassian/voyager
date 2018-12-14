@@ -1,0 +1,1 @@
+failed to wire up resource "kubecompute-simple" of type "KubeCompute": error invoking plugin: cannot depend on more than one asap key resource

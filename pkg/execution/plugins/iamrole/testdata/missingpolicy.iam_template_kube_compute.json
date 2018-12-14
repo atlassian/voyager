@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Voyager Smith Plugin generated IAM policy",
+  "Outputs": {
+    "IAMRole": {
+      "Value": {"Ref": "IAMRole"}
+    },
+    "IAMRoleARN": {
+      "Value": {"Fn::GetAtt" : ["IAMRole", "Arn"]}
+    }
+  },
+  "Resources": {
+    "IAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-UTMFBJ2IWZSK"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [],
+        "Policies": []
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "podsecretenvvar.go",
+        "podsecretenvvar_plugin.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/execution/plugins/secretenvvar/kubecompute",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/execution/plugins/secretenvvar:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = ["podsecretenvvar_plugin_test.go"],
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//pkg/execution/plugins/secretenvvar:go_default_library",
+        "//pkg/execution/plugins/testing:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)

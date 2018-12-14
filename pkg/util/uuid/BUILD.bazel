@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["uuid_util.go"],
+    importpath = "github.com/atlassian/voyager/pkg/util/uuid",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/k8s.io/apimachinery/pkg/util/uuid:go_default_library"],
+)

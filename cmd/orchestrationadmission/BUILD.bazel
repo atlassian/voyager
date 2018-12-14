@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//cmd:cmd.bzl", "define_command_targets")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "main.go",
+        "options.go",
+    ],
+    importpath = "github.com/atlassian/voyager/cmd/orchestrationadmission",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd:go_default_library",
+        "//pkg/options:go_default_library",
+        "//pkg/orchestration:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/options:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
+    ],
+)
+
+define_command_targets(
+    name = "orchestrationadmission",
+)

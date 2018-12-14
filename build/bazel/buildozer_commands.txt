@@ -1,0 +1,2 @@
+set race "on"|//...:%go_test
+fix unusedLoads|//...:__pkg__

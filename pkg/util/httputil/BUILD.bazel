@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "errors.go",
+        "request.go",
+        "response.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/util/httputil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-chi/chi/middleware:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+    ],
+)

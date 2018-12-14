@@ -1,0 +1,4 @@
+name: some-state-name
+spec:
+  configMapName: some-config-map-name
+  # no resources specified

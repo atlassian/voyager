@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["testing.go"],
+    importpath = "github.com/atlassian/voyager/pkg/k8s/testing",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/k8s.io/client-go/testing:go_default_library"],
+)

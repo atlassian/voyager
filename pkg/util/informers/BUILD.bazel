@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["informers.go"],
+    importpath = "github.com/atlassian/voyager/pkg/util/informers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/client/clientset_generated/clientset:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+    ],
+)

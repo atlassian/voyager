@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "plugin.go",
+        "types.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/kubeingress",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/k8s:go_default_library",
+        "//pkg/orchestration/wiring/k8scompute:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/api/apps/v1:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/api/extensions/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/intstr:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = ["plugin_test.go"],
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//:go_default_library",
+        "//pkg/k8s:go_default_library",
+        "//pkg/orchestration:go_default_library",
+        "//pkg/orchestration/wiring/k8scompute:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/k8s.io/api/apps/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+    ],
+)

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "templating.go",
+        "variable_expander.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/util/templating",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/util:go_default_library",
+        "//vendor/github.com/imdario/mergo:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/schollz/closestmatch:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = [
+        "templating_test.go",
+        "variable_expander_test.go",
+    ],
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//pkg/util:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)

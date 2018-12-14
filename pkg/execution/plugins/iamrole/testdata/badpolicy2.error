@@ -1,0 +1,1 @@
+failed to extract IAM policy from the resource "dynamo": failed to unmarshal IAM policy from JSON object: expecting object or array for IAM Statement: json: cannot unmarshal string into Go value of type []iamrole.IamPolicyStatement

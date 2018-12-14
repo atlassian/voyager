@@ -1,0 +1,35 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: s3-test
+  namespace: testing
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: s3-test
+    uid: ""
+spec:
+  resources:
+  - name: my-bucket--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: S3
+          name: my-bucket
+        spec:
+          clusterServiceClassExternalID: a6bf1e70-9bbb-4826-9793-75871cb540f1
+          clusterServicePlanExternalID: d8eca56a-9634-4e6f-a7c8-47e3bc76bc83
+          parameters:
+            environment:
+              fallback: false
+            resource:
+              name: my-bucket
+              type: s3
+            serviceName: test-servicename
+status: {}

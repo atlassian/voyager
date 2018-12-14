@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "env_var.go",
+        "errors.go",
+        "http.go",
+        "jsonpatch.go",
+        "retry.go",
+        "router.go",
+        "server.go",
+        "util.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8s/updater:go_default_library",
+        "//pkg/options:go_default_library",
+        "//pkg/util/crash:go_default_library",
+        "//pkg/util/httputil:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/process:go_default_library",
+        "//vendor/github.com/go-chi/chi:go_default_library",
+        "//vendor/github.com/go-chi/chi/middleware:go_default_library",
+        "//vendor/github.com/go-chi/render:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/golang.org/x/net/http2:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/json:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/wait:go_default_library",
+        "//vendor/k8s.io/client-go/util/retry:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = [
+        "env_var_test.go",
+        "errors_test.go",
+    ],
+    embed = [":go_default_library"],
+    race = "on",
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

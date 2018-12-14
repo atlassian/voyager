@@ -1,0 +1,65 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: cfn-test
+  namespace: migration
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: cfn-test
+    uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: test-cfn-elasticsearch--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: CF
+          name: test-cfn-elasticsearch
+        spec:
+          clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
+          clusterServicePlanExternalID: 8933f0a5-b232-4319-9861-baaccece62fd
+          externalID: abcd-123456789
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              notificationEmail: an_owner@example.com
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              primaryVpcEnvironment:
+                appSubnets:
+                - subnet-1
+                - subnet-2
+                instanceSecurityGroup: sg-2
+                jumpboxSecurityGroup: sg-1
+                privateDnsZone: testregion.atl-inf.io
+                privatePaasDnsZone: testregion.dev.paas-inf.net
+                region: testregion
+                sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+                vpcId: vpc-1
+                zones:
+                - testregiona
+                - testregionb
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                parameters:
+                  DedicatedMasterCount: 3
+                  ElasticsearchVersion: 5.1
+                  InstanceCount: 2
+                template: elasticsearch-v3
+              name: test-cfn-elasticsearch
+              type: cloudformation
+            serviceName: test-servicename
+status: {}

@@ -1,0 +1,38 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: ups
+  namespace: migration
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: ups
+    uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: ups1--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: ups1
+        spec:
+          clusterServiceClassExternalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+          clusterServicePlanExternalID: 86064792-7ea2-467b-af93-ac9694d96d52
+          parameters:
+            example: foo
+  - name: ups2--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: ups2
+        spec:
+          clusterServiceClassExternalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+          clusterServicePlanExternalID: 86064792-7ea2-467b-af93-ac9694d96d52
+status: {}

@@ -1,0 +1,90 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  clusterName: ""
+  creationTimestamp: 2018-06-27T07:03:34Z
+  generation: 1
+  name: bh-demo-test
+  namespace: bh-demo-test
+  ownerReferences:
+  - apiVersion: formation.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: LocationDescriptor
+    name: bh-demo-test
+    uid: 35400e49-79d8-11e8-960d-064f782ac18a
+  resourceVersion: "41896351"
+  selfLink: /apis/orchestration.voyager.atl-paas.net/v1/namespaces/bh-demo-test/states/bh-demo-test
+  uid: 354ad540-79d8-11e8-bb84-0a1e0d7ddd02
+spec:
+  configMapName: service-metadata
+  resources:
+  - name: basic-sqs
+    spec:
+      MaxReceiveCount: 10
+      VisibilityTimeout: 600
+    type: SQS
+  - dependsOn:
+    - name: basic-sqs
+    name: showenv
+    spec:
+      sd:
+        config:
+          environmentVariables:
+            EXAMPLE: SOMETHING
+        description: Voyager Show Env
+        links:
+          binary:
+            name: atlassianlabs/showenv
+            tag: 12aa007
+            type: docker
+          healthcheck:
+            uri: /healthcheck
+          source:
+            url: https://stash.atlassian.com/projects/MICROS/repos/voyager
+        notifications:
+          email: an_owner@example.com
+    type: EC2Compute
+status:
+  conditions:
+  - lastTransitionTime: 2018-07-11T08:49:10Z
+    lastUpdateTime: 2018-07-11T08:49:10Z
+    status: "False"
+    type: InProgress
+  - lastTransitionTime: 2018-07-11T08:49:10Z
+    lastUpdateTime: 2018-07-11T08:49:10Z
+    status: "True"
+    type: Ready
+  - lastTransitionTime: 2018-07-11T08:32:01Z
+    lastUpdateTime: null
+    status: "False"
+    type: Error
+  resourceStatuses:
+  - conditions:
+    - lastTransitionTime: 1970-01-01T00:00:00Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 1970-01-01T00:00:00Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 1970-01-01T00:00:00Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: basic-sqs
+  - conditions:
+    - lastTransitionTime: 1970-01-01T00:00:00Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 1970-01-01T00:00:00Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 1970-01-01T00:00:00Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: showenv

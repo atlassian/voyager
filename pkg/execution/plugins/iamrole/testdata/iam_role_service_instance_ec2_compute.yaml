@@ -1,0 +1,189 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
+metadata:
+  creationTimestamp: null
+spec:
+  clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
+  clusterServiceClassRef:
+    name: 312ebba6-e3df-443f-a151-669a04f0619b
+  clusterServicePlanExternalID: 8933f0a5-b232-4319-9861-baaccece62fd
+  clusterServicePlanRef:
+    name: 8933f0a5-b232-4319-9861-baaccece62fd
+  externalID: ""
+  parameters:
+    environment:
+      lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123
+      notificationEmail: an_owner@example.com
+      pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456
+      primaryVpcEnvironment:
+        appSubnets:
+        - subnet-93baa4e7
+        - subnet-8b11e2ee
+        privateDnsZone: domain.dev.atl-inf.io
+        privatePaasDnsZone: ap-southeast-2.dev.paas-inf.net
+        region: ap-southeast-2
+        vpcId: vpc-c545a8a0
+        zones:
+        - ap-southeast-2a
+        - ap-southeast-2b
+      tags:
+        business_unit: some_unit
+        environment: ddev
+        environment_type: dev
+        platform: voyager
+        resource_owner: an_owner
+        service_name: test-svc
+    resource:
+      attributes:
+        template: iam
+        templateBody: |2
+
+          {
+            "AWSTemplateFormatVersion": "2010-09-09",
+            "Description": "Voyager Smith Plugin generated IAM policy",
+            "Outputs": {
+              "IAMRole": {
+                "Value": {"Ref": "IAMRole"}
+              },
+              "IAMRoleARN": {
+                "Value": {"Fn::GetAtt" : ["IAMRole", "Arn"]}
+              },
+              "InstanceProfile": {
+                "Value": {"Ref": "InstanceProfile"}
+              },
+              "InstanceProfileARN": {
+                "Value": {"Fn::GetAtt" : ["InstanceProfile", "Arn"]}
+              }
+            },
+            "Resources": {
+              "IAMRole": {
+                "Type": "AWS::IAM::Role",
+                "Properties": {
+                  "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Principal": {
+                          "Service": [
+                            "ec2.amazonaws.com",
+                            "lambda.amazonaws.com",
+                            "autoscaling.amazonaws.com",
+                            "redshift.amazonaws.com"
+                          ]
+                        },
+                        "Action": "sts:AssumeRole"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Principal": {
+                          "AWS": "arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-UTMFBJ2IWZSK"
+                        },
+                        "Action": "sts:AssumeRole"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Principal": {
+                          "AWS": "arn:aws:iam::123456789012:role/other-role"
+                        },
+                        "Action": "sts:AssumeRole"
+                      }
+                    ]
+                  },
+                  "ManagedPolicyArns": ["arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-11210HMV0LWK"],
+                  "Policies": [
+                    {
+                      "PolicyName": "default.json",
+                      "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                          {
+                            "Action": [
+                              "s3:GetObjectVersion",
+                              "s3:GetObject",
+                              "s3:ListBucket"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              "arn:aws:s3:::config-store.*.atl-inf.io",
+                              "arn:aws:s3:::config-store.*.atl-inf.io/test-svc-app/*"
+                            ]
+                          },
+                          {
+                            "Action": [
+                              "s3:PutObject",
+                              "s3:GetObject",
+                              "s3:GetObjectVersion"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              "arn:aws:s3:::micros-runcmd-*/test-svc-app/*",
+                              "arn:aws:s3:::access-logs.*/service-logs/test-svc-app/*"
+                            ]
+                          },
+                          {
+                            "Action": [
+                              "s3:ListBucket"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              "arn:aws:s3:::micros-runcmd-*",
+                              "arn:aws:s3:::micros-runcmd-*/test-svc-app/*"
+                            ]
+                          },
+                          {
+                            "Action": [
+                              "sns:Publish",
+                              "sns:Subscribe",
+                              "sns:Unsubscribe",
+                              "sqs:*"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              "arn:aws:sns:*:*:stk-evts--test-svc-app--*",
+                              "arn:aws:sqs:*:*:stk-evts--test-svc-app--*"
+                            ]
+                          },
+                          {
+                            "Action": [
+                              "autoscaling:SetInstanceHealth"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              "*"
+                            ],
+                            "Condition": {
+                              "StringEquals": {
+                                "autoscaling:ResourceTag/micros_service_id": "test-svc-app"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "InstanceProfile": {
+                "Type": "AWS::IAM::InstanceProfile",
+                "Properties": {
+                  "Roles": [
+                    {
+                      "Ref": "IAMRole"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+      name: app-iamrole
+      type: cloudformation
+    serviceName: test-svc-app
+status:
+  asyncOpInProgress: false
+  conditions: null
+  deprovisionStatus: ""
+  observedGeneration: 0
+  orphanMitigationInProgress: false
+  provisionStatus: ""
+  reconciledGeneration: 0

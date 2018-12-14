@@ -1,0 +1,6 @@
+name: some-state-name
+spec:
+  # no configMapName specified
+  resources:
+    - name: foo
+      type: bar

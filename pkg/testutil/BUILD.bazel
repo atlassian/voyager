@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "env_vars.go",
+        "file_comparisons.go",
+        "logging.go",
+        "object_comparisons.go",
+        "testdata.go",
+        "users.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/testutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/util:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/pmezard/go-difflib/difflib:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/go.uber.org/zap/zaptest:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)

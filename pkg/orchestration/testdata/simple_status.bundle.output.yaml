@@ -1,0 +1,298 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  clusterName: ""
+  creationTimestamp: 2018-06-27T07:03:36Z
+  finalizers:
+  - smith.atlassian.com/deleteResources
+  generation: 1
+  name: bh-demo-test
+  namespace: bh-demo-test
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: bh-demo-test
+    uid: 354ad540-79d8-11e8-bb84-0a1e0d7ddd02
+  resourceVersion: "41896350"
+  selfLink: /apis/smith.atlassian.com/v1/namespaces/bh-demo-test/bundles/bh-demo-test
+  uid: 35faad8b-79d8-11e8-bb84-0a1e0d7ddd02
+spec:
+  resources:
+  - name: basic-sqs--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: basic-sqs
+        spec:
+          clusterServiceClassExternalName: sqs
+          clusterServicePlanExternalName: default
+          parameters:
+            environment: {}
+            resource:
+              attributes:
+                MaxReceiveCount: 10
+                VisibilityTimeout: 600
+              name: basic-sqs
+              type: sqs
+            serviceName: bh-demo-test
+  - name: showenv--basic-sqs--binding
+    references:
+    - name: basic-sqs--instance-metadata-name
+      path: metadata.name
+      resource: basic-sqs--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: showenv--basic-sqs
+        spec:
+          instanceRef:
+            name: '!{basic-sqs--instance-metadata-name}'
+          secretName: showenv--basic-sqs
+  - name: showenv--secretenvvar
+    references:
+    - resource: showenv--basic-sqs--binding
+    spec:
+      plugin:
+        name: secretenvvar
+        objectName: showenv--secretenvvar
+        spec:
+          ignoreKeyRegex: (?i)IamPolicySnippet$
+          outputJsonKey: secretEnvVars
+          outputSecretKey: ec2ComputeEnvVars
+  - name: showenv---iamrole
+    references:
+    - resource: showenv--basic-sqs--binding
+    spec:
+      plugin:
+        name: iamrole
+        objectName: showenv---iamrole
+        spec:
+          createInstanceProfile: true
+          assumeRoles:
+          - arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-UTMFBJ2IWZSK
+          environment: dev_123456789012_ap-southeast-2
+          managedPolicies:
+          - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-11210HMV0LWK
+          serviceId: bh-demo-test-showenv
+          tags:
+            business_unit: some_unit
+            platform: voyager
+            resource_owner: an_owner
+            service_name: bh-demo-test
+  - name: showenv---iamrole-binding
+    references:
+    - name: showenv---iamrole-metadata-name
+      path: metadata.name
+      resource: showenv---iamrole
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: showenv---iamrole
+        spec:
+          instanceRef:
+            name: '!{showenv---iamrole-metadata-name}'
+          secretName: showenv---iamrole
+  - name: showenv--instance
+    references:
+    - resource: showenv--secretenvvar
+    - example: arn:aws:iam::123456789012:role/path/role
+      modifier: bindsecret
+      name: showenv---iamrole-binding-IAMRoleARN
+      path: data.IAMRoleARN
+      resource: showenv---iamrole-binding
+    - example: arn:aws:iam::123456789012:instance-profile/path/Webserver
+      modifier: bindsecret
+      name: showenv---iamrole-binding-InstanceProfileARN
+      path: data.InstanceProfileARN
+      resource: showenv---iamrole-binding
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: showenv
+        spec:
+          clusterServiceClassExternalName: micros
+          clusterServicePlanExternalName: default-plan
+          parameters:
+            email: an_owner@example.com
+            env: ddev
+            iamInstanceProfileArn: '!{showenv---iamrole-binding-InstanceProfileARN}'
+            iamRoleArn: '!{showenv---iamrole-binding-IAMRoleARN}'
+            name: bh-demo-test-showenv
+            owner: an_owner
+            sd:
+              cleanup: false
+              config:
+                environmentVariables:
+                  EXAMPLE: SOMETHING
+              deployment:
+                type: cutover
+              description: Voyager Show Env
+              links:
+                binary:
+                  name: atlassianlabs/showenv
+                  tag: 12aa007
+                  type: docker
+                healthcheck:
+                  uri: /healthcheck
+                source:
+                  url: https://stash.atlassian.com/projects/MICROS/repos/voyager
+              loadBalancer:
+                single: true
+                type: ALB
+              notifications:
+                email: an_owner@example.com
+                pagerduty:
+                  apiKey: fake
+                  cloudwatch: https://fake
+                  lowPriority: https://fake
+              organization: some_unit
+              tags:
+                platform: voyager
+          parametersFrom:
+          - secretKeyRef:
+              key: ec2ComputeEnvVars
+              name: showenv--secretenvvar
+status:
+  conditions:
+  - lastTransitionTime: 2018-06-27T07:18:49Z
+    lastUpdateTime: 2018-06-27T07:18:49Z
+    status: "False"
+    type: InProgress
+  - lastTransitionTime: 2018-06-27T07:18:49Z
+    lastUpdateTime: 2018-06-27T07:18:49Z
+    status: "True"
+    type: Ready
+  - lastTransitionTime: null
+    lastUpdateTime: null
+    status: "False"
+    type: Error
+  pluginStatuses:
+  - group: ""
+    kind: Secret
+    name: secretenvvar
+    status: Ok
+    version: v1
+  - group: servicecatalog.k8s.io
+    kind: ServiceInstance
+    name: iamrole
+    status: Ok
+    version: v1beta1
+  resourceStatuses:
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Blocked
+    - lastTransitionTime: 2018-06-27T07:03:52Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:03:52Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: basic-sqs--instance
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:03:52Z
+      lastUpdateTime: null
+      status: "False"
+      type: Blocked
+    - lastTransitionTime: 2018-06-27T07:03:53Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:03:53Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: showenv--basic-sqs--binding
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:03:53Z
+      lastUpdateTime: null
+      status: "False"
+      type: Blocked
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:03:53Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: showenv--secretenvvar
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:03:53Z
+      lastUpdateTime: null
+      status: "False"
+      type: Blocked
+    - lastTransitionTime: 2018-06-27T07:08:04Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:08:04Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: showenv---iamrole
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:08:04Z
+      lastUpdateTime: null
+      status: "False"
+      type: Blocked
+    - lastTransitionTime: 2018-06-27T07:08:04Z
+      lastUpdateTime: null
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:08:04Z
+      lastUpdateTime: null
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: showenv---iamrole-binding
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:08:04Z
+      lastUpdateTime: null
+      status: "False"
+      type: Blocked
+    - lastTransitionTime: 2018-06-27T07:18:49Z
+      lastUpdateTime: 2018-06-27T07:18:49Z
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:18:49Z
+      lastUpdateTime: 2018-06-27T07:18:49Z
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: showenv--instance

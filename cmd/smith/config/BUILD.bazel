@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["config.go"],
+    importpath = "github.com/atlassian/voyager/cmd/smith/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/execution/plugins/iamrole:go_default_library",
+        "//pkg/execution/plugins/secretenvvar/kubecompute:go_default_library",
+        "//pkg/execution/plugins/secretenvvar/microscompute:go_default_library",
+        "//pkg/execution/plugins/secretparameter:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["registry.go"],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/registry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/orchestration/wiring/asapkey:go_default_library",
+        "//pkg/orchestration/wiring/aws:go_default_library",
+        "//pkg/orchestration/wiring/k8scompute:go_default_library",
+        "//pkg/orchestration/wiring/kubeingress:go_default_library",
+        "//pkg/orchestration/wiring/ups:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+    ],
+)

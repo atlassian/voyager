@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["plugin.go"],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/ups",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/svccatentangler:go_default_library",
+    ],
+)

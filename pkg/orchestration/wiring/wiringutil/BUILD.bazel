@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "name.go",
+        "service_binding.go",
+        "service_instance.go",
+        "util.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/imdario/mergo:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+    ],
+)

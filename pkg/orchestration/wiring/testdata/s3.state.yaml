@@ -1,0 +1,9 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: s3-test
+  namespace: testing
+spec:
+  resources:
+  - name: my-bucket
+    type: S3

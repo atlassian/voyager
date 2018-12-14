@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "annotations.go",
+        "review.go",
+        "server.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/admission",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/util/httputil:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/logz:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/k8s.io/api/admission/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/types:go_default_library",
+    ],
+)

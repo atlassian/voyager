@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["entangler.go"],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/orchestration/meta:go_default_library",
+        "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/orchestration:go_default_library",
+        "//pkg/orchestration/wiring/legacy:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/util:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/util/graph:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = ["entangler_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//:go_default_library",
+        "//cmd/smith/config:go_default_library",
+        "//pkg/apis/orchestration/meta:go_default_library",
+        "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/orchestration:go_default_library",
+        "//pkg/orchestration/wiring/legacy:go_default_library",
+        "//pkg/orchestration/wiring/registry:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/testutil:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)

@@ -1,0 +1,26 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: dymaodb-existing
+  namespace: migration
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: atable
+    type: DynamoDB
+    spec:
+      alarms:
+        highreadcapacity:
+          MetricName: ConsumedReadCapacityUnits
+          Description: "Consumed read units are above 95% of the provisioned reads! You should consider bumping the provisioned units in our service yaml file."
+          Threshold: 10000
+          EvaluationPeriods: 1
+          Period: 300
+          Priority: High
+          ComparisonOperator: GreaterThanThreshold
+          Statistic: Sum
+          Unit: Count
+      instanceId: abcd-123456789
+      serviceName: foo
+    defaults:
+      BackupPeriod: 1 hours

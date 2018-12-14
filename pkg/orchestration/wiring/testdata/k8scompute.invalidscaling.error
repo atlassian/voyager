@@ -1,0 +1,1 @@
+failed to wire up resource "kubecompute-simple" of type "KubeCompute": error invoking plugin: MaxReplicas (1) must be greater than MinReplicas (3)

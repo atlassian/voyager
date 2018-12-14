@@ -1,0 +1,1 @@
+failed to extract IAM policy from the resource "dynamo": failed to unmarshal IAM policy from JSON object: invalid character 'm' looking for beginning of value

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//cmd:cmd.bzl", "define_command_targets")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/atlassian/voyager/cmd/orchestration",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:go_default_library",
+        "//cmd:go_default_library",
+        "//cmd/orchestration/app:go_default_library",
+        "//pkg/orchestration/wiring/legacy:go_default_library",
+        "//pkg/orchestration/wiring/registry:go_default_library",
+        "//pkg/util/crash:go_default_library",
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/app:go_default_library",
+    ],
+)
+
+define_command_targets(
+    name = "orchestration",
+)

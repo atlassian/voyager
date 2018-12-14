@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "authenticator.go",
+        "error.go",
+        "middleware.go",
+        "requestheader.go",
+        "x509.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/util/apiservice",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/go-chi/chi/middleware:go_default_library",
+        "//vendor/github.com/go-chi/render:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/client-go/kubernetes:go_default_library",
+        "//vendor/k8s.io/client-go/util/cert:go_default_library",
+    ],
+)

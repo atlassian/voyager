@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "clusterLocation.go",
+        "doc.go",
+        "empty.go",
+        "float32.go",
+        "float64.go",
+        "int.go",
+        "int32.go",
+        "int64.go",
+        "location.go",
+        "string.go",
+        "uint.go",
+        "uint16.go",
+        "uint32.go",
+        "uint64.go",
+        "uintptr.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/util/sets",
+    visibility = ["//visibility:public"],
+    deps = ["//:go_default_library"],
+)

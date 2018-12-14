@@ -1,0 +1,192 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: state1
+  namespace: default123
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: state1
+    uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: asap--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: ASAPKey
+          name: asap
+        spec:
+          clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
+          clusterServicePlanExternalID: 07bb749b-3500-454a-87cd-1244534083f0
+          parameters:
+            creator: micros2
+            keyName: asap
+            serviceName: test-servicename/asap
+  - name: kubecompute-simple--asap--binding
+    references:
+    - name: asap--instance-metadata-name
+      path: metadata.name
+      resource: asap--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kubecompute-simple--asap
+        spec:
+          instanceRef:
+            name: '!{asap--instance-metadata-name}'
+          secretName: kubecompute-simple--asap
+  - name: kubecompute-simple--podsecretenvvar
+    references:
+    - resource: kubecompute-simple--asap--binding
+    spec:
+      plugin:
+        name: podsecretenvvar
+        objectName: kubecompute-simple--podsecretenvvar
+        spec:
+          ignoreKeyRegex: ^IamPolicySnippet$
+  - name: kubecompute-simple---iamrole
+    references:
+    - resource: kubecompute-simple--asap--binding
+    spec:
+      plugin:
+        name: iamrole
+        objectName: kubecompute-simple---iamrole
+        spec:
+          assumeRoles:
+          - arn:aws:iam::test:role/testregion.paas-test_node-role
+          - arn:aws:iam::test:role/controller-role-testregion.paas-test
+          computeType: kubeCompute
+          oapResourceName: kubecompute-simple-iamrole
+          serviceEnvironment:
+            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            notificationEmail: an_owner@example.com
+            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            primaryVpcEnvironment:
+              appSubnets:
+              - subnet-1
+              - subnet-2
+              instanceSecurityGroup: sg-2
+              jumpboxSecurityGroup: sg-1
+              privateDnsZone: testregion.atl-inf.io
+              privatePaasDnsZone: testregion.dev.paas-inf.net
+              region: testregion
+              sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+              vpcId: vpc-1
+              zones:
+              - testregiona
+              - testregionb
+            tags:
+              business_unit: some_unit
+              environment: microstestenv
+              environment_type: testenv
+              platform: voyager
+              resource_owner: an_owner
+              service_name: test-servicename
+          serviceId: test-servicename
+  - name: kubecompute-simple---iamrole-binding
+    references:
+    - name: kubecompute-simple---iamrole-metadata-name
+      path: metadata.name
+      resource: kubecompute-simple---iamrole
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kubecompute-simple---iamrole
+        spec:
+          instanceRef:
+            name: '!{kubecompute-simple---iamrole-metadata-name}'
+          secretName: kubecompute-simple---iamrole
+  - name: kubecompute-simple--svcacc
+    spec:
+      object:
+        apiVersion: v1
+        imagePullSecrets:
+        - name: kubecompute-docker-atl-paas
+        kind: ServiceAccount
+        metadata:
+          name: kubecompute-simple--svcacc
+  - name: kubecompute-simple
+    references:
+    - name: kubecompute-simple--podsecretenvvar-metadata-name
+      path: metadata.name
+      resource: kubecompute-simple--podsecretenvvar
+    - example: arn:aws:iam::123456789012:role/path/role
+      modifier: bindsecret
+      name: kubecompute-simple---iamrole-binding-IAMRoleARN
+      path: data.IAMRoleARN
+      resource: kubecompute-simple---iamrole-binding
+    - name: kubecompute-simple--svcacc-metadata-name
+      path: metadata.name
+      resource: kubecompute-simple--svcacc
+    spec:
+      object:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: kubecompute-simple
+        spec:
+          progressDeadlineSeconds: 600
+          replicas: 1
+          revisionHistoryLimit: 0
+          selector:
+            matchLabels:
+              resourceName: kubecompute-simple
+              stateName: state1
+          strategy:
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 25%
+            type: RollingUpdate
+          template:
+            metadata:
+              annotations:
+                atlassian.com/business_unit: some_unit
+                atlassian.com/logging_id: logging-id-from-configmap
+                atlassian.com/resource_owner: an_owner
+                iam.amazonaws.com/role: '!{kubecompute-simple---iamrole-binding-IAMRoleARN}'
+              creationTimestamp: null
+              labels:
+                resourceName: kubecompute-simple
+                stateName: state1
+            spec:
+              containers:
+              - env:
+                - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
+                  value: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
+                  value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                envFrom:
+                - secretRef:
+                    name: '!{kubecompute-simple--podsecretenvvar-metadata-name}'
+                    optional: false
+                image: docker.atl-paas.net/atlassian/micros-analytics:0.1
+                name: microservice
+                ports:
+                - containerPort: 8080
+                resources:
+                  limits:
+                    cpu: "0"
+                    memory: "0"
+                  requests:
+                    cpu: "0"
+                    memory: "0"
+                terminationMessagePath: /dev/termination-log
+                terminationMessagePolicy: File
+              dnsPolicy: ClusterFirst
+              restartPolicy: Always
+              schedulerName: default-scheduler
+              securityContext: {}
+              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
+              terminationGracePeriodSeconds: 30
+status: {}
