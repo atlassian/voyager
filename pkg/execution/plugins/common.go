@@ -6,18 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// Copy paste out of CloudFormation controller, to avoid having a messy dependency
-// (it's a single struct, and is the external interface...)
-type CloudformationServiceInstancePayload struct {
-	Template         string            `json:"cfTemplate,omitempty"`
-	Tags             map[string]string `json:"cfTags,omitempty"`
-	Environment      string            `json:"environment,omitempty"`
-	Parameters       map[string]string `json:"cfParameters,omitempty"`
-	TemplateName     string            `json:"cfTemplateName,omitempty"`
-	FilterParameters bool              `json:"filterParameters,omitempty"`
-	StackName        string            `json:"stackName,omitempty"`
-}
-
 func FindBindingSecret(binding *sc_v1b1.ServiceBinding, list []runtime.Object) *core_v1.Secret {
 	return FindSecret(binding.Namespace, binding.Spec.SecretName, list)
 }
