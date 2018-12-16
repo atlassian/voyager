@@ -63,10 +63,7 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 load("@com_github_atlassian_bazel_tools//buildozer:deps.bzl", "buildozer_dependencies")
 load("@com_github_atlassian_bazel_tools//goimports:deps.bzl", "goimports_dependencies")
-load("@com_github_atlassian_bazel_tools//:rjsone/deps.bzl", "rjsone_dependencies")
-load("@com_github_atlassian_bazel_tools//:multirun/deps.bzl", "multirun_dependencies")
 load("@com_github_atlassian_bazel_tools//gometalinter:deps.bzl", "gometalinter_dependencies")
-load("@com_github_atlassian_bazel_tools//gotemplate:deps.bzl", "gotemplate_dependencies")
 
 go_rules_dependencies()
 
@@ -86,10 +83,4 @@ buildifier_dependencies()
 
 buildozer_dependencies()
 
-rjsone_dependencies()
-
-multirun_dependencies()
-
 gometalinter_dependencies()
-
-gotemplate_dependencies()
