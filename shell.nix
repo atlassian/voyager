@@ -1,8 +1,8 @@
 # ======================================================================
 # nix-shell expression encapuslating all developing voyager under --pure
-# for an interactive shell: nix-shell --pure --keep GOPATH
-# to run a command: nix-shell --pure --keep GOPATH --run '<cmd>'
-#   note the single quotes
+# for an interactive shell: nix-shell --pure --keep GOPATH --keep SSH_AUTH_SOCK
+# to run a command: (note the single quotes)
+#   nix-shell --pure --keep GOPATH --keep SSH_AUTH_SOCK --run '<cmd>'
 #
 # =====================================================================
 with import <nixpkgs> {};
