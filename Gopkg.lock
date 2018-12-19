@@ -2,26 +2,6 @@
 
 
 [[projects]]
-  digest = "1:7e1b8031787f1a7d7fb24b792d3d9c978d04f4f04d564c8925f1f613784b431b"
-  name = "bitbucket.org/atlassian/go-asap"
-  packages = [
-    ".",
-    "keyprovider",
-    "validator",
-  ]
-  pruneopts = "NT"
-  revision = "805ddb2a51bc1aa003b3e08603171f9658ef4e02"
-  version = "1.0.0"
-
-[[projects]]
-  digest = "1:d301ab1fc93c09892c70ae2ace85fa1680e3c8f3c0c5961cf9b5e12b64911f97"
-  name = "bitbucket.org/atlassianlabs/restclient"
-  packages = ["."]
-  pruneopts = "NT"
-  revision = "1dca78291af314bedc9817cd6990e61df77f06a7"
-  version = "v1.1.0"
-
-[[projects]]
   digest = "1:c0164b6d52877372590085b45f53a160f47c24e8a2312bb815489223044f5914"
   name = "bitbucket.org/ww/goautoneg"
   packages = ["."]
@@ -58,19 +38,6 @@
   packages = ["."]
   pruneopts = "NT"
   revision = "5bd2802263f21d8788851d5305584c82a5c75d7e"
-
-[[projects]]
-  digest = "1:bd88d7b471ad905be1dc38c0ebe32e5ed29814d7aa15c13c18a91f69eb0a41db"
-  name = "github.com/SermoDigital/jose"
-  packages = [
-    ".",
-    "crypto",
-    "jws",
-    "jwt",
-  ]
-  pruneopts = "NT"
-  revision = "f6df55f235c24f236d11dbcf665249a59ac2021f"
-  version = "1.1"
 
 [[projects]]
   digest = "1:5a23cd3a5496a0b2da7e3b348d14e77b11a210738c398200d7d6f04ea8cf3bd8"
@@ -721,13 +688,6 @@
   revision = "65c1f6f8f0fc1e2185eb9863a3bc751496404259"
 
 [[projects]]
-  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = "NT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-
-[[projects]]
   digest = "1:693526d5d3865c78de60658d97b0fbf60d36ca79a36c5b58ba745a8360c5f882"
   name = "github.com/schollz/closestmatch"
   packages = ["."]
@@ -806,14 +766,6 @@
   packages = ["codec"]
   pruneopts = "NT"
   revision = "ded73eae5db7e7a0ef6f55aace87a2873c5d2b74"
-
-[[projects]]
-  branch = "master"
-  digest = "1:24af1d37eaa8de35eaea95a6128b9132e7d07c790a43fc1ecea3531d66c4dfc0"
-  name = "github.com/vincent-petithory/dataurl"
-  packages = ["."]
-  pruneopts = "NT"
-  revision = "9a301d65acbb728fcc3ace14f45f511a4cfeea9c"
 
 [[projects]]
   branch = "master"
@@ -1474,10 +1426,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "bitbucket.org/atlassian/go-asap",
-    "bitbucket.org/atlassian/go-asap/keyprovider",
-    "bitbucket.org/atlassianlabs/restclient",
-    "github.com/SermoDigital/jose/jws",
     "github.com/asaskevich/govalidator",
     "github.com/atlassian/ctrl",
     "github.com/atlassian/ctrl/apis/condition/v1",
@@ -1516,7 +1464,6 @@
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
-    "github.com/vincent-petithory/dataurl",
     "go.uber.org/zap",
     "go.uber.org/zap/zaptest",
     "golang.org/x/net/http2",
@@ -1554,11 +1501,9 @@
     "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/informers/core/v1",
     "k8s.io/client-go/kubernetes",
-    "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/cache",
-    "k8s.io/client-go/util/cert",
     "k8s.io/client-go/util/flowcontrol",
     "k8s.io/client-go/util/retry",
     "k8s.io/code-generator/cmd/client-gen",

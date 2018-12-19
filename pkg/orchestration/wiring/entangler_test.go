@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
@@ -166,7 +165,7 @@ func testFixture(t *testing.T, filePrefix string) {
 	}
 }
 
-func validateBundle(t *testing.T, bundleName string, bundle *v1.Bundle) {
+func validateBundle(t *testing.T, bundleName string, bundle *smith_v1.Bundle) {
 	pluginContainers := makePluginContainers(t)
 	for _, resource := range bundle.Spec.Resources {
 		plugin := resource.Spec.Plugin
@@ -190,7 +189,7 @@ func makePluginContainers(t *testing.T) map[smith_v1.PluginName]smith_plugin.Con
 	return containers
 }
 
-func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voyager.ResourceType]wiringplugin.WiringPlugin) (*v1.Bundle, bool, error) {
+func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voyager.ResourceType]wiringplugin.WiringPlugin) (*smith_v1.Bundle, bool, error) {
 	// Run the entangle
 	configMap := core_v1.ConfigMap{
 		Data: map[string]string{
@@ -248,7 +247,7 @@ loggingId: logging-id-from-configmap
 	})
 }
 
-func entangleTestFileState(t *testing.T, filePrefix string) (*v1.Bundle, bool, error) {
+func entangleTestFileState(t *testing.T, filePrefix string) (*smith_v1.Bundle, bool, error) {
 	t.Logf("testFixture prefix: %q\n", filePrefix)
 
 	state := &orch_v1.State{}
