@@ -23,9 +23,9 @@ http_archive(
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "15084722711a0ee0d7de96d3f57f9a87d1381f2e45a6f3feef577d27fc4d639d",
-    strip_prefix = "buildtools-ab1d6a0ca532b7b7f3450a42d5cbcfdcd736fd41",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/ab1d6a0ca532b7b7f3450a42d5cbcfdcd736fd41.tar.gz"],
+    sha256 = "68f0b91c5f96da8d61bc91f0bfa8fcefa5562871005fecf3bbf3dee479300edd",
+    strip_prefix = "buildtools-78432f994f6611cbbfa3ebfb41e0c931c12c747d",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/78432f994f6611cbbfa3ebfb41e0c931c12c747d.tar.gz"],
 )
 
 http_archive(
