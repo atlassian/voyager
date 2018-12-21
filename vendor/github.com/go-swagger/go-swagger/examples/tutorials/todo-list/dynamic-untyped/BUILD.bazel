@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/tutorials/todo-list/dynamic-untyped",
+    importpath = "github.com/go-swagger/go-swagger/examples/tutorials/todo-list/dynamic-untyped",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/loads:go_default_library",
+        "//vendor/github.com/go-openapi/loads/fmts:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/middleware:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/middleware/untyped:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "dynamic-untyped",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

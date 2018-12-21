@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["validation.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/validation",
+    importpath = "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/validation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/settings:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/validation:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/validation:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/validation/field:go_default_library",
+    ],
+)

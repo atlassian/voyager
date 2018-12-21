@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "inventory_get_parameters.go",
+        "inventory_get_responses.go",
+        "order_create_parameters.go",
+        "order_create_responses.go",
+        "order_delete_parameters.go",
+        "order_delete_responses.go",
+        "order_get_parameters.go",
+        "order_get_responses.go",
+        "store_client.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/client/store",
+    importpath = "github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/client/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/models:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "main.go",
+        "v8_to_v9.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/gopkg.in/go-playground/validator.v9/_examples/gin-upgrading-overriding",
+    importpath = "gopkg.in/go-playground/validator.v9/_examples/gin-upgrading-overriding",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/gin-gonic/gin/binding:go_default_library",
+        "//vendor/gopkg.in/go-playground/validator.v9:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "gin-upgrading-overriding",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "context_builder.go",
+        "pretty_kind.go",
+        "pretty_names.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/pkg/pretty",
+    importpath = "github.com/kubernetes-incubator/service-catalog/pkg/pretty",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+    ],
+)

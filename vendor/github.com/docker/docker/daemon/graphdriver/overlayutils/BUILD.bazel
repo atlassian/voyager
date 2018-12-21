@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["overlayutils.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/daemon/graphdriver/overlayutils",
+    importpath = "github.com/docker/docker/daemon/graphdriver/overlayutils",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//vendor/github.com/docker/docker/daemon/graphdriver:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

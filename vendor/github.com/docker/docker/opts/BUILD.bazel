@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "address_pools.go",
+        "env.go",
+        "hosts.go",
+        "hosts_unix.go",
+        "hosts_windows.go",
+        "ip.go",
+        "opts.go",
+        "opts_unix.go",
+        "opts_windows.go",
+        "quotedstring.go",
+        "runtime.go",
+        "ulimit.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/opts",
+    importpath = "github.com/docker/docker/opts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/go-units:go_default_library",
+        "//vendor/github.com/docker/libnetwork/ipamutils:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "download.go",
+        "transfer.go",
+        "upload.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/distribution/xfer",
+    importpath = "github.com/docker/docker/distribution/xfer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/distribution:go_default_library",
+        "//vendor/github.com/docker/docker/image:go_default_library",
+        "//vendor/github.com/docker/docker/layer:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/archive:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/ioutils:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/progress:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/system:go_default_library",
+        "//vendor/github.com/sirupsen/logrus:go_default_library",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/integration/plugin/logging/cmd/close_on_start",
+    importpath = "github.com/docker/docker/integration/plugin/logging/cmd/close_on_start",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "close_on_start",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

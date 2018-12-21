@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["truncindex.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/pkg/truncindex",
+    importpath = "github.com/docker/docker/pkg/truncindex",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/tchap/go-patricia/patricia:go_default_library"],
+)

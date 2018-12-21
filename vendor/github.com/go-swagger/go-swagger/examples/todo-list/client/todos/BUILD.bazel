@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_one_parameters.go",
+        "add_one_responses.go",
+        "destroy_one_parameters.go",
+        "destroy_one_responses.go",
+        "find_parameters.go",
+        "find_responses.go",
+        "todos_client.go",
+        "update_one_parameters.go",
+        "update_one_responses.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/todo-list/client/todos",
+    importpath = "github.com/go-swagger/go-swagger/examples/todo-list/client/todos",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/todo-list/models:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

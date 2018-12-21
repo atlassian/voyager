@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "classifier.go",
+        "doc.go",
+        "meta.go",
+        "operations.go",
+        "parameters.go",
+        "path.go",
+        "responses.go",
+        "route_params.go",
+        "routes.go",
+        "scanner.go",
+        "schema.go",
+        "validators.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/scan",
+    importpath = "github.com/go-swagger/go-swagger/scan",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/loads/fmts:go_default_library",
+        "//vendor/github.com/go-openapi/spec:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/golang.org/x/tools/go/loader:go_default_library",
+        "//vendor/gopkg.in/yaml.v2:go_default_library",
+    ],
+)

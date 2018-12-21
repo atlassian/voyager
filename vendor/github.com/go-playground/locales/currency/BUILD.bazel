@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["currency.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-playground/locales/currency",
+    importpath = "github.com/go-playground/locales/currency",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/composed-auth/cmd/multi-auth-example-server",
+    importpath = "github.com/go-swagger/go-swagger/examples/composed-auth/cmd/multi-auth-example-server",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/go-openapi/loads:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/composed-auth/restapi:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/composed-auth/restapi/operations:go_default_library",
+        "//vendor/github.com/jessevdk/go-flags:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "multi-auth-example-server",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

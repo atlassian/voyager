@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["column.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kr/text/colwriter",
+    importpath = "github.com/kr/text/colwriter",
+    visibility = ["//visibility:public"],
+)

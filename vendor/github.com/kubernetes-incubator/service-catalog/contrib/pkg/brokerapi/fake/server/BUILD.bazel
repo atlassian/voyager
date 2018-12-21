@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bind_request.go",
+        "convert_catalog.go",
+        "create_func.go",
+        "deprovision_request.go",
+        "handler.go",
+        "init.go",
+        "last_operation_request.go",
+        "provision_request.go",
+        "server.go",
+        "unbind_request.go",
+        "update_request.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/fake/server",
+    importpath = "github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/fake/server",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/code.cloudfoundry.org/lager:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker:go_default_library",
+        "//vendor/github.com/pivotal-cf/brokerapi:go_default_library",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["fakegit.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/internal/test/fakegit",
+    importpath = "github.com/docker/docker/internal/test/fakegit",
+    visibility = ["//vendor/github.com/docker/docker:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/internal/test:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/fakecontext:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/fakestorage:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/assert:go_default_library",
+    ],
+)

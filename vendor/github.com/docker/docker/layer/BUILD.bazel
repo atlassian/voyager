@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "empty.go",
+        "filestore.go",
+        "filestore_unix.go",
+        "filestore_windows.go",
+        "layer.go",
+        "layer_store.go",
+        "layer_store_windows.go",
+        "layer_unix.go",
+        "layer_windows.go",
+        "migration.go",
+        "mounted_layer.go",
+        "ro_layer.go",
+        "ro_layer_windows.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/layer",
+    importpath = "github.com/docker/docker/layer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/distribution:go_default_library",
+        "//vendor/github.com/docker/docker/daemon/graphdriver:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/archive:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/containerfs:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/idtools:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/ioutils:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/plugingetter:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/stringid:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/system:go_default_library",
+        "//vendor/github.com/opencontainers/go-digest:go_default_library",
+        "//vendor/github.com/sirupsen/logrus:go_default_library",
+        "//vendor/github.com/vbatts/tar-split/tar/asm:go_default_library",
+        "//vendor/github.com/vbatts/tar-split/tar/storage:go_default_library",
+    ],
+)

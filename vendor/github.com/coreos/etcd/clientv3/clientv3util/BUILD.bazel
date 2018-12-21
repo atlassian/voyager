@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["util.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/coreos/etcd/clientv3/clientv3util",
+    importpath = "github.com/coreos/etcd/clientv3/clientv3util",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/coreos/etcd/clientv3:go_default_library"],
+)

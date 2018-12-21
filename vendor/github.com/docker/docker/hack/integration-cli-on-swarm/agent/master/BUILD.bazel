@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "call.go",
+        "master.go",
+        "set.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/hack/integration-cli-on-swarm/agent/master",
+    importpath = "github.com/docker/docker/hack/integration-cli-on-swarm/agent/master",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/bfirsh/funker-go:go_default_library",
+        "//vendor/github.com/docker/docker/hack/integration-cli-on-swarm/agent/types:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "master",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

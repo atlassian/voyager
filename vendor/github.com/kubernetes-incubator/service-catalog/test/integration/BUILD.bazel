@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "framework.go",
+        "util.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/test/integration",
+    importpath = "github.com/kubernetes-incubator/service-catalog/test/integration",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/emicklei/go-restful/log:go_default_library",
+        "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/features:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/wait:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/server/options:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/util/feature:go_default_library",
+        "//vendor/k8s.io/client-go/rest:go_default_library",
+    ],
+)

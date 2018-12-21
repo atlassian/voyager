@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["service.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/integration/internal/swarm",
+    importpath = "github.com/docker/docker/integration/internal/swarm",
+    visibility = ["//vendor/github.com/docker/docker/integration:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/filters:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/swarm:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/daemon:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/environment:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/assert:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/poll:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/skip:go_default_library",
+    ],
+)

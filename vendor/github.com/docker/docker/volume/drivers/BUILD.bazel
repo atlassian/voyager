@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "adapter.go",
+        "extpoint.go",
+        "proxy.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/volume/drivers",
+    importpath = "github.com/docker/docker/volume/drivers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/docker/errdefs:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/locker:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/plugingetter:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/plugins:go_default_library",
+        "//vendor/github.com/docker/docker/volume:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/sirupsen/logrus:go_default_library",
+    ],
+)

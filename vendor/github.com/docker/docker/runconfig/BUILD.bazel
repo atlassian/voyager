@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "config_unix.go",
+        "config_windows.go",
+        "errors.go",
+        "hostconfig.go",
+        "hostconfig_unix.go",
+        "hostconfig_windows.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/runconfig",
+    importpath = "github.com/docker/docker/runconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types/container:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/network:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/sysinfo:go_default_library",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "configure_oauth_sample.go",
+        "doc.go",
+        "embedded_spec.go",
+        "implementation.go",
+        "server.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/oauth2/restapi",
+    importpath = "github.com/go-swagger/go-swagger/examples/oauth2/restapi",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/coreos/go-oidc:go_default_library",
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/flagext:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/middleware:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/oauth2/models:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/oauth2/restapi/operations:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/oauth2/restapi/operations/customers:go_default_library",
+        "//vendor/github.com/jessevdk/go-flags:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+        "//vendor/golang.org/x/net/netutil:go_default_library",
+        "//vendor/golang.org/x/oauth2:go_default_library",
+    ],
+)
