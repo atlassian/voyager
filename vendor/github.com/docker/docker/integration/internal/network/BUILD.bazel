@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "network.go",
+        "ops.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/integration/internal/network",
+    importpath = "github.com/docker/docker/integration/internal/network",
+    visibility = ["//vendor/github.com/docker/docker/integration:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/network:go_default_library",
+        "//vendor/github.com/docker/docker/client:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/assert:go_default_library",
+    ],
+)

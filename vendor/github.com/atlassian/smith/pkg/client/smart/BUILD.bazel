@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "discovery.go",
+        "smart.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/atlassian/smith/pkg/client/smart",
+    importpath = "github.com/atlassian/smith/pkg/client/smart",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/meta:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+        "//vendor/k8s.io/client-go/discovery:go_default_library",
+        "//vendor/k8s.io/client-go/dynamic:go_default_library",
+    ],
+)

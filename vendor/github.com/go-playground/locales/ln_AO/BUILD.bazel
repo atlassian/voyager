@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["ln_AO.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-playground/locales/ln_AO",
+    importpath = "github.com/go-playground/locales/ln_AO",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-playground/locales:go_default_library",
+        "//vendor/github.com/go-playground/locales/currency:go_default_library",
+    ],
+)

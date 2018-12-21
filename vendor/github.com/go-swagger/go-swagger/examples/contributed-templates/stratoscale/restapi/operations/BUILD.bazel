@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["petstore_api.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/restapi/operations",
+    importpath = "github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/restapi/operations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/loads:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/middleware:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/security:go_default_library",
+        "//vendor/github.com/go-openapi/spec:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/restapi/operations/pet:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/contributed-templates/stratoscale/restapi/operations/store:go_default_library",
+    ],
+)

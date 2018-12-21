@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "noparams.go",
+        "responses.go",
+        "todo_operation.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/fixtures/goparsing/classification/operations",
+    importpath = "github.com/go-swagger/go-swagger/fixtures/goparsing/classification/operations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/fixtures/goparsing/classification/models:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/fixtures/goparsing/classification/transitive/mods:go_default_library",
+    ],
+)

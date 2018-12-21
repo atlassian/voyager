@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "crash.go",
+        "logz.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/atlassian/ctrl/logz",
+    importpath = "github.com/atlassian/ctrl/logz",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/go.uber.org/zap/zapcore:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+    ],
+)

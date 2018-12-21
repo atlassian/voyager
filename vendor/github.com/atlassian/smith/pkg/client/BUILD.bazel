@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["bundle.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/atlassian/smith/pkg/client",
+    importpath = "github.com/atlassian/smith/pkg/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/client/clientset_generated/clientset:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/watch:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+    ],
+)

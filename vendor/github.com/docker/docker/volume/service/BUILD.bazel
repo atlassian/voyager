@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "by.go",
+        "convert.go",
+        "db.go",
+        "default_driver.go",
+        "default_driver_stubs.go",
+        "errors.go",
+        "restore.go",
+        "service.go",
+        "store.go",
+        "store_unix.go",
+        "store_windows.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/volume/service",
+    importpath = "github.com/docker/docker/volume/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/boltdb/bolt:go_default_library",
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/filters:go_default_library",
+        "//vendor/github.com/docker/docker/errdefs:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/directory:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/idtools:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/locker:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/plugingetter:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/stringid:go_default_library",
+        "//vendor/github.com/docker/docker/volume:go_default_library",
+        "//vendor/github.com/docker/docker/volume/drivers:go_default_library",
+        "//vendor/github.com/docker/docker/volume/mounts:go_default_library",
+        "//vendor/github.com/docker/docker/volume/service/opts:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/sirupsen/logrus:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//vendor/github.com/docker/docker/volume/local:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//vendor/github.com/docker/docker/volume/local:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "broker_client.go",
+        "catalog.go",
+        "create_func.go",
+        "doc.go",
+        "schemas.go",
+        "service.go",
+        "service_binding.go",
+        "service_instance.go",
+        "service_plan.go",
+        "types.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi",
+    importpath = "github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi",
+    visibility = ["//visibility:public"],
+)

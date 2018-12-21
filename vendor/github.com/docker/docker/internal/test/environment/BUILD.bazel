@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "clean.go",
+        "environment.go",
+        "protect.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/internal/test/environment",
+    importpath = "github.com/docker/docker/internal/test/environment",
+    visibility = ["//vendor/github.com/docker/docker:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/filters:go_default_library",
+        "//vendor/github.com/docker/docker/client:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/fixtures/load:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/assert:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)

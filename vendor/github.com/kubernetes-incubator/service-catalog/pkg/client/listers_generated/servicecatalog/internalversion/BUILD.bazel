@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "clusterservicebroker.go",
+        "clusterserviceclass.go",
+        "clusterserviceplan.go",
+        "expansion_generated.go",
+        "servicebinding.go",
+        "servicebroker.go",
+        "serviceclass.go",
+        "serviceinstance.go",
+        "serviceplan.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion",
+    importpath = "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/labels:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+    ],
+)

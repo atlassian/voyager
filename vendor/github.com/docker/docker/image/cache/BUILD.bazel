@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "compare.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/image/cache",
+    importpath = "github.com/docker/docker/image/cache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types/container:go_default_library",
+        "//vendor/github.com/docker/docker/dockerversion:go_default_library",
+        "//vendor/github.com/docker/docker/image:go_default_library",
+        "//vendor/github.com/docker/docker/layer:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)

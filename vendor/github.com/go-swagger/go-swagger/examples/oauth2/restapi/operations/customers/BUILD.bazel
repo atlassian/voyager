@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "create.go",
+        "create_parameters.go",
+        "create_responses.go",
+        "create_urlbuilder.go",
+        "get_id.go",
+        "get_id_parameters.go",
+        "get_id_responses.go",
+        "get_id_urlbuilder.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/oauth2/restapi/operations/customers",
+    importpath = "github.com/go-swagger/go-swagger/examples/oauth2/restapi/operations/customers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/middleware:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/oauth2/models:go_default_library",
+    ],
+)

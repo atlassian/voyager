@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["configz.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz",
+    importpath = "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz",
+    visibility = ["//visibility:public"],
+)

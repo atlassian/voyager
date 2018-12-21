@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "binding.go",
+        "broker.go",
+        "instance.go",
+        "serviceclass.go",
+        "serviceplan.go",
+        "validation.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation",
+    importpath = "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/controller:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/features:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/filter:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/validation:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/validation:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/validation/field:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/util/feature:go_default_library",
+    ],
+)

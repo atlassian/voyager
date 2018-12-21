@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "attach.go",
+        "streams.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/container/stream",
+    importpath = "github.com/docker/docker/container/stream",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/containerd/containerd/cio:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/broadcaster:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/ioutils:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/pools:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/term:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/sirupsen/logrus:go_default_library",
+        "//vendor/golang.org/x/sync/errgroup:go_default_library",
+    ],
+)

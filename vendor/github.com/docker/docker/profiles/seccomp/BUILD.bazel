@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "seccomp.go",
+        "seccomp_unsupported.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/profiles/seccomp",
+    importpath = "github.com/docker/docker/profiles/seccomp",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//vendor/github.com/docker/docker/api/types:go_default_library",
+            "//vendor/github.com/opencontainers/runtime-spec/specs-go:go_default_library",
+            "//vendor/github.com/seccomp/libseccomp-golang:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

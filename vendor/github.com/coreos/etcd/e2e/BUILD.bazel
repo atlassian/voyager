@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "etcd_spawn_nocov.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/coreos/etcd/e2e",
+    importpath = "github.com/coreos/etcd/e2e",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/coreos/etcd/pkg/expect:go_default_library"],
+)

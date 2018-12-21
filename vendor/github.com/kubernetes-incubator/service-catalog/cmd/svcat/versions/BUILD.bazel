@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["version_cmd.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions",
+    importpath = "github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/command:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/output:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)

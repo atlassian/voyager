@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["dbserver.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/globalsign/mgo/dbtest",
+    importpath = "github.com/globalsign/mgo/dbtest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/globalsign/mgo:go_default_library",
+        "//vendor/gopkg.in/tomb.v2:go_default_library",
+    ],
+)

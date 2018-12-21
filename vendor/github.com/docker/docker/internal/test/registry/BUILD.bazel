@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ops.go",
+        "registry.go",
+        "registry_mock.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/internal/test/registry",
+    importpath = "github.com/docker/docker/internal/test/registry",
+    visibility = ["//vendor/github.com/docker/docker:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/internal/test:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/assert:go_default_library",
+        "//vendor/github.com/opencontainers/go-digest:go_default_library",
+    ],
+)

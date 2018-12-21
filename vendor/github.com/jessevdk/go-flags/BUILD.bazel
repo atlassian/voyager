@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "arg.go",
+        "closest.go",
+        "command.go",
+        "completion.go",
+        "convert.go",
+        "error.go",
+        "flags.go",
+        "group.go",
+        "help.go",
+        "ini.go",
+        "man.go",
+        "multitag.go",
+        "option.go",
+        "optstyle_other.go",
+        "optstyle_windows.go",
+        "parser.go",
+        "termsize.go",
+        "termsize_nosysioctl.go",
+        "tiocgwinsz_bsdish.go",
+        "tiocgwinsz_linux.go",
+        "tiocgwinsz_other.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/jessevdk/go-flags",
+    importpath = "github.com/jessevdk/go-flags",
+    visibility = ["//visibility:public"],
+)

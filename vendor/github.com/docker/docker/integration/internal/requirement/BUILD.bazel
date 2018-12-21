@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["requirement.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/integration/internal/requirement",
+    importpath = "github.com/docker/docker/integration/internal/requirement",
+    visibility = ["//vendor/github.com/docker/docker/integration:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/pkg/parsers/kernel:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/icmd:go_default_library",
+    ],
+)
