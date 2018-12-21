@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "handler.go",
+        "server.go",
+        "utils.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/coreos/etcd/functional/agent",
+    importpath = "github.com/coreos/etcd/functional/agent",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/coreos/etcd/functional/rpcpb:go_default_library",
+        "//vendor/github.com/coreos/etcd/pkg/fileutil:go_default_library",
+        "//vendor/github.com/coreos/etcd/pkg/proxy:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/google.golang.org/grpc:go_default_library",
+    ],
+)

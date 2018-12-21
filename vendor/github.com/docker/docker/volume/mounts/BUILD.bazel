@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "lcow_parser.go",
+        "linux_parser.go",
+        "mounts.go",
+        "parser.go",
+        "validate.go",
+        "volume_copy.go",
+        "volume_unix.go",
+        "volume_windows.go",
+        "windows_parser.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/volume/mounts",
+    importpath = "github.com/docker/docker/volume/mounts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types/mount:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/idtools:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/stringid:go_default_library",
+        "//vendor/github.com/docker/docker/volume:go_default_library",
+        "//vendor/github.com/opencontainers/selinux/go-selinux/label:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)

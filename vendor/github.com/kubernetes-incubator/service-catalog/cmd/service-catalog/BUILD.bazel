@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/cmd/service-catalog",
+    importpath = "github.com/kubernetes-incubator/service-catalog/cmd/service-catalog",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/service-catalog/server:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/hyperkube:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "service-catalog",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

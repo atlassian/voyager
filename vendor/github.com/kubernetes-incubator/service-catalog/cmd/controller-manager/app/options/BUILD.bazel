@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["options.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options",
+    importpath = "github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/componentconfig:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/controller:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/componentconfig:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/client/leaderelectionconfig:go_default_library",
+        "//vendor/github.com/pmorie/go-open-service-broker-client/v2:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/server/options:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/util/feature:go_default_library",
+    ],
+)

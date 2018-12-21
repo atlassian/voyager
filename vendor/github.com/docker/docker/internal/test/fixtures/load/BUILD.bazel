@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["frozen.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/internal/test/fixtures/load",
+    importpath = "github.com/docker/docker/internal/test/fixtures/load",
+    visibility = ["//vendor/github.com/docker/docker:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/docker/client:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/jsonmessage:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/term:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)

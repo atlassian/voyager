@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["generate_resources.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-playground/locales/cmd",
+    importpath = "github.com/go-playground/locales/cmd",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/go-playground/locales:go_default_library",
+        "//vendor/golang.org/x/text/unicode/cldr:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "cmd",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

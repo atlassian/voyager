@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["register.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/atlassian/smith/pkg/apis/smith",
+    importpath = "github.com/atlassian/smith/pkg/apis/smith",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/atlassian/smith:go_default_library"],
+)

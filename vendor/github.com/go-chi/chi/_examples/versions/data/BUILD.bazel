@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "article.go",
+        "errors.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-chi/chi/_examples/versions/data",
+    importpath = "github.com/go-chi/chi/_examples/versions/data",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/go-chi/render:go_default_library"],
+)

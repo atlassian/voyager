@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["interface.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/settings",
+    importpath = "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/settings",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/settings/v1alpha1:go_default_library",
+    ],
+)

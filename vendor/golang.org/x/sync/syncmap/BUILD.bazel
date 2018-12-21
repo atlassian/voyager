@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["map.go"],
+    importmap = "github.com/atlassian/voyager/vendor/golang.org/x/sync/syncmap",
+    importpath = "golang.org/x/sync/syncmap",
+    visibility = ["//visibility:public"],
+)

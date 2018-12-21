@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["admission.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/servicebindings/lifecycle",
+    importpath = "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/servicebindings/lifecycle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/admission:go_default_library",
+    ],
+)

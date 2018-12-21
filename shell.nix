@@ -14,6 +14,7 @@ pkgs.mkShell {
     stdenv.cc.cc.lib
     glibc
     python2
+    perl # invoked as part of generating test output files
 
     # our scripts
     python3

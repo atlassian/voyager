@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["group.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/ash2k/stager/wait",
+    importpath = "github.com/ash2k/stager/wait",
+    visibility = ["//visibility:public"],
+)

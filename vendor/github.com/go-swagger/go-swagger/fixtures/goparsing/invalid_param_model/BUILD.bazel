@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/fixtures/goparsing/invalid_param_model",
+    importpath = "github.com/go-swagger/go-swagger/fixtures/goparsing/invalid_param_model",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "invalid_param_model",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

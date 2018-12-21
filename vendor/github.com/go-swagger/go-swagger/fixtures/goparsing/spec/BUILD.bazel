@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["api.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/fixtures/goparsing/spec",
+    importpath = "github.com/go-swagger/go-swagger/fixtures/goparsing/spec",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/go-swagger/scan-repo-boundary/makeplans:go_default_library"],
+)

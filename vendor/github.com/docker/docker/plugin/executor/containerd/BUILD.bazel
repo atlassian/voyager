@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["containerd.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/plugin/executor/containerd",
+    importpath = "github.com/docker/docker/plugin/executor/containerd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/containerd/containerd/cio:go_default_library",
+        "//vendor/github.com/containerd/containerd/runtime/linux/runctypes:go_default_library",
+        "//vendor/github.com/docker/docker/errdefs:go_default_library",
+        "//vendor/github.com/docker/docker/libcontainerd:go_default_library",
+        "//vendor/github.com/opencontainers/runtime-spec/specs-go:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/sirupsen/logrus:go_default_library",
+    ],
+)

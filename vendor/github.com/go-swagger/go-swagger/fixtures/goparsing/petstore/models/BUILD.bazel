@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "order.go",
+        "pet.go",
+        "tag.go",
+        "user.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/fixtures/goparsing/petstore/models",
+    importpath = "github.com/go-swagger/go-swagger/fixtures/goparsing/petstore/models",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/go-openapi/strfmt:go_default_library"],
+)

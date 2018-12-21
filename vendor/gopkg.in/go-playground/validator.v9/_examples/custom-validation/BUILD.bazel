@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/gopkg.in/go-playground/validator.v9/_examples/custom-validation",
+    importpath = "gopkg.in/go-playground/validator.v9/_examples/custom-validation",
+    visibility = ["//visibility:private"],
+    deps = ["//vendor/gopkg.in/go-playground/validator.v9:go_default_library"],
+)
+
+go_binary(
+    name = "custom-validation",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

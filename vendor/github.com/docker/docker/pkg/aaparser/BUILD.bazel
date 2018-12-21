@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["aaparser.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/pkg/aaparser",
+    importpath = "github.com/docker/docker/pkg/aaparser",
+    visibility = ["//visibility:public"],
+)

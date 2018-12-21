@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "generic.go",
+        "generic_worker.go",
+        "http.go",
+        "work_queue.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/atlassian/ctrl/process",
+    importpath = "github.com/atlassian/ctrl/process",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/ash2k/stager:go_default_library",
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/handlers:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/logz:go_default_library",
+        "//vendor/github.com/go-chi/chi/middleware:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/prometheus/client_golang/prometheus:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/golang.org/x/sync/errgroup:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/k8s.io/client-go/util/workqueue:go_default_library",
+    ],
+)

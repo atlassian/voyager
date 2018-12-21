@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["build.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/integration-cli/cli/build",
+    importpath = "github.com/docker/docker/integration-cli/cli/build",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/docker/docker/internal/test/fakecontext:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/icmd:go_default_library",
+    ],
+)

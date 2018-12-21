@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "defaults.go",
+        "doc.go",
+        "type.go",
+        "zz_generated.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/k8s.io/gengo/examples/defaulter-gen/_output_tests/wholepkg",
+    importpath = "k8s.io/gengo/examples/defaulter-gen/_output_tests/wholepkg",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/gengo/examples/defaulter-gen/_output_tests/empty:go_default_library",
+    ],
+)

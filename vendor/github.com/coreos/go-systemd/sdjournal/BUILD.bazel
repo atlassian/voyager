@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "functions.go",
+        "journal.go",
+        "read.go",
+    ],
+    cgo = True,
+    importmap = "github.com/atlassian/voyager/vendor/github.com/coreos/go-systemd/sdjournal",
+    importpath = "github.com/coreos/go-systemd/sdjournal",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/coreos/pkg/dlopen:go_default_library"],
+)

@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_comment_to_task_parameters.go",
+        "add_comment_to_task_responses.go",
+        "create_task_parameters.go",
+        "create_task_responses.go",
+        "delete_task_parameters.go",
+        "delete_task_responses.go",
+        "get_task_comments_parameters.go",
+        "get_task_comments_responses.go",
+        "get_task_details_parameters.go",
+        "get_task_details_responses.go",
+        "list_tasks_parameters.go",
+        "list_tasks_responses.go",
+        "tasks_client.go",
+        "update_task_parameters.go",
+        "update_task_responses.go",
+        "upload_task_file_parameters.go",
+        "upload_task_file_responses.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/task-tracker/client/tasks",
+    importpath = "github.com/go-swagger/go-swagger/examples/task-tracker/client/tasks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/github.com/go-openapi/validate:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/task-tracker/models:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

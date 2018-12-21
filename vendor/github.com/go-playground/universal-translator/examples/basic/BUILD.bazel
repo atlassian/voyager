@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-playground/universal-translator/examples/basic",
+    importpath = "github.com/go-playground/universal-translator/examples/basic",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/go-playground/locales:go_default_library",
+        "//vendor/github.com/go-playground/locales/en:go_default_library",
+        "//vendor/github.com/go-playground/locales/en_CA:go_default_library",
+        "//vendor/github.com/go-playground/locales/fr:go_default_library",
+        "//vendor/github.com/go-playground/locales/nl:go_default_library",
+        "//vendor/github.com/go-playground/universal-translator:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "basic",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

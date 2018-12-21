@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/go-swagger/go-swagger/examples/stream-server/cmd/countdown-server",
+    importpath = "github.com/go-swagger/go-swagger/examples/stream-server/cmd/countdown-server",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/go-openapi/loads:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/stream-server/restapi:go_default_library",
+        "//vendor/github.com/go-swagger/go-swagger/examples/stream-server/restapi/operations:go_default_library",
+        "//vendor/github.com/jessevdk/go-flags:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "countdown-server",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

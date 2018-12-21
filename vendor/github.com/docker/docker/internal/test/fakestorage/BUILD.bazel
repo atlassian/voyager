@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fixtures.go",
+        "storage.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/docker/docker/internal/test/fakestorage",
+    importpath = "github.com/docker/docker/internal/test/fakestorage",
+    visibility = ["//vendor/github.com/docker/docker:__subpackages__"],
+    deps = [
+        "//vendor/github.com/docker/docker/api/types:go_default_library",
+        "//vendor/github.com/docker/docker/api/types/container:go_default_library",
+        "//vendor/github.com/docker/docker/client:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/environment:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/fakecontext:go_default_library",
+        "//vendor/github.com/docker/docker/internal/test/request:go_default_library",
+        "//vendor/github.com/docker/docker/internal/testutil:go_default_library",
+        "//vendor/github.com/docker/docker/pkg/archive:go_default_library",
+        "//vendor/github.com/docker/go-connections/nat:go_default_library",
+        "//vendor/github.com/gotestyourself/gotestyourself/assert:go_default_library",
+    ],
+)

@@ -1,4 +1,3 @@
-/vendor/
 /bazel-bin
 /bazel-genfiles
 /bazel-out
