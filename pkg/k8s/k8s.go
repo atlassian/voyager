@@ -18,6 +18,7 @@ const (
 	ReplicaSetKind              = "ReplicaSet"
 	RoleKind                    = "Role"
 	RoleBindingKind             = "RoleBinding"
+	CronJobKind                 = "CronJob"
 	SecretKind                  = "Secret"
 	ServiceKind                 = "Service"
 	IngressKind                 = "Ingress"
