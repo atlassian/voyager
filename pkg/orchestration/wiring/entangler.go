@@ -100,7 +100,7 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *orchestration.Entan
 		return nil, false, err
 	}
 
-	tags := make(map[voyager.Tag]string, len(serviceProperties.UserTags)+6)
+	tags := make(map[voyager.Tag]string)
 	for tag, val := range serviceProperties.UserTags {
 		tags[tag] = val
 	}
