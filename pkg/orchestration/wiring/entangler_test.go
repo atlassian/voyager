@@ -67,6 +67,8 @@ func TestDependants(t *testing.T) {
 		childFieldValue                      = "this is a field inside the child of the parent"
 		parentName      voyager.ResourceName = "parent"
 		childName       voyager.ResourceName = "child"
+		parentType      voyager.ResourceType = "ParentType"
+		childType       voyager.ResourceType = "ChildType"
 	)
 
 	attrs := map[string]interface{}{
@@ -102,8 +104,8 @@ func TestDependants(t *testing.T) {
 	}
 
 	wiringPlugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
-		voyager.ResourceType("parent"): parentFunc,
-		voyager.ResourceType("child"):  childFunc,
+		parentType: parentFunc,
+		childType:  childFunc,
 	}
 
 	// Build the child's spec which we will have access to in the parent
@@ -116,15 +118,15 @@ func TestDependants(t *testing.T) {
 		Spec: orch_v1.StateSpec{
 			Resources: []orch_v1.StateResource{
 				{
-					Name: "parent",
-					Type: voyager.ResourceType("parent"),
+					Name: parentName,
+					Type: parentType,
 				},
 				{
-					Name: "child",
-					Type: voyager.ResourceType("child"),
+					Name: childName,
+					Type: childType,
 					DependsOn: []orch_v1.StateDependency{
 						{
-							Name:       voyager.ResourceName("parent"),
+							Name:       parentName,
 							Attributes: attrs,
 						},
 					},
@@ -279,7 +281,7 @@ func _TestDumpActualBundleToFixtures(t *testing.T) {
 	// Sanity check that we actually loaded something otherwise bazel might eat
 	// our tests
 	if len(files) == 0 {
-		require.FailNow(t, "Expected some test fixtures, but didn't fine any")
+		require.FailNow(t, "Expected some test fixtures, but didn't find any")
 	}
 
 	for _, file := range files {
