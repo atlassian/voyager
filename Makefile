@@ -8,7 +8,8 @@ KUBECONFIG ?= $(shell kind get kubeconfig-path)
 
 #Directories to scan and generate Deepcopy methods
 MAIN_PACKAGE_DIR = github.com/atlassian/voyager
-APIS_ORCHESTRATION_DIR = github.com/atlassian/voyager/pkg/apis/orchestration/v1
+APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
+SHAPES_API_DIR = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin
 ALL_DIRS=$(APIS_ORCHESTRATION_DIR)
 
 #===============================================================================
@@ -321,7 +322,7 @@ generate-deepcopy:
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/deepcopy-gen
 	./bazel-bin/vendor/k8s.io/code-generator/cmd/deepcopy-gen/$(BINARY_PREFIX_DIRECTORY)/deepcopy-gen $(VERIFY_CODE) \
 	--v 1 --logtostderr \
-	--input-dirs "$(ALL_DIRS)" \
+	--input-dirs "$(ALL_DIRS),$(SHAPES_API_DIR)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
 	--output-file-base zz_generated.deepcopy
 

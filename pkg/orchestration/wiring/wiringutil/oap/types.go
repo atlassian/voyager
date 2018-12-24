@@ -11,9 +11,9 @@ type ResourceType string
 type CfnTemplate string
 
 type ServiceInstanceSpec struct {
-	ServiceName string             `json:"serviceName"`
-	Resource    RPSResource        `json:"resource"`
-	Environment ServiceEnvironment `json:"environment"`
+	ServiceName voyager.ServiceName `json:"serviceName"`
+	Resource    RPSResource         `json:"resource"`
+	Environment ServiceEnvironment  `json:"environment"`
 }
 
 type ServiceEnvironment struct {

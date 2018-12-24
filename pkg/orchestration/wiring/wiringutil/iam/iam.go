@@ -30,7 +30,7 @@ const (
 	namePostfix = "-iamrole"
 )
 
-func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voyager.ResourceName, serviceName string, createInstanceProfile bool, dependencyReferences []smith_v1.Reference,
+func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voyager.ResourceName, serviceName voyager.ServiceName, createInstanceProfile bool, dependencyReferences []smith_v1.Reference,
 	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (wiringplugin.WiredSmithResource, error) {
 
 	iamRoleSpecJSONMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&iam_plugin.Spec{

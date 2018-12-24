@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/atlassian/voyager/pkg/execution/plugins/iamrole",
     visibility = ["//visibility:public"],
     deps = [
+        "//:go_default_library",
         "//pkg/execution/plugins:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
         "//pkg/util:go_default_library",

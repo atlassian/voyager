@@ -3,6 +3,7 @@ package oap
 import (
 	"encoding/json"
 
+	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -11,15 +12,15 @@ import (
 // For some reason spec is mix of OAP/AWS resource attributes AND Micros2 parameters, we filter out known non-attributes and pass-through all remaining ones as
 // OAP/AWS attributes.
 type nonAttributesInSpec struct {
-	InstanceID   string          `json:"instanceId"` // Common to all OSB things
-	ServiceName  string          `json:"serviceName"`
-	ResourceName string          `json:"resourceName"`
-	Alarms       json.RawMessage `json:"alarms"`
+	InstanceID   string              `json:"instanceId"` // Common to all OSB things
+	ServiceName  voyager.ServiceName `json:"serviceName"`
+	ResourceName string              `json:"resourceName"`
+	Alarms       json.RawMessage     `json:"alarms"`
 }
 
 // Gets serviceName from resource's spec if present or "" otherwise
 // If the spec is empty or does not contain the ServiceName, this returns the empty string.
-func ServiceName(resourceSpec *runtime.RawExtension) (string, error) {
+func ServiceName(resourceSpec *runtime.RawExtension) (voyager.ServiceName, error) {
 	if resourceSpec == nil {
 		return "", nil
 	}

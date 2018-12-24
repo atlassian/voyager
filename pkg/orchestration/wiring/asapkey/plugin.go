@@ -59,7 +59,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	// the issuer name is calculated by first combining the Micros2 serviceName with the ASAPKey resource name
 	// the keyserver will prefix this value it with "micros/" when binding the resource
 	// example: Micros2 serviceName=foo, ASAPKey resource=my-asap, final issuer "micros/foo/my-asap"
-	spec.ServiceName = context.StateContext.ServiceName + "/" + string(resource.Name)
+	spec.ServiceName = string(context.StateContext.ServiceName) + "/" + string(resource.Name)
 	spec.KeyName = string(resource.Name)
 	// creator is just a stored description of which entity created the ASAP key pair on keyserver side
 	// not used anywhere

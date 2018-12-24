@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -99,13 +100,12 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *orchestration.Entan
 		return nil, false, err
 	}
 
-	tags := make(map[voyager.Tag]string, len(serviceProperties.UserTags))
+	tags := make(map[voyager.Tag]string, len(serviceProperties.UserTags)+6)
 	for tag, val := range serviceProperties.UserTags {
 		tags[tag] = val
 	}
 
-	serviceName := string(context.ServiceName)
-	tags[en.TagNames.ServiceNameTag] = serviceName
+	tags[en.TagNames.ServiceNameTag] = string(context.ServiceName)
 	tags[en.TagNames.BusinessUnitTag] = serviceProperties.BusinessUnit
 	tags[en.TagNames.ResourceOwnerTag] = serviceProperties.ResourceOwner
 	tags[en.TagNames.EnvironmentTypeTag] = string(location.EnvType)
@@ -116,7 +116,7 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *orchestration.Entan
 		Location:          location,
 		ClusterConfig:     en.ClusterConfig,
 		LegacyConfig:      *legacyConfig,
-		ServiceName:       serviceName,
+		ServiceName:       context.ServiceName,
 		ServiceProperties: *serviceProperties,
 		Tags:              tags,
 	}
@@ -124,9 +124,8 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *orchestration.Entan
 	// Visit vertices in sorted order
 	for _, v := range sorted {
 		resource := g.Vertices[v].Data.(*orch_v1.StateResource)
-		//, availableDependencies map[voyager.ResourceName]struct{}
-		dependents := filterDependents(g.Vertices[v].IncomingEdges, state.Spec.Resources)
-		retriable, entErr := w.entangle(resource, &state.ObjectMeta, &stateContext, dependents)
+		dependants := getDependants(resource.Name, g.Vertices[v].IncomingEdges, state.Spec.Resources)
+		retriable, entErr := w.entangle(resource, &state.ObjectMeta, &stateContext, dependants)
 		if entErr != nil {
 			return nil, retriable, errors.Wrapf(entErr, "failed to wire up resource %q of type %q", resource.Name, resource.Type)
 		}
@@ -207,7 +206,7 @@ type worker struct {
 	allWiredResourcesList []smith_v1.Resource
 }
 
-func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.ObjectMeta, context *wiringplugin.StateContext, dependents []orch_v1.StateResource) (bool /*retriable*/, error) {
+func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.ObjectMeta, context *wiringplugin.StateContext, dependants []wiringplugin.Dependant) (bool /*retriable*/, error) {
 	if w.allWiredResources[resource.Name] != nil {
 		return false, errors.New("resource with same name already exists")
 	}
@@ -239,7 +238,7 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 	wiringContext := &wiringplugin.WiringContext{
 		StateContext: *context,
 		Dependencies: deps,
-		Dependents:   dependents,
+		Dependants:   dependants,
 	}
 	stateMeta.DeepCopyInto(&wiringContext.StateMeta)
 	result, retriable, err := plugin.WireUp(resource, wiringContext)
@@ -286,14 +285,28 @@ func sortStateResources(stateResources []orch_v1.StateResource) (*graph.Graph, [
 	return g, sorted, nil
 }
 
-func filterDependents(vertices []graph.V, allResources []orch_v1.StateResource) []orch_v1.StateResource {
-	resources := make([]orch_v1.StateResource, 0, len(vertices))
-	for _, v := range vertices {
+func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.V, allResources []orch_v1.StateResource) []wiringplugin.Dependant {
+	dependantResources := make([]wiringplugin.Dependant, 0, len(dependantVertices))
+	for _, v := range dependantVertices {
 		for _, resource := range allResources {
 			if v == resource.Name {
-				resources = append(resources, resource)
+				// Find attributes
+				var attrs map[string]interface{}
+				for _, dependency := range resource.DependsOn {
+					if dependency.Name == resourceName {
+						attrs = runtime.DeepCopyJSON(dependency.Attributes)
+						break
+					}
+				}
+				dependantResources = append(dependantResources, wiringplugin.Dependant{
+					Name:       resource.Name,
+					Type:       resource.Type,
+					Attributes: attrs,
+					Resource:   resource,
+				})
+				break
 			}
 		}
 	}
-	return resources
+	return dependantResources
 }

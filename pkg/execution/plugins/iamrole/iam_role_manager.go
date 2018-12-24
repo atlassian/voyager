@@ -10,6 +10,7 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
+	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/execution/plugins"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util"
@@ -95,7 +96,7 @@ var defaultEC2ComputeAssumeRoleStatement = IamAssumeRoleStatement{
 	Action: "sts:AssumeRole",
 }
 
-func defaultJSON(serviceID string) *IamPolicy {
+func defaultJSON(serviceID voyager.ServiceName) *IamPolicy {
 	var condition json.RawMessage = []byte(fmt.Sprintf(`
 					{
 						"StringEquals": {
@@ -213,7 +214,7 @@ func generateRoleInstance(spec *Spec, dependencies map[smith_v1.ResourceName]smi
 	}, nil
 }
 
-func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy *IamPolicy, serviceID string, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
+func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy *IamPolicy, serviceID voyager.ServiceName, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
 
 	iamPolicies := make([]*IamPolicy, 0, 2) // should not be nil to avoid serializing it as `null`
 
