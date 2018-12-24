@@ -20,4 +20,5 @@ go_library(
 
 define_command_targets(
     name = "orchestration",
+    binary_embed = [":go_default_library"],
 )

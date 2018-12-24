@@ -17,4 +17,5 @@ go_library(
 
 define_command_targets(
     name = "smith",
+    binary_embed = [":go_default_library"],
 )
