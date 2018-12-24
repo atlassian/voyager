@@ -86,7 +86,7 @@ func TestGenerateRoleInstance(t *testing.T) {
 
 	noDeps := map[smith_v1.ResourceName]smith_plugin.Dependency{}
 	spec := &Spec{
-		ServiceID:       "test-svc-app",
+		ServiceName:     "test-svc-app",
 		OAPResourceName: "app-iamrole",
 		ServiceEnvironment: oap.ServiceEnvironment{
 			NotificationEmail:            "an_owner@example.com",

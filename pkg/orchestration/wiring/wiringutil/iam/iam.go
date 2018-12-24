@@ -35,7 +35,7 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voya
 
 	iamRoleSpecJSONMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&iam_plugin.Spec{
 		OAPResourceName:       string(resourceName) + namePostfix,
-		ServiceID:             serviceName,
+		ServiceName:           serviceName,
 		CreateInstanceProfile: createInstanceProfile,
 		ManagedPolicies:       managedPolicies,
 		AssumeRoles:           assumeRoles,

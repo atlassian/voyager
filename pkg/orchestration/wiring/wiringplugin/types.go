@@ -26,7 +26,7 @@ type WiringContext struct {
 	StateMeta    meta_v1.ObjectMeta
 	StateContext StateContext
 	Dependencies []WiredDependency
-	Dependants   []Dependant
+	Dependants   []DependantResource
 }
 
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.
@@ -40,8 +40,8 @@ type WiredDependency struct {
 	Attributes map[string]interface{}
 }
 
-// Dependant represents a resource that depends on the resource that is currently being processed.
-type Dependant struct {
+// DependantResource represents a resource that depends on the resource that is currently being processed.
+type DependantResource struct {
 	Name voyager.ResourceName
 	Type voyager.ResourceType
 	// Attributes are attributes attached to the edge between resources.
@@ -93,7 +93,7 @@ type WiringResult struct {
 
 type WiredSmithResource struct {
 	SmithResource smith_v1.Resource
-	// DEPRECATED: use shapes instead
+	// DEPRECATED: use Shapes, Refs and/or Data in ResourceContract to expose information
 	Exposed bool
 }
 

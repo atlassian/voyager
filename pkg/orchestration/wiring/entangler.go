@@ -206,7 +206,7 @@ type worker struct {
 	allWiredResourcesList []smith_v1.Resource
 }
 
-func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.ObjectMeta, context *wiringplugin.StateContext, dependants []wiringplugin.Dependant) (bool /*retriable*/, error) {
+func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.ObjectMeta, context *wiringplugin.StateContext, dependants []wiringplugin.DependantResource) (bool /*retriable*/, error) {
 	if w.allWiredResources[resource.Name] != nil {
 		return false, errors.New("resource with same name already exists")
 	}
@@ -285,8 +285,8 @@ func sortStateResources(stateResources []orch_v1.StateResource) (*graph.Graph, [
 	return g, sorted, nil
 }
 
-func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.V, allResources []orch_v1.StateResource) []wiringplugin.Dependant {
-	dependantResources := make([]wiringplugin.Dependant, 0, len(dependantVertices))
+func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.V, allResources []orch_v1.StateResource) []wiringplugin.DependantResource {
+	dependantResources := make([]wiringplugin.DependantResource, 0, len(dependantVertices))
 	for _, v := range dependantVertices {
 		for _, resource := range allResources {
 			if v == resource.Name {
@@ -298,7 +298,7 @@ func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.
 						break
 					}
 				}
-				dependantResources = append(dependantResources, wiringplugin.Dependant{
+				dependantResources = append(dependantResources, wiringplugin.DependantResource{
 					Name:       resource.Name,
 					Type:       resource.Type,
 					Attributes: attrs,

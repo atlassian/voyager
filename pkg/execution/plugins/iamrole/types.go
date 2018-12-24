@@ -15,7 +15,7 @@ const (
 )
 
 type Spec struct {
-	ServiceID             voyager.ServiceName    `json:"serviceId,omitempty"`
+	ServiceName           voyager.ServiceName    `json:"serviceId,omitempty"`
 	OAPResourceName       string                 `json:"oapResourceName"`
 	CreateInstanceProfile bool                   `json:"createInstanceProfile,omitempty"`
 	AssumeRoles           []string               `json:"assumeRoles,omitempty"`
@@ -23,6 +23,7 @@ type Spec struct {
 	ServiceEnvironment    oap.ServiceEnvironment `json:"serviceEnvironment"`
 	ComputeType           ComputeType            `json:"computeType"`
 }
+
 type ComputeType string
 
 type CfnAttributes struct {
