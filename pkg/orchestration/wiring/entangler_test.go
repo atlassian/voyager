@@ -59,26 +59,33 @@ func TestEntangler(t *testing.T) {
 	}
 }
 
-func TestDependents(t *testing.T) {
+func TestDependants(t *testing.T) {
 	t.Parallel()
 
-	const childFieldKey = "child_field"
-	const childFieldValue = "this is a field inside the child of the parent"
+	const (
+		childFieldKey                        = "child_field"
+		childFieldValue                      = "this is a field inside the child of the parent"
+		parentName      voyager.ResourceName = "parent"
+		childName       voyager.ResourceName = "child"
+	)
+
+	attrs := map[string]interface{}{
+		"x": int64(42),
+	}
 
 	// Build the parent func, which will need to be able to access the child spec
-	var parentFunc registry.WireUpFunc
-	parentFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
+	var parentFunc registry.WireUpFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
 		// ensure that the dependents slice is not empty
-		assert.Len(t, context.Dependents, 1)
-		childResource := context.Dependents[0]
+		require.Len(t, context.Dependants, 1)
+		dependantResource := context.Dependants[0]
 
-		// ensure that the child does actually depend on the parent
-		assert.Len(t, childResource.DependsOn, 1)
-		assert.Equal(t, voyager.ResourceName("parent"), childResource.DependsOn[0].Name)
+		// ensure that the child is actually passed as the dependant resource to the parent
+		assert.Equal(t, childName, dependantResource.Name)
+		assert.Equal(t, attrs, dependantResource.Attributes)
 
 		// unmarshal the spec
 		var spec map[string]string
-		err := json.Unmarshal(childResource.Spec.Raw, &spec)
+		err := json.Unmarshal(dependantResource.Resource.Spec.Raw, &spec)
 		require.NoError(t, err)
 
 		// ensure the parent can access the data in the spec
@@ -90,8 +97,7 @@ func TestDependents(t *testing.T) {
 	}
 
 	// Child spec, does nothing
-	var childFunc registry.WireUpFunc
-	childFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
+	var childFunc registry.WireUpFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
 		return &wiringplugin.WiringResult{}, false, nil
 	}
 
@@ -118,7 +124,8 @@ func TestDependents(t *testing.T) {
 					Type: voyager.ResourceType("child"),
 					DependsOn: []orch_v1.StateDependency{
 						{
-							Name: voyager.ResourceName("parent"),
+							Name:       voyager.ResourceName("parent"),
+							Attributes: attrs,
 						},
 					},
 					Spec: &runtime.RawExtension{Raw: childSpec},

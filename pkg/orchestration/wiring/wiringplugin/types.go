@@ -11,6 +11,8 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// WiringPlugin represents an autowiring plugin.
+// Autowiring plugin is an in-code representation of an autowiring function.
 type WiringPlugin interface {
 	// WireUp wires up the resource.
 	// Error may be retriable if its an RPC error (like network error). Most errors are not retriable because
@@ -18,27 +20,81 @@ type WiringPlugin interface {
 	WireUp(resource *orch_v1.StateResource, context *WiringContext) (*WiringResult, bool /*retriable*/, error)
 }
 
+// WiringContext contains context information that is passed to an autowiring function to perform autowiring
+// for a resource.
 type WiringContext struct {
 	StateMeta    meta_v1.ObjectMeta
 	StateContext StateContext
 	Dependencies []WiredDependency
-	Dependents   []orch_v1.StateResource
+	Dependants   []DependantResource
 }
 
+// WiredDependency represents a resource that has been processed by a corresponding autowiring function.
 type WiredDependency struct {
-	Name           voyager.ResourceName
-	Type           voyager.ResourceType
+	Name     voyager.ResourceName
+	Type     voyager.ResourceType
+	Contract ResourceContract
+	// DEPRECATED: use Contract
 	SmithResources []smith_v1.Resource
-	Attributes     map[string]interface{}
+	// Attributes are attributes attached to the edge between resources.
+	Attributes map[string]interface{}
+}
+
+// DependantResource represents a resource that depends on the resource that is currently being processed.
+type DependantResource struct {
+	Name voyager.ResourceName
+	Type voyager.ResourceType
+	// Attributes are attributes attached to the edge between resources.
+	Attributes map[string]interface{}
+	Resource   orch_v1.StateResource
+}
+
+// ProtoReferenceName is the name of a proto reference.
+type ProtoReferenceName string
+
+// ProtoReference represent bits of information that need to be augmented with more information to
+// construct a valid Smith reference.
+type ProtoReference struct {
+	Resource smith_v1.ResourceName `json:"resource"`
+	Path     string                `json:"path,omitempty"`
+	Example  interface{}           `json:"example,omitempty"`
+	Modifier string                `json:"modifier,omitempty"`
+}
+
+// NamedProtoReference is a ProtoReference that has a name.
+// That name is typically used to find the needed proto reference in a list/map.
+type NamedProtoReference struct {
+	Name           ProtoReferenceName `json:"name"`
+	ProtoReference `json:",inline"`
+}
+
+// ResourceContract contains information about a resource for consumption by other autowiring functions.
+// It is the API of a resource that can be depended upon and hence should not change unexpectedly without
+// a proper migration path to a new version.
+type ResourceContract struct {
+	Shapes []Shape               `json:"shapes,omitempty"`
+	Refs   []NamedProtoReference `json:"refs,omitempty"`
+	Data   []DataItem            `json:"data,omitempty"`
+}
+
+// DataItem is a named bit of data made available by an autowiring function.
+type DataItem struct {
+	Name string
+	// Data is the data for this item.
+	// Only contains types produced by json.Unmarshal() and also int64:
+	// bool, int64, float64, string, []interface{}, map[string]interface{}, json.Number and nil
+	Data interface{}
 }
 
 type WiringResult struct {
+	Contract  ResourceContract
 	Resources []WiredSmithResource
 }
 
 type WiredSmithResource struct {
 	SmithResource smith_v1.Resource
-	Exposed       bool
+	// DEPRECATED: use Shapes, Refs and/or Data in ResourceContract to expose information
+	Exposed bool
 }
 
 // StateContext is used as input for the plugins. Everything in the StateContext
@@ -57,11 +113,7 @@ type StateContext struct {
 	// config, a configuration file, ...
 	LegacyConfig legacy.Config
 
-	// This is a legacy concept that we should at least be consistent with.
-	// ServiceName is not a voyager concept and will need to be passed to
-	// micros type OSB resources, and we may not always use the State resource
-	// name as the ServiceName.
-	ServiceName string
+	ServiceName voyager.ServiceName
 
 	// ServiceProperties is extra metadata we pulled from the EntanglerContext
 	// which comes from a ConfigMap tied to the State.

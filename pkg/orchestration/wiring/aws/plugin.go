@@ -95,15 +95,17 @@ func (awp *WiringPlugin) objectMeta(resource *orch_v1.StateResource, context *wi
 	return objectMeta(awp.envResourcePrefix), nil
 }
 
-func serviceName(userServiceName string, context *wiringplugin.WiringContext) string {
-	serviceName := context.StateContext.ServiceName
+func serviceName(userServiceName voyager.ServiceName, context *wiringplugin.WiringContext) voyager.ServiceName {
+	var serviceName voyager.ServiceName
 	if userServiceName != "" {
 		serviceName = userServiceName
+	} else {
+		serviceName = context.StateContext.ServiceName
 	}
 	return serviceName
 }
 
-func instanceSpec(serviceName string, resourceName string, oapName oap.ResourceType, environment oap.ServiceEnvironment, attributes, alarms []byte) ([]byte, error) {
+func instanceSpec(serviceName voyager.ServiceName, resourceName string, oapName oap.ResourceType, environment oap.ServiceEnvironment, attributes, alarms []byte) ([]byte, error) {
 	serviceInstanceSpec := oap.ServiceInstanceSpec{
 		ServiceName: serviceName,
 		Resource: oap.RPSResource{

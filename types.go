@@ -25,8 +25,6 @@ const (
 	EnvTypeProduction EnvType = "prod"
 )
 
-// NOTE: This is a temporary workaround for supporting RPS (osb-aws-provider)
-// resources that should not be used for new resource types
 type ServiceName string
 
 // +genset=true

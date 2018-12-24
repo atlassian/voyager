@@ -10,6 +10,7 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
+	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/execution/plugins"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util"
@@ -95,13 +96,13 @@ var defaultEC2ComputeAssumeRoleStatement = IamAssumeRoleStatement{
 	Action: "sts:AssumeRole",
 }
 
-func defaultJSON(serviceID string) *IamPolicy {
+func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
 	var condition json.RawMessage = []byte(fmt.Sprintf(`
 					{
 						"StringEquals": {
 						  "autoscaling:ResourceTag/micros_service_id": "%s"
 						}
-                  	}`, serviceID))
+                  	}`, serviceName))
 
 	return &IamPolicy{
 		PolicyName: "default.json",
@@ -117,7 +118,7 @@ func defaultJSON(serviceID string) *IamPolicy {
 					},
 					Resource: []string{
 						"arn:aws:s3:::config-store.*.atl-inf.io",
-						fmt.Sprintf("arn:aws:s3:::config-store.*.atl-inf.io/%s/*", serviceID),
+						fmt.Sprintf("arn:aws:s3:::config-store.*.atl-inf.io/%s/*", serviceName),
 					},
 				},
 				{
@@ -128,8 +129,8 @@ func defaultJSON(serviceID string) *IamPolicy {
 					},
 					Effect: "Allow",
 					Resource: []string{
-						fmt.Sprintf("arn:aws:s3:::micros-runcmd-*/%s/*", serviceID),
-						fmt.Sprintf("arn:aws:s3:::access-logs.*/service-logs/%s/*", serviceID),
+						fmt.Sprintf("arn:aws:s3:::micros-runcmd-*/%s/*", serviceName),
+						fmt.Sprintf("arn:aws:s3:::access-logs.*/service-logs/%s/*", serviceName),
 					},
 				},
 				{
@@ -139,7 +140,7 @@ func defaultJSON(serviceID string) *IamPolicy {
 					Effect: "Allow",
 					Resource: []string{
 						"arn:aws:s3:::micros-runcmd-*",
-						fmt.Sprintf("arn:aws:s3:::micros-runcmd-*/%s/*", serviceID),
+						fmt.Sprintf("arn:aws:s3:::micros-runcmd-*/%s/*", serviceName),
 					},
 				},
 				{
@@ -151,8 +152,8 @@ func defaultJSON(serviceID string) *IamPolicy {
 						"sqs:*",
 					},
 					Resource: []string{
-						fmt.Sprintf("arn:aws:sns:*:*:stk-evts--%.37s--*", serviceID),
-						fmt.Sprintf("arn:aws:sqs:*:*:stk-evts--%.37s--*", serviceID),
+						fmt.Sprintf("arn:aws:sns:*:*:stk-evts--%.37s--*", serviceName),
+						fmt.Sprintf("arn:aws:sqs:*:*:stk-evts--%.37s--*", serviceName),
 					},
 				},
 				{
@@ -186,7 +187,7 @@ func generateRoleInstance(spec *Spec, dependencies map[smith_v1.ResourceName]smi
 		managedPolicies = spec.ManagedPolicies
 	}
 
-	parameters, err := constructCloudFormationPayload(spec.ComputeType, spec.OAPResourceName, policy, spec.ServiceID,
+	parameters, err := constructCloudFormationPayload(spec.ComputeType, spec.OAPResourceName, policy, spec.ServiceName,
 		spec.CreateInstanceProfile, managedPolicies, spec.AssumeRoles, spec.ServiceEnvironment)
 	if err != nil {
 		return nil, err
@@ -213,7 +214,7 @@ func generateRoleInstance(spec *Spec, dependencies map[smith_v1.ResourceName]smi
 	}, nil
 }
 
-func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy *IamPolicy, serviceID string, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
+func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy *IamPolicy, serviceID voyager.ServiceName, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
 
 	iamPolicies := make([]*IamPolicy, 0, 2) // should not be nil to avoid serializing it as `null`
 

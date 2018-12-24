@@ -90,7 +90,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 func TestBuildIngressDomainName(t *testing.T) {
 	t.Parallel()
 	resourceName := voyager.ResourceName("resname")
-	serviceName := "some-service"
+	var serviceName voyager.ServiceName = "some-service"
 
 	testCases := []struct {
 		name           string

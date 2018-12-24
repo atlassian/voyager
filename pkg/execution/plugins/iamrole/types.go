@@ -3,6 +3,7 @@ package iamrole
 import (
 	"encoding/json"
 
+	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/pkg/errors"
 )
@@ -14,7 +15,7 @@ const (
 )
 
 type Spec struct {
-	ServiceID             string                 `json:"serviceId,omitempty"`
+	ServiceName           voyager.ServiceName    `json:"serviceId,omitempty"`
 	OAPResourceName       string                 `json:"oapResourceName"`
 	CreateInstanceProfile bool                   `json:"createInstanceProfile,omitempty"`
 	AssumeRoles           []string               `json:"assumeRoles,omitempty"`
@@ -22,6 +23,7 @@ type Spec struct {
 	ServiceEnvironment    oap.ServiceEnvironment `json:"serviceEnvironment"`
 	ComputeType           ComputeType            `json:"computeType"`
 }
+
 type ComputeType string
 
 type CfnAttributes struct {
