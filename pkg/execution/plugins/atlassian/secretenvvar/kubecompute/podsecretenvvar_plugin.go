@@ -2,7 +2,7 @@ package kubecompute
 
 import (
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
-	"github.com/atlassian/voyager/pkg/execution/plugins/secretenvvar"
+	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/pkg/errors"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"

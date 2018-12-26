@@ -3,7 +3,7 @@ package iam
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
-	iam_plugin "github.com/atlassian/voyager/pkg/execution/plugins/iamrole"
+	iam_plugin "github.com/atlassian/voyager/pkg/execution/plugins/atlassian/iamrole"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"

@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",
-        "//pkg/execution/plugins/iamrole:go_default_library",
+        "//pkg/execution/plugins/atlassian/iamrole:go_default_library",
         "//pkg/orchestration/wiring/aws:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",

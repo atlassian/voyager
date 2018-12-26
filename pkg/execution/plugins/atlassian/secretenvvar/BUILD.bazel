@@ -6,7 +6,7 @@ go_library(
         "secretenvvar.go",
         "types.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/execution/plugins/secretenvvar",
+    importpath = "github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar",
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",

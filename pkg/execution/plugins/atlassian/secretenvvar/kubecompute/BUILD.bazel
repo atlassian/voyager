@@ -3,13 +3,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "secretenvvar.go",
-        "secretenvvar_plugin.go",
+        "podsecretenvvar.go",
+        "podsecretenvvar_plugin.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/execution/plugins/secretenvvar/microscompute",
+    importpath = "github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar/kubecompute",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/execution/plugins/secretenvvar:go_default_library",
+        "//pkg/execution/plugins/atlassian/secretenvvar:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
@@ -22,11 +22,11 @@ go_library(
 go_test(
     name = "go_default_test",
     size = "small",
-    srcs = ["secretenvvar_plugin_test.go"],
+    srcs = ["podsecretenvvar_plugin_test.go"],
     embed = [":go_default_library"],
     race = "on",
     deps = [
-        "//pkg/execution/plugins/secretenvvar:go_default_library",
+        "//pkg/execution/plugins/atlassian/secretenvvar:go_default_library",
         "//pkg/execution/plugins/testing:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
