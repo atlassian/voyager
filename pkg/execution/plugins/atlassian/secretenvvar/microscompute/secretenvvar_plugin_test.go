@@ -6,7 +6,7 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
-	"github.com/atlassian/voyager/pkg/execution/plugins/secretenvvar"
+	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	plugin_testing "github.com/atlassian/voyager/pkg/execution/plugins/testing"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/stretchr/testify/assert"

@@ -1,5 +1,7 @@
 package iamrole
 
+// Schema for serviceEnvironment copied from Viceroy
+// https://stash.atlassian.com/projects/MDATA/repos/viceroy/browse/src/main/resources/schemas/cloudformation.json#28
 const schema = `
 
 {
