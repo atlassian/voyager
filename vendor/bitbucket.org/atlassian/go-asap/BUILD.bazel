@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["asap.go"],
+    importmap = "github.com/atlassian/voyager/vendor/bitbucket.org/atlassian/go-asap",
+    importpath = "bitbucket.org/atlassian/go-asap",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/bitbucket.org/atlassian/go-asap/validator:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/crypto:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/jws:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/jwt:go_default_library",
+        "//vendor/github.com/satori/go.uuid:go_default_library",
+    ],
+)

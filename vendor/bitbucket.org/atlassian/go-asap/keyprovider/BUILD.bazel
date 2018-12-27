@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "env_keyprovider.go",
+        "fs_keyprovider.go",
+        "http_keyprovider.go",
+        "keyprovider.go",
+        "mock_keyprovider.go",
+        "util.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/bitbucket.org/atlassian/go-asap/keyprovider",
+    importpath = "bitbucket.org/atlassian/go-asap/keyprovider",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/gregjones/httpcache:go_default_library",
+        "//vendor/github.com/vincent-petithory/dataurl:go_default_library",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "ecdsa.go",
+        "ecdsa_utils.go",
+        "errors.go",
+        "hmac.go",
+        "none.go",
+        "rsa.go",
+        "rsa_pss.go",
+        "rsa_utils.go",
+        "signature.go",
+        "signing_method.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/SermoDigital/jose/crypto",
+    importpath = "github.com/SermoDigital/jose/crypto",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/SermoDigital/jose:go_default_library"],
+)

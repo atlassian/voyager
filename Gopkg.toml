@@ -47,12 +47,8 @@ required = [
   branch = "master"
 
 [[override]]
-  name = "github.com/apache/thrift"
-  branch = "master"
-
-[[override]]
   name = "bitbucket.org/atlassianlabs/restclient"
-  version = "=v1.1.0"
+  branch = "master"
 
 [[override]]
   name = "github.com/DataDog/datadog-go"
