@@ -3,6 +3,8 @@ package logz
 import (
 	"github.com/atlassian/voyager"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Account(account voyager.Account) zap.Field {
@@ -27,4 +29,15 @@ func ServiceName(service voyager.ServiceName) zap.Field {
 
 func ServiceNameString(service string) zap.Field {
 	return zap.String("service_name", service)
+}
+
+func Namespace(obj meta_v1.Object) zapcore.Field {
+	return NamespaceName(obj.GetNamespace())
+}
+
+func NamespaceName(name string) zapcore.Field {
+	if name == "" {
+		return zap.Skip()
+	}
+	return zap.String("request_namespace", name)
 }

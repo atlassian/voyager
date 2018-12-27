@@ -10,6 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
@@ -26,8 +27,6 @@ import (
 )
 
 const (
-	ResourceType voyager.ResourceType = "KubeCompute"
-
 	nameElement      = "name"
 	metadataElement  = "metadata"
 	metadataNamePath = "metadata.name"
@@ -45,10 +44,6 @@ const (
 	podSecretEnvVarPluginTypeName = "podsecretenvvar"
 	bindingOutputRoleARNKey       = "IAMRoleARN"
 	envVarIgnoreRegex             = `^IamPolicySnippet$`
-
-	// hard coded this secret to be able to pull images from docker-atl-paas
-	// we will revisit this later for more generic approach
-	DockerImagePullName = "kubecompute-docker-atl-paas"
 )
 
 var (
@@ -98,7 +93,7 @@ func validateScaling(s Scaling) error {
 
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
 func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
-	if resource.Type != ResourceType {
+	if resource.Type != apik8scompute.ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
@@ -221,7 +216,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name: wiringutil.MetaNameWithPostfix(resource.Name, serviceAccountPostFix),
 					},
-					ImagePullSecrets: []core_v1.LocalObjectReference{{Name: DockerImagePullName}},
+					ImagePullSecrets: []core_v1.LocalObjectReference{{Name: apik8scompute.DockerImagePullName}},
 				},
 			},
 		},

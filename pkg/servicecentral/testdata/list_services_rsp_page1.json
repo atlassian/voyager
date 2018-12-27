@@ -1,0 +1,56 @@
+{
+  "data": [
+    {
+      "availability_objective": 99.0,
+      "business_unit": "PaaS/Micros",
+      "compliance_policy_id": null,
+      "creation_timestamp": "2018-05-17T07:40:48Z",
+      "description": null,
+      "hipchat_room_name": null,
+      "last_modified_timestamp": "2018-05-17T07:40:48Z",
+      "last_modified_user": "LDAPUser:aczepil",
+      "location": null,
+      "logging_id": null,
+      "misc": [
+        {
+          "misc_key": "testKey",
+          "misc_value": "testValue"
+        }
+      ],
+      "pagerduty_service_id": null,
+      "platform": "micros2",
+      "public_facing": null,
+      "recovery_point_objective": 259200.0,
+      "recovery_time_objective": 86400.0,
+      "reliability_objective": 99.0,
+      "service_name": "test-service",
+      "service_owner": {
+        "username": "testuser"
+      },
+      "service_tier": 3,
+      "service_uuid": "ef4c37b9-e41f-4895-af4d-db27dd9e295c",
+      "serving_url": null,
+      "ssam_container_name": null,
+      "stateless": true,
+      "team": null,
+      "third_party_provided": null,
+      "zero_downtime_upgrades": true
+    }
+  ],
+  "message": "HTTP status: 200",
+  "meta": {
+    "current_result_count": 1,
+    "limit": 1,
+    "next": "/api/v1/services?search=platform%3Dmicros2&limit=1&expand=tags&offset=1",
+    "offset": 0,
+    "previous": null,
+    "query_args": {
+      "expand": "tags",
+      "limit": 1,
+      "offset": 0,
+      "search": "platform%3Dmicros2"
+    },
+    "total_result_count": 1
+  },
+  "status_code": 200
+}

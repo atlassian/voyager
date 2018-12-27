@@ -1,0 +1,42 @@
+[{
+  "UUID": "c86d143b-a2f7-461d-8f08-e53ca58f0126",
+  "bindingId": "7c2cfa65-881d-4900-b7ba-7fd191ecb6a9",
+  "credentials": {},
+  "instanceId": "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4",
+  "request": {
+      "attributes": {
+          "osbSpec": {
+              "brokerId": "vtmosbapi",
+              "planId": "blah",
+              "serviceId": "uuid"
+          },
+          "parameters": {
+              "external_service_fqdn": "ge-osb-refapp.net.atlassian.com",
+              "internal_service_fqdn": "ge-osb-refapp.ap-southeast-2.dev.atl-paas.net"
+          }
+      },
+      "name": "something",
+      "type": "osb"
+  },
+  "resource_name": "something",
+  "serviceId": "elsie-compute-service"
+  },{
+  "UUID": "aca01f26-39a5-419d-806d-791d82543689",
+  "bindingId": "bd2daf02-32f1-43aa-8aff-80c40aef5de3",
+  "credentials": {},
+  "instanceId": "d0aea45f-7718-4bfe-9c89-1aaf5a668161",
+  "request": {
+      "attributes": {
+          "osbSpec": {
+              "brokerId": "vtmosbapi",
+              "planId": "x",
+              "serviceId": "uuid"
+          },
+          "parameters": {}
+      },
+      "name": "vtm_something",
+      "type": "osb"
+  },
+  "resource_name": "vtm_something",
+  "serviceId": "missing-service"
+}]
