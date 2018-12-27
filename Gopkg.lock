@@ -2,6 +2,26 @@
 
 
 [[projects]]
+  digest = "1:7e1b8031787f1a7d7fb24b792d3d9c978d04f4f04d564c8925f1f613784b431b"
+  name = "bitbucket.org/atlassian/go-asap"
+  packages = [
+    ".",
+    "keyprovider",
+    "validator",
+  ]
+  pruneopts = "NT"
+  revision = "805ddb2a51bc1aa003b3e08603171f9658ef4e02"
+  version = "1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:86e2b0b9460c2fe342e90a87b22e91928eb39eb42501ad2970efd887edf1f14e"
+  name = "bitbucket.org/atlassianlabs/restclient"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "1e7881916fe480dfb66b0cc6dab6ac3c5b8fa6d1"
+
+[[projects]]
   digest = "1:c0164b6d52877372590085b45f53a160f47c24e8a2312bb815489223044f5914"
   name = "bitbucket.org/ww/goautoneg"
   packages = ["."]
@@ -38,6 +58,19 @@
   packages = ["."]
   pruneopts = "NT"
   revision = "5bd2802263f21d8788851d5305584c82a5c75d7e"
+
+[[projects]]
+  digest = "1:bd88d7b471ad905be1dc38c0ebe32e5ed29814d7aa15c13c18a91f69eb0a41db"
+  name = "github.com/SermoDigital/jose"
+  packages = [
+    ".",
+    "crypto",
+    "jws",
+    "jwt",
+  ]
+  pruneopts = "NT"
+  revision = "f6df55f235c24f236d11dbcf665249a59ac2021f"
+  version = "1.1"
 
 [[projects]]
   digest = "1:5a23cd3a5496a0b2da7e3b348d14e77b11a210738c398200d7d6f04ea8cf3bd8"
@@ -419,6 +452,19 @@
   revision = "7d79101e329e5a3adf994758c578dab82b90c017"
 
 [[projects]]
+  digest = "1:2ddc4fb22e0f7c7f6ce615f8b453aeb1c7d0eec746c1a5a62244363e1a836462"
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/function",
+    "cmp/internal/value",
+  ]
+  pruneopts = "NT"
+  revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
+  version = "v0.2.0"
+
+[[projects]]
   digest = "1:f9425215dccf1c63f659ec781ca46bc81804341821d0cd8d2459c5b58f8bd067"
   name = "github.com/google/gofuzz"
   packages = ["."]
@@ -688,6 +734,13 @@
   revision = "65c1f6f8f0fc1e2185eb9863a3bc751496404259"
 
 [[projects]]
+  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+
+[[projects]]
   digest = "1:693526d5d3865c78de60658d97b0fbf60d36ca79a36c5b58ba745a8360c5f882"
   name = "github.com/schollz/closestmatch"
   packages = ["."]
@@ -742,11 +795,19 @@
   revision = "7fb2782df3d83e0036cc89f461ed0422628776f4"
 
 [[projects]]
+  digest = "1:1ce967a1d67f6019f2d8e68a594093de90f17c2c478fe97ab1891b9812cee02f"
+  name = "github.com/stretchr/objx"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "1a9d0bb9f541897e62256577b352fdbc1fb4fd94"
+
+[[projects]]
   branch = "master"
   digest = "1:8e2a92e64c1af43651410c94ed09da175d952a8bfea4ba2d8e9fcaae9c6f9c6d"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
+    "mock",
     "require",
   ]
   pruneopts = "NT"
@@ -766,6 +827,14 @@
   packages = ["codec"]
   pruneopts = "NT"
   revision = "ded73eae5db7e7a0ef6f55aace87a2873c5d2b74"
+
+[[projects]]
+  branch = "master"
+  digest = "1:24af1d37eaa8de35eaea95a6128b9132e7d07c790a43fc1ecea3531d66c4dfc0"
+  name = "github.com/vincent-petithory/dataurl"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "9a301d65acbb728fcc3ace14f45f511a4cfeea9c"
 
 [[projects]]
   branch = "master"
@@ -1279,38 +1348,70 @@
     "informers/storage/v1alpha1",
     "informers/storage/v1beta1",
     "kubernetes",
+    "kubernetes/fake",
     "kubernetes/scheme",
     "kubernetes/typed/admissionregistration/v1alpha1",
+    "kubernetes/typed/admissionregistration/v1alpha1/fake",
     "kubernetes/typed/admissionregistration/v1beta1",
+    "kubernetes/typed/admissionregistration/v1beta1/fake",
     "kubernetes/typed/apps/v1",
+    "kubernetes/typed/apps/v1/fake",
     "kubernetes/typed/apps/v1beta1",
+    "kubernetes/typed/apps/v1beta1/fake",
     "kubernetes/typed/apps/v1beta2",
+    "kubernetes/typed/apps/v1beta2/fake",
     "kubernetes/typed/authentication/v1",
+    "kubernetes/typed/authentication/v1/fake",
     "kubernetes/typed/authentication/v1beta1",
+    "kubernetes/typed/authentication/v1beta1/fake",
     "kubernetes/typed/authorization/v1",
+    "kubernetes/typed/authorization/v1/fake",
     "kubernetes/typed/authorization/v1beta1",
+    "kubernetes/typed/authorization/v1beta1/fake",
     "kubernetes/typed/autoscaling/v1",
+    "kubernetes/typed/autoscaling/v1/fake",
     "kubernetes/typed/autoscaling/v2beta1",
+    "kubernetes/typed/autoscaling/v2beta1/fake",
     "kubernetes/typed/autoscaling/v2beta2",
+    "kubernetes/typed/autoscaling/v2beta2/fake",
     "kubernetes/typed/batch/v1",
+    "kubernetes/typed/batch/v1/fake",
     "kubernetes/typed/batch/v1beta1",
+    "kubernetes/typed/batch/v1beta1/fake",
     "kubernetes/typed/batch/v2alpha1",
+    "kubernetes/typed/batch/v2alpha1/fake",
     "kubernetes/typed/certificates/v1beta1",
+    "kubernetes/typed/certificates/v1beta1/fake",
     "kubernetes/typed/coordination/v1beta1",
+    "kubernetes/typed/coordination/v1beta1/fake",
     "kubernetes/typed/core/v1",
+    "kubernetes/typed/core/v1/fake",
     "kubernetes/typed/events/v1beta1",
+    "kubernetes/typed/events/v1beta1/fake",
     "kubernetes/typed/extensions/v1beta1",
+    "kubernetes/typed/extensions/v1beta1/fake",
     "kubernetes/typed/networking/v1",
+    "kubernetes/typed/networking/v1/fake",
     "kubernetes/typed/policy/v1beta1",
+    "kubernetes/typed/policy/v1beta1/fake",
     "kubernetes/typed/rbac/v1",
+    "kubernetes/typed/rbac/v1/fake",
     "kubernetes/typed/rbac/v1alpha1",
+    "kubernetes/typed/rbac/v1alpha1/fake",
     "kubernetes/typed/rbac/v1beta1",
+    "kubernetes/typed/rbac/v1beta1/fake",
     "kubernetes/typed/scheduling/v1alpha1",
+    "kubernetes/typed/scheduling/v1alpha1/fake",
     "kubernetes/typed/scheduling/v1beta1",
+    "kubernetes/typed/scheduling/v1beta1/fake",
     "kubernetes/typed/settings/v1alpha1",
+    "kubernetes/typed/settings/v1alpha1/fake",
     "kubernetes/typed/storage/v1",
+    "kubernetes/typed/storage/v1/fake",
     "kubernetes/typed/storage/v1alpha1",
+    "kubernetes/typed/storage/v1alpha1/fake",
     "kubernetes/typed/storage/v1beta1",
+    "kubernetes/typed/storage/v1beta1/fake",
     "listers/admissionregistration/v1alpha1",
     "listers/admissionregistration/v1beta1",
     "listers/apps/v1",
@@ -1426,7 +1527,13 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "bitbucket.org/atlassian/go-asap",
+    "bitbucket.org/atlassian/go-asap/keyprovider",
+    "bitbucket.org/atlassianlabs/restclient",
+    "github.com/SermoDigital/jose/crypto",
+    "github.com/SermoDigital/jose/jws",
     "github.com/asaskevich/govalidator",
+    "github.com/ash2k/stager",
     "github.com/atlassian/ctrl",
     "github.com/atlassian/ctrl/apis/condition/v1",
     "github.com/atlassian/ctrl/app",
@@ -1454,17 +1561,22 @@
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/validate",
     "github.com/go-swagger/go-swagger/cmd/swagger",
+    "github.com/google/go-cmp/cmp",
     "github.com/imdario/mergo",
     "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1",
     "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset",
     "github.com/pkg/errors",
     "github.com/pmezard/go-difflib/difflib",
     "github.com/prometheus/client_golang/prometheus",
+    "github.com/satori/go.uuid",
     "github.com/schollz/closestmatch",
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
+    "github.com/vincent-petithory/dataurl",
     "go.uber.org/zap",
+    "go.uber.org/zap/zapcore",
     "go.uber.org/zap/zaptest",
     "golang.org/x/net/http2",
     "gopkg.in/go-playground/validator.v9",
@@ -1501,9 +1613,13 @@
     "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/informers/core/v1",
     "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/kubernetes/fake",
+    "k8s.io/client-go/kubernetes/scheme",
+    "k8s.io/client-go/kubernetes/typed/core/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/cache",
+    "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/flowcontrol",
     "k8s.io/client-go/util/retry",
     "k8s.io/code-generator/cmd/client-gen",

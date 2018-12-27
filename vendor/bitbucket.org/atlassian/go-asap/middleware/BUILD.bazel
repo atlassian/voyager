@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["middleware.go"],
+    importmap = "github.com/atlassian/voyager/vendor/bitbucket.org/atlassian/go-asap/middleware",
+    importpath = "bitbucket.org/atlassian/go-asap/middleware",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/bitbucket.org/atlassian/go-asap:go_default_library",
+        "//vendor/bitbucket.org/atlassian/go-asap/keyprovider:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/jws:go_default_library",
+        "//vendor/github.com/Sirupsen/logrus:go_default_library",
+        "//vendor/github.com/deckarep/golang-set:go_default_library",
+    ],
+)

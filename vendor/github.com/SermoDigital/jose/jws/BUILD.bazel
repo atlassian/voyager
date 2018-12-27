@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "claims.go",
+        "doc.go",
+        "errors.go",
+        "jws.go",
+        "jws_serialize.go",
+        "jws_validate.go",
+        "jwt.go",
+        "payload.go",
+        "rawbase64.go",
+        "signing_methods.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/SermoDigital/jose/jws",
+    importpath = "github.com/SermoDigital/jose/jws",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/SermoDigital/jose:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/crypto:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/jwt:go_default_library",
+    ],
+)

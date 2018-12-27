@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["generator.go"],
+    importmap = "github.com/atlassian/voyager/vendor/bitbucket.org/atlassian/go-asap/validator",
+    importpath = "bitbucket.org/atlassian/go-asap/validator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/SermoDigital/jose/jws:go_default_library",
+        "//vendor/github.com/SermoDigital/jose/jwt:go_default_library",
+    ],
+)
