@@ -8,9 +8,11 @@ KUBECONFIG ?= $(shell kind get kubeconfig-path)
 
 #Directories to scan and generate Deepcopy methods
 MAIN_PACKAGE_DIR = github.com/atlassian/voyager
+APIS_COMPOSITION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/composition/v1
+APIS_CREATOR_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/creator/v1
 APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
 SHAPES_API_DIR = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin
-ALL_DIRS=$(APIS_ORCHESTRATION_DIR)
+ALL_DIRS=$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_ORCHESTRATION_DIR)
 
 #===============================================================================
 

@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "admission.go",
+        "asap.go",
+        "external_id.go",
+        "micros.go",
+        "migration.go",
+        "types.go",
+        "util.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/execution/svccatadmission",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/admission:go_default_library",
+        "//pkg/execution/svccatadmission/rps:go_default_library",
+        "//pkg/pkiutil:go_default_library",
+        "//pkg/servicecentral:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/uuid:go_default_library",
+        "//vendor/github.com/go-chi/chi:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/k8s.io/api/admission/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = [
+        "asap_test.go",
+        "external_id_test.go",
+        "micros_test.go",
+        "util_for_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//pkg/execution/svccatadmission/rps/testing:go_default_library",
+        "//pkg/servicecentral:go_default_library",
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/uuid:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/mock:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/k8s.io/api/admission/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)

@@ -7,7 +7,7 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/stretchr/testify/assert"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -28,7 +28,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	}
 
 	computeDep := wiringplugin.WiredDependency{
-		Type: k8scompute.ResourceType,
+		Type: apik8scompute.ResourceType,
 		SmithResources: []smith_v1.Resource{
 			smith_v1.Resource{
 				Spec: smith_v1.ResourceSpec{

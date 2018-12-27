@@ -7,7 +7,7 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -204,8 +204,8 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 
 func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
 	// Require exactly one KubeCompute dependency
-	if len(dependencies) != 1 || dependencies[0].Type != k8scompute.ResourceType {
-		return nil, false, errors.Errorf("must depend on a single %s resource. %d dependencies were given", k8scompute.ResourceType, len(dependencies))
+	if len(dependencies) != 1 || dependencies[0].Type != apik8scompute.ResourceType {
+		return nil, false, errors.Errorf("must depend on a single %s resource. %d dependencies were given", apik8scompute.ResourceType, len(dependencies))
 	}
 
 	// Extract the deployment created by the KubeCompute dependency

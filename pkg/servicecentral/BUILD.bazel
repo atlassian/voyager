@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "errors.go",
+        "metadata.go",
+        "store.go",
+        "tags.go",
+        "types.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/servicecentral",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/pkiutil:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/httputil:go_default_library",
+        "//vendor/bitbucket.org/atlassianlabs/restclient:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/types:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = [
+        "client_test.go",
+        "metadata_test.go",
+        "store_test.go",
+        "tags_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/pkiutil:go_default_library",
+        "//pkg/pkiutil/testutil:go_default_library",
+        "//pkg/testutil:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/httptest:go_default_library",
+        "//pkg/util/httputil:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/mock:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/go.uber.org/zap/zaptest:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/types:go_default_library",
+    ],
+)

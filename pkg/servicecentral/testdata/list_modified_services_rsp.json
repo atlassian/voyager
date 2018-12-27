@@ -1,0 +1,22 @@
+[
+  {
+    "uuid": "ef4c37b9-e41f-4895-af4d-db27dd9e295c",
+    "name": "test-service",
+    "owner": "testuser",
+    "businessUnit": "PaaS/Micros",
+    "ssamContainerName": "",
+    "platform": "micros2",
+    "serviceTier": 3,
+    "stateless": true,
+    "zeroDowntimeUpgrades": true,
+    "createdOn": "2018-05-17T07:40:48.302606Z",
+    "modifiedOn": "2018-05-17T07:40:48.302606Z",
+    "modifiedBy": "LDAPUser:micros-sc-bot",
+    "admins": {
+      "users": [
+        "testuser"
+      ],
+      "groups": []
+    }
+  }
+]
