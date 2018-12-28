@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "escalation_policies.go",
+        "event.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/PagerDuty/go-pagerduty/examples",
+    importpath = "github.com/PagerDuty/go-pagerduty/examples",
+    visibility = ["//visibility:private"],
+    deps = ["//vendor/github.com/PagerDuty/go-pagerduty:go_default_library"],
+)
+
+go_binary(
+    name = "examples",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

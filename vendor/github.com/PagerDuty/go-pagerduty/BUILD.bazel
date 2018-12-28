@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ability.go",
+        "addon.go",
+        "client.go",
+        "escalation_policy.go",
+        "event.go",
+        "incident.go",
+        "log_entry.go",
+        "maintenance_window.go",
+        "notification.go",
+        "on_call.go",
+        "schedule.go",
+        "service.go",
+        "team.go",
+        "user.go",
+        "vendor.go",
+        "webhook.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/PagerDuty/go-pagerduty",
+    importpath = "github.com/PagerDuty/go-pagerduty",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/google/go-querystring/query:go_default_library"],
+)
