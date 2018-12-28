@@ -64,6 +64,10 @@ spec:
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                envFrom:
+                - secretRef:
+                    name: common-secrets
+                    optional: true
                 name: microservice
                 image: "docker.atl-paas.net/atlassian/micros-analytics:0.1"
                 imagePullPolicy: IfNotPresent
@@ -84,6 +88,10 @@ spec:
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                envFrom:
+                - secretRef:
+                    name: common-secrets
+                    optional: true
                 name: pgbouncer
                 image: "docker.atl-paas.net/my_pgbouncer:abcxyz"
                 imagePullPolicy: IfNotPresent

@@ -170,6 +170,9 @@ spec:
                 - secretRef:
                     name: '!{kubecompute-simple--podsecretenvvar-metadata-name}'
                     optional: false
+                - secretRef:
+                    name: common-secrets
+                    optional: true
                 image: docker.atl-paas.net/atlassian/micros-analytics:0.1
                 name: microservice
                 ports:
