@@ -1,0 +1,639 @@
+{
+  "components": {
+    "kube_response": {
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "properties": {
+              "account": {
+                "type": "string"
+              },
+              "apiVersion": {
+                "type": "string"
+              },
+              "envType": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "metadata": {
+                "creationTimestamp": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "namespace": {
+                  "type": "string"
+                }
+              },
+              "region": {
+                "type": "string"
+              },
+              "report": {
+                "schema": {
+                  "$ref": "#/components/report"
+                }
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "layer": {
+      "enum": [
+        "composition",
+        "formation",
+        "orchestration",
+        "execution",
+        "object",
+        "provider"
+      ],
+      "type": "string"
+    },
+    "report": {
+      "properties": {
+        "composition": {
+          "schema": {
+            "$ref": "#/components/layerResult"
+          }
+        },
+        "execution": {
+          "schema": {
+            "$ref": "#/components/layerResult"
+          }
+        },
+        "formation": {
+          "schema": {
+            "$ref": "#/components/layerResult"
+          }
+        },
+        "objects": {
+          "schema": {
+            "$ref": "#/components/layerResult"
+          }
+        },
+        "orchestration": {
+          "schema": {
+            "$ref": "#/components/layerResult"
+          }
+        },
+        "providers": {
+          "schema": {
+            "$ref": "#/components/layerResult"
+          }
+        }
+      },
+      "type": "object"
+    },
+    "resource": {
+      "properties": {
+        "name": {
+          "description": "name of the resource",
+          "type": "string"
+        },
+        "properties": {
+          "description": "Output of resource",
+          "type": "object"
+        },
+        "references": {
+          "description": "references to other resources",
+          "items": {
+            "properties": {
+              "attributes": {
+                "description": "attributes of the reference",
+                "type": "object"
+              },
+              "layer": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "spec": {
+          "type": "object"
+        },
+        "status": {
+          "schema": {
+            "$ref": "#/components/status"
+          }
+        },
+        "type": {
+          "description": "type of the resource",
+          "type": "string"
+        },
+        "version": {
+          "description": "version of the resource",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "status": {
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "layerResult": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "schema": {
+            "$ref": "#/components/status"
+          }
+        },
+        "resources": {
+          "items": {
+            "schema": {
+              "$ref": "#/components/resource"
+            }
+          },
+          "type": "array"
+        }
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "micros@atlassian.com"
+    },
+    "title": "Voyager Master Cluster Reporting API",
+    "version": "0.0.1"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/namespaces/{namespace}/report": {
+      "get": {
+        "description": "Get a report for the service in the cluster\n",
+        "operationId": "namespaceReport",
+        "parameters": [
+          {
+            "description": "The name of the service the report is being generated for",
+            "in": "path",
+            "name": "namespace",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Get only resources of this resource type",
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Select a single layer to query",
+            "in": "query",
+            "name": "layer",
+            "schema": {
+              "$ref": "#/components/layer"
+            }
+          },
+          {
+            "description": "Kubernetes field selector to filter on type, layer etc from kubectl",
+            "example": "type=compute&layer=foobar",
+            "in": "query",
+            "name": "fieldSelector",
+            "type": "string"
+          },
+          {
+            "description": "The account the report should be generated for",
+            "in": "query",
+            "name": "account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The region the report should be generated for",
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The environment type the report should be generated for",
+            "in": "query",
+            "name": "envType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/kube_response"
+              }
+            }
+          },
+          "description": "A report of the service in the cluster"
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "https://schemas.atl-paas.net/voyager/operations.json#/components/schemas/errors"
+              }
+            }
+          },
+          "description": "unexpected error"
+        }
+      }
+    },
+    "/namespaces/{namespace}/report/{resource}": {
+      "get": {
+        "description": "Get a report for an instance in the cluster\n",
+        "operationId": "resourceReport",
+        "parameters": [
+          {
+            "description": "The name of the service the report is being generated for",
+            "in": "path",
+            "name": "namespace",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Get a report of a single resource with the supplied name",
+            "in": "query",
+            "name": "resource",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Select a single layer to query",
+            "in": "query",
+            "name": "layer",
+            "schema": {
+              "$ref": "#/components/layer"
+            }
+          },
+          {
+            "description": "Kubernetes field selector to filter on type, layer etc from kubectl",
+            "example": "type=compute&layer=foobar",
+            "in": "query",
+            "name": "fieldSelector",
+            "type": "string"
+          },
+          {
+            "description": "The account the report should be generated for",
+            "in": "query",
+            "name": "account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The region the report should be generated for",
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The environment type the report should be generated for",
+            "in": "query",
+            "name": "envType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/kube_response"
+              }
+            }
+          },
+          "description": "A report of the service in the cluster"
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "https://schemas.atl-paas.net/voyager/operations.json#/components/schemas/errors"
+              }
+            }
+          },
+          "description": "unexpected error"
+        }
+      }
+    },
+    "/namespaces/{namespace}/summary": {
+      "get": {
+        "default": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "https://schemas.atl-paas.net/voyager/operations.json#/definitions/errors"
+              }
+            }
+          },
+          "description": "unexpected error"
+        },
+        "description": "Get a summary for the service in the cluster\n",
+        "operationId": "namespaceSummary",
+        "parameters": [
+          {
+            "description": "The namespace of the service the report is being generated for",
+            "in": "path",
+            "name": "namespace",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma Separated list of additional information. Currently supports properties, parameters and providers.",
+            "in": "query",
+            "name": "expand",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Get only resources of this resource type",
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Select a single layer to query",
+            "in": "query",
+            "name": "layer",
+            "schema": {
+              "$ref": "#/components/layer"
+            }
+          },
+          {
+            "description": "Kubernetes field selector to filter on type, layer etc from kubectl",
+            "example": "type=compute&layer=foobar",
+            "in": "query",
+            "name": "fieldSelector",
+            "type": "string"
+          },
+          {
+            "description": "The account the report should be generated for",
+            "in": "query",
+            "name": "account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The region the report should be generated for",
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The environment type the report should be generated for",
+            "in": "query",
+            "name": "envType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/kube_response"
+                }
+              }
+            },
+            "description": "A report of the service in the cluster"
+          }
+        }
+      }
+    },
+    "/report/{service}": {
+      "get": {
+        "default": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "https://schemas.atl-paas.net/voyager/operations.json#/components/schemas/errors"
+              }
+            }
+          },
+          "description": "unexpected error"
+        },
+        "description": "Get a report for the service in the cluster\n",
+        "operationId": "serviceReport",
+        "parameters": [
+          {
+            "description": "The name of the service the report is being generated for",
+            "in": "path",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Get only resources of this resource type",
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Select a single layer to query",
+            "in": "query",
+            "name": "layer",
+            "schema": {
+              "$ref": "#/components/layer"
+            }
+          },
+          {
+            "description": "Kubernetes field selector to filter on type, layer etc from kubectl",
+            "example": "type=compute&layer=foobar",
+            "in": "query",
+            "name": "fieldSelector",
+            "type": "string"
+          },
+          {
+            "description": "The account the report should be generated for",
+            "in": "query",
+            "name": "account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The region the report should be generated for",
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The environment type the report should be generated for",
+            "in": "query",
+            "name": "envType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/kube_response"
+                }
+              }
+            },
+            "description": "A report of the service in the cluster"
+          }
+        }
+      }
+    },
+    "/summary/{service}": {
+      "get": {
+        "description": "Get a summary for the service in the cluster\n",
+        "operationId": "serviceSummary",
+        "parameters": [
+          {
+            "description": "The name of the service the report is being generated for",
+            "in": "path",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma Separated list of additional information. Currently supports properties, parameters and providers.",
+            "in": "query",
+            "name": "expand",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Get only resources of this resource type",
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Select a single layer to query",
+            "in": "query",
+            "name": "layer",
+            "schema": {
+              "$ref": "#/components/layer"
+            }
+          },
+          {
+            "description": "Kubernetes field selector to filter on type, layer etc from kubectl",
+            "example": "type=compute&layer=foobar",
+            "in": "query",
+            "name": "fieldSelector",
+            "type": "string"
+          },
+          {
+            "description": "The account the report should be generated for",
+            "in": "query",
+            "name": "account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The region the report should be generated for",
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The environment type the report should be generated for",
+            "in": "query",
+            "name": "envType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/kube_response"
+                }
+              }
+            },
+            "description": "A report of the service in the cluster"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://schemas.atl-paas.net/voyager/operations.json#/components/schemas/errors"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      }
+    }
+  }
+}

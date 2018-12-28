@@ -1,0 +1,44 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+config:
+    vars:
+      test-key:
+        global-item: 1
+        global-to-override: global
+    type:
+      - scope: dev
+        vars:
+          test-key:
+            type-item: type-dev
+            global-to-override: dev-override
+        region:
+          - scope: us-west-1
+            vars:
+              test-key:
+                region-item: 2
+                global-to-override: region-override
+            label:
+              - scope: myLabel
+                vars:
+                  test-key:
+                    label-item: 3
+                    global-to-override: label-override
+                account:
+                  - scope: A234
+                    vars:
+                      test-key:
+                        account-item: 4
+                        global-to-override: account-override
+
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:

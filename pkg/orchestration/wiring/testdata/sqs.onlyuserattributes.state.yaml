@@ -1,0 +1,12 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: sqs-userattributes
+  namespace: migration
+spec:
+  resources:
+  - name: aqueue
+    type: SQS
+    spec:
+      foo: bar
+      alarms: foo

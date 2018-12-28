@@ -1,0 +1,48 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    account: A234
+
+
+config:
+  - scope: global
+    vars:
+      test:
+        msg: found-global
+
+  - scope: dev
+    vars:
+      test:
+        msg: found-dev
+
+  - scope: dev.us-west-1
+    vars:
+      test:
+        msg: found-dev.us-west-1
+
+  - scope: dev.us-west-1.myLabel
+    vars:
+      test:
+        msg: found-dev.us-west-1.myLabel
+
+  - scope: dev.us-west-1.myLabel.A234
+    vars:
+      test:
+        msg: found-dev.us-west-1.myLabel.A234
+
+  - scope: dev.us-west-1..A234
+    vars:
+      test:
+        msg: found-unspecifiedLabel
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:
+      - name: test-resource
+        type: tester
+        spec:
+          msg: ${self:test.msg}

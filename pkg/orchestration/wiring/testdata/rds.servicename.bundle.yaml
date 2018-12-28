@@ -1,0 +1,61 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: rds
+  namespace: rds
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: rds
+    uid: ""
+spec:
+  resources:
+  - name: myownrds--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: RDS
+          name: myownrds
+        spec:
+          clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
+          clusterServicePlanExternalID: 7e6d37bb-8aa4-4c63-87d2-d78ca91a0120
+          parameters:
+            parameters:
+              DBType: postgres96
+              AllocatedStorage: 1528
+              ReadReplica: true
+            location:
+              env: microstestenv
+            misc:
+              lessee: another-service
+              rds_type: dedicated
+              resource_name: myownrds
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            primary_parameters:
+              MicrosAppSubnets:
+              - subnet-1
+              - subnet-2
+              MicrosEnv: microstestenv
+              MicrosInstanceSecurityGroup: sg-2
+              MicrosJumpboxSecurityGroup: sg-1
+              MicrosPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointHigh: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointLow: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPrivateDnsZone: testregion.atl-inf.io
+              MicrosPrivatePaasDnsZone: testregion.dev.paas-inf.net
+              MicrosResourceName: myownrds
+              MicrosServiceName: test-servicename
+              MicrosVpcId: vpc-1
+status: {}

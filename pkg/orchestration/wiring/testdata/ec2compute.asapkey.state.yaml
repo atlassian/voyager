@@ -1,0 +1,31 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: ptl-percolator
+  namespace: ptl-percolator
+spec:
+  resources:
+  - type: ASAPKey
+    name: myasap
+  - name: compute
+    type: EC2Compute
+    spec:
+      meaninglesskey: used as an example
+      ec2:
+        instanceType: t2.small
+      autoScalingGroup:
+        minSize: 1
+        maxSize: 2
+      tags:
+        key: "a-tag"
+      docker:
+        envVars:
+          key: "value"
+        compose:
+          backendapp:
+            image: docker.example.com/my-app
+            tag: '1.0'
+            ports:
+            - 8080:8080
+    dependsOn:
+      - myasap

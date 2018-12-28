@@ -1,0 +1,9 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: ptl-percolator
+  namespace: ptl-percolator
+spec:
+  resources:
+  - name: db
+    type: Postgres

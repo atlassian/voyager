@@ -1,0 +1,44 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: sqs-rename
+  namespace: migration
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: sqs-rename
+    uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: aqueue--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: sqs
+          name: aqueue
+        spec:
+          clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
+          clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
+          externalID: abcd-123456789
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              name: bqueue
+              type: sqs
+            serviceName: foo
+status: {}

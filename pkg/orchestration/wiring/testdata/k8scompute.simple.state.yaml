@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: microservice
-          image: "docker.atl-paas.net/atlassian/micros-analytics:0.1"
+          image: "docker.example.com/atlassian/micros-analytics:0.1"
           ports:
           - containerPort: 8080
           resources:
@@ -44,7 +44,7 @@ spec:
                 memory: "128Mi"
                 cpu: "500m"
         - name: pgbouncer
-          image: "docker.atl-paas.net/my_pgbouncer:abcxyz"
+          image: "docker.example.com/my_pgbouncer:abcxyz"
           ports:
           - containerPort: 5432
             protocol: UDP

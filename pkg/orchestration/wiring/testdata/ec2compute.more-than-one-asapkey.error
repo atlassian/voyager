@@ -1,0 +1,1 @@
+failed to wire up resource "compute" of type "EC2Compute": error invoking plugin: cannot depend on more than one asap key resource

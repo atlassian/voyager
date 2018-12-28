@@ -1,0 +1,20 @@
+apiVersion: formation.voyager.atl-paas.net/v1
+kind: LocationDescriptor
+metadata:
+  name: basic
+  namespace: basic 
+  ownerReferences:
+  - apiVersion: composition.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ServiceDescriptor
+    name: basic
+    uid: 5a687aa9-84dc-11e8-b00e-0236ca008ed8
+spec:
+  configMapName: ""
+  resources:
+  - name: basic-sqs
+    spec:
+      VisibilityTimeout: 600
+      MaxReceiveCount: 10
+    type: SQS

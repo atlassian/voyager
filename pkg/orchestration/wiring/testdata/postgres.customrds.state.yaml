@@ -1,0 +1,15 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+spec:
+  resources:
+  - name: db
+    type: Postgres
+    dependsOn:
+    - rds
+  - name: rds
+    type: RDS
+    spec:
+      RDSType: postgres961

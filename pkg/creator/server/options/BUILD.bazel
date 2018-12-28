@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config_file_options.go",
+        "creator_options.go",
+        "options.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/creator/server/options",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/creator:go_default_library",
+        "//pkg/creator/server/apiserver:go_default_library",
+        "//pkg/pagerduty:go_default_library",
+        "//pkg/pkiutil:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/apiserver:go_default_library",
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/options:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/server:go_default_library",
+    ],
+)

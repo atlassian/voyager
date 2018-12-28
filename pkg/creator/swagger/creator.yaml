@@ -1,0 +1,312 @@
+# OpenAPI 3.0.0 Spec
+# https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
+#
+# The spec is missing some bits; I found these filled in the gaps:
+#   - Swagger 2.0 & 3.0:  https://swagger.io/docs/specification
+#   - JSON Schema:        https://cswr.github.io/JsonSchema/
+#   - Editor:             https://github.com/swagger-api/swagger-editor
+
+openapi: 3.0.0
+
+tags:
+  - name: service
+
+info:
+  title: Voyager Creator API
+  description: "Creates your Service metadata for Voyager. Note: Authentication is not documented."
+  version: 0.0.2
+  contact:
+    name: Micros team
+    email: micros@atlassian.com
+
+servers:
+  - url: https://creator.voyager.atl-paas.net/v1
+    description: The development instance of Creator running in dev cluster
+
+  - url: https://creator.voyager.atl-paas.net/v1
+    description: The staging instance of Creator running in staging cluster
+
+  - url: https://creator.voyager.atl-paas.net/v1
+    description: The production instance of Creator running in prod cluster
+
+paths:
+  /:
+    get:
+      summary: "List the operations that can be perform, like OPTIONS for HTTP but for the KubeAPI."
+      operationId: ListOperations
+      responses:
+        '200':
+          description: "Returns the APIResourceList for the Service resource."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResourceList'
+
+  /services:
+
+    summary: "Operations for services"
+
+    get:
+      summary: "Get a list of services."
+      operationId: ServiceList
+      responses:
+        '200':
+          description: "A list of services is returned."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceList'
+        '400':
+          description: "Bad Request"
+        '500':
+          description: "Internal Server Error"
+        '403':
+          description: "Unauthorized"
+
+    post:
+      summary: "Create a new service."
+      operationId: ServiceCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Service"
+      responses:
+        '200':
+          description: "The service was successfully created and the whole object with any defaults filled is returned."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          description: "Bad Request"
+        '500':
+          description: "Internal Server Error"
+        '403':
+          description: "Unauthorized"
+
+  /services/{name}:
+
+    summary: "Manage services by the service name, (i.e. the service.metadata.name field from the Service object, which is also called the Service Metadata Descriptor)."
+
+    get:
+      parameters:
+        - $ref: '#/components/parameters/ServiceName'
+      summary: "Get a service."
+      operationId: ServiceGet
+      responses:
+        '200':
+          description: "If found, returns the service that matches the name."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          description: "Bad Request"
+        '500':
+          description: "Internal Server Error"
+        '403':
+          description: "Unauthorized"
+
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/ServiceName'
+      summary: "Patch a service."
+      operationId: ServicePatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Service"
+      responses:
+        '200':
+          description: "If succesful, returns the updated service."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          description: "Bad Request"
+        '500':
+          description: "Internal Server Error"
+        '403':
+          description: "Unauthorized"
+
+    # TODO - Reminder - This is not yet implemented.
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/ServiceName'
+      summary: "Delete a service."
+      operationId: ServiceDelete
+      responses:
+        '500':
+          description: "Not yet implemented"
+
+components:
+  parameters:
+    ServiceName:
+      name: name
+      in: path
+      description: "The name of the service."
+      required: true
+      schema:
+        type: string
+
+  schemas:
+
+    # https://stash.atlassian.com/projects/MICROS/repos/voyager/browse/pkg/apis/creator/v1/types.go
+    Service:
+      allOf:
+        - $ref: '#/components/schemas/TypeMeta'
+        - type: object
+          properties:
+            spec:
+              $ref: '#/components/schemas/ServiceSpec'
+            metadata:
+              $ref: '#/components/schemas/ObjectMeta'
+
+    ServiceSpec:
+      type: object
+      properties:
+        businessUnit:
+          type: string
+        resourceOwner:
+          type: string
+        ssamContainerName:
+          type: string
+        pagerDutyServiceID:
+          type: string
+        loggingID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ServiceMetadata'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+
+    ServiceMetadata:
+      type: object
+      properties:
+        pagerDuty:
+          $ref: '#/components/schemas/PagerDutyMetadata'
+
+    PagerDutyMetadata:
+      type: object
+      properties:
+        staging:
+          $ref: '#/components/schemas/PagerDutyEnvMetadata'
+        production:
+          $ref: '#/components/schemas/PagerDutyEnvMetadata'
+
+    PagerDutyEnvMetadata:
+      type: object
+      properties:
+        main:
+          $ref: '#/components/schemas/PagerDutyServiceMetadata'
+        lowPriority:
+          $ref: '#/components/schemas/PagerDutyServiceMetadata'
+
+    PagerDutyServiceMetadata:
+      type: object
+      properties:
+        serviceID:
+          type: string
+        policyID:
+          type: string
+        integrations:
+          $ref: '#/components/schemas/PagerDutyIntegrations'
+
+    PagerDutyIntegrations:
+      type: object
+      properties:
+        cloudWatch:
+          $ref: '#/components/schemas/PagerDutyIntegrationMetadata'
+        generic:
+          $ref: '#/components/schemas/PagerDutyIntegrationMetadata'
+        pingdom:
+          $ref: '#/components/schemas/PagerDutyIntegrationMetadata'
+
+    PagerDutyIntegrationMetadata:
+      type: object
+      properties:
+        integrationID:
+          type: string
+        integrationKey:
+          type: string
+
+    ServiceList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Service'
+
+    # https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#TypeMeta
+    TypeMeta:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: "A string value representing the REST resource this object represents."
+        apiVersion:
+          type: string
+          description: "Defines the versioned schema of this representation of an object."
+
+    # https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta
+    # There are more properties than what is here. Most of the time they are omitted.
+    ObjectMeta:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "A unique name within a namespace that identifies the resource of this kind."
+        creationTimestamp:
+          type: string
+          description: "A timestamp representing the server time when this object was created. RFC3339 form and is in UTC"
+
+    # https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#Verbs
+    Verbs:
+      type: array
+      items:
+        type: string
+
+    # https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#APIResource
+    APIResource:
+      type: object
+      properties:
+        name:
+          type: string
+        singularName:
+          type: string
+        namespaced:
+          type: boolean
+        group:
+          type: string
+        version:
+          type: string
+        kind:
+          type: string
+        verbs:
+          $ref: '#/components/schemas/Verbs'
+        shortNames:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+
+    # https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#APIResourceList
+    APIResourceList:
+      allOf:
+        - $ref: '#/components/schemas/TypeMeta'
+        - type: object
+          properties:
+            groupVersion:
+              type: string
+            resources:
+              type: array
+              items:
+                $ref: '#/components/schemas/APIResource'

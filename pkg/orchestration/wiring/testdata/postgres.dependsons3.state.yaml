@@ -1,0 +1,13 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+spec:
+  resources:
+  - name: my-bucket
+    type: S3
+  - name: db
+    type: Postgres
+    dependsOn:
+    - my-bucket # doesn't make sense to Postgres depends on S3, that's just for RDS dependency tests

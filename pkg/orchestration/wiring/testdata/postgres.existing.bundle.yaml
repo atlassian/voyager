@@ -1,0 +1,34 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: postgres-existing
+  namespace: migration
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: postgres-existing
+    uid: ""
+spec:
+  resources:
+  - name: adb--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: pg
+          name: adb
+        spec:
+          clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8
+          clusterServicePlanExternalID: 10aa2cb5-897d-43f6-b0df-ac4f8a2a758e
+          externalID: abcd-123456789
+          parameters:
+            lessee: foo
+            location:
+              env: microstestenv
+            resource_name: adb
+status: {}

@@ -64,10 +64,10 @@ spec:
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
-                - secretRef:
-                    name: common-secrets
-                    optional: true
-                image: docker.atl-paas.net/atlassian/micros-analytics:0.1.8
+                  - secretRef:
+                      name: common-secrets
+                      optional: true
+                image: docker.example.com/atlassian/micros-analytics:0.1.8
                 imagePullPolicy: IfNotPresent
                 name: microservice
                 resources:
@@ -137,6 +137,7 @@ spec:
         kind: Ingress
         metadata:
           annotations:
+            contour.heptio.com/request-timeout: 120s
             voyager.atl-paas.net/ingressType: private
           name: ingress-ingress
         spec:

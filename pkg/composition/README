@@ -1,0 +1,29 @@
+This directory holds Composition layer from Voyager architecture.
+
+### Miscellaneous from @bbarclay to get started
+
+#### Start Composition controller
+
+If you don't want to use minikube, but instead docker for mac
+```
+export KUBE_CONTEXT=docker-for-desktop
+make update-bazel; make run-voyager
+```
+
+#### Create the Service Descriptor CRD
+
+From voyager "root" directory in source tree
+```
+make print-sd-crd > SOME_FILE
+```
+
+Delete the top (3?) lines of the file until "apiVersion" is at the top and then run
+
+```
+kubectl create -f SOME_FILE
+```
+
+* If you add a test to a directoy that did not previously had a test, from voyager root, run
+```
+make fmt-bazel
+```

@@ -209,10 +209,10 @@ notifications:
    email: an_owner@example.com
    lowPriority:
       cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-      generic: 123123123123123
+      generic: "123123123123123"
    main:
       cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-      generic: 123123123123123
+      generic: "123123123123123"
 ssamAccessLevel: access-level-from-configmap
 loggingId: logging-id-from-configmap
 `,

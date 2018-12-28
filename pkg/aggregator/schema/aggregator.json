@@ -1,0 +1,109 @@
+{
+  "components": {
+    "cluster": {
+      "properties": {
+        "body": {
+          "type": "object",
+          "description": "Response body from the cluster request"
+        },
+        "statusCode": {
+          "type": "integer",
+          "description": "Status code from the cluster request"
+        },
+        "region": {
+          "type": "string",
+          "description": "Region of the cluster"
+        },
+        "envType": {
+          "type": "string",
+          "description": "Environment the cluster is running in"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the cluster"
+        },
+        "error": {
+          "type": "string",
+          "description": "Reason for error if error occured"
+        }
+      },
+      "type": "object"
+    },
+    "clusterList": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/cluster"
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "micros@atlassian.com"
+    },
+    "title": "Voyager Aggregator API",
+    "version": "0.0.1"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/aggregate": {
+      "get": {
+        "description": "Aggregate a request across mutliple clusters",
+        "operationId": "aggregate",
+        "parameters": [
+          {
+            "description": "Uri to request in the cluster",
+            "in": "query",
+            "name": "uri",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "description": "Select from clusters only in the specified region",
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Select from clusters only in the specified environment",
+            "in": "query",
+            "name": "envType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/clusterList"
+              }
+            }
+          },
+          "description": "A report of the service in the cluster"
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "https://schemas.atl-paas.net/voyager/operations.json#/components/schemas/errors"
+              }
+            }
+          },
+          "description": "unexpected error"
+        }
+      }
+    }
+  }
+}

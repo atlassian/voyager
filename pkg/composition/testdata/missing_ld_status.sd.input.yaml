@@ -1,0 +1,38 @@
+apiVersion: composition.voyager.atl-paas.net/v1
+kind: ServiceDescriptor
+metadata:
+  name: basic
+  finalizers:
+  - voyager.atl-paas.net/serviceDescriptorComposition
+spec:
+  locations:
+    - account: "1"
+      name: "location1"
+      region: "us"
+      envType: "prod"
+    - account: "1"
+      name: "location2"
+      region: "us"
+      envType: "prod"
+      label: "pdev"
+
+  config:
+  - scope: global
+    vars:
+      compute:
+        image: "atlassianlabs/showenv"
+        tag: "12aa007"
+      enviro:
+        myvalue: "SOMETHING"
+
+  resourceGroups:
+  - name: demo
+    locations:
+    - my-dev
+    - my-stg
+    resources:
+    - name: basic-sqs
+      type: SQS
+      spec:
+        VisibilityTimeout: 600
+        MaxReceiveCount: 10

@@ -1,0 +1,36 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+    - name: basic
+      type: SQS
+
+    - name: kubecompute-simple
+      type: KubeCompute
+      dependsOn:
+        - basic
+      spec:
+        containers:
+          - name: microservice
+            image: "docker.example.com/atlassian/micros-analytics:0.1"
+            livenessProbe:
+              httpGet:
+                # No path to test setting of default path
+                port: 8080
+              initialDelaySeconds: 5
+            readinessProbe:
+              httpGet:
+                path: /readiness
+                port: 8080
+              initialDelaySeconds: 10
+            ports:
+              - containerPort: 8080
+          - name: pgbouncer
+            image: "docker.example.com/my_pgbouncer:abcxyz"
+            ports:
+              - containerPort: 5432
+                protocol: UDP

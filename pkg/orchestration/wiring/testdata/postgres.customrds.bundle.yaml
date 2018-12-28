@@ -1,0 +1,84 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: state1
+  namespace: default123
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: state1
+    uid: ""
+spec:
+  resources:
+  - name: rds--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: RDS
+          name: rds
+        spec:
+          clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
+          clusterServicePlanExternalID: 7e6d37bb-8aa4-4c63-87d2-d78ca91a0120
+          parameters:
+            location:
+              env: microstestenv
+            misc:
+              lessee: test-servicename
+              rds_type: dedicated
+              resource_name: rds
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            parameters:
+              RDSType: postgres961
+            primary_parameters:
+              MicrosAppSubnets:
+              - subnet-1
+              - subnet-2
+              MicrosEnv: microstestenv
+              MicrosInstanceSecurityGroup: sg-2
+              MicrosJumpboxSecurityGroup: sg-1
+              MicrosPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointHigh: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointLow: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPrivateDnsZone: testregion.atl-inf.io
+              MicrosPrivatePaasDnsZone: testregion.dev.paas-inf.net
+              MicrosResourceName: rds
+              MicrosServiceName: test-servicename
+              MicrosVpcId: vpc-1
+  - name: db--instance
+    references:
+    - name: rds--instance-metadata-name
+      path: metadata.name
+      resource: rds--instance
+      example: myownrds
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: pg
+          name: db
+        spec:
+          clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8
+          clusterServicePlanExternalID: 10aa2cb5-897d-43f6-b0df-ac4f8a2a758e
+          parameters:
+            lessee: test-servicename
+            location:
+              env: microstestenv
+            resource_name: db
+            shareddb:
+              resource: '!{rds--instance-metadata-name}'
+              service: test-servicename
+status: {}

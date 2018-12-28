@@ -1,0 +1,15 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    account: A123
+    label: user
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:
+
+

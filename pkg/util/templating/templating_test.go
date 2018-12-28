@@ -359,7 +359,7 @@ func TestSpecToMapCreatesExpectedStructure(t *testing.T) {
 		"sd": {
 			"links": {
 				"binary": {
-					"name": "docker.atl-paas.net/micros/node-refapp",
+					"name": "docker.example.com/micros/node-refapp",
 					"tag": "${release:abc.def}",
 					"type": "docker"
 				}
@@ -371,7 +371,7 @@ func TestSpecToMapCreatesExpectedStructure(t *testing.T) {
 		"sd": map[string]interface{}{
 			"links": map[string]interface{}{
 				"binary": map[string]interface{}{
-					"name": "docker.atl-paas.net/micros/node-refapp",
+					"name": "docker.example.com/micros/node-refapp",
 					"tag":  "${release:abc.def}",
 					"type": "docker",
 				},

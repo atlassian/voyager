@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "pagerduty.go",
+        "types.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/pagerduty",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/auth:go_default_library",
+        "//pkg/util/httputil:go_default_library",
+        "//pkg/util/uuid:go_default_library",
+        "//vendor/github.com/PagerDuty/go-pagerduty:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = ["pagerduty_test.go"],
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//:go_default_library",
+        "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/testutil:go_default_library",
+        "//pkg/util/uuid:go_default_library",
+        "//vendor/github.com/PagerDuty/go-pagerduty:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/mock:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/go.uber.org/zap/zaptest:go_default_library",
+    ],
+)

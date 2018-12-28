@@ -1,0 +1,62 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: basic
+    type: SQS
+
+  - name: kubecompute-simple
+    type: KubeCompute
+    dependsOn:
+    - basic
+    spec:
+      scaling:
+        minReplicas: 1
+        maxReplicas: 1
+      containers:
+      - name: microservice
+        image: "docker.example.com/atlassian/micros-analytics:0.1"
+        tag: "0.1.8"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: "keyFromConfigMap"
+          valueFrom:
+            configMapKeyRef:
+              name: "configMap"
+              key: "key"
+        envFrom:
+        - configMapRef:
+            name: configMap
+      - name: pgbouncer
+        image: "docker.example.com/my_pgbouncer:abcxyz"
+        ports:
+        - containerPort: 5432
+          protocol: UDP
+        envFrom:
+        - configMapRef:
+            name: configMap
+    defaults:
+      Scaling:
+        MinReplicas: 1
+        MaxReplicas: 5
+        Metrics:
+        - Type: Resource
+          Resource:
+            Name: cpu
+            TargetAverageUtilization: 80
+      Container:
+        ImagePullPolicy: IfNotPresent
+        Resources:
+          Requests:
+            cpu: 50m
+            memory: 50Mi
+          Limits:
+            cpu: 250m
+            memory: 150Mi
+      Port:
+        Protocol: TCP

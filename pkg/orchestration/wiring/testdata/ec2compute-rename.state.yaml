@@ -1,0 +1,25 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: ptl-percolator
+  namespace: ptl-percolator
+spec:
+  resources:
+  - name: basic
+    type: SQS
+
+  - name: compute
+    type: EC2Compute
+    dependsOn:
+    - basic
+    spec:
+      docker:
+        compose:
+          microservice:
+            image: docker/image
+            ports:
+            - 8080:8080
+      rename:
+        SQS_BASIC_QUEUE_URL: MY_QUEUE_URL
+        SQS_BASIC_QUEUE_REGION: MY_QUEUE_REGION
+

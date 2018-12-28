@@ -1,0 +1,21 @@
+version: 3
+locations:
+  - name: us-west2-dev
+    region: us-west-2
+    envType: dev
+
+  - name: us-west2-prod
+    region: us-west-2
+    envType: prod
+
+resourceGroups:
+  - name: StackOne
+    locations:
+      - us-west2-dev
+      - us-west2-prod
+    resources:
+      - name: first-resource
+        type: some-type
+
+
+

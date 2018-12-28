@@ -1,0 +1,65 @@
+apiVersion: formation.voyager.atl-paas.net/v1
+kind: LocationDescriptor
+metadata:
+  clusterName: ""
+  creationTimestamp: 2018-07-11T07:30:58Z
+  generation: 1
+  name: ychen-test-svc
+  namespace: ychen-test-svc
+  ownerReferences:
+  - apiVersion: composition.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ServiceDescriptor
+    name: ychen-test-svc
+    uid: 5a687aa9-84dc-11e8-b00e-0236ca008ed8
+  resourceVersion: "19413632"
+  selfLink: /apis/formation.voyager.atl-paas.net/v1/namespaces/ychen-test-svc/locationdescriptors/ychen-test-svc
+  uid: 5a810273-84dc-11e8-b00e-0236ca008ed8
+spec:
+  configMapName: ""
+  resources:
+  - name: mi
+    spec:
+      sd:
+        links:
+          binary:
+            name: docker.example.com/micros/node-refapp
+            tag: 2.12.2
+            type: docker
+          healthcheck:
+            uri: /healthcheck
+          source:
+            url: ssh://git@stash.atlassian.com:7997/micros/node-refapp.git
+        notifications:
+          email: an_owner@example.com
+    type: EC2Compute
+status:
+  conditions:
+  - lastTransitionTime: 2018-07-11T08:49:10Z
+    lastUpdateTime: 2018-07-11T08:49:10Z
+    status: "False"
+    type: InProgress
+  - lastTransitionTime: 2018-07-11T08:49:10Z
+    lastUpdateTime: 2018-07-11T08:49:10Z
+    status: "True"
+    type: Ready
+  - lastTransitionTime: 2018-07-11T08:32:01Z
+    lastUpdateTime: null
+    status: "False"
+    type: Error
+  resourceStatuses:
+  - conditions:
+    - lastTransitionTime: 2018-06-27T07:18:49Z
+      lastUpdateTime: 2018-06-27T07:18:49Z
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2018-06-27T07:18:49Z
+      lastUpdateTime: 2018-06-27T07:18:49Z
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2018-06-27T07:03:36Z
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: mi

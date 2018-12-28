@@ -1,0 +1,26 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - type: KubeCompute
+    name: kubecompute-simple
+    spec:
+      containers:
+        - name: microservice
+          image: docker.example.com/atlassian/micros-analytics:0.1.8
+  - type: KubeIngress
+    name: ingress
+    dependsOn:
+      - kubecompute-simple
+  - type: InternalDNS
+    name: internaldns
+    spec:
+      aliases:
+        - type: Simple
+          name: foo.staging.atl-paas.net
+    dependsOn:
+      - ingress

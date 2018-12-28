@@ -1,0 +1,12 @@
+version: 3
+locations:
+  - name: east-pete
+    region: us-west-1
+    envType: staging
+    account: "123"
+    label: foo
+
+resourceGroups:
+  - name: PTL
+    locations:
+      - east-pete

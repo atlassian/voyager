@@ -1,0 +1,14 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: rds
+  namespace: rds
+spec:
+  resources:
+  - name: myownrds
+    type: RDS
+    spec:
+      DBType: postgres96
+      serviceName: another-service
+      AllocatedStorage: 1528
+      ReadReplica: true

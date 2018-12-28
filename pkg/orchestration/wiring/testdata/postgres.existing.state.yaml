@@ -1,0 +1,12 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: postgres-existing
+  namespace: migration
+spec:
+  resources:
+  - name: adb
+    type: Postgres
+    spec:
+      lessee: foo
+      instanceId: abcd-123456789
