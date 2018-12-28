@@ -238,6 +238,18 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	// regardless if they're using ASAP or not
 	envDefault = append(envDefault, asapkey.GetPublicKeyRepoEnvVars(context.StateContext.Location)...)
 
+	// always bind to the common secret, it's OK if it doesn't exist
+	trueVar := true
+	commonEnvFrom := core_v1.EnvFromSource{
+		SecretRef: &core_v1.SecretEnvSource{
+			LocalObjectReference: core_v1.LocalObjectReference{
+				Name: apik8scompute.CommonSecretName,
+			},
+			Optional: &trueVar,
+		},
+	}
+	envFrom = append(envFrom, commonEnvFrom)
+
 	// prepare containers
 	containers := buildContainers(spec, envDefault, envFrom)
 
