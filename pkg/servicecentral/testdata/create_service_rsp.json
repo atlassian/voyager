@@ -2,13 +2,13 @@
   "data": [
 	{
 	  "availability_objective": 99.0,
-	  "business_unit": "PaaS/Micros",
+	  "business_unit": "some_unit",
 	  "compliance_policy_id": null,
 	  "creation_timestamp": "2018-05-17T07:40:48.302606Z",
 	  "description": null,
 	  "hipchat_room_name": null,
 	  "last_modified_timestamp": "2018-05-17T07:40:48.302606Z",
-	  "last_modified_user": "LDAPUser:aczepil",
+	  "last_modified_user": "LDAPUser:an_owner",
 	  "location": null,
 	  "logging_id": null,
 	  "pagerduty_service_id": null,
@@ -19,7 +19,7 @@
 	  "reliability_objective": 99.0,
 	  "service_name": "test-service",
 	  "service_owner": {
-		"username": "aczepil"
+		"username": "an_owner"
 	  },
 	  "service_tier": 3,
 	  "service_uuid": "ef4c37b9-e41f-4895-af4d-db27dd9e295c",

@@ -495,7 +495,7 @@ func newService(wasCreated bool) *creator_v1.Service {
 		},
 		Spec: creator_v1.ServiceSpec{
 			ResourceOwner: testUser.Name(),
-			BusinessUnit:  "PaaS/Micros",
+			BusinessUnit:  "some_unit",
 			ResourceTags:  map[voyager.Tag]string{},
 		},
 	}
@@ -517,7 +517,7 @@ func newServiceWithCompliance(wasCreated bool, PRGBEnabled bool) *creator_v1.Ser
 		},
 		Spec: creator_v1.ServiceSpec{
 			ResourceOwner: testUser.Name(),
-			BusinessUnit:  "PaaS/Micros",
+			BusinessUnit:  "some_unit",
 			ResourceTags:  map[voyager.Tag]string{},
 		},
 		Status: creator_v1.ServiceStatus{
@@ -539,7 +539,7 @@ func newServiceServiceCentralData(setID bool) *ServiceData {
 		Platform:             voyagerPlatform,
 		ZeroDowntimeUpgrades: true,
 		Stateless:            true,
-		BusinessUnit:         "PaaS/Micros",
+		BusinessUnit:         "some_unit",
 	}
 	if setID {
 		serviceUUID := testServiceUUID

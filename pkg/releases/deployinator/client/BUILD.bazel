@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["deployinator_client.go"],
+    importpath = "github.com/atlassian/voyager/pkg/releases/deployinator/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/releases/deployinator/client/resolve:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+    ],
+)

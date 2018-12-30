@@ -1,0 +1,123 @@
+version: 3
+locations:
+
+config:
+  - scope: global
+    vars:
+      compute:
+        scaling:
+          msg: global
+      listItem:
+        - g-1
+        - g-2
+      numberItem: 5
+
+  - scope: dev
+    vars:
+      compute:
+        scaling:
+          msg: dev
+
+  - scope: dev.us-west-1
+    vars:
+      compute:
+        scaling:
+          msg:
+
+  - scope: dev.us-west-1.myLabel
+    vars:
+      compute:
+        scaling:
+          min: 3
+
+  - scope: dev.us-west-1.myLabel.A234
+    vars:
+      compute:
+        scaling:
+          min: 3
+
+  - scope: dev.regionWithNoLabel
+    vars:
+      compute:
+        scaling:
+          msg: global-dev-regionWithNoLabel
+
+  - scope: dev.TestAccountOverridesType
+    vars:
+      compute:
+        scaling:
+          msg: regionLevelMsg
+
+  - scope: dev.TestAccountOverridesType.myLabel
+    vars:
+      compute:
+        scaling:
+          msg: labelLevelMsg
+
+  - scope: dev.TestAccountOverridesType.myLabel.A234
+    vars:
+      compute:
+        scaling:
+          msg: accountLevelMsg
+
+  - scope: dev.R-ListTest
+    vars:
+      listItem:
+        - r-1
+        - r-2
+
+  - scope: dev.TestMapsMerged
+    vars:
+      compute:
+        scaling:
+          msg-region: regionLevelMsg
+
+  - scope: dev.TestMapsMerged.myLabel
+    vars:
+      compute:
+        scaling:
+          msg-label: labelLevelMsg
+
+  - scope: dev.TestMapsMerged.myLabel.A234
+    vars:
+      compute:
+        scaling:
+          msg-account: accountLevelMsg
+
+  - scope: staging
+    vars:
+      compute:
+        scaling:
+          min: 1
+
+  - scope: staging.us-west-1
+    vars:
+      adhoc-results-2:
+        GlobalTableRegions:
+          - stg-east
+          - stg-west2
+          - stg-euwest
+
+  - scope: staging.us-west-1.staging_us-west-1_label
+    vars:
+      compute:
+        scaling:
+          min: 3
+
+  - scope: staging.us-west-1.staging_us-west-1_label.acc_staging_us-west-1_label
+    vars:
+      adhoc-results-2:
+        GlobalTableRegions:
+      placeholder: 1
+
+  - scope: staging.us-west-1.shouldntFind
+    vars:
+      k1:
+        k2: shouldNotMatch
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+      - us-west1-prod
+    resources:

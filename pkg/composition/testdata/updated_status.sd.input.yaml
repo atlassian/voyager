@@ -1,0 +1,82 @@
+apiVersion: composition.voyager.atl-paas.net/v1
+kind: ServiceDescriptor
+metadata:
+  name: basic
+  finalizers:
+  - voyager.atl-paas.net/serviceDescriptorComposition
+spec:
+  locations:
+    - account: "1"
+      name: "location1"
+      region: "us"
+      envType: "prod"
+    - account: "1"
+      name: "location2"
+      region: "us"
+      envType: "prod"
+      label: "pdev"
+
+  config:
+  - scope: global
+    vars:
+      compute:
+        image: "atlassianlabs/showenv"
+        tag: "12aa007"
+      enviro:
+        myvalue: "SOMETHING"
+
+  resourceGroups:
+  - name: demo
+    locations:
+    - my-dev
+    - my-stg
+    resources:
+    - name: basic-sqs
+      type: SQS
+      spec:
+        VisibilityTimeout: 600
+        MaxReceiveCount: 10
+status:
+  conditions:
+  conditions:
+  - lastTransitionTime: "1970-01-01T00:00:00Z"
+    lastUpdateTime: null
+    status: "True"
+    type: InProgress
+  - lastTransitionTime: "1970-01-01T00:00:00Z"
+    lastUpdateTime: null
+    status: "False"
+    type: Ready
+  - lastTransitionTime: "1970-01-01T00:00:00Z"
+    lastUpdateTime: null
+    status: "True"
+    type: Error
+  locationStatuses:
+  - conditions:
+    - lastTransitionTime: "2018-07-11T08:49:10Z"
+      lastUpdateTime: "2018-07-11T08:49:10Z"
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: "2018-07-11T08:49:10Z"
+      lastUpdateTime: "2018-07-11T08:49:10Z"
+      status: "True"
+      type: Ready
+    - lastTransitionTime: "2018-07-11T08:32:01Z"
+      lastUpdateTime: null
+      status: "False"
+      type: Error
+    name: location1
+  - conditions:
+    - lastTransitionTime: "2018-06-27T07:18:49Z"
+      lastUpdateTime: null
+      status: "True"
+      type: InProgress
+    - lastTransitionTime: "2018-06-27T07:18:49Z"
+      lastUpdateTime: "2018-06-27T07:18:49Z"
+      status: "False"
+      type: Ready
+    - lastTransitionTime: "2018-06-27T07:03:36Z"
+      lastUpdateTime: "2018-06-27T07:18:49Z"
+      status: "True"
+      type: Error
+    name: location2

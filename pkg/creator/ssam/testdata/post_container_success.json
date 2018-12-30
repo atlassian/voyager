@@ -1,0 +1,9 @@
+{
+  "container_type": "micros",
+  "display_name": "chaos-monkey service",
+  "short_name": "micros-sv--chaos-monkey",
+  "url": null,
+  "system_owner": "sgreenup",
+  "delegates": [],
+  "access_levels": []
+}

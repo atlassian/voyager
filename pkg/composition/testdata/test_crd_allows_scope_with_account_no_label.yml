@@ -1,0 +1,21 @@
+name: some-name
+spec:
+  locations:
+    - name: some-name
+      region: us-some-2
+      account: '123456789012'
+      envType: dev
+
+  config:
+    - scope: dev.us-some-2..123456789012
+      vars:
+        some: value
+
+  resourceGroups:
+    - name: some-stack
+      locations:
+        - some-name
+      resources:
+        - name: foo
+          type: bar
+

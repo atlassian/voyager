@@ -1,0 +1,73 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+config:
+  - scope: global
+    vars:
+      myservice:
+        proxy:
+          image: docker.example.com/path/myservice-proxy
+          tag: 1.0.0
+
+  - scope: dev
+    vars:
+      myservice:
+        proxy:
+          image: docker.example.com/path/myservice-proxy
+
+  - scope: dev.us-west-1
+    vars:
+      myservice:
+        proxy:
+          tag: 2.0.0
+
+resourceGroups:
+- locations:
+  - us-west1-dev
+  name: stack
+  resources:
+  - name: db
+    type: Postgres
+  - dependsOn:
+    - name: compute
+    name: compute-ingress
+    type: KubeIngress
+  - dependsOn:
+    - name: db
+    name: compute
+    spec:
+      containers:
+        env:
+        - name: PORT
+          value: "8080"
+        image: ${release:myservice.compute.image}@${release:myservice.compute.digest}
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8080
+        name: service
+    type: KubeCompute
+  - dependsOn:
+    - name: proxy
+    name: proxy-ingress
+    type: KubeIngress
+  - dependsOn:
+    - name: db
+    name: proxy
+    spec:
+      containers:
+        env:
+        - name: PORT
+          value: "8080"
+        image: ${myservice.proxy.image}:${myservice.proxy.tag}
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8080
+        name: service
+    type: KubeCompute

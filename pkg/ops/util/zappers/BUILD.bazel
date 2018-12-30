@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["zappers.go"],
+    importpath = "github.com/atlassian/voyager/pkg/ops/util/zappers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/apis/ops/v1:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/go.uber.org/zap/zapcore:go_default_library",
+    ],
+)

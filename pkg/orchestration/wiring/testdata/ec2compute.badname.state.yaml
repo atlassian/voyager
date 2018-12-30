@@ -1,0 +1,22 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: ptl-percolator
+  namespace: ptl-percolator
+spec:
+  resources:
+  - name: basic
+    type: SQS
+
+  - name: compute
+    type: EC2Compute
+    dependsOn:
+    - basic
+    spec:
+      ec2:
+        iamInstanceProfileArn: "should not be present"
+        iamRoleArn: "also should not be present"
+      secretEnvVars:
+        foo: hello
+      location:
+        region: 'ap-northeast-3'

@@ -1,0 +1,48 @@
+version: 3
+locations:
+  - name: ignore-me
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+config:
+  - scope: global
+    vars:
+      compute:
+        scaling:
+          msg: global
+      listItem:
+        - g-1
+        - g-2
+      numberItem: 5
+
+  - scope: dev
+    vars:
+      compute:
+        scaling:
+          msg: dev
+
+  - scope: dev.nil_or_missing
+    vars:
+      compute:
+        scaling:
+          nilmsg:
+
+  - scope: dev.us-west-1.myLabel
+    vars:
+      compute:
+        scaling:
+          min: 3
+
+
+resourceGroups:
+  - name: NotUsed
+    locations:
+      - ignore-me
+    resources:
+      - name: test-ddb
+        type: dynamodb
+        spec:
+          nilVal: ${compute.scaling.nilmsg}
+          missingVal: ${compute.scaling.missingmsg}

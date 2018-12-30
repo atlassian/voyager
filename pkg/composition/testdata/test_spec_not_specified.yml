@@ -1,0 +1,15 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    account: A123
+
+resourceGroups:
+  - name: TestResource
+    locations:
+      - us-west1-dev
+    resources:
+      - name: some-name
+        type: some-resource-type
+        # hey there is no spec here

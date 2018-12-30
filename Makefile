@@ -8,11 +8,15 @@ KUBECONFIG ?= $(shell kind get kubeconfig-path)
 
 #Directories to scan and generate Deepcopy methods
 MAIN_PACKAGE_DIR = github.com/atlassian/voyager
+APIS_AGGREGATOR_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/aggregator/v1
 APIS_COMPOSITION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/composition/v1
 APIS_CREATOR_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/creator/v1
+APIS_FORMATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/formation/v1
+APIS_OPS_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/ops/v1
 APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
+APIS_REPORTER_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/reporter/v1
 SHAPES_API_DIR = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin
-ALL_DIRS=$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_ORCHESTRATION_DIR)
+ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_FORMATION_DIR),$(APIS_OPS_DIR),$(APIS_ORCHESTRATION_DIR),$(APIS_REPORTER_DIR)
 
 #===============================================================================
 
@@ -302,7 +306,83 @@ generate: \
 
 .PHONY: generate-clients
 generate-clients: \
-	generate-orchestration-client
+	generate-deployinator-client \
+	generate-composition-client \
+	generate-creator-client \
+	generate-formation-client \
+	generate-ops-client \
+	generate-orchestration-client \
+	generate-reporter-client
+
+#===============================================================================
+
+.PHONY: update-deployinator-spec
+update-deployinator-spec:
+	curl -s https://deployinator-trebuchet.prod.atl-paas.net/api/swagger.json | jq '.' > pkg/releases/deployinator-trebuchet.json
+
+#===============================================================================
+
+.PHONY: generate-deployinator-client
+generate-deployinator-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/github.com/go-swagger/go-swagger/cmd/swagger
+	./bazel-bin/vendor/github.com/go-swagger/go-swagger/cmd/swagger/$(BINARY_PREFIX_DIRECTORY)/swagger $(VERIFY_CODE) \
+	generate client -f pkg/releases/deployinator-trebuchet.json --skip-validation  \
+	-t "pkg/releases/deployinator" \
+	-O resolve \
+	-O resolveBatch \
+	-A deployinator \
+	-M ResolutionResponseType \
+	-M BatchResolutionResponseType \
+	-M PageDetails \
+	-M ErrorResponse
+
+#===============================================================================
+
+.PHONY: generate-composition-client
+generate-composition-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
+	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
+	--input "composition/v1" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/composition" \
+	--clientset-name "client" \
+	--go-header-file "build/code-generator/boilerplate.go.txt"
+
+#===============================================================================
+
+.PHONY: generate-creator-client
+generate-creator-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
+	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
+	--input "creator/v1" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/creator" \
+	--clientset-name "client" \
+	--go-header-file "build/code-generator/boilerplate.go.txt"
+
+#===============================================================================
+
+.PHONY: generate-formation-client
+generate-formation-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
+	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
+	--input "formation/v1" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/formation" \
+	--clientset-name "client" \
+	--go-header-file "build/code-generator/boilerplate.go.txt"
+
+#===============================================================================
+
+.PHONY: generate-ops-client
+generate-ops-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
+	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
+	--input "ops/v1" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/ops" \
+	--clientset-name "client" \
+	--go-header-file "build/code-generator/boilerplate.go.txt"
 
 #===============================================================================
 
@@ -310,9 +390,21 @@ generate-clients: \
 generate-orchestration-client:
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
 	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
-	--input-base "github.com/atlassian/voyager/pkg/apis" \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
 	--input "orchestration/v1" \
-	--clientset-path "github.com/atlassian/voyager/pkg/orchestration" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/orchestration" \
+	--clientset-name "client" \
+	--go-header-file "build/code-generator/boilerplate.go.txt"
+
+#===============================================================================
+
+.PHONY: generate-reporter-client
+generate-reporter-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
+	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
+	--input "reporter/v1" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/reporter" \
 	--clientset-name "client" \
 	--go-header-file "build/code-generator/boilerplate.go.txt"
 
@@ -338,7 +430,7 @@ generate-sets:
 	--v 1 --logtostderr \
 	--input-dirs "$(MAIN_PACKAGE_DIR),$(ALL_DIRS)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
-	--output-package 'github.com/atlassian/voyager/pkg/util/sets'
+	--output-package '$(MAIN_PACKAGE_DIR)/pkg/util/sets'
 	# Hacked removal of bad bool and byte sets
 	# For some reason each set is generated a lot of times into the same file. A bug.
 	rm pkg/util/sets/bool.go pkg/util/sets/byte.go
@@ -348,5 +440,17 @@ generate-sets:
 .PHONY: print-state-crd
 print-state-crd:
 	bazel run //cmd/crd -- -output-format=yaml -resource=state
+
+.PHONY: print-route-crd
+print-route-crd:
+	bazel run //cmd/crd -- -output-format=yaml -resource=route
+
+.PHONY: print-sd-crd
+print-sd-crd:
+	bazel run //cmd/crd -- -output-format=yaml -resource=sd
+
+.PHONY: print-ld-crd
+print-ld-crd:
+	bazel run //cmd/crd -- -output-format=yaml -resource=ld
 
 #===============================================================================

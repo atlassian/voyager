@@ -1,0 +1,7 @@
+filegroup(
+    name = "aggregator",
+    srcs = [
+        "aggregator.json",
+    ],
+    visibility = ["//visibility:public"],
+)

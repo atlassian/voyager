@@ -1,0 +1,23 @@
+version: 3
+locations:
+  - name: dev1
+    region: us-west-1
+    envType: dev
+    account: "A234"
+
+  - name: dev2
+    region: us-west-1
+    envType: dev
+    account: "A234"
+
+resourceGroups:
+  - name: StackOne
+    locations:
+      - dev1
+      - dev2
+    resources:
+      - name: first-resource
+        type: some-type
+
+
+

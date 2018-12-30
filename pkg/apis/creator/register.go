@@ -5,6 +5,6 @@ import (
 )
 
 const (
-	// GroupName is the group name use in this package.
+	// GroupName is the group name used in this package.
 	GroupName = "creator." + voyager.Domain
 )

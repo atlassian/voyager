@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "batch_resolution_response_type.go",
+        "error_response.go",
+        "page_details.go",
+        "resolution_response_type.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/releases/deployinator/models",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/go-openapi/swag:go_default_library",
+        "//vendor/github.com/go-openapi/validate:go_default_library",
+    ],
+)

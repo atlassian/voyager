@@ -1,0 +1,50 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+  - name: us-west1-prod
+    region: us-west-1
+    envType: prod
+    account: 321A
+    label: sre
+
+config:
+  - scope: global
+    vars:
+      test-ddb:
+        RCU: 1
+
+  - scope: dev
+    vars:
+      test-ddb:
+        RCU: 2
+
+  - scope: dev.us-west-1
+    vars:
+      test-ddb:
+        RCU: 3
+
+  - scope: dev.us-west-1.myLabel
+    vars:
+      test-ddb:
+        RCU: 4
+
+  - scope: dev.us-west-1.myLabel.A234
+    vars:
+      test-ddb:
+        RCU: 5
+
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:
+      - name: test-ddb
+        type: dynamodb
+        spec:
+          RCU: ${selfWRong:test-ddb.RCU}

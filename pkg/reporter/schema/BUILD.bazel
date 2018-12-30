@@ -1,0 +1,7 @@
+filegroup(
+    name = "reporter",
+    srcs = [
+        "reporter.json",
+    ],
+    visibility = ["//visibility:public"],
+)

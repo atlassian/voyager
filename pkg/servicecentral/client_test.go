@@ -262,7 +262,7 @@ func newTestServiceData(setID bool) *ServiceData {
 		Platform:             "micros2",
 		ZeroDowntimeUpgrades: true,
 		Stateless:            true,
-		BusinessUnit:         "PaaS/Micros",
+		BusinessUnit:         "some_unit",
 		Misc: []miscData{
 			{
 				Key:   "testKey",

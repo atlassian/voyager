@@ -3,7 +3,7 @@
     "uuid": "ef4c37b9-e41f-4895-af4d-db27dd9e295c",
     "name": "test-service",
     "owner": "testuser",
-    "businessUnit": "PaaS/Micros",
+    "businessUnit": "some_unit",
     "ssamContainerName": "",
     "platform": "micros2",
     "serviceTier": 3,

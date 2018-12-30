@@ -1,0 +1,22 @@
+{
+  "container_type": "micros",
+  "display_name": "chaos-monkey service",
+  "short_name": "micros-sv--chaos-monkey",
+  "url": null,
+  "system_owner": "charlie",
+  "delegates": [],
+  "access_levels": [
+    {
+      "system": "micros-sv--chaos-monkey",
+      "access_level_name": "Micros Admins",
+      "access_level_short_name": "admins",
+      "ad_group_name": "micros-sv--chaos-monkey-dl-admins",
+      "members": {
+        "users": [
+          "charlie"
+        ]
+      },
+      "aws_arn": null
+    }
+  ]
+}

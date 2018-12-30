@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "ssam.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/creator/ssam",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/creator/ssam/util/zappers:go_default_library",
+        "//pkg/pkiutil:go_default_library",
+        "//pkg/ssam:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/httputil:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//pkg/util/validation:go_default_library",
+        "//vendor/bitbucket.org/atlassianlabs/restclient:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    size = "small",
+    srcs = [
+        "client_test.go",
+        "ssam_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    race = "on",
+    deps = [
+        "//pkg/pkiutil/testutil:go_default_library",
+        "//pkg/testutil:go_default_library",
+        "//pkg/util/httptest:go_default_library",
+        "//pkg/util/httputil:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+    ],
+)

@@ -1,0 +1,53 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+config:
+  - scope: global
+    vars:
+      inline-test:
+        element:
+          item1: region1
+          item3: region1
+
+  - scope: dev
+    vars:
+      inline-test:
+        element:
+          item1: region1
+          item3: region1
+
+  - scope: dev.us-west-1
+    vars:
+      inline-test:
+        element:
+          item1: region1
+          item3: region1
+
+  - scope: dev.us-west-1.myLabel
+    vars:
+      inline-test:
+        element:
+          item1: notList
+          item2: alsoNotList
+
+  - scope: dev.us-west-1.myLabel.A234
+    vars:
+      inline-test:
+        element:
+          item1: reallyNotList
+          item3: anotherItem
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:
+      - name: test-ddb
+        type: dynamodb
+        spec:
+          ${inline}: ${release:inline-test}

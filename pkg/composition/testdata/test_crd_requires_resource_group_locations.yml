@@ -1,0 +1,13 @@
+name: some-name
+spec:
+  locations:
+    - name: some-name
+      region: some-region
+      account: some-account
+      envType: dev
+  resourceGroups:
+    - name: some-stack
+      # no locations
+      resources:
+        - name: foo
+          type: bar

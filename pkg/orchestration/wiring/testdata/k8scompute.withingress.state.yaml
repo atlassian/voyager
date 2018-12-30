@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: microservice
-          image: docker.atl-paas.net/atlassian/micros-analytics:0.1.8
+          image: docker.example.com/atlassian/micros-analytics:0.1.8
     defaults:
       Scaling:
         MinReplicas: 1

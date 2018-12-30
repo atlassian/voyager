@@ -1,0 +1,16 @@
+version: 3
+locations:
+  - name: mydev
+    region: us-west-1
+    envType: dev
+    account: "123"
+
+resourceGroups:
+  - name: some-stack
+    locations:
+      - mydev
+    resources:
+      - name: myresource
+        type: some-type
+        dependsOn:
+        - name: myresource

@@ -1,0 +1,41 @@
+{
+  "data": {
+    "creation_timestamp": "2018-05-31T06:22:02.929844223Z",
+    "last_modified_timestamp": "2018-05-31T06:22:02.929844223Z",
+    "deleted_timestamp": null,
+    "last_modified_user": "an_owner",
+    "logging_id": "ef4c37b9-e41f-4895-af4d-db27dd9e295c",
+    "source_id": "micros2",
+    "name": "test-service",
+    "owner": "an_owner",
+    "admins": "",
+    "organization": "some_unit",
+    "capacity_gigabytes": 1,
+    "capacity_comment": "shibe",
+    "acls": [
+      {
+        "creation_timestamp": "2018-05-31T06:22:02.930922757Z",
+        "last_modified_timestamp": "2018-05-31T06:22:02.930922757Z",
+        "deleted_timestamp": null,
+        "last_modified_user": "an_owner",
+        "acl_id": 30100,
+        "staffid_group": "atlassian-staff",
+        "environments": "*"
+      }
+    ],
+    "index": {
+      "write": {
+        "id": "74e18231-2d06-4c72-b985-eb9d8451974c",
+        "cluster": ""
+      },
+      "read": [
+        {
+          "id": "74e18231-2d06-4c72-b985-eb9d8451974c",
+          "cluster": "bondi"
+        }
+      ]
+    }
+  },
+  "status_code": 201,
+  "errors": []
+}

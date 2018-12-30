@@ -2,13 +2,13 @@
   "data": [
     {
       "availability_objective": 99.0,
-      "business_unit": "PaaS/Micros",
+      "business_unit": "some_unit",
       "compliance_policy_id": null,
       "creation_timestamp": "2018-05-17T07:40:48Z",
       "description": null,
       "hipchat_room_name": null,
       "last_modified_timestamp": "2018-05-17T07:40:48Z",
-      "last_modified_user": "LDAPUser:aczepil",
+      "last_modified_user": "LDAPUser:an_owner",
       "location": null,
       "logging_id": null,
       "misc": [

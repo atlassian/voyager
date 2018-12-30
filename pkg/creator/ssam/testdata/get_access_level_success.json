@@ -1,0 +1,12 @@
+{
+  "system": "micros-sv--chaos-monkey",
+  "access_level_name": "Chaos Monkey Administrators",
+  "access_level_short_name": "chaos-monkey-admins",
+  "ad_group_name": "micros-sv--chaos-monkey-dl-chaos-monkey-admins",
+  "members": {
+    "users": [
+      "sgreenup"
+    ]
+  },
+  "aws_arn": null
+}

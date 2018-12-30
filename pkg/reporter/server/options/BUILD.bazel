@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["options.go"],
+    importpath = "github.com/atlassian/voyager/pkg/reporter/server/options",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/reporter/server/apiserver:go_default_library",
+        "//pkg/util/apiserver:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/server:go_default_library",
+    ],
+)

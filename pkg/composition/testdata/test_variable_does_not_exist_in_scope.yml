@@ -1,0 +1,26 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+config:
+- scope: dev
+  vars:
+    compute:
+      scaling:
+        msg: testmessage
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:
+      - name: test-ddb
+        type: dynamodb
+        spec:
+          things:
+            - some normal value
+            - ${self:test-ddb.RCXXXXXXX} # no matching var

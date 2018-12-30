@@ -19,4 +19,4 @@ spec:
             targetAverageUtilization: 50
       containers:
         - name: microservice
-          image: "docker.atl-paas.net/atlassian/micros-analytics:0.1"
+          image: "docker.example.com/atlassian/micros-analytics:0.1"

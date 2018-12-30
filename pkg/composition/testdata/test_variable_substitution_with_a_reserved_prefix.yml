@@ -1,0 +1,25 @@
+version: 3
+locations:
+  - name: us-west1-dev
+    region: us-west-1
+    envType: dev
+    label: myLabel
+    account: A234
+
+# no vars present
+config:
+- scope: global
+  vars:
+    test-ddb:
+      RCU: 5.0
+
+resourceGroups:
+  - name: TestDynamo
+    locations:
+      - us-west1-dev
+    resources:
+      - name: test-ddb
+        type: dynamodb
+        spec:
+          WCU: ${self:test-ddb.RCU} # correct variable templating prefix
+          RCU: ${release:something.else} # Prefix from another source

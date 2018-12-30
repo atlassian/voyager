@@ -1,12 +1,14 @@
 package kubeingress
 
 import (
+	"encoding/json"
 	"fmt"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/pkg/errors"
@@ -29,6 +31,7 @@ const (
 	envTypeIntegration = "integration"
 
 	kittIngressTypeAnnotation = "voyager.atl-paas.net/ingressType"
+	contourTimeoutAnnotation  = "contour.heptio.com/request-timeout"
 
 	// The port is hardcoded for now, see https://sdog.jira-dev.com/browse/MICROS-6451
 	servicePort     = 8080
@@ -36,6 +39,8 @@ const (
 
 	servicePostfix = "service"
 	ingressPostfix = "ingress"
+
+	defaultContourTimeout = "120s"
 )
 
 // WireUp is the main autowiring function for KubeIngress
@@ -61,7 +66,10 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	smithResources = append(smithResources, serviceResource)
 
 	// Build the Ingress
-	ingressResource := buildIngressResource(serviceResource.SmithResource.Name, resource, context)
+	ingressResource, err := buildIngressResource(serviceResource.SmithResource.Name, resource, context)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed building ingress resource")
+	}
 	smithResources = append(smithResources, ingressResource)
 
 	result := &wiringplugin.WiringResult{
@@ -117,31 +125,49 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 }
 
 // buildIngressResource constructs the Kube / KITT Ingress object
-func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiredSmithResource {
+// with a default rule, plus all aliases rules from dependants internalDNS resources
+func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
+	var ingressRules []ext_v1b1.IngressRule
 	ingressName := string(resource.Name) + "-" + ingressPostfix
-	hostname := buildIngressHostName(resource.Name, context.StateContext)
-
-	ingressRule := ext_v1b1.IngressRule{
-		Host: hostname,
-		IngressRuleValue: ext_v1b1.IngressRuleValue{
-			HTTP: &ext_v1b1.HTTPIngressRuleValue{
-				Paths: []ext_v1b1.HTTPIngressPath{
-					{
-						Path: "/",
-						Backend: ext_v1b1.IngressBackend{
-							ServiceName: string(serviceName),
-							ServicePort: intstr.FromInt(servicePort),
-						},
+	ingressRuleValue := ext_v1b1.IngressRuleValue{
+		HTTP: &ext_v1b1.HTTPIngressRuleValue{
+			Paths: []ext_v1b1.HTTPIngressPath{
+				{
+					Path: "/",
+					Backend: ext_v1b1.IngressBackend{
+						ServiceName: string(serviceName),
+						ServicePort: intstr.FromInt(servicePort),
 					},
 				},
 			},
 		},
 	}
 
+	// default rule
+	hostname := buildIngressHostName(resource.Name, context.StateContext)
+	ingressRules = append(ingressRules, ext_v1b1.IngressRule{
+		Host:             hostname,
+		IngressRuleValue: ingressRuleValue,
+	})
+
+	// internalDNS rules
+	for _, dependency := range context.Dependants {
+		if dependency.Type == internaldns.ResourceType {
+			var internalDNSSpec internaldns.UserSpec
+			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
+				return wiringplugin.WiredSmithResource{}, err
+			}
+			for _, alias := range internalDNSSpec.Aliases {
+				ingressRules = append(ingressRules, ext_v1b1.IngressRule{
+					Host:             alias.Name,
+					IngressRuleValue: ingressRuleValue,
+				})
+			}
+		}
+	}
+
 	ingressSpec := ext_v1b1.IngressSpec{
-		Rules: []ext_v1b1.IngressRule{
-			ingressRule,
-		},
+		Rules: ingressRules,
 	}
 
 	ingressResource := wiringplugin.WiredSmithResource{
@@ -162,6 +188,10 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 						Name: ingressName,
 						Annotations: map[string]string{
 							kittIngressTypeAnnotation: "private",
+							// incoming requests pass through ALB and Envoy
+							// KITT will set ALB's timeout to 5 minutes, so that it is higher than any reasonable value supplied by the user
+							// Contour timeout is fixed for now at 120 seconds, but we should eventually allow users to set any values <= 5 minutes
+							contourTimeoutAnnotation: defaultContourTimeout,
 						},
 					},
 					Spec: ingressSpec,
@@ -171,7 +201,7 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 		Exposed: true,
 	}
 
-	return ingressResource
+	return ingressResource, nil
 }
 
 func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.StateContext) string {
