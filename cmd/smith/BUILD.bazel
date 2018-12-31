@@ -6,13 +6,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/atlassian/voyager/cmd/smith",
     visibility = ["//visibility:private"],
-    deps = [
-        "//cmd:go_default_library",
-        "//cmd/smith/config:go_default_library",
-        "//vendor/github.com/atlassian/ctrl:go_default_library",
-        "//vendor/github.com/atlassian/ctrl/app:go_default_library",
-        "//vendor/github.com/atlassian/smith/cmd/smith/app:go_default_library",
-    ],
+    deps = ["//cmd/smith/app:go_default_library"],
 )
 
 define_command_targets(

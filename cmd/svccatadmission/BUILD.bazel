@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//cmd:cmd.bzl", "define_command_targets")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/atlassian/voyager/cmd/svccatadmission",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd/svccatadmission/app:go_default_library"],
+)
+
+define_command_targets(
+    name = "svccatadmission",
+    binary_embed = [":go_default_library"],
+)

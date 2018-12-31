@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "app.go",
+        "main.go",
+        "options.go",
+    ],
+    importpath = "github.com/atlassian/voyager/cmd/computionadmission/app",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd:go_default_library",
+        "//pkg/execution/computionadmission:go_default_library",
+        "//pkg/options:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/ash2k/stager:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/options:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
+        "//vendor/k8s.io/client-go/informers/core/v1:go_default_library",
+        "//vendor/k8s.io/client-go/kubernetes:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+    ],
+)

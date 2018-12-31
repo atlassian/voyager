@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//cmd:cmd.bzl", "define_command_targets")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/atlassian/voyager/cmd/synchronization",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd/synchronization/app:go_default_library"],
+)
+
+define_command_targets(
+    name = "synchronization",
+    binary_embed = [":go_default_library"],
+)

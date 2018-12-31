@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "app.go",
+        "main.go",
+        "options.go",
+    ],
+    importpath = "github.com/atlassian/voyager/cmd/monitor/app",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//cmd:go_default_library",
+        "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/composition/client:go_default_library",
+        "//pkg/creator/client:go_default_library",
+        "//pkg/monitor:go_default_library",
+        "//pkg/options:go_default_library",
+        "//pkg/util/crash:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/options:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset:go_default_library",
+        "//vendor/github.com/pborman/uuid:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/k8s.io/client-go/rest:go_default_library",
+    ],
+)

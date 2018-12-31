@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"io/ioutil"
@@ -9,13 +9,34 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
+type Locations struct {
+	Current    options.Location   `json:"current"`
+	Replicated []options.Location `json:"replicated"`
+}
+
 type Options struct {
 	ServerConfig options.ServerConfig `json:"serverConfig"`
+	Locations    Locations            `json:"locations"`
+}
+
+func (locs *Locations) DefaultAndValidate() []error {
+	var allErrors []error
+	allErrors = append(allErrors, locs.Current.DefaultAndValidate()...)
+	for _, l := range locs.Replicated {
+		allErrors = append(allErrors, l.DefaultAndValidate()...)
+	}
+
+	if len(locs.Replicated) == 0 {
+		allErrors = append(allErrors, errors.New("must have at least one replicated location (ourselves)"))
+	}
+
+	return allErrors
 }
 
 func (o *Options) DefaultAndValidate() []error {
 	var allErrors []error
 	allErrors = append(allErrors, o.ServerConfig.DefaultAndValidate()...)
+	allErrors = append(allErrors, o.Locations.DefaultAndValidate()...)
 
 	return allErrors
 }
