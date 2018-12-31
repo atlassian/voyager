@@ -42,7 +42,7 @@ type TagNames struct {
 type Entangler struct {
 	Plugins             map[voyager.ResourceType]wiringplugin.WiringPlugin
 	ClusterLocation     voyager.ClusterLocation
-	ClusterConfig       orchestration.ClusterConfig
+	ClusterConfig       wiringplugin.ClusterConfig
 	TagNames            TagNames
 	GetLegacyConfigFunc func(voyager.Location) *legacy.Config
 }
