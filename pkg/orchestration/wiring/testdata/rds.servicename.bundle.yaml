@@ -44,6 +44,15 @@ spec:
                 resource_owner: an_owner
                 service_name: test-servicename
             primary_parameters:
+              MicrosAlarmEndpoints:
+              - type: CloudWatch
+                consumer: pagerduty
+                priority: high
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              - type: CloudWatch
+                consumer: pagerduty
+                priority: low
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               MicrosAppSubnets:
               - subnet-1
               - subnet-2

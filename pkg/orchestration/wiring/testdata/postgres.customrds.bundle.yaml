@@ -42,6 +42,15 @@ spec:
             parameters:
               RDSType: postgres961
             primary_parameters:
+              MicrosAlarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               MicrosAppSubnets:
               - subnet-1
               - subnet-2
