@@ -23,7 +23,7 @@ import (
 type Monitor struct {
 	ServiceDescriptorName  string
 	Logger                 *zap.Logger
-	Location               *voyager.Location
+	Location               voyager.Location
 	ExpectedProcessingTime time.Duration
 	ServiceSpec            creator_v1.ServiceSpec
 	Version                string
@@ -90,7 +90,7 @@ func (m *Monitor) Run(ctx context.Context) (retErr error) {
 }
 
 func (m *Monitor) verifyUpsServiceInstance(ctx context.Context, namespace, expectedVersion string) error {
-	si, err := m.serviceInstance(ctx, resourceName, namespace)
+	si, err := m.serviceInstance(ctx, string(resourceName), namespace)
 	if err != nil {
 		return errors.Wrapf(err, "could not get ServiceInstance %q", resourceName)
 	}
@@ -205,7 +205,7 @@ func (m *Monitor) waitForServiceDescriptorDeletion(ctx context.Context, name str
 
 func (m *Monitor) logFailureDetails(ctx context.Context, retErr error) {
 	var serviceInstance zap.Field
-	si, err := m.serviceInstance(ctx, resourceName, m.ServiceDescriptorName)
+	si, err := m.serviceInstance(ctx, string(resourceName), m.ServiceDescriptorName)
 	if err != nil {
 		serviceInstance = ServiceInstanceError(errors.Wrap(err, "si"))
 	} else {

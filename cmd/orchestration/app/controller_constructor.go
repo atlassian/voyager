@@ -31,7 +31,7 @@ import (
 
 type ControllerConstructor struct {
 	FlagConfigFile      string
-	GetLegacyConfigFunc func(location *voyager.Location) *legacy.Config
+	GetLegacyConfigFunc func(voyager.Location) *legacy.Config
 	Plugins             map[voyager.ResourceType]wiringplugin.WiringPlugin
 }
 

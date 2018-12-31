@@ -44,7 +44,7 @@ type Entangler struct {
 	ClusterLocation     voyager.ClusterLocation
 	ClusterConfig       orchestration.ClusterConfig
 	TagNames            TagNames
-	GetLegacyConfigFunc func(location *voyager.Location) *legacy.Config
+	GetLegacyConfigFunc func(voyager.Location) *legacy.Config
 }
 
 type wiredStateResource struct {
@@ -90,7 +90,7 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *orchestration.Entan
 	if legacyConfigFunc == nil {
 		return nil, false, errors.New("missing legacy config")
 	}
-	legacyConfig := legacyConfigFunc(&location)
+	legacyConfig := legacyConfigFunc(location)
 	if legacyConfig == nil {
 		return nil, false, errors.Errorf("no legacy config for %s", location)
 	}
