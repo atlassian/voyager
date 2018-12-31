@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "apiserver_runner.go",
+        "controller_constructor.go",
+        "main.go",
+        "options.go",
+    ],
+    importpath = "github.com/atlassian/voyager/cmd/aggregator/app",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//cmd:go_default_library",
+        "//pkg/aggregator:go_default_library",
+        "//pkg/aggregator/server:go_default_library",
+        "//pkg/aggregator/server/options:go_default_library",
+        "//pkg/apis/aggregator/v1:go_default_library",
+        "//pkg/options:go_default_library",
+        "//pkg/pkiutil:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/crash:go_default_library",
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/app:go_default_library",
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/server:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/util/logs:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/client/clientset/versioned:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/client/informers/externalversions:go_default_library",
+    ],
+)

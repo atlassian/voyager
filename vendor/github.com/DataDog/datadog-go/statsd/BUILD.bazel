@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "statsd.go",
+        "udp.go",
+        "uds.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/DataDog/datadog-go/statsd",
+    importpath = "github.com/DataDog/datadog-go/statsd",
+    visibility = ["//visibility:public"],
+)

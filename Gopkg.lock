@@ -39,6 +39,14 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:6d83aad9c98e13079ad8a4dbc740892edf5384bcd07f1d789bb66cd8ecfae2cd"
+  name = "github.com/DataDog/datadog-go"
+  packages = ["statsd"]
+  pruneopts = "NT"
+  revision = "e67964b4021ad3a334e748e8811eb3cd6becbc6e"
+  version = "2.1.0"
+
+[[projects]]
   digest = "1:98a80c23be101f8a1d51c4721cc6b85f882e07d57adf2133852c0034006f646e"
   name = "github.com/NYTimes/gziphandler"
   packages = ["."]
@@ -1598,6 +1606,7 @@
     "bitbucket.org/atlassian/go-asap",
     "bitbucket.org/atlassian/go-asap/keyprovider",
     "bitbucket.org/atlassianlabs/restclient",
+    "github.com/DataDog/datadog-go/statsd",
     "github.com/PagerDuty/go-pagerduty",
     "github.com/SermoDigital/jose/crypto",
     "github.com/SermoDigital/jose/jws",
@@ -1636,14 +1645,17 @@
     "github.com/go-openapi/swag",
     "github.com/go-openapi/validate",
     "github.com/go-swagger/go-swagger/cmd/swagger",
+    "github.com/golang/glog",
     "github.com/google/go-cmp/cmp",
     "github.com/imdario/mergo",
     "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1",
     "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset",
     "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake",
     "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1",
+    "github.com/pborman/uuid",
     "github.com/pkg/errors",
     "github.com/pmezard/go-difflib/difflib",
+    "github.com/prometheus/client_golang/api",
     "github.com/prometheus/client_golang/api/prometheus/v1",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_model/go",
@@ -1703,9 +1715,13 @@
     "k8s.io/apiserver/pkg/registry/rest",
     "k8s.io/apiserver/pkg/server",
     "k8s.io/apiserver/pkg/server/options",
+    "k8s.io/apiserver/pkg/util/logs",
     "k8s.io/client-go/discovery",
     "k8s.io/client-go/discovery/fake",
+    "k8s.io/client-go/informers/apps/v1",
+    "k8s.io/client-go/informers/autoscaling/v2beta1",
     "k8s.io/client-go/informers/core/v1",
+    "k8s.io/client-go/informers/extensions/v1beta1",
     "k8s.io/client-go/informers/rbac/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
@@ -1720,6 +1736,7 @@
     "k8s.io/client-go/util/flowcontrol",
     "k8s.io/client-go/util/retry",
     "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1",
+    "k8s.io/cluster-registry/pkg/client/clientset/versioned",
     "k8s.io/cluster-registry/pkg/client/clientset/versioned/fake",
     "k8s.io/cluster-registry/pkg/client/informers/externalversions",
     "k8s.io/code-generator/cmd/client-gen",
