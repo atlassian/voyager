@@ -4,12 +4,12 @@ load("//cmd:cmd.bzl", "define_command_targets")
 go_library(
     name = "go_default_library",
     srcs = ["main.go"],
-    importpath = "github.com/atlassian/voyager/cmd/orchestrationadmission",
-    visibility = ["//visibility:private"],
-    deps = ["//cmd/orchestrationadmission/app:go_default_library"],
+    importpath = "github.com/atlassian/voyager/cmd/creator",
+    visibility = ["//visibility:public"],
+    deps = ["//cmd/creator/app:go_default_library"],
 )
 
 define_command_targets(
-    name = "orchestrationadmission",
+    name = "creator",
     binary_embed = [":go_default_library"],
 )
