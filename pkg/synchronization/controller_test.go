@@ -1051,6 +1051,142 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 	tc.run(t)
 }
 
+func TestCreatesCommonSecret(t *testing.T) {
+	t.Parallel()
+
+	const serviceName = "some-service"
+	ns := &core_v1.Namespace{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.NamespaceKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: "the-namespace",
+			Labels: map[string]string{
+				voyager.ServiceNameLabel: serviceName,
+			},
+		},
+	}
+
+	tc := testCase{
+		mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret()},
+		ns:                ns,
+		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+			service := &creator_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: serviceName,
+				},
+				Spec: creator_v1.ServiceSpec{
+					ResourceOwner: "somebody",
+					BusinessUnit:  "the unit",
+					LoggingID:     "some-logging-id",
+					Metadata: creator_v1.ServiceMetadata{
+						PagerDuty: &creator_v1.PagerDutyMetadata{},
+					},
+					SSAMContainerName: "some-ssam-container",
+					ResourceTags: map[voyager.Tag]string{
+						"foo": "bar",
+						"baz": "blah",
+					},
+				},
+			}
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+
+			_, err := cntrlr.Process(ctx)
+			require.NoError(t, err)
+
+			secrets := findCreatedSecrets(tc.mainFake.Actions())
+
+			// ensure secret was created
+			secret, ok := secrets[commonSecretName]
+			assert.True(t, ok)
+
+			// check secret namespace and contents
+			assert.Equal(t, tc.ns.Name, secret.Namespace, "Should be in the created namespace")
+			assert.Len(t, secret.Data, 0)
+
+			// check secret owner references
+			assert.Nil(t, secret.OwnerReferences, "OwnerReferences should be nil")
+		},
+	}
+
+	tc.run(t)
+}
+
+func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
+	t.Parallel()
+
+	const serviceName = "some-service"
+	ns := &core_v1.Namespace{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.NamespaceKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: "the-namespace",
+			Labels: map[string]string{
+				voyager.ServiceNameLabel: serviceName,
+			},
+		},
+	}
+	existingSecret := &core_v1.Secret{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.SecretKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      commonSecretName,
+			Namespace: ns.Name,
+		},
+		Type: core_v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"Some": []byte("Base64thing"),
+		},
+	}
+
+	tc := testCase{
+		mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret(), existingSecret},
+		ns:                ns,
+		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+			service := &creator_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: serviceName,
+				},
+				Spec: creator_v1.ServiceSpec{
+					ResourceOwner: "somebody",
+					BusinessUnit:  "the unit",
+					LoggingID:     "some-logging-id",
+					Metadata: creator_v1.ServiceMetadata{
+						PagerDuty: &creator_v1.PagerDutyMetadata{},
+					},
+					SSAMContainerName: "some-ssam-container",
+					ResourceTags: map[voyager.Tag]string{
+						"foo": "bar",
+						"baz": "blah",
+					},
+				},
+			}
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+
+			_, err := cntrlr.Process(ctx)
+			require.NoError(t, err)
+
+			secrets := findCreatedSecrets(tc.mainFake.Actions())
+
+			// ensure secret was not created
+			_, ok := secrets[commonSecretName]
+			assert.False(t, ok)
+
+			// make sure it wasn't updated
+			secrets = findUpdatedSecrets(tc.mainFake.Actions())
+			_, ok = secrets[commonSecretName]
+			assert.False(t, ok)
+		},
+	}
+
+	tc.run(t)
+}
+
 func TestUpdatesKube2IamAnnotation(t *testing.T) {
 	t.Parallel()
 

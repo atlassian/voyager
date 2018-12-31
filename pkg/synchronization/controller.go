@@ -45,6 +45,8 @@ const (
 	dockerSecretName      = apik8scompute.DockerImagePullName // #nosec
 	dockerSecretNamespace = "voyager"                         // #nosec
 
+	commonSecretName = apik8scompute.CommonSecretName
+
 	// kube2iam allowed roles annotation
 	// see https://github.com/jtblin/kube2iam#namespace-restrictions
 	allowedRolesAnnotation = "iam.amazonaws.com/allowed-roles"
@@ -171,6 +173,9 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		func() (bool, error) {
 			retriable, _, err := c.createOrUpdateNamespaceAnnotations(ctx.Logger, serviceName, ns)
 			return retriable, err
+		},
+		func() (bool, error) {
+			return c.ensureCommonSecretExists(ctx.Logger, ns)
 		},
 	}
 
@@ -532,6 +537,41 @@ func (c *Controller) createOrUpdateSecret(logger *zap.Logger, secretSpec *core_v
 
 	secret, err := c.MainClient.CoreV1().Secrets(secretSpec.Namespace).Create(secretSpec)
 	return true, secret, err
+}
+
+func (c *Controller) ensureCommonSecretExists(logger *zap.Logger, ns *core_v1.Namespace) (bool /* retriable */, error) {
+	_, err := c.MainClient.CoreV1().Secrets(ns.Name).Get(commonSecretName, meta_v1.GetOptions{})
+
+	switch {
+	case err == nil:
+		// nothing to do, it exists; nothing to update
+		logger.Sugar().Debugf("Secret named %q already exists", commonSecretName)
+		return false, nil
+
+	case api_errors.IsNotFound(err):
+		logger.Sugar().Debugf("Common secret %q does not exist, creating", commonSecretName)
+		secret := &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      commonSecretName,
+				Namespace: ns.Name,
+			},
+			TypeMeta: meta_v1.TypeMeta{
+				Kind:       k8s.SecretKind,
+				APIVersion: core_v1.SchemeGroupVersion.String(),
+			},
+			Type: core_v1.SecretTypeOpaque,
+		}
+
+		_, err = c.MainClient.CoreV1().Secrets(ns.Name).Create(secret)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+
+	default:
+		// unknown error
+		return true, err
+	}
 }
 
 func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serviceName string, namespace *core_v1.Namespace) (bool /* retriable */, *core_v1.Namespace, error) {
