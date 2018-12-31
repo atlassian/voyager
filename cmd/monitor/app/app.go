@@ -75,7 +75,7 @@ func (a *App) Run(ctx context.Context) error {
 
 	runID := uuid.New()
 	m := &monitor.Monitor{
-		Location: &voyager.Location{
+		Location: voyager.Location{
 			Account: a.Options.Location.Account,
 			EnvType: a.Options.Location.EnvType,
 			Region:  a.Options.Location.Region,

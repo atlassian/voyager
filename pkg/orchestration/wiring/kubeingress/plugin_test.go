@@ -6,7 +6,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/stretchr/testify/assert"
@@ -144,7 +143,7 @@ func TestBuildIngressDomainName(t *testing.T) {
 					Region:  tc.region,
 					EnvType: tc.envType,
 				},
-				ClusterConfig: orchestration.ClusterConfig{
+				ClusterConfig: wiringplugin.ClusterConfig{
 					KittClusterEnv: tc.kittClusterEnv,
 				},
 			}

@@ -225,7 +225,7 @@ loggingId: logging-id-from-configmap
 			Region:  legacy.TestRegion,
 			EnvType: legacy.TestEnvironment,
 		},
-		ClusterConfig: orchestration.ClusterConfig{
+		ClusterConfig: wiringplugin.ClusterConfig{
 			ClusterDomainName: "internal.ap-southeast-2.kitt-integration.kitt-inf.net",
 			KittClusterEnv:    "test",
 			Kube2iamAccount:   "test",
@@ -266,7 +266,7 @@ func entangleTestFileState(t *testing.T, filePrefix string) (*smith_v1.Bundle, b
 	return entangleTestState(t, state, registry.KnownWiringPlugins)
 }
 
-func getTestLegacyConfig(location *voyager.Location) *legacy.Config {
+func getTestLegacyConfig(location voyager.Location) *legacy.Config {
 	return legacy.GetLegacyConfigFromMap(legacy.TestLegacyConfigs, location)
 }
 

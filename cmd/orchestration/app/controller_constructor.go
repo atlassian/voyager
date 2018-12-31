@@ -31,7 +31,7 @@ import (
 
 type ControllerConstructor struct {
 	FlagConfigFile      string
-	GetLegacyConfigFunc func(location *voyager.Location) *legacy.Config
+	GetLegacyConfigFunc func(voyager.Location) *legacy.Config
 	Plugins             map[voyager.ResourceType]wiringplugin.WiringPlugin
 }
 
@@ -210,8 +210,8 @@ func (cc *ControllerConstructor) Describe() ctrl.Descriptor {
 	}
 }
 
-func toClusterConfig(cluster options.Cluster) orchestration.ClusterConfig {
-	return orchestration.ClusterConfig{
+func toClusterConfig(cluster options.Cluster) wiringplugin.ClusterConfig {
+	return wiringplugin.ClusterConfig{
 		ClusterDomainName: cluster.ClusterDomainName,
 		KittClusterEnv:    cluster.KITTClusterEnv,
 		Kube2iamAccount:   cluster.Kube2iamAccount,

@@ -17,8 +17,8 @@ const (
 
 	stackName = "ups"
 
-	resourceName = "ups"
-	resourceType = "UPS"
+	resourceName voyager.ResourceName = "ups"
+	resourceType voyager.ResourceType = "UPS"
 
 	versionParameter = "version"
 	timeParameter    = "time"
@@ -27,7 +27,7 @@ const (
 	serviceDescriptorDeletionTimeout = 1 * time.Minute
 )
 
-func buildServiceDescriptor(name string, location *voyager.Location, version string) (*composition_v1.ServiceDescriptor, error) {
+func buildServiceDescriptor(name string, location voyager.Location, version string) (*composition_v1.ServiceDescriptor, error) {
 	bytes, err := json.Marshal(map[string]string{
 		versionParameter: version,
 		timeParameter:    time.Now().Format(time.RFC3339),
@@ -69,8 +69,8 @@ func buildServiceDescriptor(name string, location *voyager.Location, version str
 					},
 					Resources: []composition_v1.ServiceDescriptorResource{
 						{
-							Name: voyager.ResourceName(resourceName),
-							Type: voyager.ResourceType(resourceType),
+							Name: resourceName,
+							Type: resourceType,
 							Spec: spec,
 						},
 					},
