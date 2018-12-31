@@ -6,7 +6,6 @@ import (
 	"github.com/atlassian/voyager"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -124,5 +123,12 @@ type StateContext struct {
 	Tags map[voyager.Tag]string
 
 	// ClusterConfig is the cluster config.
-	ClusterConfig orchestration.ClusterConfig
+	ClusterConfig ClusterConfig
+}
+
+type ClusterConfig struct {
+	// ClusterDomainName is the domain name of the ingress.
+	ClusterDomainName string
+	KittClusterEnv    string
+	Kube2iamAccount   string
 }

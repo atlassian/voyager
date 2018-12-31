@@ -225,7 +225,7 @@ loggingId: logging-id-from-configmap
 			Region:  legacy.TestRegion,
 			EnvType: legacy.TestEnvironment,
 		},
-		ClusterConfig: orchestration.ClusterConfig{
+		ClusterConfig: wiringplugin.ClusterConfig{
 			ClusterDomainName: "internal.ap-southeast-2.kitt-integration.kitt-inf.net",
 			KittClusterEnv:    "test",
 			Kube2iamAccount:   "test",

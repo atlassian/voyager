@@ -49,10 +49,3 @@ type EntanglerContext struct {
 	// ServiceName
 	ServiceName voyager.ServiceName
 }
-
-type ClusterConfig struct {
-	// ClusterDomainName is the domain name of the ingress.
-	ClusterDomainName string
-	KittClusterEnv    string
-	Kube2iamAccount   string
-}
