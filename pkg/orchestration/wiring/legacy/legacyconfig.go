@@ -34,7 +34,7 @@ type Config struct {
 }
 
 // Extract the config from map; return nil if it doesn't exist
-func GetLegacyConfigFromMap(legacyConfigMap map[voyager.EnvType]map[voyager.Region]map[voyager.Account]Config, location *voyager.Location) *Config {
+func GetLegacyConfigFromMap(legacyConfigMap map[voyager.EnvType]map[voyager.Region]map[voyager.Account]Config, location voyager.Location) *Config {
 	regionMap := legacyConfigMap[location.EnvType]
 	if regionMap == nil {
 		return nil

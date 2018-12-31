@@ -25,7 +25,7 @@ func Main() {
 	CustomMain(emptyLegacyConfigFunc, registry.KnownWiringPlugins)
 }
 
-func CustomMain(getLegacyConfigFunc func(location *voyager.Location) *legacy.Config, plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
+func CustomMain(getLegacyConfigFunc func(location voyager.Location) *legacy.Config, plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
 	rand.Seed(time.Now().UnixNano())
 	cmd.RunInterruptably(func(ctx context.Context) error {
 		crash.InstallAPIMachineryLoggers()
@@ -46,6 +46,6 @@ func CustomMain(getLegacyConfigFunc func(location *voyager.Location) *legacy.Con
 	})
 }
 
-func emptyLegacyConfigFunc(location *voyager.Location) *legacy.Config {
+func emptyLegacyConfigFunc(location voyager.Location) *legacy.Config {
 	return &legacy.Config{}
 }
