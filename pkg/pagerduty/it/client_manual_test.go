@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	pagerdutyClient "github.com/PagerDuty/go-pagerduty"
+	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/pagerduty"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	"github.com/atlassian/voyager/pkg/util/uuid"
@@ -14,9 +15,9 @@ import (
 )
 
 const (
-	testServiceName = "voyager-NCC-74656"
-	testUserName    = "jeffreyPenkcombus"
-	testUserEmail   = testUserName + "@atlassian.com"
+	testServiceName voyager.ServiceName = "voyager-NCC-74656"
+	testUserName                        = "jeffreyPenkcombus"
+	testUserEmail                       = testUserName + "@atlassian.com"
 )
 
 // This test is tagged in Bazel as manual, and therefore won't be run with the unit-tests. This is useful code for

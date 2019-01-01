@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -76,10 +77,10 @@ func isV1Plan(serviceInstance sc_v1b1.ServiceInstance) bool {
 		serviceInstance.Spec.ClusterServicePlanExternalName == microsV1ClusterServicePlanExternalName
 }
 
-func getServiceName(serviceInstance sc_v1b1.ServiceInstance) (string, error) {
+func getServiceName(serviceInstance sc_v1b1.ServiceInstance) (voyager.ServiceName, error) {
 	if isV1Plan(serviceInstance) {
 		var v1PlanParameters struct {
-			Name string `json:"name"`
+			Name voyager.ServiceName `json:"name"`
 		}
 		if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &v1PlanParameters); err != nil {
 			return "", errors.WithStack(err)
@@ -90,7 +91,7 @@ func getServiceName(serviceInstance sc_v1b1.ServiceInstance) (string, error) {
 	// This is V2 for now, but we'll hope for forwards compatibility...
 	var otherPlanParameters struct {
 		Service struct {
-			ID string `json:"id"`
+			ID voyager.ServiceName `json:"id"`
 		} `json:"service"`
 	}
 	if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &otherPlanParameters); err != nil {
@@ -100,7 +101,7 @@ func getServiceName(serviceInstance sc_v1b1.ServiceInstance) (string, error) {
 	return otherPlanParameters.Service.ID, nil
 }
 
-func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceName string) (*servicecentral.ServiceData, error) {
+func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceName voyager.ServiceName) (*servicecentral.ServiceData, error) {
 	search := fmt.Sprintf("service_name='%s'", serviceName)
 	listData, err := scClient.ListServices(ctx, auth.NoUser(), search)
 
@@ -109,7 +110,7 @@ func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceN
 	}
 
 	for _, serviceData := range listData {
-		if serviceData.ServiceName == serviceName {
+		if voyager.ServiceName(serviceData.ServiceName) == serviceName {
 			return &serviceData, nil
 		}
 	}

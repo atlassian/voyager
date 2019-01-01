@@ -59,7 +59,7 @@ func New(logger *zap.Logger, client pagerdutyRestClient, uuidGenerator uuid.Gene
 	}, nil
 }
 
-func GetServiceSearchURL(serviceName string) (string, error) {
+func GetServiceSearchURL(serviceName voyager.ServiceName) (string, error) {
 	// NOTE: This URL is not used for REST API calls, it's a URL for users
 	// to open in their browser to see filtered list of PagerDuty objects
 	// And yes, it is using fragment (`#`) followed by a `?query=str` client-side filtering
@@ -69,12 +69,12 @@ func GetServiceSearchURL(serviceName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	servicePrefix := concatenateName(namePrefix, serviceName)
+	servicePrefix := concatenateName(namePrefix, string(serviceName))
 	searchURL.Fragment = "?query=" + servicePrefix
 	return searchURL.String(), nil
 }
 
-func (c *Client) FindOrCreate(serviceName string, user auth.User, email string) (creator_v1.PagerDutyMetadata, error) {
+func (c *Client) FindOrCreate(serviceName voyager.ServiceName, user auth.User, email string) (creator_v1.PagerDutyMetadata, error) {
 	pagerdutyUser, err := c.findOrCreateUser(user, email)
 	if err != nil {
 		return creator_v1.PagerDutyMetadata{}, err
@@ -92,7 +92,7 @@ func (c *Client) FindOrCreate(serviceName string, user auth.User, email string) 
 	return config, err
 }
 
-func (c *Client) Delete(serviceName string) error {
+func (c *Client) Delete(serviceName voyager.ServiceName) error {
 	err := c.deleteService(serviceName, voyager.EnvTypeProduction, false)
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func (c *Client) Delete(serviceName string) error {
 	return nil
 }
 
-func (c *Client) deleteService(serviceName string, envType voyager.EnvType, lowPriority bool) error {
+func (c *Client) deleteService(serviceName voyager.ServiceName, envType voyager.EnvType, lowPriority bool) error {
 	pdServiceName := nameService(serviceName, envType, lowPriority)
 	pdService, found, err := c.findService(pdServiceName)
 	if err != nil {
@@ -142,7 +142,7 @@ func (c *Client) deleteService(serviceName string, envType voyager.EnvType, lowP
 	return nil
 }
 
-func (c *Client) deleteEscalationPolicy(serviceName string) error {
+func (c *Client) deleteEscalationPolicy(serviceName voyager.ServiceName) error {
 	policyName := nameEscalationPolicy(serviceName)
 	policy, found, err := c.findEscalationPolicy(policyName)
 	if err != nil {
@@ -227,7 +227,7 @@ func (c *Client) findEscalationPolicy(name EscalationPolicy) (*pagerdutyClient.E
 	return nil, false, nil
 }
 
-func (c *Client) findOrCreateEscalationPolicy(serviceName string, user *pagerdutyClient.User) (*pagerdutyClient.EscalationPolicy, error) {
+func (c *Client) findOrCreateEscalationPolicy(serviceName voyager.ServiceName, user *pagerdutyClient.User) (*pagerdutyClient.EscalationPolicy, error) {
 	name := nameEscalationPolicy(serviceName)
 
 	policy, found, err := c.findEscalationPolicy(name)
@@ -262,7 +262,7 @@ func (c *Client) findOrCreateEscalationPolicy(serviceName string, user *pagerdut
 	return escalationPolicy, nil
 }
 
-func (c *Client) createServices(serviceName string, policy *pagerdutyClient.EscalationPolicy) (creator_v1.PagerDutyMetadata, error) {
+func (c *Client) createServices(serviceName voyager.ServiceName, policy *pagerdutyClient.EscalationPolicy) (creator_v1.PagerDutyMetadata, error) {
 	var err error
 
 	metadata := creator_v1.PagerDutyMetadata{}
@@ -313,7 +313,7 @@ func (c *Client) findService(pdServiceName ServiceName) (pagerdutyClient.Service
 	return pagerdutyClient.Service{}, false, nil
 }
 
-func (c *Client) findOrCreateService(serviceName string, envType voyager.EnvType, lowPriority bool, policy *pagerdutyClient.EscalationPolicy) (creator_v1.PagerDutyServiceMetadata, error) {
+func (c *Client) findOrCreateService(serviceName voyager.ServiceName, envType voyager.EnvType, lowPriority bool, policy *pagerdutyClient.EscalationPolicy) (creator_v1.PagerDutyServiceMetadata, error) {
 	pdServiceName := nameService(serviceName, envType, lowPriority)
 	pdService, found, err := c.findService(pdServiceName)
 	if err != nil {
@@ -452,18 +452,18 @@ func setIntegration(integrations *creator_v1.PagerDutyIntegrations, integration 
 	}
 }
 
-func nameEscalationPolicy(serviceName string) EscalationPolicy {
-	return EscalationPolicy(namePagerdutyObject(serviceName, escalationPolicySuffix))
+func nameEscalationPolicy(serviceName voyager.ServiceName) EscalationPolicy {
+	return EscalationPolicy(namePagerdutyObject(string(serviceName), escalationPolicySuffix))
 }
 
-func nameService(serviceName string, envType voyager.EnvType, lowPriority bool) ServiceName {
+func nameService(serviceName voyager.ServiceName, envType voyager.EnvType, lowPriority bool) ServiceName {
 	var suffix string
 	if lowPriority {
 		suffix = serviceLowPrioritySuffix
 	} else {
 		suffix = serviceMainSuffix
 	}
-	return ServiceName(namePagerdutyObject(serviceName, string(envType), suffix))
+	return ServiceName(namePagerdutyObject(string(serviceName), string(envType), suffix))
 }
 
 func namePagerdutyObject(objectNameParts ...string) string {

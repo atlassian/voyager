@@ -20,6 +20,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s/updater"
 	"github.com/atlassian/voyager/pkg/pagerduty"
 	"github.com/atlassian/voyager/pkg/releases"
+	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/ssam"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/auth"
@@ -44,13 +45,18 @@ import (
 const (
 	fakeSCPollErrorCounter = "fake_poll_error_counter"
 	fakeUpdateErrorCounter = "fake_access_error_counter"
+
+	serviceName    string = "some-service"
+	serviceNameVoy        = voyager.ServiceName(serviceName)
+	serviceNameSc         = servicecentral.ServiceName(serviceName)
+	namespaceName         = "the-namespace"
 )
 
 type fakeServiceCentral struct {
 	mock.Mock
 }
 
-func (m *fakeServiceCentral) GetService(ctx context.Context, user auth.OptionalUser, name string) (*creator_v1.Service, error) {
+func (m *fakeServiceCentral) GetService(ctx context.Context, user auth.OptionalUser, name servicecentral.ServiceName) (*creator_v1.Service, error) {
 	args := m.Called(ctx, user, name)
 	return args.Get(0).(*creator_v1.Service), args.Error(1)
 }
@@ -66,8 +72,8 @@ func (m *fakeServiceCentral) ListModifiedServices(ctx context.Context, user auth
 }
 
 type fakeReleaseManagement struct {
-	serviceName  string
-	serviceNames []string
+	serviceName  voyager.ServiceName
+	serviceNames []voyager.ServiceName
 	error        error
 	calledParams releases.ResolveParams
 	batchParams  releases.ResolveBatchParams
@@ -97,7 +103,6 @@ func (m *fakeReleaseManagement) ResolveLatest(params releases.ResolveBatchParams
 func TestSkipsConfigMapWhenNotServiceNamespace(t *testing.T) {
 	t.Parallel()
 
-	const namespaceName = "the-namespace"
 	tc := testCase{
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
@@ -128,8 +133,6 @@ func TestSkipsConfigMapWhenNotServiceNamespace(t *testing.T) {
 
 func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 	t.Parallel()
-	const serviceName = "some-service"
-	const namespaceName = "the-namespace"
 
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
@@ -145,7 +148,7 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 	}
 
 	tc := testCase{
-		serviceName:       serviceName,
+		serviceName:       serviceNameVoy,
 		ns:                ns,
 		mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret()},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
@@ -168,7 +171,7 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 				},
 			}
 			expected := basicServiceProperties(service, voyager.EnvTypeDev)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -203,8 +206,8 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 			err = yaml.Unmarshal([]byte(relData), &actualRelResponse)
 			require.NoError(t, err)
 
-			assert.Equal(t, defaultReleaseResolveResponse(serviceName).ResolvedData, actualRelResponse)
-			assert.Equal(t, resolveParams(tc.clusterLocation, serviceName), tc.releasesFake.calledParams)
+			assert.Equal(t, defaultReleaseResolveResponse(serviceNameVoy).ResolvedData, actualRelResponse)
+			assert.Equal(t, resolveParams(tc.clusterLocation, serviceNameVoy), tc.releasesFake.calledParams)
 		},
 	}
 
@@ -229,8 +232,6 @@ func TestIncludesPagerDutyForClusterEnvironment(t *testing.T) {
 			fullPagerDutyMetadata.Production,
 		},
 	}
-	const serviceName = "some-service"
-	const namespaceName = "the-namespace"
 
 	for _, subCase := range envTypeCases {
 		t.Run(string(subCase.envType), func(t *testing.T) {
@@ -278,7 +279,7 @@ func TestIncludesPagerDutyForClusterEnvironment(t *testing.T) {
 						CloudWatch: cwURL,
 					}
 
-					tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+					tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 					// make sure the controller knows we are our specific environment type
 					cntrlr.ClusterLocation = voyager.ClusterLocation{
@@ -312,11 +313,10 @@ func TestIncludesPagerDutyForClusterEnvironment(t *testing.T) {
 func TestReturnsErrorWhenPagerDutyNotPresent(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -340,7 +340,7 @@ func TestReturnsErrorWhenPagerDutyNotPresent(t *testing.T) {
 				},
 			}
 
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			// we have not set pagerduty for this environment
 			cntrlr.ClusterLocation = voyager.ClusterLocation{
@@ -359,11 +359,10 @@ func TestReturnsErrorWhenPagerDutyNotPresent(t *testing.T) {
 func TestReturnsErrorWhenPagerDutyEmptyForEnvironment(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -387,7 +386,7 @@ func TestReturnsErrorWhenPagerDutyEmptyForEnvironment(t *testing.T) {
 				},
 			}
 
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			// we have not set pagerduty for this environment
 			cntrlr.ClusterLocation = voyager.ClusterLocation{
@@ -406,11 +405,11 @@ func TestReturnsErrorWhenPagerDutyEmptyForEnvironment(t *testing.T) {
 func TestUpdatesExistingConfigMap(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	oldData, err := yaml.Marshal(orch_meta.ServiceProperties{
 		ResourceOwner: "old owner",
 		BusinessUnit:  "old unit",
 	})
+	require.NoError(t, err)
 	oldRelData, err := yaml.Marshal(releases.ResolvedRelease{
 		ServiceName:  "svc",
 		Label:        "",
@@ -423,7 +422,7 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -453,7 +452,7 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 	}
 
 	tc := testCase{
-		serviceName:       serviceName,
+		serviceName:       serviceNameVoy,
 		mainClientObjects: []runtime.Object{existingNS, existingCM, existingRelCM, existingDefaultDockerSecret()},
 		ns:                existingNS,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
@@ -471,7 +470,7 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			}
 
 			expected := basicServiceProperties(service, voyager.EnvTypeDev)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -510,8 +509,8 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			err = yaml.Unmarshal([]byte(data), &actualRelResponse)
 			require.NoError(t, err)
 
-			assert.Equal(t, defaultReleaseResolveResponse(serviceName).ResolvedData, actualRelResponse)
-			assert.Equal(t, resolveParams(tc.clusterLocation, serviceName), tc.releasesFake.calledParams)
+			assert.Equal(t, defaultReleaseResolveResponse(serviceNameVoy).ResolvedData, actualRelResponse)
+			assert.Equal(t, resolveParams(tc.clusterLocation, serviceNameVoy), tc.releasesFake.calledParams)
 		},
 	}
 
@@ -521,7 +520,6 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	existingService := &creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: serviceName,
@@ -537,7 +535,7 @@ func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 
 	oldData, err := yaml.Marshal(basicServiceProperties(existingService, voyager.EnvTypeDev))
 	require.NoError(t, err)
-	oldRelData, err := yaml.Marshal(defaultReleaseResolveResponse(serviceName).ResolvedData)
+	oldRelData, err := yaml.Marshal(defaultReleaseResolveResponse(serviceNameVoy).ResolvedData)
 	require.NoError(t, err)
 	existingNS := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
@@ -545,7 +543,7 @@ func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -575,11 +573,11 @@ func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 	}
 
 	tc := testCase{
-		serviceName:       serviceName,
+		serviceName:       serviceNameVoy,
 		mainClientObjects: []runtime.Object{existingNS, existingCM, existingRelCM, existingDefaultDockerSecret()},
 		ns:                existingNS,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(existingService, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(existingService, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -600,10 +598,9 @@ func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 func TestMarksRetriableWhenNotKnownService(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	existingNS := &core_v1.Namespace{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -625,7 +622,7 @@ func TestMarksRetriableWhenNotKnownService(t *testing.T) {
 		mainClientObjects: []runtime.Object{existingNS, existingCM, existingDefaultDockerSecret()},
 		ns:                existingNS,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(&creator_v1.Service{}, errors.Errorf("Could not find service"))
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(&creator_v1.Service{}, errors.Errorf("Could not find service"))
 
 			retriable, err := cntrlr.Process(ctx)
 
@@ -709,41 +706,45 @@ func TestIncrementsCounterWhenFailsCallingServiceCentral(t *testing.T) {
 func TestCreatesAllServicesReleaseData(t *testing.T) {
 	t.Parallel()
 
-	service1Name := "service-1"
-	service2Name := "service-2"
-
+	const (
+		service1NameStr string = "service-1"
+		service1Name           = voyager.ServiceName(service1NameStr)
+		service2NameStr string = "service-2"
+		service2Name           = voyager.ServiceName(service2NameStr)
+	)
 	service1 := &core_v1.Namespace{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: service1Name,
+			Name: string(service1Name),
 			Labels: map[string]string{
-				voyager.ServiceNameLabel: service1Name,
+				voyager.ServiceNameLabel: string(service1Name),
 			},
 		},
 	}
 	service2 := &core_v1.Namespace{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: service2Name,
+			Name: string(service2Name),
 			Labels: map[string]string{
-				voyager.ServiceNameLabel: service2Name,
+				voyager.ServiceNameLabel: string(service2Name),
 			},
 		},
 	}
 	tc := testCase{
-		releaseDataServiceNames: []string{service1Name, service2Name},
+		releaseDataServiceNames: []voyager.ServiceName{service1Name, service2Name},
 		mainClientObjects:       []runtime.Object{service1, service2, existingDefaultDockerSecret()},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			cntrlr.syncReleasesMetadata()
 
 			actions := tc.mainFake.Actions()
 
-			createdConfigMaps := make([]string, 0)
+			var createdConfigMaps []string
 			for _, action := range k8s_testing.FilterCreateActions(actions) {
 				if r, ok := action.GetObject().(*core_v1.ConfigMap); ok {
 					createdConfigMaps = append(createdConfigMaps, r.Namespace)
 				}
 			}
 			assert.Equal(t, 2, len(createdConfigMaps))
-			assert.Contains(t, createdConfigMaps, service1Name, service2Name)
+			assert.Contains(t, createdConfigMaps, string(service1Name))
+			assert.Contains(t, createdConfigMaps, string(service2Name))
 		},
 	}
 
@@ -753,14 +754,13 @@ func TestCreatesAllServicesReleaseData(t *testing.T) {
 func TestCreatesDockerSecret(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.NamespaceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -789,7 +789,7 @@ func TestCreatesDockerSecret(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -821,14 +821,13 @@ func TestCreatesDockerSecret(t *testing.T) {
 func TestUpdatesDockerSecret(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	existingNamespace := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.NamespaceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -876,7 +875,7 @@ func TestUpdatesDockerSecret(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -900,12 +899,11 @@ func TestUpdatesDockerSecret(t *testing.T) {
 func TestDockerSecretNonExistent(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	tc := testCase{
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
-				Name: "the-namespace",
+				Name: namespaceName,
 				Labels: map[string]string{
 					voyager.ServiceNameLabel: serviceName,
 				},
@@ -930,7 +928,7 @@ func TestDockerSecretNonExistent(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			assert.Error(t, err, "Should return an error as the docker secret does not exist")
@@ -946,13 +944,12 @@ func TestDockerSecretIncorrectType(t *testing.T) {
 	existingSecret := existingDefaultDockerSecret()
 	existingSecret.Type = core_v1.SecretTypeOpaque
 
-	const serviceName = "some-service"
 	tc := testCase{
 		mainClientObjects: []runtime.Object{existingSecret},
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
-				Name: "the-namespace",
+				Name: namespaceName,
 				Labels: map[string]string{
 					voyager.ServiceNameLabel: serviceName,
 				},
@@ -977,7 +974,7 @@ func TestDockerSecretIncorrectType(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			assert.Error(t, err, "Should return an error as the docker secret is of the wrong type")
@@ -991,14 +988,13 @@ func TestDockerSecretIncorrectType(t *testing.T) {
 func TestAddsKube2IamAnnotation(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.NamespaceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -1027,7 +1023,7 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -1042,7 +1038,7 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 			assert.True(t, ok)
 
 			// Ensure the value of the annotation is correct
-			expectedVal, err := cntrlr.getNamespaceAllowedRoles(serviceName)
+			expectedVal, err := cntrlr.getNamespaceAllowedRoles(serviceNameVoy)
 			require.NoError(t, err)
 			assert.Equal(t, expectedVal, val)
 		},
@@ -1054,14 +1050,13 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 func TestCreatesCommonSecret(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.NamespaceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -1090,7 +1085,7 @@ func TestCreatesCommonSecret(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -1116,14 +1111,13 @@ func TestCreatesCommonSecret(t *testing.T) {
 func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.NamespaceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -1166,7 +1160,7 @@ func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -1190,14 +1184,13 @@ func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
 func TestUpdatesKube2IamAnnotation(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	ns := &core_v1.Namespace{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.NamespaceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "the-namespace",
+			Name: namespaceName,
 			Labels: map[string]string{
 				voyager.ServiceNameLabel: serviceName,
 			},
@@ -1229,7 +1222,7 @@ func TestUpdatesKube2IamAnnotation(t *testing.T) {
 					},
 				},
 			}
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -1244,7 +1237,7 @@ func TestUpdatesKube2IamAnnotation(t *testing.T) {
 			assert.True(t, ok)
 
 			// Ensure the value of the annotation is correct
-			expectedVal, err := cntrlr.getNamespaceAllowedRoles(serviceName)
+			expectedVal, err := cntrlr.getNamespaceAllowedRoles(serviceNameVoy)
 			require.NoError(t, err)
 			assert.Equal(t, expectedVal, val)
 		},
@@ -1258,7 +1251,7 @@ func TestGenerateIamRoleGlob(t *testing.T) {
 
 	cases := []struct {
 		account     voyager.Account
-		serviceName string
+		serviceName voyager.ServiceName
 		want        string
 	}{
 		{
@@ -1307,9 +1300,9 @@ type testCase struct {
 	scFake       *fakeServiceCentral
 	releasesFake *fakeReleaseManagement
 	registry     *prometheus.Registry
-	serviceName  string
+	serviceName  voyager.ServiceName
 	// Each service name listed will have some fake release metadata made available for it
-	releaseDataServiceNames []string
+	releaseDataServiceNames []voyager.ServiceName
 
 	test func(*testing.T, *Controller, *ctrl.ProcessContext, *testCase)
 }
@@ -1470,10 +1463,10 @@ func findUpdatedNamespaces(actions []kube_testing.Action) map[string]*core_v1.Na
 	return result
 }
 
-func resolveParams(location voyager.ClusterLocation, serviceName string) releases.ResolveParams {
+func resolveParams(location voyager.ClusterLocation, serviceName voyager.ServiceName) releases.ResolveParams {
 	return releases.ResolveParams{
 		Region: location.Region, Account: location.Account, Environment: location.EnvType,
-		ServiceName: voyager.ServiceName(serviceName),
+		ServiceName: serviceName,
 	}
 }
 
@@ -1554,7 +1547,7 @@ func fullPagerDutyMetadata() *creator_v1.PagerDutyMetadata {
 	}
 }
 
-func defaultReleaseResolveResponse(serviceName string) releases.ResolvedRelease {
+func defaultReleaseResolveResponse(serviceName voyager.ServiceName) releases.ResolvedRelease {
 	return releases.ResolvedRelease{
 		ServiceName: serviceName,
 		Label:       "",

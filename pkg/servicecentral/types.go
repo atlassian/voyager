@@ -1,6 +1,13 @@
 package servicecentral
 
-import "time"
+import (
+	"time"
+)
+
+// ServiceName is the name of a Service.
+// Not voyager.ServiceName because not all Services in Service Central are Voyager services.
+// I.e. set of all voyager.ServiceName is a subset of all Service Central ServiceNames.
+type ServiceName string
 
 type ServiceOwner struct {
 	Username string `json:"username"`
@@ -9,7 +16,7 @@ type ServiceOwner struct {
 type ServiceData struct {
 	ServiceUUID        *string      `json:"service_uuid,omitempty"`
 	CreationTimestamp  *string      `json:"creation_timestamp,omitempty"`
-	ServiceName        string       `json:"service_name,omitempty"`
+	ServiceName        ServiceName  `json:"service_name,omitempty"`
 	ServiceOwner       ServiceOwner `json:"service_owner,omitempty"`
 	ServiceTier        int          `json:"service_tier,omitempty"`
 	Tags               []string     `json:"tags,omitempty"`

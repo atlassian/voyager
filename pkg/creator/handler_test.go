@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlassian/voyager"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	"github.com/atlassian/voyager/pkg/creator/luigi"
 	"github.com/atlassian/voyager/pkg/creator/ssam"
@@ -28,12 +29,13 @@ import (
 )
 
 const (
-	testServiceName       = "per-tenant-loop"
-	testBusinessUnit      = "some_unit"
-	testSSAMContainerName = "paas-" + testServiceName
-	testPagerDutyURL      = "https://atlassian.pagerduty.com/services#?query=Micros%202%20-%20per-tenant-loop"
-	testLoggingID         = "ef4c37b9-e41f-4895-af4d-db27dd9e295c"
-	testAccessLevel       = "test-ssam-access-level"
+	testServiceName       voyager.ServiceName = "per-tenant-loop"
+	testServiceNameSc                         = servicecentral.ServiceName(testServiceName)
+	testBusinessUnit                          = "some_unit"
+	testSSAMContainerName                     = string("paas-" + testServiceName)
+	testPagerDutyURL                          = "https://atlassian.pagerduty.com/services#?query=Micros%202%20-%20per-tenant-loop"
+	testLoggingID                             = "ef4c37b9-e41f-4895-af4d-db27dd9e295c"
+	testAccessLevel                           = "test-ssam-access-level"
 )
 
 var (
@@ -65,7 +67,7 @@ func (m *serviceCentralMock) FindOrCreateService(ctx context.Context, user auth.
 	}
 }
 
-func (m *serviceCentralMock) GetService(ctx context.Context, user auth.OptionalUser, name string) (*creator_v1.Service, error) {
+func (m *serviceCentralMock) GetService(ctx context.Context, user auth.OptionalUser, name servicecentral.ServiceName) (*creator_v1.Service, error) {
 	args := m.Called(ctx, user, name)
 	svc, _ := args.Get(0).(*creator_v1.Service)
 	return svc, args.Error(1)
@@ -86,7 +88,7 @@ func (m *serviceCentralMock) PatchService(ctx context.Context, user auth.User, s
 	return args.Error(0)
 }
 
-func (m *serviceCentralMock) DeleteService(ctx context.Context, user auth.User, name string) error {
+func (m *serviceCentralMock) DeleteService(ctx context.Context, user auth.User, name servicecentral.ServiceName) error {
 	args := m.Called(ctx, user, name)
 	return args.Error(0)
 }
@@ -97,12 +99,12 @@ type pagerDutyMock struct {
 	mock.Mock
 }
 
-func (m *pagerDutyMock) FindOrCreate(serviceName string, user auth.User, email string) (creator_v1.PagerDutyMetadata, error) {
+func (m *pagerDutyMock) FindOrCreate(serviceName voyager.ServiceName, user auth.User, email string) (creator_v1.PagerDutyMetadata, error) {
 	args := m.Called(serviceName, user, email)
 	return args.Get(0).(creator_v1.PagerDutyMetadata), args.Error(1)
 }
 
-func (m *pagerDutyMock) Delete(serviceName string) error {
+func (m *pagerDutyMock) Delete(serviceName voyager.ServiceName) error {
 	args := m.Called(serviceName)
 	return args.Error(0)
 }
@@ -242,7 +244,7 @@ func TestServiceCreateBlacklistedServiceName(t *testing.T) {
 	t.Parallel()
 
 	for _, badword := range blacklist {
-		t.Run(badword, func(t *testing.T) {
+		t.Run(string(badword), func(t *testing.T) {
 			// given
 			service := testService(badword)
 
@@ -258,13 +260,13 @@ func TestServiceCreateBlacklistedServiceName(t *testing.T) {
 
 func TestServiceCreateNonBlacklistedServiceName(t *testing.T) {
 	t.Parallel()
-	var whiteList []string
+	var whiteList []voyager.ServiceName
 	for _, badWord := range blacklist {
-		whiteList = append(whiteList, fmt.Sprintf("%s-test", badWord))
+		whiteList = append(whiteList, voyager.ServiceName(fmt.Sprintf("%s-test", badWord)))
 	}
 
 	for _, goodWord := range whiteList {
-		t.Run(goodWord, func(t *testing.T) {
+		t.Run(string(goodWord), func(t *testing.T) {
 			// given
 			service := testService(goodWord)
 
@@ -325,14 +327,14 @@ func TestServiceDelete(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 
 	testService := testService(testServiceName)
-	serviceCentralClient.On("GetService", mock.Anything, auth.ToOptionalUser(testResourceOwner), testServiceName).Return(testService, nil)
+	serviceCentralClient.On("GetService", mock.Anything, auth.ToOptionalUser(testResourceOwner), testServiceNameSc).Return(testService, nil)
 	luigiClient.On("DeleteService", mock.Anything, testService.Spec.LoggingID).Return(nil)
 	pagerDutyClient.On("Delete", testServiceName).Return(nil)
 	ssamClient.On("DeleteService", mock.Anything, &ssam.ServiceMetadata{
 		ServiceName:  testServiceName,
 		ServiceOwner: testService.Spec.ResourceOwner,
 	}).Return(nil)
-	serviceCentralClient.On("DeleteService", mock.Anything, testResourceOwner, testServiceName).Return(nil)
+	serviceCentralClient.On("DeleteService", mock.Anything, testResourceOwner, testServiceNameSc).Return(nil)
 
 	// when
 	ctx := context.Background()
@@ -362,14 +364,14 @@ func TestServiceDeleteNotFound(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 
 	testService := testService(testServiceName)
-	serviceCentralClient.On("GetService", mock.Anything, auth.ToOptionalUser(testResourceOwner), testServiceName).Return(testService, nil)
+	serviceCentralClient.On("GetService", mock.Anything, auth.ToOptionalUser(testResourceOwner), testServiceNameSc).Return(testService, nil)
 	luigiClient.On("DeleteService", mock.Anything, testService.Spec.LoggingID).Return(httputil.NewNotFound("nope"))
 	pagerDutyClient.On("Delete", testServiceName).Return(httputil.NewNotFound("nope"))
 	ssamClient.On("DeleteService", mock.Anything, &ssam.ServiceMetadata{
 		ServiceName:  testServiceName,
 		ServiceOwner: testService.Spec.ResourceOwner,
 	}).Return(httputil.NewNotFound("nope"))
-	serviceCentralClient.On("DeleteService", mock.Anything, testResourceOwner, testServiceName).Return(nil)
+	serviceCentralClient.On("DeleteService", mock.Anything, testResourceOwner, testServiceNameSc).Return(nil)
 
 	// when
 	ctx := context.Background()
@@ -398,7 +400,7 @@ func TestServiceDeleteActualServiceNotFound(t *testing.T) {
 	}
 	logger := zaptest.NewLogger(t)
 
-	serviceCentralClient.On("GetService", mock.Anything, auth.ToOptionalUser(testResourceOwner), testServiceName).Return(nil, servicecentral.NewNotFound("not found"))
+	serviceCentralClient.On("GetService", mock.Anything, auth.ToOptionalUser(testResourceOwner), testServiceNameSc).Return(nil, servicecentral.NewNotFound("not found"))
 
 	// when
 	ctx := context.Background()
@@ -412,14 +414,14 @@ func TestServiceDeleteActualServiceNotFound(t *testing.T) {
 	assert.True(t, apierrors.IsNotFound(err))
 }
 
-func testService(name string) *creator_v1.Service {
+func testService(name voyager.ServiceName) *creator_v1.Service {
 	return &creator_v1.Service{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       creator_v1.ServiceResourceKind,
 			APIVersion: creator_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: name,
+			Name: string(name),
 		},
 		Spec: creator_v1.ServiceSpec{
 			ResourceOwner: testResourceOwner.Name(),
@@ -445,7 +447,7 @@ func testPagerDutyMetadata() *creator_v1.PagerDutyMetadata {
 
 func testLuigiServiceMetadata() *luigi.ServiceMetadata {
 	return &luigi.ServiceMetadata{
-		Name:         testServiceName,
+		Name:         string(testServiceName),
 		BusinessUnit: testBusinessUnit,
 		Owner:        testResourceOwner.Name(),
 		Admins:       testAccessLevel,
@@ -468,8 +470,8 @@ func testSSAMServiceMetadata() *ssam.ServiceMetadata {
 func TestValidateServiceName(t *testing.T) {
 	t.Parallel()
 
-	testCases := []string{
-		strings.Repeat("a", ServiceNameMaximumLength),
+	testCases := []voyager.ServiceName{
+		voyager.ServiceName(strings.Repeat("a", ServiceNameMaximumLength)),
 		"my-test-svc",
 		"my-testing-service",
 		"alpha",
@@ -478,8 +480,7 @@ func TestValidateServiceName(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc, func(t *testing.T) {
+		t.Run(string(tc), func(t *testing.T) {
 			require.NoError(t, validateServiceName(tc))
 		})
 	}
@@ -488,7 +489,7 @@ func TestValidateServiceName(t *testing.T) {
 func TestValidateServiceNameInvalid(t *testing.T) {
 	t.Parallel()
 
-	testCases := []string{
+	testCases := []voyager.ServiceName{
 		"",
 		"!",
 		"?!%20",
@@ -503,13 +504,12 @@ func TestValidateServiceNameInvalid(t *testing.T) {
 		"a-b-",
 		"-a-b",
 		"-a",
-		strings.Repeat("a", ServiceNameMaximumLength+1),
-		strings.Repeat("a", ServiceNameMaximumLength+2),
+		voyager.ServiceName(strings.Repeat("a", ServiceNameMaximumLength+1)),
+		voyager.ServiceName(strings.Repeat("a", ServiceNameMaximumLength+2)),
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc, func(t *testing.T) {
+		t.Run(string(tc), func(t *testing.T) {
 			require.Error(t, validateServiceName(tc))
 		})
 	}

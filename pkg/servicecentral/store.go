@@ -108,7 +108,7 @@ func (c *Store) ListModifiedServices(ctx context.Context, user auth.OptionalUser
 }
 
 func (c *Store) PatchService(ctx context.Context, user auth.User, service *creator_v1.Service) error {
-	existingData, err := c.getServiceDataByName(ctx, auth.ToOptionalUser(user), service.Name)
+	existingData, err := c.getServiceDataByName(ctx, auth.ToOptionalUser(user), ServiceName(service.Name))
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (c *Store) PatchService(ctx context.Context, user auth.User, service *creat
 }
 
 // GetService retrieves a service from ServiceCentral by name. It only searches for services of type micros2.
-func (c *Store) GetService(ctx context.Context, user auth.OptionalUser, name string) (*creator_v1.Service, error) {
+func (c *Store) GetService(ctx context.Context, user auth.OptionalUser, name ServiceName) (*creator_v1.Service, error) {
 	data, err := c.getServiceDataByName(ctx, user, name)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (c *Store) GetService(ctx context.Context, user auth.OptionalUser, name str
 	return creatorV1Service, nil
 }
 
-func (c *Store) DeleteService(ctx context.Context, user auth.User, name string) error {
+func (c *Store) DeleteService(ctx context.Context, user auth.User, name ServiceName) error {
 	data, err := c.getServiceDataByName(ctx, auth.ToOptionalUser(user), name)
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func (c *Store) DeleteService(ctx context.Context, user auth.User, name string) 
 	return nil
 }
 
-func (c *Store) getServiceDataByName(ctx context.Context, user auth.OptionalUser, name string) (*ServiceData, error) {
+func (c *Store) getServiceDataByName(ctx context.Context, user auth.OptionalUser, name ServiceName) (*ServiceData, error) {
 	search := fmt.Sprintf("service_name='%s' AND platform='%s'", name, voyagerPlatform)
 	listData, err := c.client.ListServices(ctx, user, search)
 
@@ -225,7 +225,7 @@ func serviceToServiceData(existingData ServiceData, service *creator_v1.Service)
 
 	sd := ServiceData{
 		ServiceUUID:        serviceUUID,
-		ServiceName:        service.Name,
+		ServiceName:        ServiceName(service.Name),
 		ServiceOwner:       ServiceOwner{Username: service.Spec.ResourceOwner},
 		BusinessUnit:       service.Spec.BusinessUnit,
 		SSAMContainerName:  service.Spec.SSAMContainerName,
@@ -272,7 +272,7 @@ func serviceDataToService(data *ServiceData) (*creator_v1.Service, error) {
 			Kind:       creator_v1.ServiceResourceKind,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: data.ServiceName,
+			Name: string(data.ServiceName),
 			UID:  types.UID(serviceUID),
 		},
 		Spec: creator_v1.ServiceSpec{

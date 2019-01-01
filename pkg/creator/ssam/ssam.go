@@ -41,7 +41,7 @@ func stringSliceContains(arr []string, target string) bool {
 }
 
 type ServiceMetadata struct {
-	ServiceName  string
+	ServiceName  voyager.ServiceName
 	ServiceOwner string
 }
 
@@ -114,7 +114,7 @@ func (s *ServiceCreator) GetExpectedServiceContainerName(ctx context.Context, me
 // also ensure that the default access levels exist.
 func (s *ServiceCreator) CreateService(ctx context.Context, metadata *ServiceMetadata) (string, AccessLevels, error) {
 	logger := logz.RetrieveLoggerFromContext(ctx).With(
-		zappers.ServiceName(metadata.ServiceName),
+		logz.ServiceName(metadata.ServiceName),
 		zappers.ServiceOwner(metadata.ServiceOwner),
 		zappers.ContainerShortName(metadata.SSAMContainerShortName()))
 	logger.Info("Creating SSAM Container and Access Level")
@@ -162,7 +162,7 @@ func (s *ServiceCreator) CreateService(ctx context.Context, metadata *ServiceMet
 
 func (s *ServiceCreator) DeleteService(ctx context.Context, metadata *ServiceMetadata) error {
 	logger := logz.RetrieveLoggerFromContext(ctx).With(
-		zappers.ServiceName(metadata.ServiceName),
+		logz.ServiceName(metadata.ServiceName),
 		zappers.ServiceOwner(metadata.ServiceOwner),
 		zappers.ContainerShortName(metadata.SSAMContainerShortName()))
 	logger.Info("Deleting SSAM Container and Access Level")

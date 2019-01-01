@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	testServiceName       = "test-service"
-	testServiceUUID       = "ef4c37b9-e41f-4895-af4d-db27dd9e295c"
-	testCreationTimestamp = "2018-05-17T07:40:48Z"
+	testServiceName       ServiceName = "test-service"
+	testServiceUUID                   = "ef4c37b9-e41f-4895-af4d-db27dd9e295c"
+	testCreationTimestamp             = "2018-05-17T07:40:48Z"
 )
 
 var (
@@ -256,7 +256,7 @@ func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress stri
 // should match data from create_service_rsp.json and list_services_rsp.json
 func newTestServiceData(setID bool) *ServiceData {
 	s := ServiceData{
-		ServiceName:          "test-service",
+		ServiceName:          testServiceName,
 		ServiceOwner:         ServiceOwner{Username: testUser.Name()},
 		ServiceTier:          3,
 		Platform:             "micros2",

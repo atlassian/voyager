@@ -11,6 +11,7 @@ go_test(
         "manual",
     ],
     deps = [
+        "//:go_default_library",
         "//pkg/pagerduty:go_default_library",
         "//pkg/util/auth:go_default_library",
         "//pkg/util/uuid:go_default_library",

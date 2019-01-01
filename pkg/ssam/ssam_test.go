@@ -1,9 +1,9 @@
 package ssam
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/atlassian/voyager"
 	"github.com/stretchr/testify/require"
 )
 
@@ -11,7 +11,7 @@ func TestValidateServiceNameWithDelimiterBadCases(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		BadServiceName string
+		BadServiceName voyager.ServiceName
 	}{
 		{"foo-dl"},
 		{"dl-foo"},
@@ -19,7 +19,7 @@ func TestValidateServiceNameWithDelimiterBadCases(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("ValidateServiceName with ServiceName as %q", tc.BadServiceName), func(t *testing.T) {
+		t.Run(string(tc.BadServiceName), func(t *testing.T) {
 			badName := tc.BadServiceName
 			err := ValidateServiceName(badName)
 			require.Error(t, err)
@@ -31,7 +31,7 @@ func TestValidateServiceNameWithDelimiterGoodCases(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		GoodServiceName string
+		GoodServiceName voyager.ServiceName
 	}{
 		{"noodle"},
 		{"dlmanager"},
@@ -39,7 +39,7 @@ func TestValidateServiceNameWithDelimiterGoodCases(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("ValidateService with ServiceName as %q", tc.GoodServiceName), func(t *testing.T) {
+		t.Run(string(tc.GoodServiceName), func(t *testing.T) {
 			goodName := tc.GoodServiceName
 			err := ValidateServiceName(goodName)
 			require.NoError(t, err)

@@ -70,7 +70,7 @@ func AsapKeyAdmitFunc(ctx context.Context, admissionReview admissionv1beta1.Admi
 	}
 
 	serviceName := getServiceNameFromNamespace(admissionRequest.Namespace)
-	if !strings.HasPrefix(parameters.ServiceName, serviceName) {
+	if !strings.HasPrefix(parameters.ServiceName, string(serviceName)) {
 		reason := fmt.Sprintf("serviceName was set to %q, which is not prefixed by namespace %q", parameters.ServiceName, admissionRequest.Namespace)
 		return &admissionv1beta1.AdmissionResponse{
 			Allowed: false,

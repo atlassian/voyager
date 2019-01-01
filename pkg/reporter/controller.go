@@ -12,10 +12,10 @@ const (
 func ByServiceNameLabelIndex(object interface{}) ([]string, error) {
 	nsObj := object.(meta_v1.Object)
 
-	serviceNameLabel, err := layers.ServiceNameFromNamespaceLabels(nsObj.GetLabels())
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(nsObj.GetLabels())
 	if err != nil {
 		return nil, nil
 	}
 
-	return []string{string(serviceNameLabel)}, nil
+	return []string{string(serviceName)}, nil
 }

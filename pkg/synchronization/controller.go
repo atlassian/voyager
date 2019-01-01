@@ -19,6 +19,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/pagerduty"
 	"github.com/atlassian/voyager/pkg/releases"
+	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/ssam"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/auth"
@@ -66,7 +67,7 @@ const (
 )
 
 type ServiceMetadataStore interface {
-	GetService(ctx context.Context, user auth.OptionalUser, name string) (*creator_v1.Service, error)
+	GetService(ctx context.Context, user auth.OptionalUser, name servicecentral.ServiceName) (*creator_v1.Service, error)
 	ListServices(ctx context.Context, user auth.OptionalUser) ([]creator_v1.Service, error)
 	ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]creator_v1.Service, error)
 }
@@ -132,7 +133,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	}
 
 	ctx.Logger.Sugar().Infof("Looking up service data for service %q from Service Central", serviceName)
-	serviceData, err := c.getServiceData(auth.NoUser(), string(serviceName))
+	serviceData, err := c.getServiceData(auth.NoUser(), serviceName)
 	if err != nil {
 		// should be able to retry SC errors
 		return true, err
@@ -172,7 +173,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 			return retriable, err
 		},
 		func() (bool, error) {
-			retriable, _, err := c.createOrUpdateNamespaceAnnotations(ctx.Logger, string(serviceName), ns)
+			retriable, _, err := c.createOrUpdateNamespaceAnnotations(ctx.Logger, serviceName, ns)
 			return retriable, err
 		},
 		func() (bool, error) {
@@ -265,7 +266,7 @@ func (c *Controller) syncReleasesMetadata() {
 }
 
 func (c *Controller) getNamespaceForRelease(release *releases.ResolvedRelease) *core_v1.Namespace {
-	nsObj, err := c.NamespaceInformer.GetIndexer().ByIndex(NamespaceByServiceLabelIndexName, ByLabelAndService(voyager.ServiceName(release.ServiceName), release.Label))
+	nsObj, err := c.NamespaceInformer.GetIndexer().ByIndex(NamespaceByServiceLabelIndexName, ByLabelAndService(release.ServiceName, release.Label))
 	if err != nil {
 		c.Logger.Sugar().Error("Failed to retrieve Namespace object", zap.Error(err))
 		return nil
@@ -333,7 +334,7 @@ func (c *Controller) syncServiceMetadata() {
 			for service := range svcChan {
 				// Service Central actually doesn't include misc data so we need to perform
 				// additional query to fill out the miscdata for our builds
-				fullService, err := c.ServiceCentral.GetService(context.Background(), auth.NoUser(), service.Name)
+				fullService, err := c.ServiceCentral.GetService(context.Background(), auth.NoUser(), servicecentral.ServiceName(service.Name))
 				if err != nil {
 					c.Logger.With(zap.Error(err)).Sugar().Errorf("Error getting full service info for %q", service.Name)
 					continue
@@ -451,8 +452,8 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 	return false, nil
 }
 
-func (c *Controller) getServiceData(user auth.OptionalUser, name string) (*creator_v1.Service, error) {
-	return c.ServiceCentral.GetService(context.Background(), user, name)
+func (c *Controller) getServiceData(user auth.OptionalUser, name voyager.ServiceName) (*creator_v1.Service, error) {
+	return c.ServiceCentral.GetService(context.Background(), user, servicecentral.ServiceName(name))
 }
 
 func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta.Notifications, error) {
@@ -575,7 +576,7 @@ func (c *Controller) ensureCommonSecretExists(logger *zap.Logger, ns *core_v1.Na
 	}
 }
 
-func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serviceName string, namespace *core_v1.Namespace) (bool /* retriable */, *core_v1.Namespace, error) {
+func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serviceName voyager.ServiceName, namespace *core_v1.Namespace) (bool /* retriable */, *core_v1.Namespace, error) {
 	// Get the desired value of the annotation
 	desiredVal, err := c.getNamespaceAllowedRoles(serviceName)
 	if err != nil {
@@ -612,7 +613,7 @@ func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serv
 }
 
 // getNamespaceAllowedRoles returns a JSON encoded string of all the IAM roles pods in a namespace are allowed to assume
-func (c *Controller) getNamespaceAllowedRoles(serviceName string) (string, error) {
+func (c *Controller) getNamespaceAllowedRoles(serviceName voyager.ServiceName) (string, error) {
 	roles := []string{
 		// We use a wildcard/glob because we don't know what the final role will be called
 		generateIamRoleGlob(c.ClusterLocation.Account, serviceName),
@@ -624,7 +625,7 @@ func (c *Controller) getNamespaceAllowedRoles(serviceName string) (string, error
 	return string(result), errors.WithStack(err)
 }
 
-func generateIamRoleGlob(account voyager.Account, serviceName string) string {
+func generateIamRoleGlob(account voyager.Account, serviceName voyager.ServiceName) string {
 	return fmt.Sprintf("arn:aws:iam::%s:role/rps-%s-*", account, serviceName)
 }
 

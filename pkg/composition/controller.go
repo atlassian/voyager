@@ -548,7 +548,7 @@ func (c *Controller) createOrUpdateNamespace(logger *zap.Logger, fo *FormationOb
 				sdOwnerReference(parent),
 			},
 			Labels: map[string]string{
-				voyager.ServiceNameLabel:  fo.ServiceName,
+				voyager.ServiceNameLabel:  string(fo.ServiceName),
 				voyager.ServiceLabelLabel: string(fo.Location.Label),
 			},
 		},

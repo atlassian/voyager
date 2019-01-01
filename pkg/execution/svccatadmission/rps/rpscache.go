@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/atlassian/voyager"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +28,7 @@ type Cache struct {
 	logger    *zap.Logger
 	rpsClient Client
 
-	serviceNamesByInstanceID map[string]string
+	serviceNamesByInstanceID map[string]voyager.ServiceName
 	// Look, we don't strictly need this, because it's a RO map after creation, but
 	// I guess it prevents an unlikely deluge of REST requests in the initial stages
 	// (or indefinitely if we're 500ing)...
@@ -52,7 +53,7 @@ func (r *Cache) updateCache(ctx context.Context) error {
 		return err
 	}
 
-	serviceNamesByInstanceID := make(map[string]string, len(osbResources))
+	serviceNamesByInstanceID := make(map[string]voyager.ServiceName, len(osbResources))
 	for _, osbResource := range osbResources {
 		serviceNamesByInstanceID[osbResource.InstanceID] = osbResource.ServiceID
 	}
@@ -60,7 +61,7 @@ func (r *Cache) updateCache(ctx context.Context) error {
 	return nil
 }
 
-func (r *Cache) GetServiceFor(ctx context.Context, instanceID string) (string, error) {
+func (r *Cache) GetServiceFor(ctx context.Context, instanceID string) (voyager.ServiceName, error) {
 	r.serviceNamesLock.Lock()
 	defer r.serviceNamesLock.Unlock()
 

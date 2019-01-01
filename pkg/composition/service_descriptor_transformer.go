@@ -35,7 +35,7 @@ type FormationObjectInfo struct {
 	// Namespace is where the location descriptor should be placed
 	Namespace string
 	// ServiceName is the service creating the location descriptor (==service descriptor Name)
-	ServiceName string
+	ServiceName voyager.ServiceName
 	Location    voyager.Location
 	Resources   []comp_v1.ServiceDescriptorResource
 }
@@ -126,7 +126,7 @@ func (t *ServiceDescriptorTransformer) CreateFormationObjectDef(sd *comp_v1.Serv
 				fo = &FormationObjectInfo{
 					Name:        nsName,
 					Namespace:   nsName,
-					ServiceName: serviceName,
+					ServiceName: voyager.ServiceName(serviceName),
 					Location:    location.VoyagerLocation(),
 				}
 				formationObjects[key] = fo

@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/atlassian/voyager/pkg/execution/svccatadmission/rps",
     visibility = ["//visibility:public"],
     deps = [
+        "//:go_default_library",
         "//pkg/pkiutil:go_default_library",
         "//pkg/util:go_default_library",
         "//vendor/bitbucket.org/atlassianlabs/restclient:go_default_library",

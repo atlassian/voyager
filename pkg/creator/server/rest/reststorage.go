@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 
+	"github.com/atlassian/voyager"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	"github.com/atlassian/voyager/pkg/creator"
 	"github.com/atlassian/voyager/pkg/util/logz"
@@ -46,7 +47,7 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 // returned error value err when the specified resource is not found.
 func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	ctx = logz.CreateContextWithLogger(ctx, r.Logger)
-	return r.Handler.ServiceGet(ctx, name)
+	return r.Handler.ServiceGet(ctx, voyager.ServiceName(name))
 }
 
 // Create creates a new version of a resource. If includeUninitialized is set, the object may be returned
@@ -62,7 +63,7 @@ func (r *REST) Create(ctx context.Context, obj runtime.Object, createValidation 
 // to true.
 func (r *REST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *metav1.UpdateOptions) (runtime.Object, bool, error) {
 	ctx = logz.CreateContextWithLogger(ctx, r.Logger)
-	service, err := r.Handler.ServiceUpdate(ctx, name, objInfo)
+	service, err := r.Handler.ServiceUpdate(ctx, voyager.ServiceName(name), objInfo)
 	return service, false, err
 }
 
@@ -77,6 +78,6 @@ func (r *REST) Update(ctx context.Context, name string, objInfo rest.UpdatedObje
 // deleted or false if it will be deleted asynchronously.
 func (r *REST) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	ctx = logz.CreateContextWithLogger(ctx, r.Logger)
-	service, err := r.Handler.ServiceDelete(ctx, name)
+	service, err := r.Handler.ServiceDelete(ctx, voyager.ServiceName(name))
 	return service, err == nil, err
 }

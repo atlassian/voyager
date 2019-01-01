@@ -22,13 +22,12 @@ import (
 func TestCreatesRoleBindingsFromServiceCentralData(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	tc := testCase{
 		mainClientObjects: []runtime.Object{existingDefaultDockerSecret()},
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
-				Name: "the-namespace",
+				Name: namespaceName,
 				Labels: map[string]string{
 					voyager.ServiceNameLabel: serviceName,
 				},
@@ -56,7 +55,7 @@ func TestCreatesRoleBindingsFromServiceCentralData(t *testing.T) {
 				},
 			}
 
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -88,12 +87,11 @@ func TestCreatesRoleBindingsFromServiceCentralData(t *testing.T) {
 func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
 	objs := []runtime.Object{
 		&rbac_v1.RoleBinding{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      bambooBuildsRoleBinding,
-				Namespace: "the-namespace",
+				Namespace: namespaceName,
 			},
 			RoleRef: rbac_v1.RoleRef{
 				Kind: k8s.ClusterRoleKind,
@@ -107,7 +105,7 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 		&rbac_v1.RoleBinding{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      bambooDeploymentsRoleBinding,
-				Namespace: "the-namespace",
+				Namespace: namespaceName,
 			},
 			RoleRef: rbac_v1.RoleRef{
 				Kind: k8s.ClusterRoleKind,
@@ -120,7 +118,7 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 		&rbac_v1.RoleBinding{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      staffViewRoleBinding,
-				Namespace: "the-namespace",
+				Namespace: namespaceName,
 			},
 			RoleRef: rbac_v1.RoleRef{
 				Kind: k8s.ClusterRoleKind,
@@ -134,7 +132,7 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 		&rbac_v1.RoleBinding{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      teamCrudRoleBinding,
-				Namespace: "the-namespace",
+				Namespace: namespaceName,
 			},
 			RoleRef: rbac_v1.RoleRef{
 				Kind: k8s.ClusterRoleKind,
@@ -152,7 +150,7 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
-				Name: "the-namespace",
+				Name: namespaceName,
 				Labels: map[string]string{
 					voyager.ServiceNameLabel: serviceName,
 				},
@@ -180,7 +178,7 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 				},
 			}
 
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -201,14 +199,12 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 func TestEmptyBuildRoleBindingsWhenListsEmpty(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
-
 	tc := testCase{
 		mainClientObjects: []runtime.Object{existingDefaultDockerSecret()},
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
-				Name: "the-namespace",
+				Name: namespaceName,
 				Labels: map[string]string{
 					voyager.ServiceNameLabel: serviceName,
 				},
@@ -231,7 +227,7 @@ func TestEmptyBuildRoleBindingsWhenListsEmpty(t *testing.T) {
 				},
 			}
 
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
@@ -256,14 +252,12 @@ func TestEmptyBuildRoleBindingsWhenListsEmpty(t *testing.T) {
 func TestEmptyRoleBindingsNonExistantBuilds(t *testing.T) {
 	t.Parallel()
 
-	const serviceName = "some-service"
-
 	tc := testCase{
 		mainClientObjects: []runtime.Object{existingDefaultDockerSecret()},
 		ns: &core_v1.Namespace{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
-				Name: "the-namespace",
+				Name: namespaceName,
 				Labels: map[string]string{
 					voyager.ServiceNameLabel: serviceName,
 				},
@@ -282,7 +276,7 @@ func TestEmptyRoleBindingsNonExistantBuilds(t *testing.T) {
 				},
 			}
 
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceName).Return(service, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)

@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"github.com/atlassian/ctrl"
+	"github.com/atlassian/voyager"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	k8s_testing "github.com/atlassian/voyager/pkg/k8s/testing"
+	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -20,12 +22,22 @@ import (
 	kube_testing "k8s.io/client-go/testing"
 )
 
+const (
+	firstServiceNameStr string = "first-service" // explicitly string typed constant
+	firstServiceName           = voyager.ServiceName(firstServiceNameStr)
+	firstServiceNameSc         = servicecentral.ServiceName(firstServiceNameStr)
+
+	secondServiceNameStr string = "second-service" // explicitly string typed constant
+	secondServiceName           = voyager.ServiceName(secondServiceNameStr)
+	secondServiceNameSc         = servicecentral.ServiceName(secondServiceNameStr)
+)
+
 func TestIncrementsCounterWhenAccessUpdateErrors(t *testing.T) {
 	t.Parallel()
 
 	sourceService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "new-ssam-container",
@@ -56,7 +68,7 @@ func TestIncrementsCounterWhenAccessUpdateErrors(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&sourceService, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&sourceService, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -76,7 +88,7 @@ func TestCreatesClusterRole(t *testing.T) {
 
 	sourceService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "new-ssam-container",
@@ -89,7 +101,7 @@ func TestCreatesClusterRole(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&sourceService, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&sourceService, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -99,7 +111,7 @@ func TestCreatesClusterRole(t *testing.T) {
 			assert.Equal(t, "paas:composition:servicedescriptor:first-service:crud", crs[0].GetName())
 			assert.Equal(t, "composition.voyager.atl-paas.net", crs[0].Rules[0].APIGroups[0])
 			assert.Equal(t, "servicedescriptors", crs[0].Rules[0].Resources[0])
-			assert.Equal(t, "first-service", crs[0].Rules[0].ResourceNames[0])
+			assert.EqualValues(t, firstServiceName, crs[0].Rules[0].ResourceNames[0])
 			assert.Equal(t, []string{"claim", "update", "patch", "delete"}, crs[0].Rules[0].Verbs)
 
 			assert.Equal(t, "paas:creator:service:first-service:modify", crs[1].GetName())
@@ -116,7 +128,7 @@ func TestCreatesMultipleClusterRoles(t *testing.T) {
 
 	sourceService1 := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "second-ssam-container",
@@ -124,7 +136,7 @@ func TestCreatesMultipleClusterRoles(t *testing.T) {
 	}
 	sourceService2 := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "second-service",
+			Name: secondServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "second-ssam-container",
@@ -137,8 +149,8 @@ func TestCreatesMultipleClusterRoles(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService1, sourceService2,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&sourceService1, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "second-service").Return(&sourceService2, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&sourceService1, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), secondServiceNameSc).Return(&sourceService2, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -167,7 +179,7 @@ func TestDoesntCreateServiceClusterRole(t *testing.T) {
 
 	sourceService1 := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "second-ssam-container",
@@ -175,7 +187,7 @@ func TestDoesntCreateServiceClusterRole(t *testing.T) {
 	}
 	sourceService2 := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "second-service",
+			Name: secondServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "second-ssam-container",
@@ -191,8 +203,8 @@ func TestDoesntCreateServiceClusterRole(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService1, sourceService2,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&sourceService1, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "second-service").Return(&sourceService2, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&sourceService1, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), secondServiceNameSc).Return(&sourceService2, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -220,7 +232,7 @@ func TestCreatesClusterRoleBinding(t *testing.T) {
 
 	sourceService1 := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "first-ssam-container",
@@ -228,7 +240,7 @@ func TestCreatesClusterRoleBinding(t *testing.T) {
 	}
 	sourceService2 := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "second-service",
+			Name: secondServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "second-ssam-container",
@@ -241,8 +253,8 @@ func TestCreatesClusterRoleBinding(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService1, sourceService2,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&sourceService1, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "second-service").Return(&sourceService2, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&sourceService1, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), secondServiceNameSc).Return(&sourceService2, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -271,7 +283,7 @@ func TestBuildsInClusterRoleBinding(t *testing.T) {
 
 	sourceService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "first-ssam-container",
@@ -279,7 +291,7 @@ func TestBuildsInClusterRoleBinding(t *testing.T) {
 	}
 	fullService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "first-ssam-container",
@@ -303,7 +315,7 @@ func TestBuildsInClusterRoleBinding(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&fullService, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&fullService, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -329,7 +341,7 @@ func TestNoUpdatesToClusterRoleBindingWhenNoChanges(t *testing.T) {
 
 	sourceService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "first-ssam-container",
@@ -338,7 +350,7 @@ func TestNoUpdatesToClusterRoleBindingWhenNoChanges(t *testing.T) {
 	}
 	fullService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "first-ssam-container",
@@ -426,7 +438,7 @@ func TestNoUpdatesToClusterRoleBindingWhenNoChanges(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&fullService, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&fullService, nil)
 
 			cntrlr.syncServiceMetadata()
 
@@ -445,7 +457,7 @@ func TestUpdateClusterRoleBindingWhenChangesToSSAMContainer(t *testing.T) {
 
 	sourceService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "another-ssam-container",
@@ -453,7 +465,7 @@ func TestUpdateClusterRoleBindingWhenChangesToSSAMContainer(t *testing.T) {
 	}
 	fullService := creator_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "first-service",
+			Name: firstServiceNameStr,
 		},
 		Spec: creator_v1.ServiceSpec{
 			SSAMContainerName: "another-ssam-container",
@@ -532,7 +544,7 @@ func TestUpdateClusterRoleBindingWhenChangesToSSAMContainer(t *testing.T) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
 			}, nil)
-			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), "first-service").Return(&fullService, nil)
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), firstServiceNameSc).Return(&fullService, nil)
 
 			cntrlr.syncServiceMetadata()
 
