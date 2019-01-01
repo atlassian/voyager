@@ -23,6 +23,7 @@ const (
 
 // MICROS Provided RDS CFN Parameters
 type MainParametersSpec struct {
+	MicrosAlarmEndpoints        []MicrosAlarmSpec   `json:"MicrosAlarmEndpoints"`
 	MicrosAppSubnets            []string            `json:"MicrosAppSubnets"`
 	MicrosEnv                   string              `json:"MicrosEnv"`
 	MicrosEnvironmentLabel      string              `json:"MicrosEnvironmentLabel,omitempty"`
@@ -47,6 +48,13 @@ type MiscParametersSpec struct {
 
 type LocationSpec struct {
 	Environment string `json:"env"`
+}
+
+type MicrosAlarmSpec struct {
+	Type     string `json:"type"`
+	Priority string `json:"priority"`
+	Endpoint string `json:"endpoint"`
+	Consumer string `json:"consumer"`
 }
 
 type FinalSpec struct {
@@ -91,7 +99,26 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		}
 	}
 
+	// EMP-712: We are currently constructing the list of alarm endpoints manually.
+	// When the alarmEndpoints list is available in context.StateContext, we should
+	// just pass that down instead.
+	microsAlarmEndpoints := []MicrosAlarmSpec{
+		MicrosAlarmSpec{
+			Type:     "CloudWatch",
+			Priority: "high",
+			Endpoint: context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
+			Consumer: "pagerduty",
+		},
+		MicrosAlarmSpec{
+			Type:     "CloudWatch",
+			Priority: "low",
+			Endpoint: context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
+			Consumer: "pagerduty",
+		},
+	}
+
 	primaryParameters := MainParametersSpec{
+		MicrosAlarmEndpoints:        microsAlarmEndpoints,
 		MicrosAppSubnets:            context.StateContext.LegacyConfig.AppSubnets,
 		MicrosEnv:                   context.StateContext.LegacyConfig.MicrosEnv,
 		MicrosEnvironmentLabel:      string(context.StateContext.Location.Label),
