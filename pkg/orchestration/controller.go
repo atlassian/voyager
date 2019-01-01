@@ -15,6 +15,8 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
 	orch_v1client "github.com/atlassian/voyager/pkg/orchestration/client/typed/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -40,6 +42,10 @@ func ByConfigMapNameIndex(obj interface{}) ([]string, error) {
 
 func ByConfigMapNameIndexKey(namespace string, configMapName string) string {
 	return namespace + "/" + configMapName
+}
+
+type Entangler interface {
+	Entangle(*orch_v1.State, *wiring.EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error)
 }
 
 type Controller struct {
@@ -113,15 +119,15 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		return false, false, nil, errors.Errorf("missing ConfigMap %q (key: %q) in informer", state.Spec.ConfigMapName, key)
 	}
 
-	serviceName, err := GetNamespaceServiceName(namespace)
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	if err != nil {
 		return false, false, nil, err
 	}
 
 	// Entangle the state, passing in the namespace and and configmap as context
-	entanglerContext := &EntanglerContext{
+	entanglerContext := &wiring.EntanglerContext{
 		Config:      configMap.(*core_v1.ConfigMap).Data,
-		Label:       GetNamespaceLabel(namespace),
+		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceName: serviceName,
 	}
 	bundleSpec, retriable, err := c.Entangler.Entangle(state, entanglerContext)

@@ -7,7 +7,6 @@ import (
 	"github.com/atlassian/voyager"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	yaml "github.com/ghodss/yaml"
@@ -30,6 +29,19 @@ const (
 	// (i.e. want to make it obvious they should be removed at the same time).
 	legacyEnvironmentTagName = "environment"
 )
+
+// EntanglerContext contains information that is required by autowiring.
+// Everything in this context can only be obtained by reading Kubernetes objects.
+type EntanglerContext struct {
+	// ServiceName
+	ServiceName voyager.ServiceName
+
+	// Label
+	Label voyager.Label
+
+	// Config is the configuration pulled from the ConfigMap
+	Config map[string]string
+}
 
 type TagNames struct {
 	ServiceNameTag     voyager.Tag
@@ -67,7 +79,7 @@ func parseConfigMap(data map[string]string) (*orch_meta.ServiceProperties, error
 	return &serviceProperties, nil
 }
 
-func (en *Entangler) Entangle(state *orch_v1.State, context *orchestration.EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error) {
+func (en *Entangler) Entangle(state *orch_v1.State, context *EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error) {
 	g, sorted, err := sortStateResources(state.Spec.Resources)
 	if err != nil {
 		return nil, false, err

@@ -23,6 +23,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util/apiservice"
 	"github.com/atlassian/voyager/pkg/util/crash"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/felixge/httpsnoop"
 	"github.com/go-chi/chi"
@@ -262,7 +263,7 @@ func (r *API) AddOrUpdateProvider(p ops.ProviderInterface) {
 
 func (r *API) getNamespaces(service string) ([]*core_v1.Namespace, error) {
 	nsInf := r.informers[core_v1.SchemeGroupVersion.WithKind(k8s.NamespaceKind)]
-	namespaces, err := nsInf.GetIndexer().ByIndex(ByServiceLabelIndexName, service)
+	namespaces, err := nsInf.GetIndexer().ByIndex(ByServiceNameLabelIndexName, service)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -319,7 +320,7 @@ func (r *API) getObjects(namespace string, filter RequestFilter) ([]runtime.Obje
 }
 
 func (r *API) generateNamespaces(filter RequestFilter) ([]*NamespaceReportHandler, error) {
-	ns := []*NamespaceReportHandler{}
+	var ns []*NamespaceReportHandler
 	var namespaces []*core_v1.Namespace
 
 	// We also check for the default namespace for requests from kubectl like `kubectl get reports my-service`
@@ -327,7 +328,7 @@ func (r *API) generateNamespaces(filter RequestFilter) ([]*NamespaceReportHandle
 		nsInf := r.informers[core_v1.SchemeGroupVersion.WithKind(k8s.NamespaceKind)]
 		n, exists, err := nsInf.GetIndexer().GetByKey(filter.Namespace)
 		if err != nil {
-			return ns, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 		if exists {
 			namespaces = append(namespaces, n.(*core_v1.Namespace).DeepCopy())
@@ -335,7 +336,7 @@ func (r *API) generateNamespaces(filter RequestFilter) ([]*NamespaceReportHandle
 	} else {
 		serviceNamespaces, err := r.getNamespaces(filter.Service)
 		if err != nil {
-			return ns, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 		namespaces = append(namespaces, serviceNamespaces...)
 	}
@@ -343,13 +344,16 @@ func (r *API) generateNamespaces(filter RequestFilter) ([]*NamespaceReportHandle
 	for _, n := range namespaces {
 		objs, err := r.getObjects(n.Name, filter)
 		if err != nil {
-			return ns, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 
-		serviceNameLabel := n.GetLabels()[voyager.ServiceNameLabel]
-		nrh, err := NewNamespaceReportHandler(n.Name, serviceNameLabel, objs, filter, r.location)
+		serviceName, err := layers.ServiceNameFromNamespaceLabels(n.GetLabels())
 		if err != nil {
-			return ns, errors.WithStack(err)
+			return nil, errors.WithStack(err)
+		}
+		nrh, err := NewNamespaceReportHandler(n.Name, string(serviceName), objs, filter, r.location)
+		if err != nil {
+			return nil, errors.WithStack(err)
 		}
 
 		ns = append(ns, nrh)

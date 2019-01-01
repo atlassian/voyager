@@ -142,6 +142,7 @@ func TestGenerateReport(t *testing.T) {
 			require.Equal(t, http.StatusOK, recorder.Code)
 
 			body, err := ioutil.ReadAll(recorder.Result().Body)
+			require.NoError(t, err)
 
 			reportList := reporter_v1.ReportList{}
 			err = json.Unmarshal(body, &reportList)
@@ -205,6 +206,7 @@ func TestFilterService(t *testing.T) {
 			require.Equal(t, http.StatusOK, recorder.Code)
 
 			body, err := ioutil.ReadAll(recorder.Result().Body)
+			require.NoError(t, err)
 
 			reportList := reporter_v1.ReportList{}
 			err = json.Unmarshal(body, &reportList)
@@ -258,6 +260,7 @@ func TestFilterServiceWithDefaultNamespace(t *testing.T) {
 			require.Equal(t, http.StatusOK, recorder.Code)
 
 			body, err := ioutil.ReadAll(recorder.Result().Body)
+			require.NoError(t, err)
 
 			reportList := reporter_v1.ReportList{}
 			err = json.Unmarshal(body, &reportList)
@@ -365,6 +368,7 @@ func TestFilterLabel(t *testing.T) {
 			require.Equal(t, http.StatusOK, recorder.Code)
 
 			body, err := ioutil.ReadAll(recorder.Result().Body)
+			require.NoError(t, err)
 
 			reportList := reporter_v1.ReportList{}
 			err = json.Unmarshal(body, &reportList)
@@ -453,7 +457,7 @@ func (tc *testCase) run(t *testing.T) {
 		smith_v1.SchemeGroupVersion.WithKind(smith_v1.BundleResourceKind):           bundleClient.BundleInformer(smithClient, "", 0),
 		sc_v1b1.SchemeGroupVersion.WithKind("ServiceInstance"):                      sc_v1b1inf.NewServiceBindingInformer(scClient, "", 0, cache.Indexers{}),
 		core_v1.SchemeGroupVersion.WithKind(k8s.NamespaceKind): core_v1inf.NewNamespaceInformer(nsClient, 0, cache.Indexers{
-			ByServiceLabelIndexName: ByServiceLabelIndex,
+			ByServiceNameLabelIndexName: ByServiceNameLabelIndex,
 		}),
 	}
 

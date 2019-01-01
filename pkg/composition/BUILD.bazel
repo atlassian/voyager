@@ -30,6 +30,7 @@ go_library(
         "//pkg/releases:go_default_library",
         "//pkg/synchronization/api:go_default_library",
         "//pkg/util:go_default_library",
+        "//pkg/util/layers:go_default_library",
         "//pkg/util/prometheus:go_default_library",
         "//pkg/util/sets:go_default_library",
         "//pkg/util/templating:go_default_library",
