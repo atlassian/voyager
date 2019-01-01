@@ -1,21 +1,21 @@
 package reporter
 
 import (
-	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	ByServiceLabelIndexName = "serviceLabelIndex"
+	ByServiceNameLabelIndexName = "serviceLabelIndex"
 )
 
-func ByServiceLabelIndex(object interface{}) ([]string, error) {
-	obj := object.(meta_v1.Object)
+func ByServiceNameLabelIndex(object interface{}) ([]string, error) {
+	nsObj := object.(meta_v1.Object)
 
-	serviceNameLabel, ok := obj.GetLabels()[voyager.ServiceNameLabel]
-	if !ok {
+	serviceNameLabel, err := layers.ServiceNameFromNamespaceLabels(nsObj.GetLabels())
+	if err != nil {
 		return nil, nil
 	}
 
-	return []string{serviceNameLabel}, nil
+	return []string{string(serviceNameLabel)}, nil
 }

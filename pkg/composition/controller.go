@@ -19,6 +19,7 @@ import (
 	"github.com/atlassian/voyager/pkg/options"
 	"github.com/atlassian/voyager/pkg/releases"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -420,7 +421,7 @@ func (c *Controller) calculateLocationStatuses(serviceName string, results []*Fo
 	for _, key := range keys {
 		result := allResults[key]
 		ld := result.ld
-		label := voyager.Label(result.namespace.Labels[voyager.ServiceLabelLabel])
+		label := layers.ServiceLabelFromNamespaceLabels(result.namespace.Labels)
 		location := c.location.ClusterLocation().Location(label)
 		inProgressCond := cond_v1.Condition{
 			Type:   cond_v1.ConditionInProgress,
@@ -705,12 +706,13 @@ func nsServiceNameIndexFunc(obj interface{}) ([]string, error) {
 	// was created by the SD it's reasonable to report them), so we fall back on
 	// our string lookups.
 	ns := obj.(*core_v1.Namespace)
-	serviceName := ns.Labels[voyager.ServiceNameLabel]
-	if serviceName == "" {
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(ns.Labels)
+	if err != nil {
+		// Non service namespace
 		return nil, nil
 	}
 
-	return []string{serviceName}, nil
+	return []string{string(serviceName)}, nil
 }
 
 func ldKey(namespace string, name string) string {

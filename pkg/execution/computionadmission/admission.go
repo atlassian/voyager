@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/admission"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/ghodss/yaml"
 	"github.com/go-chi/chi"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -198,11 +198,8 @@ func (ac *AdmissionContext) isVoyagerNamespace(namespace string) (bool, error) {
 	if !ok {
 		return false, errors.New("failed to assert Namespace object")
 	}
-	for k := range ns.Labels {
-		// check if it includes Voyager service name label
-		if k == voyager.ServiceNameLabel {
-			return true, nil
-		}
+	if _, err := layers.ServiceNameFromNamespaceLabels(ns.Labels); err == nil {
+		return true, nil
 	}
 
 	return false, nil

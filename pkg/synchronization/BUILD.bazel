@@ -26,6 +26,7 @@ go_library(
         "//pkg/synchronization/api:go_default_library",
         "//pkg/util:go_default_library",
         "//pkg/util/auth:go_default_library",
+        "//pkg/util/layers:go_default_library",
         "//pkg/util/logz:go_default_library",
         "//vendor/github.com/ash2k/stager:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",

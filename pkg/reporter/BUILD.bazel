@@ -25,6 +25,7 @@ go_library(
         "//pkg/util/apiservice:go_default_library",
         "//pkg/util/crash:go_default_library",
         "//pkg/util/httputil:go_default_library",
+        "//pkg/util/layers:go_default_library",
         "//pkg/util/logz:go_default_library",
         "//vendor/github.com/atlassian/ctrl/apis/condition/v1:go_default_library",
         "//vendor/github.com/atlassian/smith:go_default_library",

@@ -5,6 +5,8 @@ metadata:
   name: state1
   namespace: default123
   labels:
+    # this label is supported on Namespace objects only.
+    # it is here for entangler test only and should not be relied upon in any way.
     voyager.atl-paas.net/label: "branch"
   uid: 411c0040-617e-11e7-9b57-427d691976d7
 spec:

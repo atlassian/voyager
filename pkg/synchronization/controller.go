@@ -22,6 +22,7 @@ import (
 	"github.com/atlassian/voyager/pkg/ssam"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/auth"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -124,14 +125,14 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		return false, nil
 	}
 
-	serviceName, ok := ns.Labels[voyager.ServiceNameLabel]
-	if !ok {
-		nsLogger.Debug("Namespace doesn't have a service label, skipping")
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(ns.Labels)
+	if err != nil {
+		nsLogger.Debug("Namespace doesn't have a valid service name label, skipping")
 		return false, nil
 	}
 
 	ctx.Logger.Sugar().Infof("Looking up service data for service %q from Service Central", serviceName)
-	serviceData, err := c.getServiceData(auth.NoUser(), serviceName)
+	serviceData, err := c.getServiceData(auth.NoUser(), string(serviceName))
 	if err != nil {
 		// should be able to retry SC errors
 		return true, err
@@ -152,13 +153,13 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 			return c.createOrUpdateServiceMetadata(ctx.Logger, ns, serviceData)
 		},
 		func() (bool, error) {
-			serviceLabel := ns.Labels[voyager.ServiceLabelLabel]
+			serviceLabel := layers.ServiceLabelFromNamespaceLabels(ns.Labels)
 			params := releases.ResolveParams{
 				Account:     c.ClusterLocation.Account,
 				Region:      c.ClusterLocation.Region,
 				Environment: c.ClusterLocation.EnvType,
-				ServiceName: voyager.ServiceName(serviceName),
-				Label:       voyager.Label(serviceLabel),
+				ServiceName: serviceName,
+				Label:       serviceLabel,
 			}
 			resolvedRelease, err := c.ReleaseManagement.Resolve(params)
 			if err != nil {
@@ -171,7 +172,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 			return retriable, err
 		},
 		func() (bool, error) {
-			retriable, _, err := c.createOrUpdateNamespaceAnnotations(ctx.Logger, serviceName, ns)
+			retriable, _, err := c.createOrUpdateNamespaceAnnotations(ctx.Logger, string(serviceName), ns)
 			return retriable, err
 		},
 		func() (bool, error) {
@@ -264,7 +265,7 @@ func (c *Controller) syncReleasesMetadata() {
 }
 
 func (c *Controller) getNamespaceForRelease(release *releases.ResolvedRelease) *core_v1.Namespace {
-	nsObj, err := c.NamespaceInformer.GetIndexer().ByIndex(NamespaceByServiceLabelIndexName, ByLabelAndService(release.ServiceName, string(release.Label)))
+	nsObj, err := c.NamespaceInformer.GetIndexer().ByIndex(NamespaceByServiceLabelIndexName, ByLabelAndService(voyager.ServiceName(release.ServiceName), release.Label))
 	if err != nil {
 		c.Logger.Sugar().Error("Failed to retrieve Namespace object", zap.Error(err))
 		return nil
@@ -351,12 +352,12 @@ func (c *Controller) syncServiceMetadata() {
 }
 
 func (c *Controller) createOrUpdateReleaseData(logger *zap.Logger, ns *core_v1.Namespace, rd *releases.ResolvedReleaseData) (bool, error) {
-	serviceName, ok := ns.Labels[voyager.ServiceNameLabel]
-	if !ok {
-		logger.Debug("Namespace doesn't have a service label, skipping")
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(ns.Labels)
+	if err != nil {
+		logger.Debug("Namespace doesn't have a valid service name label, skipping")
 		return false, nil
 	}
-	serviceLogger := logger.With(logz.ServiceNameString(serviceName))
+	serviceLogger := logger.With(logz.ServiceName(serviceName))
 
 	resolvedTargetsYAML, err := yaml.Marshal(rd)
 	if err != nil {
@@ -662,15 +663,15 @@ func pagerDutyForEnvType(pagerduty *creator_v1.PagerDutyMetadata, envType voyage
 
 func NsServiceLabelIndexFunc(obj interface{}) ([]string, error) {
 	ns := obj.(*core_v1.Namespace)
-	serviceName, ok := ns.Labels[voyager.ServiceNameLabel]
-	if !ok {
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(ns.Labels)
+	if err != nil {
 		// Non service namespace
 		return nil, nil
 	}
-	label := ns.Labels[voyager.ServiceLabelLabel]
+	label := layers.ServiceLabelFromNamespaceLabels(ns.Labels)
 	return []string{ByLabelAndService(serviceName, label)}, nil
 }
 
-func ByLabelAndService(serviceName string, label string) string {
-	return serviceName + "::" + label
+func ByLabelAndService(serviceName voyager.ServiceName, label voyager.Label) string {
+	return string(serviceName) + ":" + string(label)
 }

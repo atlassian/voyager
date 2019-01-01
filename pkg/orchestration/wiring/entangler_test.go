@@ -13,11 +13,11 @@ import (
 	smith_config "github.com/atlassian/voyager/cmd/smith/config"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/testutil"
+	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -239,18 +239,22 @@ loggingId: logging-id-from-configmap
 		},
 		GetLegacyConfigFunc: getTestLegacyConfig,
 	}
+	labels := state.GetLabels()
 	namespace := core_v1.Namespace{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Labels: map[string]string{
-				voyager.ServiceNameLabel:  "test-servicename",
-				voyager.ServiceLabelLabel: state.GetLabels()[voyager.ServiceLabelLabel],
+				voyager.ServiceNameLabel: "test-servicename",
+				// This is just to allow fixtures to specify Label. In reality Label is only supported on Namespaces. See below.
+				voyager.ServiceLabelLabel: labels[voyager.ServiceLabelLabel],
 			},
 		},
 	}
-	serviceName, err := orchestration.GetNamespaceServiceName(&namespace)
+	delete(labels, voyager.ServiceLabelLabel)
+	state.SetLabels(labels)
+	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
-	return ent.Entangle(state, &orchestration.EntanglerContext{
-		Label:       orchestration.GetNamespaceLabel(&namespace),
+	return ent.Entangle(state, &EntanglerContext{
+		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceName: serviceName,
 		Config:      configMap.Data,
 	})

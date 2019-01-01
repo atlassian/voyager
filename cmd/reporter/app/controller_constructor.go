@@ -135,7 +135,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 	}
 
 	err = nsInf.AddIndexers(cache.Indexers{
-		reporter.ByServiceLabelIndexName: reporter.ByServiceLabelIndex,
+		reporter.ByServiceNameLabelIndexName: reporter.ByServiceNameLabelIndex,
 	})
 
 	if err != nil {
