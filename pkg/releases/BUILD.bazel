@@ -23,7 +23,6 @@ go_test(
     embed = [":go_default_library"],
     race = "on",
     deps = [
-        "//:go_default_library",
         "//pkg/releases/deployinator/client:go_default_library",
         "//pkg/releases/deployinator/client/resolve:go_default_library",
         "//pkg/releases/deployinator/models:go_default_library",

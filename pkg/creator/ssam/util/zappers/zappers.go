@@ -15,10 +15,6 @@ func ContainerSystemOwner(owner string) zapcore.Field {
 	return zap.String("container_system_owner", owner)
 }
 
-func ServiceName(name string) zapcore.Field {
-	return zap.String("service_name", name)
-}
-
 func ServiceOwner(owner string) zapcore.Field {
 	return zap.String("service_owner", owner)
 }

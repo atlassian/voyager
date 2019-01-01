@@ -17,5 +17,8 @@ go_test(
     srcs = ["ssam_test.go"],
     embed = [":go_default_library"],
     race = "on",
-    deps = ["//vendor/github.com/stretchr/testify/require:go_default_library"],
+    deps = [
+        "//:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+    ],
 )

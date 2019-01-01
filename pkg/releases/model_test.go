@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/releases/deployinator/client"
 	"github.com/atlassian/voyager/pkg/releases/deployinator/client/resolve"
 	"github.com/atlassian/voyager/pkg/releases/deployinator/models"
@@ -126,14 +125,14 @@ func TestBatchResolveShouldRespondWithResultWithOnePage(t *testing.T) {
 	require.NotNil(t, res)
 	require.NotNil(t, nextFrom)
 	assert.Equal(t, expectedReleaseData, res[0].ResolvedData["rg1"]["alias1"])
-	assert.Equal(t, "svc-name1", res[0].ServiceName)
-	assert.Equal(t, voyager.Label(""), res[0].Label)
+	assert.EqualValues(t, "svc-name1", res[0].ServiceName)
+	assert.EqualValues(t, "", res[0].Label)
 	assert.Equal(t, expectedReleaseData, res[1].ResolvedData["rg1"]["alias1"])
-	assert.Equal(t, "svc-name1", res[1].ServiceName)
-	assert.Equal(t, voyager.Label("labelA"), res[1].Label)
+	assert.EqualValues(t, "svc-name1", res[1].ServiceName)
+	assert.EqualValues(t, "labelA", res[1].Label)
 	assert.Equal(t, expectedReleaseData, res[2].ResolvedData["rg1"]["alias1"])
-	assert.Equal(t, "svc-name2", res[2].ServiceName)
-	assert.Equal(t, voyager.Label(""), res[2].Label)
+	assert.EqualValues(t, "svc-name2", res[2].ServiceName)
+	assert.EqualValues(t, "", res[2].Label)
 }
 
 func TestBatchResolveShouldAggregateResultsOverMultiplePages(t *testing.T) {
@@ -191,14 +190,14 @@ func TestBatchResolveShouldAggregateResultsOverMultiplePages(t *testing.T) {
 	require.NotNil(t, nextFrom)
 	assert.Equal(t, expectedResponseStartTime.UTC(), nextFrom.UTC())
 	assert.Equal(t, expectedReleaseData, res[0].ResolvedData["rg1"]["alias1"])
-	assert.Equal(t, "svc-name1", res[0].ServiceName)
-	assert.Equal(t, voyager.Label(""), res[0].Label)
+	assert.EqualValues(t, "svc-name1", res[0].ServiceName)
+	assert.EqualValues(t, "", res[0].Label)
 	assert.Equal(t, expectedReleaseData, res[1].ResolvedData["rg1"]["alias1"])
-	assert.Equal(t, "svc-name1", res[1].ServiceName)
-	assert.Equal(t, voyager.Label("labelA"), res[1].Label)
+	assert.EqualValues(t, "svc-name1", res[1].ServiceName)
+	assert.EqualValues(t, "labelA", res[1].Label)
 	assert.Equal(t, expectedReleaseData, res[2].ResolvedData["rg1"]["alias1"])
-	assert.Equal(t, "svc-name2", res[2].ServiceName)
-	assert.Equal(t, voyager.Label(""), res[2].Label)
+	assert.EqualValues(t, "svc-name2", res[2].ServiceName)
+	assert.EqualValues(t, "", res[2].Label)
 }
 
 func TestBatchResolveShouldHandleNoContentResult(t *testing.T) {

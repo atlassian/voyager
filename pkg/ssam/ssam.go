@@ -14,8 +14,8 @@ var (
 
 // ValidateServiceName validates that a specified service will not violate our requirements
 // for naming of SSAM containers
-func ValidateServiceName(serviceName string) error {
-	index := regexpSSAMDelimiter.FindStringIndex(serviceName)
+func ValidateServiceName(serviceName voyager.ServiceName) error {
+	index := regexpSSAMDelimiter.FindStringIndex(string(serviceName))
 
 	if index == nil {
 		return nil

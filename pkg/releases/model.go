@@ -46,7 +46,7 @@ type ResolvedReleaseData map[string]map[string]interface{}
 
 type ResolvedRelease struct {
 	ResolvedData ResolvedReleaseData
-	ServiceName  string
+	ServiceName  voyager.ServiceName
 	Label        voyager.Label
 }
 
@@ -88,7 +88,7 @@ func (rms *DeployinatorRMS) Resolve(params ResolveParams) (*ResolvedRelease, err
 	if err != nil {
 		if _, ok := err.(*resolve.ResolveNotFound); ok {
 			return &ResolvedRelease{
-				ServiceName: name,
+				ServiceName: params.ServiceName,
 				Label:       voyager.Label(label),
 			}, nil
 		}
@@ -96,7 +96,7 @@ func (rms *DeployinatorRMS) Resolve(params ResolveParams) (*ResolvedRelease, err
 	}
 	return &ResolvedRelease{
 		ResolvedData: response.Payload.ReleaseGroups,
-		ServiceName:  response.Payload.Service,
+		ServiceName:  voyager.ServiceName(response.Payload.Service),
 		Label:        voyager.Label(response.Payload.Label),
 	}, nil
 }
@@ -124,7 +124,7 @@ func (rms *DeployinatorRMS) ResolveLatest(params ResolveBatchParams) ([]Resolved
 		for _, v := range res.Results {
 			resolvedRelease := ResolvedRelease{
 				ResolvedData: v.ReleaseGroups,
-				ServiceName:  v.Service,
+				ServiceName:  voyager.ServiceName(v.Service),
 				Label:        voyager.Label(v.Label),
 			}
 			results = append(results, resolvedRelease)

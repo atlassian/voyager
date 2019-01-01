@@ -63,7 +63,7 @@ var (
 type NamespaceReportHandler struct {
 	*reporter_v1.NamespaceReport
 	name     string
-	service  string
+	service  voyager.ServiceName
 	filter   RequestFilter
 	location voyager.Location
 }
@@ -76,7 +76,7 @@ type ProviderResponse struct {
 	Version    string                 `json:"version,omitempty"`
 }
 
-func NewNamespaceReportHandler(name, service string, objs []runtime.Object, filter RequestFilter, location voyager.Location) (*NamespaceReportHandler, error) {
+func NewNamespaceReportHandler(name string, service voyager.ServiceName, objs []runtime.Object, filter RequestFilter, location voyager.Location) (*NamespaceReportHandler, error) {
 	nrh := &NamespaceReportHandler{
 		name:    name,
 		service: service,
@@ -136,7 +136,7 @@ func (n *NamespaceReportHandler) FormatReport() reporter_v1.Report {
 			APIVersion: reporter_v1.ReportResourceAPIVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      n.service,
+			Name:      string(n.service),
 			Namespace: n.name,
 		},
 		Report: *n.NamespaceReport,

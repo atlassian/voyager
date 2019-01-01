@@ -351,7 +351,7 @@ func convertV2ServicesToV1(v2Services []V2Service) []ServiceData {
 
 func convertV2ServiceToV1(v2Service V2Service) ServiceData {
 	service := ServiceData{
-		ServiceName: v2Service.Name,
+		ServiceName: ServiceName(v2Service.Name),
 		ServiceOwner: ServiceOwner{
 			Username: v2Service.Owner,
 		},

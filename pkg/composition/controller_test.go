@@ -1359,7 +1359,7 @@ func (tc *testCase) run(t *testing.T) {
 		objectInfos = append(objectInfos, FormationObjectInfo{
 			Name:        nsName,
 			Namespace:   nsName,
-			ServiceName: tc.sd.Name,
+			ServiceName: voyager.ServiceName(tc.sd.Name),
 			Location:    serviceLocation.VoyagerLocation(),
 			Resources:   tc.transformedResources,
 		})

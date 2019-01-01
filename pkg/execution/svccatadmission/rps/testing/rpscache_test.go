@@ -17,7 +17,7 @@ func TestGetServiceForExistingThing(t *testing.T) {
 	rpsCache := MockRPSCache(t)
 	serviceName, err := rpsCache.GetServiceFor(context.Background(), "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")
 	require.NoError(t, err)
-	assert.Equal(t, "node-refapp-jhaggerty-dev", serviceName)
+	assert.EqualValues(t, "node-refapp-jhaggerty-dev", serviceName)
 }
 
 func TestGetServiceForMissingThing(t *testing.T) {
@@ -25,5 +25,5 @@ func TestGetServiceForMissingThing(t *testing.T) {
 	rpsCache := MockRPSCache(t)
 	serviceName, err := rpsCache.GetServiceFor(context.Background(), "something")
 	require.NoError(t, err)
-	assert.Equal(t, "", serviceName)
+	assert.EqualValues(t, "", serviceName)
 }

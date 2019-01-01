@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	testUUID        = "b5dd92da-cc9b-40f4-a854-821d45197288"
-	testServiceName = "my-service"
-	testEmail       = "an_owner@example.com"
+	testUUID                            = "b5dd92da-cc9b-40f4-a854-821d45197288"
+	testServiceName voyager.ServiceName = "my-service"
+	testEmail                           = "an_owner@example.com"
 
 	testUserID             = "userID"
 	testEscalationPolicyID = "escalationID"
@@ -97,7 +97,7 @@ var (
 func TestGetServiceSearchURL(t *testing.T) {
 	t.Parallel()
 	// given
-	serviceName := "nislamov-creator"
+	const serviceName voyager.ServiceName = "nislamov-creator"
 	// when
 	url, err := GetServiceSearchURL(serviceName)
 	// then

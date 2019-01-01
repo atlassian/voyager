@@ -2,11 +2,13 @@ package rps
 
 import (
 	"context"
+
+	"github.com/atlassian/voyager"
 )
 
 type OSBResource struct {
-	ServiceID  string `json:"serviceId"`
-	InstanceID string `json:"instanceId"`
+	ServiceID  voyager.ServiceName `json:"serviceId"`
+	InstanceID string              `json:"instanceId"`
 }
 
 // This is the form of errors that come back - currently we don't try to parse.

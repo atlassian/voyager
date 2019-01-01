@@ -43,6 +43,7 @@ go_test(
     embed = [":go_default_library"],
     race = "on",
     deps = [
+        "//:go_default_library",
         "//pkg/apis/creator/v1:go_default_library",
         "//pkg/creator/luigi:go_default_library",
         "//pkg/creator/ssam:go_default_library",

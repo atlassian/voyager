@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/atlassian/voyager"
 	"github.com/pkg/errors"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func allowedToMigrate(ctx context.Context, scClient serviceCentralClient, namespace string, resourceServiceName string) (*admissionv1beta1.AdmissionResponse, error) {
+func allowedToMigrate(ctx context.Context, scClient serviceCentralClient, namespace string, resourceServiceName voyager.ServiceName) (*admissionv1beta1.AdmissionResponse, error) {
 
 	namespaceServiceName := getServiceNameFromNamespace(namespace)
 

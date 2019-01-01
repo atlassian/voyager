@@ -41,7 +41,7 @@ var (
 )
 
 // this list corresponds to namespaces we are using inside a cluster that should not be valid service names
-var blacklist = []string{
+var blacklist = []voyager.ServiceName{
 	"kube-system",
 	"kube-public",
 	"micros",
@@ -86,7 +86,7 @@ func NewHandler(config *ExtraConfig) (*ServiceHandler, error) {
 
 func (h *ServiceHandler) createSSAMContainer(ctx context.Context, service *creator_v1.Service) (accessLevels ssam.AccessLevels, wasMutated bool, mutationErr error) {
 	metadata := &ssam.ServiceMetadata{
-		ServiceName:  service.Name,
+		ServiceName:  voyager.ServiceName(service.Name),
 		ServiceOwner: service.Spec.ResourceOwner,
 	}
 
@@ -111,7 +111,7 @@ func (h *ServiceHandler) createPagerDuty(ctx context.Context, service *creator_v
 	if service.Spec.Metadata.PagerDuty != nil {
 		return false, nil
 	}
-	url, err := pagerduty.GetServiceSearchURL(service.Name)
+	url, err := pagerduty.GetServiceSearchURL(voyager.ServiceName(service.Name))
 	if err != nil {
 		return false, errors.Wrap(err, "Failed to generate search URL for PagerDuty")
 	}
@@ -122,7 +122,7 @@ func (h *ServiceHandler) createPagerDuty(ctx context.Context, service *creator_v
 	if err != nil {
 		return false, err
 	}
-	pagerDutyMetadata, err := h.pagerDuty.FindOrCreate(service.Name, user, email)
+	pagerDutyMetadata, err := h.pagerDuty.FindOrCreate(voyager.ServiceName(service.Name), user, email)
 
 	if err != nil {
 		return false, errors.Wrap(err, "Failed to create services in PagerDuty")
@@ -211,13 +211,13 @@ func (h *ServiceHandler) ServiceCreate(ctx context.Context, service *creator_v1.
 	return actualService, nil
 }
 
-func (h *ServiceHandler) ServiceGet(ctx context.Context, name string) (*creator_v1.Service, error) {
+func (h *ServiceHandler) ServiceGet(ctx context.Context, name voyager.ServiceName) (*creator_v1.Service, error) {
 	user := maybeUserFromContext(ctx)
 
-	service, err := h.serviceCentral.GetService(ctx, user, name)
+	service, err := h.serviceCentral.GetService(ctx, user, servicecentral.ServiceName(name))
 	if err != nil {
 		if servicecentral.IsNotFound(err) {
-			return nil, apierrors.NewNotFound(ServiceGroupResource, name)
+			return nil, apierrors.NewNotFound(ServiceGroupResource, string(name))
 		}
 		return nil, apierrors.NewInternalError(errors.Wrap(err, "Failed to get service from Service Central"))
 	}
@@ -273,16 +273,16 @@ func (h *ServiceHandler) ServiceListNew(ctx context.Context) (*creator_v1.Servic
 	return &serviceListResponse, nil
 }
 
-func (h *ServiceHandler) ServiceUpdate(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo) (*creator_v1.Service, error) {
+func (h *ServiceHandler) ServiceUpdate(ctx context.Context, name voyager.ServiceName, objInfo rest.UpdatedObjectInfo) (*creator_v1.Service, error) {
 	user, err := userFromContext(ctx)
 	if err != nil {
 		return nil, apierrors.NewBadRequest(fmt.Sprintf("Failed to extract user from the request: %v", err))
 	}
 
-	service, err := h.serviceCentral.GetService(ctx, auth.ToOptionalUser(user), name)
+	service, err := h.serviceCentral.GetService(ctx, auth.ToOptionalUser(user), servicecentral.ServiceName(name))
 	if err != nil {
 		if servicecentral.IsNotFound(err) {
-			return nil, apierrors.NewNotFound(ServiceGroupResource, name)
+			return nil, apierrors.NewNotFound(ServiceGroupResource, string(name))
 		}
 		return nil, apierrors.NewInternalError(errors.Wrap(err, "Failed to fetch existing service"))
 	}
@@ -301,16 +301,16 @@ func (h *ServiceHandler) ServiceUpdate(ctx context.Context, name string, objInfo
 	return updatedService, nil
 }
 
-func (h *ServiceHandler) ServiceDelete(ctx context.Context, name string) (*creator_v1.Service, error) {
+func (h *ServiceHandler) ServiceDelete(ctx context.Context, name voyager.ServiceName) (*creator_v1.Service, error) {
 	user, err := userFromContext(ctx)
 	if err != nil {
 		return nil, apierrors.NewBadRequest(fmt.Sprintf("Failed to extract user from the request: %v", err))
 	}
 
-	service, err := h.serviceCentral.GetService(ctx, auth.ToOptionalUser(user), name)
+	service, err := h.serviceCentral.GetService(ctx, auth.ToOptionalUser(user), servicecentral.ServiceName(name))
 	if err != nil {
 		if servicecentral.IsNotFound(err) {
-			return nil, apierrors.NewNotFound(ServiceGroupResource, name)
+			return nil, apierrors.NewNotFound(ServiceGroupResource, string(name))
 		}
 		return nil, apierrors.NewInternalError(errors.Wrap(err, "Failed to fetch existing service"))
 	}
@@ -343,7 +343,7 @@ func (h *ServiceHandler) ServiceDelete(ctx context.Context, name string) (*creat
 	}
 
 	// Finally delete the service central record
-	err = h.serviceCentral.DeleteService(ctx, user, name)
+	err = h.serviceCentral.DeleteService(ctx, user, servicecentral.ServiceName(name))
 	if err != nil && !httputil.IsNotFound(err) {
 		return nil, apierrors.NewInternalError(errors.Wrap(err, "Failed to delete Service Central service"))
 	}
@@ -351,9 +351,9 @@ func (h *ServiceHandler) ServiceDelete(ctx context.Context, name string) (*creat
 	return service, nil
 }
 
-func validateServiceName(serviceName string) error {
+func validateServiceName(serviceName voyager.ServiceName) error {
 	if contains(blacklist, serviceName) {
-		return NewBlackListError("service name", serviceName)
+		return NewBlackListError("service name", string(serviceName))
 	}
 
 	if len(serviceName) > ServiceNameMaximumLength {
@@ -377,7 +377,7 @@ func validateServiceName(serviceName string) error {
 		return errors.Errorf("service name length is less than the minimum %d", ServiceNameMinimumLength)
 	}
 
-	if !ServiceNameRegExp.MatchString(serviceName) {
+	if !ServiceNameRegExp.MatchString(string(serviceName)) {
 		return errors.Errorf("Your service name is invalid. Only alphanumeric characters and dashes are allowed.")
 	}
 
@@ -405,7 +405,7 @@ func maybeUserFromContext(ctx context.Context) auth.OptionalUser {
 }
 
 func defaultAndValidateService(service *creator_v1.Service, user auth.User) error {
-	if err := validateServiceName(service.Name); err != nil {
+	if err := validateServiceName(voyager.ServiceName(service.Name)); err != nil {
 		return err
 	}
 
@@ -416,7 +416,7 @@ func defaultAndValidateService(service *creator_v1.Service, user auth.User) erro
 	return nil
 }
 
-func contains(list []string, key string) bool {
+func contains(list []voyager.ServiceName, key voyager.ServiceName) bool {
 	for _, value := range list {
 		if value == key {
 			return true

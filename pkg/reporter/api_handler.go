@@ -351,7 +351,7 @@ func (r *API) generateNamespaces(filter RequestFilter) ([]*NamespaceReportHandle
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		nrh, err := NewNamespaceReportHandler(n.Name, string(serviceName), objs, filter, r.location)
+		nrh, err := NewNamespaceReportHandler(n.Name, serviceName, objs, filter, r.location)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
