@@ -9,6 +9,7 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
@@ -137,6 +138,13 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	var references []smith_v1.Reference
 
 	for _, dependency := range dependencies {
+		if !dependency.Contract.IsEmpty() {
+			if dependency.Type != ups.ResourceType {
+				return nil, false, errors.Errorf("Wiring of %s to EC2Compute by resource contract is not supported yet", dependency.Type)
+			}
+			// TODO(kopper): Implement proper support, not only for UPS.
+			bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, wiringutil.ServiceInstanceResourceName(dependency.Name), false))
+		}
 		for _, resource := range dependency.SmithResources {
 			// TODO can be plugin
 			if resource.Spec.Plugin != nil {
