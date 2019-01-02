@@ -47,14 +47,16 @@ spec:
             resource:
               alarms:
                 highreadcapacity:
-                  MetricName: ConsumedReadCapacityUnits
-                  Description: "Consumed read units are above 95% of the provisioned reads! You should consider bumping the provisioned units in our service yaml file."
-                  Threshold: 10000
+                  ComparisonOperator: GreaterThanThreshold
+                  Description: Consumed read units are above 95% of the provisioned
+                    reads! You should consider bumping the provisioned units in our
+                    service yaml file.
                   EvaluationPeriods: 1
+                  MetricName: ConsumedReadCapacityUnits
                   Period: 300
                   Priority: High
-                  ComparisonOperator: GreaterThanThreshold
                   Statistic: Sum
+                  Threshold: 10000
                   Unit: Count
               attributes:
                 BackupPeriod: 1 hours

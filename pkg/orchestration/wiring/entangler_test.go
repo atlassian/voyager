@@ -15,12 +15,16 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/testutil"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -218,7 +222,10 @@ loggingId: logging-id-from-configmap
 `,
 		},
 	}
+	// capture WARN logs to test how we wire dependencies - as a SmithResource or as ResourceContract
+	core, observedLogs := observer.New(zapcore.WarnLevel)
 	ent := Entangler{
+		Logger:  zap.New(core),
 		Plugins: wiringPlugins,
 		ClusterLocation: voyager.ClusterLocation{
 			Account: legacy.TestAccountName,
@@ -253,11 +260,30 @@ loggingId: logging-id-from-configmap
 	state.SetLabels(labels)
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
-	return ent.Entangle(state, &EntanglerContext{
+	bundle, retriable, err := ent.Entangle(state, &EntanglerContext{
 		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceName: serviceName,
 		Config:      configMap.Data,
 	})
+	// TODO(kopper): Uncomment X after refactoring all autowiring functions to use ResourceContract of X
+	//requireNoDeprecatedWiring(t, apik8scompute.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, kubeingress.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, ec2compute_v2.ResourceType, observedLogs)
+	requireNoDeprecatedWiring(t, ups.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, aws.Cfn, observedLogs)
+	//requireNoDeprecatedWiring(t, aws.DynamoDB, observedLogs)
+	//requireNoDeprecatedWiring(t, aws.S3, observedLogs)
+	//requireNoDeprecatedWiring(t, postgres.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, rds.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, sqs.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, asapkey.ResourceType, observedLogs)
+	//requireNoDeprecatedWiring(t, internaldns.ResourceType, observedLogs)
+	return bundle, retriable, err
+}
+
+func requireNoDeprecatedWiring(t *testing.T, resourceType voyager.ResourceType, observedLogs *observer.ObservedLogs) {
+	//deprecatedLogs := observedLogs.FilterMessage(wiringResourcesDirectlyIsDeprecatedMsg).FilterField(zap.String("resourceType", string(resourceType)))
+	//require.True(t, deprecatedLogs.Len() == 0, "expected no deprecated logs for resource type %s, but found %v", resourceType, deprecatedLogs.All())
 }
 
 func entangleTestFileState(t *testing.T, filePrefix string) (*smith_v1.Bundle, bool, error) {

@@ -72,12 +72,11 @@ spec:
         name: iamrole
         objectName: kubecompute-simple---iamrole
         spec:
-          computeType: kubeCompute
           assumeRoles:
-          - "arn:aws:iam::test:role/testregion.paas-test_node-role"
-          - "arn:aws:iam::test:role/controller-role-testregion.paas-test"
+          - arn:aws:iam::test:role/testregion.paas-test_node-role
+          - arn:aws:iam::test:role/controller-role-testregion.paas-test
+          computeType: kubeCompute
           oapResourceName: kubecompute-simple-iamrole
-          serviceId: test-servicename
           serviceEnvironment:
             lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             notificationEmail: an_owner@example.com
@@ -103,6 +102,7 @@ spec:
               platform: voyager
               resource_owner: an_owner
               service_name: test-servicename
+          serviceId: test-servicename
   - name: kubecompute-simple---iamrole-binding
     references:
     - name: kubecompute-simple---iamrole-metadata-name
@@ -122,9 +122,9 @@ spec:
     spec:
       object:
         apiVersion: v1
-        kind: ServiceAccount
         imagePullSecrets:
         - name: kubecompute-docker-atl-paas
+        kind: ServiceAccount
         metadata:
           name: kubecompute-simple--svcacc
   - name: kubecompute-simple
@@ -132,9 +132,9 @@ spec:
     - name: kubecompute-simple--podsecretenvvar-metadata-name
       path: metadata.name
       resource: kubecompute-simple--podsecretenvvar
-    - name: kubecompute-simple---iamrole-binding-IAMRoleARN
-      example: arn:aws:iam::123456789012:role/path/role
+    - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
+      name: kubecompute-simple---iamrole-binding-IAMRoleARN
       path: data.IAMRoleARN
       resource: kubecompute-simple---iamrole-binding
     - name: kubecompute-simple--svcacc-metadata-name
@@ -147,13 +147,13 @@ spec:
         metadata:
           name: kubecompute-simple
         spec:
+          progressDeadlineSeconds: 600
+          replicas: 1
+          revisionHistoryLimit: 0
           selector:
             matchLabels:
               resourceName: kubecompute-simple
               stateName: state1
-          replicas: 1
-          progressDeadlineSeconds: 600
-          revisionHistoryLimit: 0
           strategy:
             rollingUpdate:
               maxSurge: 25%
@@ -171,16 +171,13 @@ spec:
                 resourceName: kubecompute-simple
                 stateName: state1
             spec:
-              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               containers:
-              - name: microservice
-                image: "docker.example.com/atlassian/micros-analytics:0.1"
-                env:
-                - name: "keyFromConfigMap"
+              - env:
+                - name: keyFromConfigMap
                   valueFrom:
                     configMapKeyRef:
-                      name: "configMap"
-                      key: "key"
+                      key: key
+                      name: configMap
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
@@ -194,6 +191,8 @@ spec:
                     optional: true
                 - configMapRef:
                     name: configMap
+                image: docker.example.com/atlassian/micros-analytics:0.1
+                name: microservice
                 ports:
                 - containerPort: 8080
                 resources:
@@ -219,7 +218,7 @@ spec:
                     optional: true
                 - configMapRef:
                     name: configMap
-                image: "docker.example.com/my_pgbouncer:abcxyz"
+                image: docker.example.com/my_pgbouncer:abcxyz
                 name: pgbouncer
                 ports:
                 - containerPort: 5432
@@ -237,4 +236,6 @@ spec:
               restartPolicy: Always
               schedulerName: default-scheduler
               securityContext: {}
+              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
+status: {}

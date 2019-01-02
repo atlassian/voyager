@@ -76,6 +76,10 @@ type ResourceContract struct {
 	Data   []DataItem            `json:"data,omitempty"`
 }
 
+func (c *ResourceContract) IsEmpty() bool {
+	return len(c.Shapes) == 0 && len(c.Refs) == 0 && len(c.Data) == 0
+}
+
 // DataItem is a named bit of data made available by an autowiring function.
 type DataItem struct {
 	Name string
