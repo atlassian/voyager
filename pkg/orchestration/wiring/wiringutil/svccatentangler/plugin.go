@@ -23,7 +23,8 @@ type SvcCatEntangler struct {
 	ObjectMeta   func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error)
 	References   func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
 
-	ResourceType voyager.ResourceType
+	ResourceType           voyager.ResourceType
+	OutputResourceContract bool
 }
 
 type partialSpec struct {
@@ -104,7 +105,18 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 				},
 			},
 		},
-		Exposed: true,
+		Exposed: !e.OutputResourceContract,
+	}, nil
+}
+
+func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.ResourceContract, error) {
+	// TODO(kopper): Actually implement.
+	return wiringplugin.ResourceContract{
+		Data: []wiringplugin.DataItem{
+			{
+				Name: "fakeNotEmptyContract",
+			},
+		},
 	}, nil
 }
 
@@ -118,8 +130,20 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 		return nil, false, err
 	}
 
-	result := &wiringplugin.WiringResult{
-		Resources: []wiringplugin.WiredSmithResource{serviceInstance},
+	var result *wiringplugin.WiringResult
+	if e.OutputResourceContract {
+		resourceContract, err := e.constructResourceContract(resource, context)
+		if err != nil {
+			return nil, false, err
+		}
+		result = &wiringplugin.WiringResult{
+			Contract:  resourceContract,
+			Resources: []wiringplugin.WiredSmithResource{serviceInstance},
+		}
+	} else {
+		result = &wiringplugin.WiringResult{
+			Resources: []wiringplugin.WiredSmithResource{serviceInstance},
+		}
 	}
 
 	return result, false, nil
