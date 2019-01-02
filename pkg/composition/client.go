@@ -1,7 +1,7 @@
 package composition
 
 import (
-	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/api/schema"
 	"github.com/atlassian/voyager/pkg/apis/composition"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	apiext_v1b1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -65,7 +65,7 @@ func ServiceDescriptorCrd() *apiext_v1b1.CustomResourceDefinition {
 		Type: "string", // can't provide a default in k8s schema yet
 	}
 
-	resourceName := voyager.ResourceNameSchema()
+	resourceName := schema.ResourceNameSchema()
 	resourceGroups := apiext_v1b1.JSONSchemaProps{
 		Type:     "array",
 		MinItems: int64ptr(1),

@@ -9,6 +9,7 @@ import (
 
 	pagerdutyClient "github.com/PagerDuty/go-pagerduty"
 	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/api/schema"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	"github.com/atlassian/voyager/pkg/creator/luigi"
 	"github.com/atlassian/voyager/pkg/creator/ssam"
@@ -31,7 +32,7 @@ import (
 const (
 	ServiceNameMinimumLength    = 1
 	ServiceNameMaximumLength    = 24
-	ServiceNameExpr             = voyager.ResourceNameSchemaPattern
+	ServiceNameExpr             = schema.ResourceNameSchemaPattern
 	EC2ComputeNameMaximumLength = ec2compute_common.MaximumServiceNameLength
 )
 
