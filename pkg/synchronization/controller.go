@@ -542,32 +542,26 @@ func (c *Controller) createOrUpdateSecret(logger *zap.Logger, secretSpec *core_v
 }
 
 func (c *Controller) ensureCommonSecretExists(logger *zap.Logger, ns *core_v1.Namespace) (bool /* retriable */, error) {
-	_, err := c.MainClient.CoreV1().Secrets(ns.Name).Get(commonSecretName, meta_v1.GetOptions{})
+	secret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: commonSecretName,
+		},
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.SecretKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		Type: core_v1.SecretTypeOpaque,
+	}
 
+	_, err := c.MainClient.CoreV1().Secrets(ns.Name).Create(secret)
 	switch {
 	case err == nil:
-		// nothing to do, it exists; nothing to update
-		logger.Sugar().Debugf("Secret named %q already exists", commonSecretName)
+		// we created it, no further action
+		logger.Sugar().Infof("Created common secret %q", commonSecretName)
 		return false, nil
 
-	case api_errors.IsNotFound(err):
-		logger.Sugar().Debugf("Common secret %q does not exist, creating", commonSecretName)
-		secret := &core_v1.Secret{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Name:      commonSecretName,
-				Namespace: ns.Name,
-			},
-			TypeMeta: meta_v1.TypeMeta{
-				Kind:       k8s.SecretKind,
-				APIVersion: core_v1.SchemeGroupVersion.String(),
-			},
-			Type: core_v1.SecretTypeOpaque,
-		}
-
-		_, err = c.MainClient.CoreV1().Secrets(ns.Name).Create(secret)
-		if err != nil {
-			return true, err
-		}
+	case api_errors.IsAlreadyExists(err):
+		logger.Sugar().Debugf("Common secret %q already exists, nothing to do", commonSecretName)
 		return false, nil
 
 	default:
