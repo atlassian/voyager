@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "shapes.go",
         "types.go",
+        "unstructured_shape.go",
         "zz_generated.deepcopy.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin",
