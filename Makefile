@@ -15,7 +15,7 @@ APIS_FORMATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/formation/v1
 APIS_OPS_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/ops/v1
 APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
 APIS_REPORTER_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/reporter/v1
-SHAPES_API_DIR = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin
+SHAPES_API_DIRS = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/knownshapes
 ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_FORMATION_DIR),$(APIS_OPS_DIR),$(APIS_ORCHESTRATION_DIR),$(APIS_REPORTER_DIR)
 
 #===============================================================================
@@ -416,7 +416,7 @@ generate-deepcopy:
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/deepcopy-gen
 	./bazel-bin/vendor/k8s.io/code-generator/cmd/deepcopy-gen/$(BINARY_PREFIX_DIRECTORY)/deepcopy-gen $(VERIFY_CODE) \
 	--v 1 --logtostderr \
-	--input-dirs "$(ALL_DIRS),$(SHAPES_API_DIR)" \
+	--input-dirs "$(ALL_DIRS),$(SHAPES_API_DIRS)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
 	--output-file-base zz_generated.deepcopy
 

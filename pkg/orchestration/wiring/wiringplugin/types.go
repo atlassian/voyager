@@ -8,6 +8,7 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // WiringPlugin represents an autowiring plugin.
@@ -51,13 +52,21 @@ type DependantResource struct {
 // ProtoReferenceName is the name of a proto reference.
 type ProtoReferenceName string
 
-// ProtoReference represent bits of information that need to be augmented with more information to
+// ProtoReference represents bits of information that need to be augmented with more information to
 // construct a valid Smith reference.
+// +k8s:deepcopy-gen=true
 type ProtoReference struct {
 	Resource smith_v1.ResourceName `json:"resource"`
 	Path     string                `json:"path,omitempty"`
 	Example  interface{}           `json:"example,omitempty"`
 	Modifier string                `json:"modifier,omitempty"`
+}
+
+// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
+// since it doesn't know it's JSON).
+func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
+	*out = *r
+	out.Example = runtime.DeepCopyJSONValue(r.Example)
 }
 
 // NamedProtoReference is a ProtoReference that has a name.
