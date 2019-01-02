@@ -12,6 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",
+        "//pkg/api/schema:go_default_library",
         "//pkg/apis/creator/v1:go_default_library",
         "//pkg/creator/luigi:go_default_library",
         "//pkg/creator/ssam:go_default_library",

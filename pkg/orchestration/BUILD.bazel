@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//:go_default_library",
         "//pkg/admission:go_default_library",
+        "//pkg/api/schema:go_default_library",
         "//pkg/apis/orchestration:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/k8s:go_default_library",

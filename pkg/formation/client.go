@@ -1,7 +1,7 @@
 package formation
 
 import (
-	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/api/schema"
 	"github.com/atlassian/voyager/pkg/apis/formation"
 	form_v1 "github.com/atlassian/voyager/pkg/apis/formation/v1"
 	apiext_v1b1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -19,7 +19,7 @@ func LocationDescriptorCrd() *apiext_v1b1.CustomResourceDefinition {
 
 	// definitions are not supported, do what we can :)
 
-	resourceName := voyager.ResourceNameSchema()
+	resourceName := schema.ResourceNameSchema()
 	resource := apiext_v1b1.JSONSchemaProps{
 		Type:     "object",
 		Required: []string{"name", "type"},

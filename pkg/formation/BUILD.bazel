@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",
+        "//pkg/api/schema:go_default_library",
         "//pkg/apis/formation:go_default_library",
         "//pkg/apis/formation/v1:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
