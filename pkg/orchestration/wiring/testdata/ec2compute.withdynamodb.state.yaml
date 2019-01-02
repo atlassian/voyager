@@ -1,0 +1,38 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: ptl-percolator
+  namespace: ptl-percolator
+spec:
+  resources:
+  - name: basic
+    type: DynamoDB
+    spec:
+      ReadCapacityUnits: 1
+      WriteCapacityUnits: 1
+      HashKeyName: key
+      HashKeyType: S
+      BackupPeriod: 1 day
+
+  - name: compute
+    type: EC2Compute
+    dependsOn:
+    - basic
+    spec:
+      meaninglesskey: used as an example
+      notifications:
+        email: notification@email.com
+      ec2:
+        instanceType: t2.small
+      autoScalingGroup:
+        minSize: 1
+        maxSize: 2
+      docker:
+        envVars:
+          key: "value"
+        compose:
+          backendapp:
+            image: docker.example.com/my-app
+            tag: '1.0'
+            ports:
+            - 8080:8080

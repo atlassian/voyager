@@ -282,8 +282,8 @@ loggingId: logging-id-from-configmap
 }
 
 func requireNoDeprecatedWiring(t *testing.T, resourceType voyager.ResourceType, observedLogs *observer.ObservedLogs) {
-	//deprecatedLogs := observedLogs.FilterMessage(wiringResourcesDirectlyIsDeprecatedMsg).FilterField(zap.String("resourceType", string(resourceType)))
-	//require.True(t, deprecatedLogs.Len() == 0, "expected no deprecated logs for resource type %s, but found %v", resourceType, deprecatedLogs.All())
+	deprecatedLogs := observedLogs.FilterMessage(wiringResourcesDirectlyIsDeprecatedMsg).FilterField(zap.String("resourceType", string(resourceType)))
+	require.True(t, deprecatedLogs.Len() == 0, "expected no deprecated logs for resource type %s, but found %v", resourceType, deprecatedLogs.All())
 }
 
 func entangleTestFileState(t *testing.T, filePrefix string) (*smith_v1.Bundle, bool, error) {
