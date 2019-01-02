@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	core_v1 "k8s.io/api/core/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	core_v1inf "k8s.io/client-go/informers/core/v1"
@@ -1096,8 +1097,7 @@ func TestCreatesCommonSecret(t *testing.T) {
 			secret, ok := secrets[commonSecretName]
 			assert.True(t, ok)
 
-			// check secret namespace and contents
-			assert.Equal(t, tc.ns.Name, secret.Namespace, "Should be in the created namespace")
+			// ensure secret is empty
 			assert.Len(t, secret.Data, 0)
 
 			// check secret owner references
@@ -1108,7 +1108,7 @@ func TestCreatesCommonSecret(t *testing.T) {
 	tc.run(t)
 }
 
-func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
+func TestHandlesExistingCommonSecret(t *testing.T) {
 	t.Parallel()
 
 	ns := &core_v1.Namespace{
@@ -1142,6 +1142,20 @@ func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
 		mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret(), existingSecret},
 		ns:                ns,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+			// mock that the secret already exists
+			existsErrorFunc := func(action kube_testing.Action) (bool, runtime.Object, error) {
+				if create, ok := action.(kube_testing.CreateAction); ok {
+					if secret, ok := create.GetObject().(*core_v1.Secret); ok {
+						if secret.Name == "common-secrets" {
+							return true, nil, api_errors.NewAlreadyExists(action.GetResource().GroupResource(), commonSecretName)
+						}
+					}
+				}
+				return false, nil, nil
+			}
+
+			tc.mainFake.PrependReactor("create", "secrets", existsErrorFunc)
+
 			service := &creator_v1.Service{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: serviceName,
@@ -1165,16 +1179,8 @@ func TestDoesNotChangeExistingCommonSecret(t *testing.T) {
 			_, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
 
-			secrets := findCreatedSecrets(tc.mainFake.Actions())
-
-			// ensure secret was not created
-			_, ok := secrets[commonSecretName]
-			assert.False(t, ok)
-
-			// make sure it wasn't updated
-			secrets = findUpdatedSecrets(tc.mainFake.Actions())
-			_, ok = secrets[commonSecretName]
-			assert.False(t, ok)
+			// the fact that there is no error means that it
+			// handled the already exists error
 		},
 	}
 
