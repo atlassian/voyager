@@ -6,7 +6,7 @@ import (
 
 	"github.com/atlassian/smith/pkg/resources"
 	"github.com/atlassian/voyager/cmd"
-	"github.com/atlassian/voyager/pkg/composition"
+	comp_crd "github.com/atlassian/voyager/pkg/composition/crd"
 	"github.com/atlassian/voyager/pkg/formation"
 	"github.com/atlassian/voyager/pkg/ops"
 	"github.com/atlassian/voyager/pkg/orchestration"
@@ -30,7 +30,7 @@ func innerMain() error {
 	case "route":
 		crd = ops.RouteCrd()
 	case "sd":
-		crd = composition.ServiceDescriptorCrd()
+		crd = comp_crd.ServiceDescriptorCrd()
 	case "ld":
 		crd = formation.LocationDescriptorCrd()
 	default:

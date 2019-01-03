@@ -16,6 +16,7 @@ go_library(
         "//pkg/apis/composition/v1:go_default_library",
         "//pkg/composition:go_default_library",
         "//pkg/composition/client:go_default_library",
+        "//pkg/composition/crd:go_default_library",
         "//pkg/composition/informer:go_default_library",
         "//pkg/k8s:go_default_library",
         "//pkg/util:go_default_library",

@@ -1,4 +1,4 @@
-package composition
+package crd
 
 import (
 	"github.com/atlassian/voyager/pkg/api/schema"
@@ -8,7 +8,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ServiceDescriptorCrd provides the custom resource definition for a ServiceDescriptor
+// ServiceDescriptorCrd provides the custom resource definition for a ServiceDescriptor.
 func ServiceDescriptorCrd() *apiext_v1b1.CustomResourceDefinition {
 	locations := apiext_v1b1.JSONSchemaProps{
 		Type: "array",

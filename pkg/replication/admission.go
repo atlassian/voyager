@@ -15,6 +15,7 @@ import (
 	apis_composition "github.com/atlassian/voyager/pkg/apis/composition"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	"github.com/atlassian/voyager/pkg/composition"
+	comp_crd "github.com/atlassian/voyager/pkg/composition/crd"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/sets"
@@ -79,13 +80,13 @@ func (ac *AdmissionContext) SetupAdmissionWebhooks(r *chi.Mux) error {
 }
 
 func setupValidator() (*validate.SchemaValidator, error) {
-	validation := apiextensions.CustomResourceValidation{}
-	err := apiext_v1b1.Convert_v1beta1_CustomResourceValidation_To_apiextensions_CustomResourceValidation(composition.ServiceDescriptorCrd().Spec.Validation, &validation, nil)
+	crValidation := apiextensions.CustomResourceValidation{}
+	err := apiext_v1b1.Convert_v1beta1_CustomResourceValidation_To_apiextensions_CustomResourceValidation(comp_crd.ServiceDescriptorCrd().Spec.Validation, &crValidation, nil)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	validation.OpenAPIV3Schema.Properties["spec"] = addAdditionalProperties(validation.OpenAPIV3Schema.Properties["spec"])
-	validator, _, err := apiservervalidation.NewSchemaValidator(&validation)
+	crValidation.OpenAPIV3Schema.Properties["spec"] = addAdditionalProperties(crValidation.OpenAPIV3Schema.Properties["spec"])
+	validator, _, err := apiservervalidation.NewSchemaValidator(&crValidation)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
