@@ -8,7 +8,7 @@ go_library(
         "request.go",
         "response.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/util/httptest",
+    importpath = "github.com/atlassian/voyager/pkg/util/httputil/httptest",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/util/testutil:go_default_library",

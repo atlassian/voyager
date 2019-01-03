@@ -56,7 +56,7 @@ go_test(
         "//pkg/apis/ops/v1:go_default_library",
         "//pkg/k8s:go_default_library",
         "//pkg/ops/constants:go_default_library",
-        "//pkg/util/httptest:go_default_library",
+        "//pkg/util/httputil/httptest:go_default_library",
         "//pkg/util/logz:go_default_library",
         "//pkg/util/pkiutil:go_default_library",
         "//vendor/github.com/SermoDigital/jose/jws:go_default_library",

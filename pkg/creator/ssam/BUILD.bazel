@@ -34,8 +34,8 @@ go_test(
     embed = [":go_default_library"],
     race = "on",
     deps = [
-        "//pkg/util/httptest:go_default_library",
         "//pkg/util/httputil:go_default_library",
+        "//pkg/util/httputil/httptest:go_default_library",
         "//pkg/util/pkiutil/pkitest:go_default_library",
         "//pkg/util/testutil:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",

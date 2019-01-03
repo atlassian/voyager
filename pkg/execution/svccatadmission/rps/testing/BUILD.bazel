@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//pkg/execution/svccatadmission/rps:go_default_library",
         "//pkg/util:go_default_library",
-        "//pkg/util/httptest:go_default_library",
+        "//pkg/util/httputil/httptest:go_default_library",
         "//pkg/util/pkiutil:go_default_library",
         "//vendor/github.com/stretchr/testify/require:go_default_library",
         "//vendor/go.uber.org/zap/zaptest:go_default_library",
