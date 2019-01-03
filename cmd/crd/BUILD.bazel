@@ -9,7 +9,7 @@ go_library(
         "//cmd:go_default_library",
         "//pkg/composition/crd:go_default_library",
         "//pkg/formation/crd:go_default_library",
-        "//pkg/ops:go_default_library",
+        "//pkg/ops/crd:go_default_library",
         "//pkg/orchestration/crd:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/resources:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",

@@ -8,7 +8,7 @@ import (
 	"github.com/atlassian/voyager/cmd"
 	comp_crd "github.com/atlassian/voyager/pkg/composition/crd"
 	form_crd "github.com/atlassian/voyager/pkg/formation/crd"
-	"github.com/atlassian/voyager/pkg/ops"
+	ops_crd "github.com/atlassian/voyager/pkg/ops/crd"
 	orch_crd "github.com/atlassian/voyager/pkg/orchestration/crd"
 	"github.com/pkg/errors"
 	apiext_v1b1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -28,7 +28,7 @@ func innerMain() error {
 	case "state":
 		crd = orch_crd.StateCrd()
 	case "route":
-		crd = ops.RouteCrd()
+		crd = ops_crd.RouteCrd()
 	case "sd":
 		crd = comp_crd.ServiceDescriptorCrd()
 	case "ld":
