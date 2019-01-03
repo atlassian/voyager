@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/atlassian/voyager/pkg/pagerduty"
-	"github.com/atlassian/voyager/pkg/pkiutil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"go.uber.org/zap"
 )
 

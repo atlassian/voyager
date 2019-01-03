@@ -9,7 +9,7 @@ go_library(
         "keyprovider.go",
         "keys.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/pkiutil",
+    importpath = "github.com/atlassian/voyager/pkg/util/pkiutil",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/util:go_default_library",

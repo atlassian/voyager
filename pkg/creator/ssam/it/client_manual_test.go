@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/creator/ssam"
-	"github.com/atlassian/voyager/pkg/pkiutil"
 	"github.com/atlassian/voyager/pkg/testutil"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"

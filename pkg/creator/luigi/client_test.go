@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/pkiutil"
 	"github.com/atlassian/voyager/pkg/util"
 	. "github.com/atlassian/voyager/pkg/util/httptest"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
