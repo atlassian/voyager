@@ -22,11 +22,9 @@ go_test(
     embed = [":go_default_library"],
     race = "on",
     deps = [
+        "//pkg/api/schema/schematest:go_default_library",
         "//pkg/util/testutil:go_default_library",
         "//vendor/github.com/ghodss/yaml:go_default_library",
-        "//vendor/github.com/go-openapi/errors:go_default_library",
-        "//vendor/github.com/go-openapi/spec:go_default_library",
-        "//vendor/github.com/go-openapi/strfmt:go_default_library",
         "//vendor/github.com/go-openapi/validate:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",
         "//vendor/github.com/stretchr/testify/require:go_default_library",
