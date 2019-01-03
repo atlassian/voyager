@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/testutil"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

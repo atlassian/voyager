@@ -6,7 +6,7 @@ import (
 	pagerdutyClient "github.com/PagerDuty/go-pagerduty"
 	"github.com/atlassian/voyager"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
-	"github.com/atlassian/voyager/pkg/testutil"
+	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/atlassian/voyager/pkg/util/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

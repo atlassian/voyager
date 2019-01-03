@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/testutil"
+	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/ghodss/yaml"
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/spec"

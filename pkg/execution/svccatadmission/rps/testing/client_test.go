@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission/rps"
-	"github.com/atlassian/voyager/pkg/testutil"
 	"github.com/atlassian/voyager/pkg/util"
+	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"

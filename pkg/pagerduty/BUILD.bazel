@@ -30,7 +30,7 @@ go_test(
     deps = [
         "//:go_default_library",
         "//pkg/apis/creator/v1:go_default_library",
-        "//pkg/testutil:go_default_library",
+        "//pkg/util/testutil:go_default_library",
         "//pkg/util/uuid:go_default_library",
         "//vendor/github.com/PagerDuty/go-pagerduty:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",

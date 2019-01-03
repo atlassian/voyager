@@ -53,7 +53,7 @@ go_test(
         "//:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/orchestration/client/fake:go_default_library",
-        "//pkg/testutil:go_default_library",
+        "//pkg/util/testutil:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/go-openapi/errors:go_default_library",

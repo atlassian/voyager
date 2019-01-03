@@ -28,7 +28,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s/updater"
 	"github.com/atlassian/voyager/pkg/options"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
-	"github.com/atlassian/voyager/pkg/testutil"
+	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

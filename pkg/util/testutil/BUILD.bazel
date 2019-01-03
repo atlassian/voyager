@@ -10,7 +10,7 @@ go_library(
         "testdata.go",
         "users.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/testutil",
+    importpath = "github.com/atlassian/voyager/pkg/util/testutil",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/util/auth:go_default_library",
