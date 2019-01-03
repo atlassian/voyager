@@ -9,10 +9,12 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,11 +141,15 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 
 	for _, dependency := range dependencies {
 		if !dependency.Contract.IsEmpty() {
-			if dependency.Type != ups.ResourceType {
+			if dependency.Type != ups.ResourceType && dependency.Type != aws.DynamoDB {
 				return nil, false, errors.Errorf("Wiring of %s to EC2Compute by resource contract is not supported yet", dependency.Type)
 			}
-			// TODO(kopper): Implement proper support, not only for UPS.
-			bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, wiringutil.ServiceInstanceResourceName(dependency.Name), false))
+			bindableShape, err := dependency.Contract.GetShape(knownshapes.BindableEnvironmentVariablesShape)
+			if err != nil {
+				return nil, false, errors.Wrap(err, "failed to bind to ServiceInstance")
+			}
+			resourceReference := bindableShape.(knownshapes.ServiceInstanceReference).Reference()
+			bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceReference, false))
 		}
 		for _, resource := range dependency.SmithResources {
 			// TODO can be plugin

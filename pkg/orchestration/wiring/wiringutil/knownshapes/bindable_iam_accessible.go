@@ -1,6 +1,9 @@
 package knownshapes
 
-import "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+import (
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+)
 
 const (
 	// BindableIamAccessibleShape is a When you bind to it it returns IAM policy snippet.
@@ -9,7 +12,7 @@ const (
 
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin.Shape
-type BindableIamAccessible struct {
+type bindableIamAccessible struct {
 	wiringplugin.ShapeMeta           `json:",inline"`
 	wiringplugin.BindableShapeStruct `json:",inline"`
 	//IAMRoleARN    BindingProtoReference
@@ -17,6 +20,18 @@ type BindableIamAccessible struct {
 	IAMPolicySnippet wiringplugin.BindingProtoReference
 }
 
-func (s *BindableIamAccessible) Name() wiringplugin.ShapeName {
+func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnippetPath string) *bindableIamAccessible {
+	return &bindableIamAccessible{
+		ShapeMeta: wiringplugin.ShapeMeta{BindableIamAccessibleShape},
+		BindableShapeStruct: wiringplugin.BindableShapeStruct{
+			ServiceInstanceName: wiringplugin.ProtoReference{
+				Resource: resourceName,
+				Path:     "metadata.name",
+			}},
+		IAMPolicySnippet: wiringplugin.BindingProtoReference{Path: IAMPolicySnippetPath},
+	}
+}
+
+func (s *bindableIamAccessible) Name() wiringplugin.ShapeName {
 	return BindableIamAccessibleShape
 }

@@ -9,7 +9,10 @@ go_library(
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/orchestration/wiring/wiringplugin:go_default_library"],
+    deps = [
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+    ],
 )
 
 go_test(

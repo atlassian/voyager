@@ -7,6 +7,7 @@ import (
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
+	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -83,6 +84,16 @@ type ResourceContract struct {
 	Shapes []Shape               `json:"shapes,omitempty"`
 	Refs   []NamedProtoReference `json:"refs,omitempty"`
 	Data   []DataItem            `json:"data,omitempty"`
+}
+
+func (c *ResourceContract) GetShape(shapeName ShapeName) (Shape, error) {
+	for _, shape := range c.Shapes {
+		if shape.Name() == shapeName {
+			return shape, nil
+		}
+	}
+
+	return nil, errors.Errorf("Shape %s not found in the contract", shapeName)
 }
 
 func (c *ResourceContract) IsEmpty() bool {

@@ -16,6 +16,7 @@ import (
 // there is a need to bind to multiple ServiceInstances produced by the same producer, construct names
 // (using ConsumerProducerResourceNameWithPostfix() and ConsumerProducerMetaNameWithPostfix() functions) with
 // different postfixes.
+// DEPRECATED: use ConsumerProducerServiceBindingV2 instead
 func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, producerServiceInstance smith_v1.ResourceName,
 	exposed bool) wiringplugin.WiredSmithResource {
 
@@ -23,6 +24,20 @@ func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, pro
 		Name:     ReferenceName(producerServiceInstance, "metadata", "name"),
 		Resource: producerServiceInstance,
 		Path:     "metadata.name",
+	}
+	bindingResourceName := ConsumerProducerResourceNameWithPostfix(consumer, producer, "binding")
+	bindingMetaName := ConsumerProducerMetaName(consumer, producer)
+	return ServiceBinding(bindingResourceName, bindingMetaName, serviceInstanceRef, exposed)
+}
+
+// TODO(kopper): Remove V2 suffix
+func ConsumerProducerServiceBindingV2(consumer, producer voyager.ResourceName, resourceReference wiringplugin.ProtoReference,
+	exposed bool) wiringplugin.WiredSmithResource {
+
+	serviceInstanceRef := smith_v1.Reference{
+		Name:     ReferenceName(resourceReference.Resource, "metadata", "name"),
+		Resource: resourceReference.Resource,
+		Path:     resourceReference.Path,
 	}
 	bindingResourceName := ConsumerProducerResourceNameWithPostfix(consumer, producer, "binding")
 	bindingMetaName := ConsumerProducerMetaName(consumer, producer)
