@@ -1,4 +1,4 @@
-package testutil
+package pkitest
 
 import (
 	"crypto/rand"
