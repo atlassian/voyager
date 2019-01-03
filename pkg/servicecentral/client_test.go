@@ -13,7 +13,7 @@ import (
 	. "github.com/atlassian/voyager/pkg/util/httptest"
 	"github.com/atlassian/voyager/pkg/util/httputil"
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
-	pkitestutil "github.com/atlassian/voyager/pkg/util/pkiutil/testutil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil/pkitest"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +46,7 @@ func TestCreateNewService(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newTestServiceData(false))
 	// then
 	assert.NoError(t, err)
@@ -61,7 +61,7 @@ func TestCreateServiceFailsIfItAlreadyExists(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newTestServiceData(false))
 	// then
 	assert.True(t, httputil.IsConflict(errors.Cause(err)))
@@ -74,7 +74,7 @@ func TestCreateServiceFailsWhenServiceCentralInternalError(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newTestServiceData(false))
 	// then
 	assert.True(t, httputil.IsUnknown(err))
@@ -94,7 +94,7 @@ func TestUpdateService(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	testServiceData := newTestServiceData(true)
 	copiedTestServiceData := *testServiceData
 	err := serviceCentralClient.PatchService(context.Background(), testUser, testServiceData)
@@ -120,7 +120,7 @@ func TestListServices(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	serviceData, err := serviceCentralClient.ListServices(context.Background(), optionalUser, "service_name='test-service'")
 	// then
 	require.NoError(t, err)
@@ -143,7 +143,7 @@ func TestListModifiedServices(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	serviceData, err := serviceCentralClient.ListModifiedServices(context.Background(), optionalUser, now)
 	// then
 	require.NoError(t, err)
@@ -183,7 +183,7 @@ func TestListServicesPaginates(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	serviceData, err := serviceCentralClient.ListServices(context.Background(), optionalUser, "platform='micros2'")
 	// then
 	require.NoError(t, err)
@@ -204,7 +204,7 @@ func TestDeleteService(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	err := serviceCentralClient.DeleteService(context.Background(), testUser, "some-uuid")
 	// then
 	require.NoError(t, err)
@@ -224,7 +224,7 @@ func TestDeleteServiceNotFound(t *testing.T) {
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	err := serviceCentralClient.DeleteService(context.Background(), testUser, "some-uuid")
 	// then
 	require.Error(t, err)
@@ -240,7 +240,7 @@ func TestGetServiceDataFailsWhenServiceCentralInternalError(t *testing.T) {
 	defer serviceCentralServerMock.Close()
 	user := auth.MaybeNamed("test-owner")
 	// when
-	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitestutil.MockASAPClientConfig(t))
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
 	_, err := serviceCentralClient.ListServices(context.Background(), user, "test-query")
 	// then
 	assert.True(t, httputil.IsUnknown(err))

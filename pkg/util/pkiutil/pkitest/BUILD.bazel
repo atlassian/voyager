@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = ["asap.go"],
-    importpath = "github.com/atlassian/voyager/pkg/util/pkiutil/testutil",
+    importpath = "github.com/atlassian/voyager/pkg/util/pkiutil/pkitest",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/util/pkiutil:go_default_library",

@@ -10,7 +10,7 @@ import (
 
 	. "github.com/atlassian/voyager/pkg/util/httptest"
 	"github.com/atlassian/voyager/pkg/util/httputil"
-	pkitestutil "github.com/atlassian/voyager/pkg/util/pkiutil/testutil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil/pkitest"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,7 +37,7 @@ func TestSSAMClientGetContainerThatExists(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
@@ -65,7 +65,7 @@ func TestSSAMClientGetContainerThatDoesNotExist(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
@@ -100,7 +100,7 @@ func TestSSAMClientPostContainer(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
@@ -136,7 +136,7 @@ func TestSSAMClientGetAccessLevel(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
@@ -174,7 +174,7 @@ func TestSSAMClientPostAccessLevel(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
@@ -209,7 +209,7 @@ func TestSSAMClientDeleteContainerSuccess(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
@@ -238,7 +238,7 @@ func TestSSAMClientDeleteContainerNotFound(t *testing.T) {
 	defer srv.Close()
 
 	// GIVEN: Setup our SSAM Client
-	asapConfig := pkitestutil.MockASAPClientConfig(t)
+	asapConfig := pkitest.MockASAPClientConfig(t)
 	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
 
 	// WHEN: Make the request
