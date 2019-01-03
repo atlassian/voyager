@@ -1,4 +1,4 @@
-package composition
+package crd
 
 import (
 	"encoding/json"
@@ -35,7 +35,7 @@ func runCRDTestCase(t *testing.T, schema *spec.Schema, filename string, errorMsg
 	srcFile, err := testutil.LoadFileFromTestData(filename)
 	require.NoError(t, err)
 
-	var testData map[string]interface{}
+	var testData interface{}
 	err = yaml.Unmarshal(srcFile, &testData)
 	require.NoError(t, err)
 

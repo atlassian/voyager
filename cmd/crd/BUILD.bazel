@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd:go_default_library",
-        "//pkg/composition:go_default_library",
+        "//pkg/composition/crd:go_default_library",
         "//pkg/formation:go_default_library",
         "//pkg/ops:go_default_library",
         "//pkg/orchestration:go_default_library",
