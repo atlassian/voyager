@@ -1,0 +1,1000 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: noderefapp
+  namespace: noderefapp
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: noderefapp
+    uid: ""
+spec:
+  resources:
+  - name: asap--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: ASAPKey
+          name: asap
+        spec:
+          clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
+          clusterServicePlanExternalID: 07bb749b-3500-454a-87cd-1244534083f0
+          parameters:
+            creator: micros2
+            keyName: asap
+            serviceName: test-servicename/asap
+  - name: basic--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: sqs
+          name: basic
+        spec:
+          clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
+          clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                MaxReceiveCount: 10
+                VisibilityTimeout: 600
+              name: basic
+              type: sqs
+            serviceName: test-servicename
+  - name: notification-sns--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: CF
+          name: notification-sns
+        spec:
+          clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
+          clusterServicePlanExternalID: 8933f0a5-b232-4319-9861-baaccece62fd
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              notificationEmail: an_owner@example.com
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              primaryVpcEnvironment:
+                appSubnets:
+                - subnet-1
+                - subnet-2
+                instanceSecurityGroup: sg-2
+                jumpboxSecurityGroup: sg-1
+                privateDnsZone: testregion.atl-inf.io
+                privatePaasDnsZone: testregion.dev.paas-inf.net
+                region: testregion
+                sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+                vpcId: vpc-1
+                zones:
+                - testregiona
+                - testregionb
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                template: sns-v1
+              name: notification-sns
+              type: cloudformation
+            serviceName: test-servicename
+  - name: notification-sqs--notification-sns--binding
+    references:
+    - name: notification-sns--instance-metadata-name
+      path: metadata.name
+      resource: notification-sns--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: notification-sqs--notification-sns
+        spec:
+          instanceRef:
+            name: '!{notification-sns--instance-metadata-name}'
+          secretName: notification-sqs--notification-sns
+  - name: notification-sqs--instance
+    references:
+    - example: '"arn:aws:sns:us-east-1:123456789012:example"'
+      modifier: bindsecret
+      name: notification-sqs--notification-sns--binding-TopicArn
+      path: data.TopicArn
+      resource: notification-sqs--notification-sns--binding
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: sqs
+          name: notification-sqs
+        spec:
+          clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
+          clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                MaxReceiveCount: 100
+                Subscriptions:
+                - attributes:
+                    RawMessageDelivery: false
+                  topicArn: '!{notification-sqs--notification-sns--binding-TopicArn}'
+                VisibilityTimeout: 30
+              name: notification-sqs
+              type: sqs
+            serviceName: test-servicename
+  - name: files--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: S3
+          name: files
+        spec:
+          clusterServiceClassExternalID: a6bf1e70-9bbb-4826-9793-75871cb540f1
+          clusterServicePlanExternalID: d8eca56a-9634-4e6f-a7c8-47e3bc76bc83
+          parameters:
+            environment:
+              fallback: false
+            resource:
+              name: files
+              type: s3
+            serviceName: test-servicename
+  - name: stream--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: CF
+          name: stream
+        spec:
+          clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
+          clusterServicePlanExternalID: 8933f0a5-b232-4319-9861-baaccece62fd
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              notificationEmail: an_owner@example.com
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              primaryVpcEnvironment:
+                appSubnets:
+                - subnet-1
+                - subnet-2
+                instanceSecurityGroup: sg-2
+                jumpboxSecurityGroup: sg-1
+                privateDnsZone: testregion.atl-inf.io
+                privatePaasDnsZone: testregion.dev.paas-inf.net
+                region: testregion
+                sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+                vpcId: vpc-1
+                zones:
+                - testregiona
+                - testregionb
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                parameters:
+                  ShardCount: 1
+                template: kinesis-v1
+              name: stream
+              type: cloudformation
+            serviceName: test-servicename
+  - name: dynamo-basic--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: DYNAMO
+          name: dynamo-basic
+        spec:
+          clusterServiceClassExternalID: 0dae543c-216b-4a08-87bd-aea7522c0cfd
+          clusterServicePlanExternalID: 9b59fb3e-56eb-487d-863e-bf831ca4fa3f
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              notificationEmail: an_owner@example.com
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              primaryVpcEnvironment:
+                appSubnets:
+                - subnet-1
+                - subnet-2
+                emrSubnet: subnet-1a
+                region: testregion
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                BackupPeriod: 1 day
+                HashKeyName: key
+                HashKeyType: S
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+              name: dynamo-basic
+              type: dynamo-db
+            serviceName: test-servicename
+  - name: dynamo-complex--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: DYNAMO
+          name: dynamo-complex
+        spec:
+          clusterServiceClassExternalID: 0dae543c-216b-4a08-87bd-aea7522c0cfd
+          clusterServicePlanExternalID: 9b59fb3e-56eb-487d-863e-bf831ca4fa3f
+          parameters:
+            environment:
+              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              notificationEmail: an_owner@example.com
+              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              primaryVpcEnvironment:
+                appSubnets:
+                - subnet-1
+                - subnet-2
+                emrSubnet: subnet-1a
+                region: testregion
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                BackupPeriod: never
+                GlobalSecondaryIndexes:
+                - HashKeyName: globallyindexed
+                  HashKeyType: S
+                  IndexName: global
+                  ProjectionType: ALL
+                  RangeKeyName: rangekeynecessary
+                  RangeKeyType: S
+                HashKeyName: key
+                HashKeyType: S
+                LocalSecondaryIndexes:
+                - IndexName: local
+                  ProjectionType: ALL
+                  RangeKeyName: locallyindexed
+                  RangeKeyType: S
+                RangeKeyName: rng
+                RangeKeyType: "N"
+                ReadCapacityUnits: 1
+                TTLAttributeName: ttlattribute
+                WriteCapacityUnits: 1
+              name: dynamo-complex
+              type: dynamo-db
+            serviceName: test-servicename
+  - name: datastore--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          annotations:
+            voyager.atl-paas.net/envResourcePrefix: pg
+          name: datastore
+        spec:
+          clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8
+          clusterServicePlanExternalID: 10aa2cb5-897d-43f6-b0df-ac4f8a2a758e
+          parameters:
+            lessee: test-servicename
+            location:
+              env: microstestenv
+            resource_name: datastore
+  - name: ec2--asap--binding
+    references:
+    - name: asap--instance-metadata-name
+      path: metadata.name
+      resource: asap--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--asap
+        spec:
+          instanceRef:
+            name: '!{asap--instance-metadata-name}'
+          secretName: ec2--asap
+  - name: ec2--basic--binding
+    references:
+    - name: basic--instance-metadata-name
+      path: metadata.name
+      resource: basic--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--basic
+        spec:
+          instanceRef:
+            name: '!{basic--instance-metadata-name}'
+          secretName: ec2--basic
+  - name: ec2--files--binding
+    references:
+    - name: files--instance-metadata-name
+      path: metadata.name
+      resource: files--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--files
+        spec:
+          instanceRef:
+            name: '!{files--instance-metadata-name}'
+          secretName: ec2--files
+  - name: ec2--stream--binding
+    references:
+    - name: stream--instance-metadata-name
+      path: metadata.name
+      resource: stream--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--stream
+        spec:
+          instanceRef:
+            name: '!{stream--instance-metadata-name}'
+          secretName: ec2--stream
+  - name: ec2--dynamo-basic--binding
+    references:
+    - name: dynamo-basic--instance-metadata-name
+      path: metadata.name
+      resource: dynamo-basic--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--dynamo-basic
+        spec:
+          instanceRef:
+            name: '!{dynamo-basic--instance-metadata-name}'
+          secretName: ec2--dynamo-basic
+  - name: ec2--dynamo-complex--binding
+    references:
+    - name: dynamo-complex--instance-metadata-name
+      path: metadata.name
+      resource: dynamo-complex--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--dynamo-complex
+        spec:
+          instanceRef:
+            name: '!{dynamo-complex--instance-metadata-name}'
+          secretName: ec2--dynamo-complex
+  - name: ec2--datastore--binding
+    references:
+    - name: datastore--instance-metadata-name
+      path: metadata.name
+      resource: datastore--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--datastore
+        spec:
+          instanceRef:
+            name: '!{datastore--instance-metadata-name}'
+          secretName: ec2--datastore
+  - name: ec2--notification-sns--binding
+    references:
+    - name: notification-sns--instance-metadata-name
+      path: metadata.name
+      resource: notification-sns--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--notification-sns
+        spec:
+          instanceRef:
+            name: '!{notification-sns--instance-metadata-name}'
+          secretName: ec2--notification-sns
+  - name: ec2--notification-sqs--binding
+    references:
+    - name: notification-sqs--instance-metadata-name
+      path: metadata.name
+      resource: notification-sqs--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2--notification-sqs
+        spec:
+          instanceRef:
+            name: '!{notification-sqs--instance-metadata-name}'
+          secretName: ec2--notification-sqs
+  - name: ec2--secretenvvar
+    references:
+    - resource: ec2--asap--binding
+    - resource: ec2--basic--binding
+    - resource: ec2--files--binding
+    - resource: ec2--stream--binding
+    - resource: ec2--dynamo-basic--binding
+    - resource: ec2--dynamo-complex--binding
+    - resource: ec2--datastore--binding
+    - resource: ec2--notification-sns--binding
+    - resource: ec2--notification-sqs--binding
+    spec:
+      plugin:
+        name: secretenvvar
+        objectName: ec2--secretenvvar
+        spec:
+          ignoreKeyRegex: (?i)IamPolicySnippet$
+          outputJsonKey: secretEnvVars
+          outputSecretKey: ec2ComputeEnvVars
+          rename:
+            CF_NOTIFICATION_SNS_TOPICARN: LIFECYCLE_SNS_TOPICNAME
+            DYNAMO_DYNAMO_BASIC_TABLE_NAME: DYNAMO_BASIC_TABLE_NAME
+            DYNAMO_DYNAMO_BASIC_TABLE_REGION: DYNAMO_BASIC_TABLE_REGION
+            DYNAMO_DYNAMO_COMPLEX_TABLE_NAME: DYNAMO_COMPLEX_TABLE_NAME
+            DYNAMO_DYNAMO_COMPLEX_TABLE_REGION: DYNAMO_COMPLEX_TABLE_REGION
+            SQS_NOTIFICATION_SQS_QUEUE_NAME: LIFECYCLE_SQS_QUEUE_NAME
+            SQS_NOTIFICATION_SQS_QUEUE_REGION: LIFECYCLE_SQS_QUEUE_REGION
+            SQS_NOTIFICATION_SQS_QUEUE_URL: LIFECYCLE_SQS_QUEUE_URL
+  - name: ec2---iamrole
+    references:
+    - resource: ec2--asap--binding
+    - resource: ec2--basic--binding
+    - resource: ec2--files--binding
+    - resource: ec2--stream--binding
+    - resource: ec2--dynamo-basic--binding
+    - resource: ec2--dynamo-complex--binding
+    - resource: ec2--datastore--binding
+    - resource: ec2--notification-sns--binding
+    - resource: ec2--notification-sqs--binding
+    spec:
+      plugin:
+        name: iamrole
+        objectName: ec2---iamrole
+        spec:
+          assumeRoles:
+          - arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC
+          computeType: ec2Compute
+          createInstanceProfile: true
+          managedPolicies:
+          - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
+          - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
+          oapResourceName: ec2-iamrole
+          serviceEnvironment:
+            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            notificationEmail: an_owner@example.com
+            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            primaryVpcEnvironment:
+              appSubnets:
+              - subnet-1
+              - subnet-2
+              instanceSecurityGroup: sg-2
+              jumpboxSecurityGroup: sg-1
+              privateDnsZone: testregion.atl-inf.io
+              privatePaasDnsZone: testregion.dev.paas-inf.net
+              region: testregion
+              sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+              vpcId: vpc-1
+              zones:
+              - testregiona
+              - testregionb
+            tags:
+              business_unit: some_unit
+              environment: microstestenv
+              environment_type: testenv
+              platform: voyager
+              resource_owner: an_owner
+              service_name: test-servicename
+          serviceId: test-servicename-ec2
+  - name: ec2---iamrole-binding
+    references:
+    - name: ec2---iamrole-metadata-name
+      path: metadata.name
+      resource: ec2---iamrole
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: ec2---iamrole
+        spec:
+          instanceRef:
+            name: '!{ec2---iamrole-metadata-name}'
+          secretName: ec2---iamrole
+  - name: ec2--instance
+    references:
+    - resource: ec2--secretenvvar
+    - example: arn:aws:iam::123456789012:role/path/role
+      modifier: bindsecret
+      name: ec2---iamrole-binding-IAMRoleARN
+      path: data.IAMRoleARN
+      resource: ec2---iamrole-binding
+    - example: arn:aws:iam::123456789012:instance-profile/path/Webserver
+      modifier: bindsecret
+      name: ec2---iamrole-binding-InstanceProfileARN
+      path: data.InstanceProfileARN
+      resource: ec2---iamrole-binding
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: ec2
+        spec:
+          clusterServiceClassExternalName: micros
+          clusterServicePlanExternalName: v2
+          parameters:
+            autoScalingGroup:
+              maxSize: 2
+              minSize: 1
+            docker:
+              compose:
+                microservice:
+                  image: docker.atl-paas.net/micros/node-refapp
+                  ports:
+                  - 8080:8080
+                  tag: 2.12.18
+              envVars:
+                ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                ASAP_PUBLIC_KEY_REPOSITORY_URL: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                foo: barbazon
+            ec2:
+              iamInstanceProfileArn: '!{ec2---iamrole-binding-InstanceProfileARN}'
+              iamRoleArn: '!{ec2---iamrole-binding-IAMRoleARN}'
+              instanceType: t2.micro
+            location:
+              account: testaccount
+              envType: testenv
+              region: testregion
+            notifications:
+              email: micros@atlassian.com
+              pagerduty:
+                cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                generic: "123123123123123"
+                lowPriority: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            service:
+              id: test-servicename-ec2
+              loggingId: logging-id-from-configmap
+              ssamAccessLevel: access-level-from-configmap
+            tags:
+              business_unit: some_unit
+              platform: voyager
+              resource_owner: an_owner
+          parametersFrom:
+          - secretKeyRef:
+              key: ec2ComputeEnvVars
+              name: ec2--secretenvvar
+  - name: kc--asap--binding
+    references:
+    - name: asap--instance-metadata-name
+      path: metadata.name
+      resource: asap--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--asap
+        spec:
+          instanceRef:
+            name: '!{asap--instance-metadata-name}'
+          secretName: kc--asap
+  - name: kc--basic--binding
+    references:
+    - name: basic--instance-metadata-name
+      path: metadata.name
+      resource: basic--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--basic
+        spec:
+          instanceRef:
+            name: '!{basic--instance-metadata-name}'
+          secretName: kc--basic
+  - name: kc--files--binding
+    references:
+    - name: files--instance-metadata-name
+      path: metadata.name
+      resource: files--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--files
+        spec:
+          instanceRef:
+            name: '!{files--instance-metadata-name}'
+          secretName: kc--files
+  - name: kc--stream--binding
+    references:
+    - name: stream--instance-metadata-name
+      path: metadata.name
+      resource: stream--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--stream
+        spec:
+          instanceRef:
+            name: '!{stream--instance-metadata-name}'
+          secretName: kc--stream
+  - name: kc--dynamo-basic--binding
+    references:
+    - name: dynamo-basic--instance-metadata-name
+      path: metadata.name
+      resource: dynamo-basic--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--dynamo-basic
+        spec:
+          instanceRef:
+            name: '!{dynamo-basic--instance-metadata-name}'
+          secretName: kc--dynamo-basic
+  - name: kc--dynamo-complex--binding
+    references:
+    - name: dynamo-complex--instance-metadata-name
+      path: metadata.name
+      resource: dynamo-complex--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--dynamo-complex
+        spec:
+          instanceRef:
+            name: '!{dynamo-complex--instance-metadata-name}'
+          secretName: kc--dynamo-complex
+  - name: kc--datastore--binding
+    references:
+    - name: datastore--instance-metadata-name
+      path: metadata.name
+      resource: datastore--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--datastore
+        spec:
+          instanceRef:
+            name: '!{datastore--instance-metadata-name}'
+          secretName: kc--datastore
+  - name: kc--notification-sns--binding
+    references:
+    - name: notification-sns--instance-metadata-name
+      path: metadata.name
+      resource: notification-sns--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--notification-sns
+        spec:
+          instanceRef:
+            name: '!{notification-sns--instance-metadata-name}'
+          secretName: kc--notification-sns
+  - name: kc--notification-sqs--binding
+    references:
+    - name: notification-sqs--instance-metadata-name
+      path: metadata.name
+      resource: notification-sqs--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc--notification-sqs
+        spec:
+          instanceRef:
+            name: '!{notification-sqs--instance-metadata-name}'
+          secretName: kc--notification-sqs
+  - name: kc--podsecretenvvar
+    references:
+    - resource: kc--asap--binding
+    - resource: kc--basic--binding
+    - resource: kc--files--binding
+    - resource: kc--stream--binding
+    - resource: kc--dynamo-basic--binding
+    - resource: kc--dynamo-complex--binding
+    - resource: kc--datastore--binding
+    - resource: kc--notification-sns--binding
+    - resource: kc--notification-sqs--binding
+    spec:
+      plugin:
+        name: podsecretenvvar
+        objectName: kc--podsecretenvvar
+        spec:
+          ignoreKeyRegex: ^IamPolicySnippet$
+          rename:
+            CF_NOTIFICATION_SNS_TOPICARN: LIFECYCLE_SNS_TOPICNAME
+            DYNAMO_DYNAMO_BASIC_TABLE_NAME: DYNAMO_BASIC_TABLE_NAME
+            DYNAMO_DYNAMO_BASIC_TABLE_REGION: DYNAMO_BASIC_TABLE_REGION
+            DYNAMO_DYNAMO_COMPLEX_TABLE_NAME: DYNAMO_COMPLEX_TABLE_NAME
+            DYNAMO_DYNAMO_COMPLEX_TABLE_REGION: DYNAMO_COMPLEX_TABLE_REGION
+            SQS_NOTIFICATION_SQS_QUEUE_NAME: LIFECYCLE_SQS_QUEUE_NAME
+            SQS_NOTIFICATION_SQS_QUEUE_REGION: LIFECYCLE_SQS_QUEUE_REGION
+            SQS_NOTIFICATION_SQS_QUEUE_URL: LIFECYCLE_SQS_QUEUE_URL
+  - name: kc---iamrole
+    references:
+    - resource: kc--asap--binding
+    - resource: kc--basic--binding
+    - resource: kc--files--binding
+    - resource: kc--stream--binding
+    - resource: kc--dynamo-basic--binding
+    - resource: kc--dynamo-complex--binding
+    - resource: kc--datastore--binding
+    - resource: kc--notification-sns--binding
+    - resource: kc--notification-sqs--binding
+    spec:
+      plugin:
+        name: iamrole
+        objectName: kc---iamrole
+        spec:
+          assumeRoles:
+          - arn:aws:iam::test:role/testregion.paas-test_node-role
+          - arn:aws:iam::test:role/controller-role-testregion.paas-test
+          computeType: kubeCompute
+          oapResourceName: kc-iamrole
+          serviceEnvironment:
+            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            notificationEmail: an_owner@example.com
+            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            primaryVpcEnvironment:
+              appSubnets:
+              - subnet-1
+              - subnet-2
+              instanceSecurityGroup: sg-2
+              jumpboxSecurityGroup: sg-1
+              privateDnsZone: testregion.atl-inf.io
+              privatePaasDnsZone: testregion.dev.paas-inf.net
+              region: testregion
+              sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+              vpcId: vpc-1
+              zones:
+              - testregiona
+              - testregionb
+            tags:
+              business_unit: some_unit
+              environment: microstestenv
+              environment_type: testenv
+              platform: voyager
+              resource_owner: an_owner
+              service_name: test-servicename
+          serviceId: test-servicename
+  - name: kc---iamrole-binding
+    references:
+    - name: kc---iamrole-metadata-name
+      path: metadata.name
+      resource: kc---iamrole
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: kc---iamrole
+        spec:
+          instanceRef:
+            name: '!{kc---iamrole-metadata-name}'
+          secretName: kc---iamrole
+  - name: kc--svcacc
+    spec:
+      object:
+        apiVersion: v1
+        imagePullSecrets:
+        - name: kubecompute-docker-atl-paas
+        kind: ServiceAccount
+        metadata:
+          name: kc--svcacc
+  - name: kc
+    references:
+    - name: kc--podsecretenvvar-metadata-name
+      path: metadata.name
+      resource: kc--podsecretenvvar
+    - example: arn:aws:iam::123456789012:role/path/role
+      modifier: bindsecret
+      name: kc---iamrole-binding-IAMRoleARN
+      path: data.IAMRoleARN
+      resource: kc---iamrole-binding
+    - name: kc--svcacc-metadata-name
+      path: metadata.name
+      resource: kc--svcacc
+    spec:
+      object:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: kc
+        spec:
+          progressDeadlineSeconds: 600
+          replicas: 1
+          revisionHistoryLimit: 0
+          selector:
+            matchLabels:
+              resourceName: kc
+              stateName: noderefapp
+          strategy:
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 25%
+            type: RollingUpdate
+          template:
+            metadata:
+              annotations:
+                atlassian.com/business_unit: some_unit
+                atlassian.com/logging_id: logging-id-from-configmap
+                atlassian.com/resource_owner: an_owner
+                iam.amazonaws.com/role: '!{kc---iamrole-binding-IAMRoleARN}'
+              creationTimestamp: null
+              labels:
+                resourceName: kc
+                stateName: noderefapp
+            spec:
+              containers:
+              - env:
+                - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
+                  value: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
+                  value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                envFrom:
+                - secretRef:
+                    name: '!{kc--podsecretenvvar-metadata-name}'
+                    optional: false
+                - secretRef:
+                    name: common-secrets
+                    optional: true
+                image: docker.atl-paas.net/micros/node-refapp:2.12.18
+                imagePullPolicy: IfNotPresent
+                name: microservice
+                resources:
+                  limits:
+                    cpu: "1"
+                    memory: 1Gi
+                  requests:
+                    cpu: 150m
+                    memory: 750Mi
+                terminationMessagePath: /dev/termination-log
+                terminationMessagePolicy: File
+              dnsPolicy: ClusterFirst
+              restartPolicy: Always
+              schedulerName: default-scheduler
+              securityContext: {}
+              serviceAccountName: '!{kc--svcacc-metadata-name}'
+              terminationGracePeriodSeconds: 30
+  - name: kc--hpa
+    references:
+    - name: kc-metadata-name
+      path: metadata.name
+      resource: kc
+    spec:
+      object:
+        apiVersion: autoscaling/v2beta1
+        kind: HorizontalPodAutoscaler
+        metadata:
+          name: kc--hpa
+        spec:
+          maxReplicas: 1
+          metrics:
+          - resource:
+              name: cpu
+              targetAverageUtilization: 80
+            type: Resource
+          minReplicas: 1
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: '!{kc-metadata-name}'
+  - name: ingress-service
+    references:
+    - resource: kc
+    spec:
+      object:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ingress-service
+        spec:
+          ports:
+          - name: http
+            port: 8080
+            protocol: TCP
+            targetPort: 8080
+          selector:
+            resourceName: kc
+            stateName: noderefapp
+          sessionAffinity: None
+          type: ClusterIP
+  - name: ingress-ingress
+    references:
+    - resource: ingress-service
+    spec:
+      object:
+        apiVersion: extensions/v1beta1
+        kind: Ingress
+        metadata:
+          annotations:
+            contour.heptio.com/request-timeout: 120s
+            voyager.atl-paas.net/ingressType: private
+          name: ingress-ingress
+        spec:
+          rules:
+          - host: test-servicename--ingress.testregion.testenv.k8s.atl-paas.net
+            http:
+              paths:
+              - backend:
+                  serviceName: ingress-service
+                  servicePort: 8080
+                path: /
+status: {}

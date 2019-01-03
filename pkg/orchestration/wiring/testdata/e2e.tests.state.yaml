@@ -1,0 +1,188 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: noderefapp
+  namespace: noderefapp
+spec:
+  configMapName: service-metadata
+  resources:
+    - defaults: {}
+      name: asap
+      type: ASAPKey
+    - defaults: {}
+      name: basic
+      spec:
+        MaxReceiveCount: 10
+        VisibilityTimeout: 600
+      type: SQS
+    - defaults: {}
+      name: notification-sns
+      spec:
+        template: sns-v1
+      type: CloudFormation
+    - defaults: {}
+      dependsOn:
+        - attributes:
+            RawMessageDelivery: false
+          name: notification-sns
+      name: notification-sqs
+      spec:
+        MaxReceiveCount: 100
+        VisibilityTimeout: 30
+      type: SQS
+    - defaults: {}
+      name: files
+      type: S3
+    - defaults: {}
+      name: stream
+      spec:
+        parameters:
+          ShardCount: 1
+        template: kinesis-v1
+      type: CloudFormation
+    - defaults:
+        BackupPeriod: 1 hours
+      name: dynamo-basic
+      spec:
+        BackupPeriod: 1 day
+        HashKeyName: key
+        HashKeyType: S
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      type: DynamoDB
+    - defaults:
+        BackupPeriod: 1 hours
+      name: dynamo-complex
+      spec:
+        BackupPeriod: never
+        GlobalSecondaryIndexes:
+          - HashKeyName: globallyindexed
+            HashKeyType: S
+            IndexName: global
+            ProjectionType: ALL
+            RangeKeyName: rangekeynecessary
+            RangeKeyType: S
+        HashKeyName: key
+        HashKeyType: S
+        LocalSecondaryIndexes:
+          - IndexName: local
+            ProjectionType: ALL
+            RangeKeyName: locallyindexed
+            RangeKeyType: S
+        RangeKeyName: rng
+        RangeKeyType: "N"
+        ReadCapacityUnits: 1
+        TTLAttributeName: ttlattribute
+        WriteCapacityUnits: 1
+      type: DynamoDB
+    - defaults: {}
+      name: datastore
+      type: Postgres
+    - defaults: {}
+      dependsOn:
+        - name: asap
+        - name: basic
+        - name: files
+        - name: stream
+        - name: dynamo-basic
+        - name: dynamo-complex
+        - name: datastore
+        - name: notification-sns
+        - name: notification-sqs
+      name: ec2
+      spec:
+        autoScalingGroup:
+          maxSize: 2
+          minSize: 1
+        docker:
+          compose:
+            microservice:
+              image: docker.atl-paas.net/micros/node-refapp
+              ports:
+                - 8080:8080
+              tag: 2.12.18
+          envVars:
+            foo: barbazon
+        ec2:
+          instanceType: t2.micro
+        notifications:
+          email: micros@atlassian.com
+        rename:
+          CF_NOTIFICATION_SNS_TOPICARN: LIFECYCLE_SNS_TOPICNAME
+          DYNAMO_DYNAMO_BASIC_TABLE_NAME: DYNAMO_BASIC_TABLE_NAME
+          DYNAMO_DYNAMO_BASIC_TABLE_REGION: DYNAMO_BASIC_TABLE_REGION
+          DYNAMO_DYNAMO_COMPLEX_TABLE_NAME: DYNAMO_COMPLEX_TABLE_NAME
+          DYNAMO_DYNAMO_COMPLEX_TABLE_REGION: DYNAMO_COMPLEX_TABLE_REGION
+          SQS_NOTIFICATION_SQS_QUEUE_NAME: LIFECYCLE_SQS_QUEUE_NAME
+          SQS_NOTIFICATION_SQS_QUEUE_REGION: LIFECYCLE_SQS_QUEUE_REGION
+          SQS_NOTIFICATION_SQS_QUEUE_URL: LIFECYCLE_SQS_QUEUE_URL
+      type: EC2Compute
+    - defaults:
+        Container:
+          ImagePullPolicy: IfNotPresent
+          LivenessProbe:
+            FailureThreshold: 3
+            HTTPGet:
+              Path: /healthcheck
+              Scheme: HTTP
+            PeriodSeconds: 10
+            SuccessThreshold: 1
+            TimeoutSeconds: 1
+          ReadinessProbe:
+            FailureThreshold: 3
+            HTTPGet:
+              Path: /healthcheck
+              Scheme: HTTP
+            PeriodSeconds: 10
+            SuccessThreshold: 1
+            TimeoutSeconds: 1
+          Resources:
+            Limits:
+              cpu: "1"
+              memory: 1Gi
+            Requests:
+              cpu: 150m
+              memory: 750Mi
+        Port:
+          Protocol: TCP
+        Scaling:
+          MaxReplicas: 5
+          Metrics:
+            - Resource:
+                Name: cpu
+                TargetAverageUtilization: 80
+              Type: Resource
+          MinReplicas: 1
+      dependsOn:
+        - name: asap
+        - name: basic
+        - name: files
+        - name: stream
+        - name: dynamo-basic
+        - name: dynamo-complex
+        - name: datastore
+        - name: notification-sns
+        - name: notification-sqs
+      name: kc
+      spec:
+        containers:
+          - image: docker.atl-paas.net/micros/node-refapp:2.12.18
+            name: microservice
+        rename:
+          CF_NOTIFICATION_SNS_TOPICARN: LIFECYCLE_SNS_TOPICNAME
+          DYNAMO_DYNAMO_BASIC_TABLE_NAME: DYNAMO_BASIC_TABLE_NAME
+          DYNAMO_DYNAMO_BASIC_TABLE_REGION: DYNAMO_BASIC_TABLE_REGION
+          DYNAMO_DYNAMO_COMPLEX_TABLE_NAME: DYNAMO_COMPLEX_TABLE_NAME
+          DYNAMO_DYNAMO_COMPLEX_TABLE_REGION: DYNAMO_COMPLEX_TABLE_REGION
+          SQS_NOTIFICATION_SQS_QUEUE_NAME: LIFECYCLE_SQS_QUEUE_NAME
+          SQS_NOTIFICATION_SQS_QUEUE_REGION: LIFECYCLE_SQS_QUEUE_REGION
+          SQS_NOTIFICATION_SQS_QUEUE_URL: LIFECYCLE_SQS_QUEUE_URL
+        scaling:
+          maxReplicas: 1
+          minReplicas: 1
+      type: KubeCompute
+    - defaults: {}
+      dependsOn:
+        - name: kc
+      name: ingress
+      type: KubeIngress
