@@ -67,10 +67,10 @@ spec:
               MicrosVpcId: vpc-1
   - name: db--instance
     references:
-    - name: rds--instance-metadata-name
+    - example: myownrds
+      name: rds--instance-metadata-name
       path: metadata.name
       resource: rds--instance
-      example: myownrds
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1

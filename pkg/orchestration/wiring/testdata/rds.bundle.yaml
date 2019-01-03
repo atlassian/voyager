@@ -26,10 +26,6 @@ spec:
           clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
           clusterServicePlanExternalID: 7e6d37bb-8aa4-4c63-87d2-d78ca91a0120
           parameters:
-            parameters:
-              DBType: postgres96
-              AllocatedStorage: 1528
-              ReadReplica: true
             location:
               env: microstestenv
             misc:
@@ -43,16 +39,20 @@ spec:
                 platform: voyager
                 resource_owner: an_owner
                 service_name: test-servicename
+            parameters:
+              AllocatedStorage: 1528
+              DBType: postgres96
+              ReadReplica: true
             primary_parameters:
               MicrosAlarmEndpoints:
-                - consumer: pagerduty
-                  endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                  priority: high
-                  type: CloudWatch
-                - consumer: pagerduty
-                  endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                  priority: low
-                  type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               MicrosAppSubnets:
               - subnet-1
               - subnet-2

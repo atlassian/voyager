@@ -64,9 +64,9 @@ spec:
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
-                  - secretRef:
-                      name: common-secrets
-                      optional: true
+                - secretRef:
+                    name: common-secrets
+                    optional: true
                 image: docker.example.com/atlassian/micros-analytics:0.1.8
                 name: microservice
                 resources:
@@ -154,6 +154,6 @@ spec:
             - name: foo.staging.atl-paas.net
               type: Simple
             environmentType: testenv
-            target: '!{ingress-ingress-metadata-endpoint}'
             serviceName: test-servicename
+            target: '!{ingress-ingress-metadata-endpoint}'
 status: {}

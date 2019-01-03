@@ -17,9 +17,9 @@ spec:
     spec:
       object:
         apiVersion: v1
-        kind: ServiceAccount
         imagePullSecrets:
         - name: kubecompute-docker-atl-paas
+        kind: ServiceAccount
         metadata:
           name: kubecompute-simple--svcacc
   - name: kubecompute-simple
@@ -34,13 +34,13 @@ spec:
         metadata:
           name: kubecompute-simple
         spec:
+          progressDeadlineSeconds: 600
+          replicas: 5
+          revisionHistoryLimit: 0
           selector:
             matchLabels:
               resourceName: kubecompute-simple
               stateName: state1
-          progressDeadlineSeconds: 600
-          revisionHistoryLimit: 0
-          replicas: 5
           strategy:
             rollingUpdate:
               maxSurge: 25%
@@ -57,7 +57,6 @@ spec:
                 resourceName: kubecompute-simple
                 stateName: state1
             spec:
-              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               containers:
               - env:
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
@@ -68,9 +67,9 @@ spec:
                 - secretRef:
                     name: common-secrets
                     optional: true
-                name: microservice
-                image: "docker.example.com/atlassian/micros-analytics:0.1"
+                image: docker.example.com/atlassian/micros-analytics:0.1
                 imagePullPolicy: IfNotPresent
+                name: microservice
                 ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -92,9 +91,9 @@ spec:
                 - secretRef:
                     name: common-secrets
                     optional: true
-                name: pgbouncer
-                image: "docker.example.com/my_pgbouncer:abcxyz"
+                image: docker.example.com/my_pgbouncer:abcxyz
                 imagePullPolicy: IfNotPresent
+                name: pgbouncer
                 ports:
                 - containerPort: 5432
                   protocol: UDP
@@ -111,6 +110,7 @@ spec:
               restartPolicy: Always
               schedulerName: default-scheduler
               securityContext: {}
+              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
   - name: kubecompute-simple--hpa
     references:
@@ -124,18 +124,19 @@ spec:
         metadata:
           name: kubecompute-simple--hpa
         spec:
-          minReplicas: 5
           maxReplicas: 10
           metrics:
-          - type: Resource
-            resource:
+          - resource:
               name: cpu
               targetAverageUtilization: 50
-          - type: Resource
-            resource:
+            type: Resource
+          - resource:
               name: memory
-              targetAverageValue: "50Mi"
+              targetAverageValue: 50Mi
+            type: Resource
+          minReplicas: 5
           scaleTargetRef:
             apiVersion: apps/v1
             kind: Deployment
             name: '!{kubecompute-simple-metadata-name}'
+status: {}

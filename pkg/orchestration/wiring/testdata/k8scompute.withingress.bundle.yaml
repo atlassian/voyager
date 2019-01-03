@@ -64,9 +64,9 @@ spec:
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
-                  - secretRef:
-                      name: common-secrets
-                      optional: true
+                - secretRef:
+                    name: common-secrets
+                    optional: true
                 image: docker.example.com/atlassian/micros-analytics:0.1.8
                 imagePullPolicy: IfNotPresent
                 name: microservice
@@ -87,9 +87,9 @@ spec:
               terminationGracePeriodSeconds: 30
   - name: kubecompute-simple--hpa
     references:
-      - name: kubecompute-simple-metadata-name
-        path: metadata.name
-        resource: kubecompute-simple
+    - name: kubecompute-simple-metadata-name
+      path: metadata.name
+      resource: kubecompute-simple
     spec:
       object:
         apiVersion: autoscaling/v2beta1
@@ -97,17 +97,17 @@ spec:
         metadata:
           name: kubecompute-simple--hpa
         spec:
-          minReplicas: 1
           maxReplicas: 5
+          metrics:
+          - resource:
+              name: cpu
+              targetAverageUtilization: 80
+            type: Resource
+          minReplicas: 1
           scaleTargetRef:
             apiVersion: apps/v1
             kind: Deployment
             name: '!{kubecompute-simple-metadata-name}'
-          metrics:
-            - type: Resource
-              resource:
-                name: cpu
-                targetAverageUtilization: 80
   - name: ingress-service
     references:
     - resource: kubecompute-simple
@@ -149,3 +149,4 @@ spec:
                   serviceName: ingress-service
                   servicePort: 8080
                 path: /
+status: {}

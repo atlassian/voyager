@@ -4,3 +4,4 @@
 /bazel-voyager
 /bazel-testlogs
 /user.bazelrc
+/.idea/

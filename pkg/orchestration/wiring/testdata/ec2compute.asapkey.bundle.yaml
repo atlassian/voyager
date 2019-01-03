@@ -57,16 +57,16 @@ spec:
           outputSecretKey: ec2ComputeEnvVars
   - name: compute---iamrole
     references:
-      - resource: compute--myasap--binding
+    - resource: compute--myasap--binding
     spec:
       plugin:
         name: iamrole
         objectName: compute---iamrole
         spec:
-          createInstanceProfile: true
-          computeType: ec2Compute
           assumeRoles:
           - arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC
+          computeType: ec2Compute
+          createInstanceProfile: true
           managedPolicies:
           - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
