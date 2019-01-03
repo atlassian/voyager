@@ -7,7 +7,7 @@ import (
 	"github.com/atlassian/smith/pkg/resources"
 	"github.com/atlassian/voyager/cmd"
 	comp_crd "github.com/atlassian/voyager/pkg/composition/crd"
-	"github.com/atlassian/voyager/pkg/formation"
+	form_crd "github.com/atlassian/voyager/pkg/formation/crd"
 	"github.com/atlassian/voyager/pkg/ops"
 	"github.com/atlassian/voyager/pkg/orchestration"
 	"github.com/pkg/errors"
@@ -32,7 +32,7 @@ func innerMain() error {
 	case "sd":
 		crd = comp_crd.ServiceDescriptorCrd()
 	case "ld":
-		crd = formation.LocationDescriptorCrd()
+		crd = form_crd.LocationDescriptorCrd()
 	default:
 		return errors.Errorf("unsupported CRD %q", *resource)
 	}
