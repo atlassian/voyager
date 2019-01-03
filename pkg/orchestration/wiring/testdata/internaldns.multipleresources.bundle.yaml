@@ -135,9 +135,9 @@ spec:
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
-                  - secretRef:
-                      name: common-secrets
-                      optional: true
+                - secretRef:
+                    name: common-secrets
+                    optional: true
                 image: docker.example.com/atlassian/micros-analytics:0.1.8
                 name: microservice
                 resources:
@@ -287,8 +287,8 @@ spec:
             - name: foo11.staging.atl-paas.net
               type: Simple
             environmentType: testenv
-            target: '!{ingress1-ingress-metadata-endpoint}'
             serviceName: test-servicename
+            target: '!{ingress1-ingress-metadata-endpoint}'
   - name: i12--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
@@ -311,8 +311,8 @@ spec:
             - name: foo12.staging.atl-paas.net
               type: Simple
             environmentType: testenv
-            target: '!{ingress1-ingress-metadata-endpoint}'
             serviceName: test-servicename
+            target: '!{ingress1-ingress-metadata-endpoint}'
   - name: i21--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
@@ -335,8 +335,8 @@ spec:
             - name: foo21.staging.atl-paas.net
               type: Simple
             environmentType: testenv
-            target: '!{ingress2-ingress-metadata-endpoint}'
             serviceName: test-servicename
+            target: '!{ingress2-ingress-metadata-endpoint}'
   - name: i22--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
@@ -359,6 +359,6 @@ spec:
             - name: foo22.staging.atl-paas.net
               type: Simple
             environmentType: testenv
-            target: '!{ingress2-ingress-metadata-endpoint}'
             serviceName: test-servicename
+            target: '!{ingress2-ingress-metadata-endpoint}'
 status: {}

@@ -181,6 +181,6 @@ spec:
             - name: foo4.staging.atl-paas.net
               type: Simple
             environmentType: testenv
-            target: '!{ingress-ingress-metadata-endpoint}'
             serviceName: test-servicename
+            target: '!{ingress-ingress-metadata-endpoint}'
 status: {}
