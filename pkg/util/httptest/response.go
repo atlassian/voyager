@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/testutil"
+	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/require"
 )
 

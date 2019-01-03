@@ -27,8 +27,8 @@ go_test(
     race = "on",
     deps = [
         "//pkg/execution/svccatadmission/rps:go_default_library",
-        "//pkg/testutil:go_default_library",
         "//pkg/util:go_default_library",
+        "//pkg/util/testutil:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",
         "//vendor/github.com/stretchr/testify/require:go_default_library",
         "//vendor/go.uber.org/zap/zaptest:go_default_library",
