@@ -10,8 +10,8 @@ import (
 
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/auth"
-	. "github.com/atlassian/voyager/pkg/util/httptest"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/atlassian/voyager/pkg/util/pkiutil/pkitest"
 	"github.com/atlassian/voyager/pkg/util/testutil"

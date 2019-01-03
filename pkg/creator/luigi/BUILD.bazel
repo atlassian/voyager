@@ -31,8 +31,8 @@ go_test(
     race = "on",
     deps = [
         "//pkg/util:go_default_library",
-        "//pkg/util/httptest:go_default_library",
         "//pkg/util/httputil:go_default_library",
+        "//pkg/util/httputil/httptest:go_default_library",
         "//pkg/util/pkiutil:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",

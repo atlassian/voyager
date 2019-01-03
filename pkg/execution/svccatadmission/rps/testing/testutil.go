@@ -5,27 +5,27 @@ import (
 	"crypto/rsa"
 	"net/http"
 	"net/http/httptest"
-	url2 "net/url"
+	"net/url"
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission/rps"
 	"github.com/atlassian/voyager/pkg/util"
-	httptest2 "github.com/atlassian/voyager/pkg/util/httptest"
+	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
 
 func MockRPSCache(t *testing.T) *rps.Cache {
-	handler := httptest2.MockHandler(httptest2.Match(httptest2.AnyRequest).Respond(
-		httptest2.Status(http.StatusOK),
-		httptest2.JSONFromFile(t, "list_osb_resources.json"),
+	handler := MockHandler(Match(AnyRequest).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "list_osb_resources.json"),
 	))
 	mockServer := httptest.NewServer(handler)
-	url, err := url2.Parse(mockServer.URL)
+	parsedURL, err := url.Parse(mockServer.URL)
 	require.NoError(t, err)
 	httpClient := util.HTTPClient()
-	rpsClient := rps.NewRPSClient(zaptest.NewLogger(t), httpClient, testASAP(t), url)
+	rpsClient := rps.NewRPSClient(zaptest.NewLogger(t), httpClient, testASAP(t), parsedURL)
 	return rps.NewRPSCache(zaptest.NewLogger(t), rpsClient)
 }
 

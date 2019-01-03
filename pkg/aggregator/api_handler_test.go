@@ -14,7 +14,7 @@ import (
 	"github.com/ash2k/stager"
 	"github.com/atlassian/voyager"
 	agg_v1 "github.com/atlassian/voyager/pkg/apis/aggregator/v1"
-	. "github.com/atlassian/voyager/pkg/util/httptest"
+	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/go-chi/chi"
 	"github.com/prometheus/client_golang/prometheus"

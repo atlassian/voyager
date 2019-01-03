@@ -11,7 +11,7 @@ import (
 
 	"github.com/SermoDigital/jose/jws"
 	ops_v1 "github.com/atlassian/voyager/pkg/apis/ops/v1"
-	. "github.com/atlassian/voyager/pkg/util/httptest"
+	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/go-chi/chi/middleware"
 	"github.com/pkg/errors"

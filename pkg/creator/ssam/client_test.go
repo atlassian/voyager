@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"testing"
 
-	. "github.com/atlassian/voyager/pkg/util/httptest"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
 	"github.com/atlassian/voyager/pkg/util/pkiutil/pkitest"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
