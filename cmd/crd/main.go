@@ -9,7 +9,7 @@ import (
 	comp_crd "github.com/atlassian/voyager/pkg/composition/crd"
 	form_crd "github.com/atlassian/voyager/pkg/formation/crd"
 	"github.com/atlassian/voyager/pkg/ops"
-	"github.com/atlassian/voyager/pkg/orchestration"
+	orch_crd "github.com/atlassian/voyager/pkg/orchestration/crd"
 	"github.com/pkg/errors"
 	apiext_v1b1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
@@ -26,7 +26,7 @@ func innerMain() error {
 	var crd *apiext_v1b1.CustomResourceDefinition
 	switch *resource {
 	case "state":
-		crd = orchestration.StateCrd()
+		crd = orch_crd.StateCrd()
 	case "route":
 		crd = ops.RouteCrd()
 	case "sd":
