@@ -8,8 +8,8 @@ import (
 	"net/url"
 
 	"bitbucket.org/atlassianlabs/restclient"
-	"github.com/atlassian/voyager/pkg/pkiutil"
 	"github.com/atlassian/voyager/pkg/util"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )

@@ -7,9 +7,9 @@ import (
 
 	"github.com/atlassian/voyager/pkg/admission"
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission/rps"
-	"github.com/atlassian/voyager/pkg/pkiutil"
 	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/util"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/atlassian/voyager/pkg/util/uuid"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"

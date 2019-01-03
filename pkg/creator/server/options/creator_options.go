@@ -5,8 +5,8 @@ import (
 	"github.com/atlassian/ctrl/options"
 	"github.com/atlassian/voyager/pkg/creator"
 	"github.com/atlassian/voyager/pkg/pagerduty"
-	"github.com/atlassian/voyager/pkg/pkiutil"
 	"github.com/atlassian/voyager/pkg/util"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 )
 
 type CreatorOptions struct {

@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/pkiutil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/vincent-petithory/dataurl"
 )

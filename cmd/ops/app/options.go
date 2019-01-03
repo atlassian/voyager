@@ -3,7 +3,7 @@ package app
 import (
 	"io/ioutil"
 
-	"github.com/atlassian/voyager/pkg/pkiutil"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"

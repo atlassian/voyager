@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission/rps"
-	"github.com/atlassian/voyager/pkg/pkiutil"
 	"github.com/atlassian/voyager/pkg/util"
 	httptest2 "github.com/atlassian/voyager/pkg/util/httptest"
+	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
