@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
-        "env_vars.go",
         "file_comparisons.go",
         "logging.go",
         "object_comparisons.go",
