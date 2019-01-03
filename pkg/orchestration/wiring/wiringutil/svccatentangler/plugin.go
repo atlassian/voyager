@@ -8,6 +8,7 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -109,13 +110,12 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 	}, nil
 }
 
-func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.ResourceContract, error) {
+func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource smith_v1.Resource, context *wiringplugin.WiringContext) (wiringplugin.ResourceContract, error) {
 	// TODO(kopper): Actually implement.
 	return wiringplugin.ResourceContract{
-		Data: []wiringplugin.DataItem{
-			{
-				Name: "fakeNotEmptyContract",
-			},
+		Shapes: []wiringplugin.Shape{
+			knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
+			// knownshapes.NewBindableIamAccessible(smithResource.Name, "IamPolicySnippet"),
 		},
 	}, nil
 }
@@ -132,7 +132,7 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 
 	var result *wiringplugin.WiringResult
 	if e.OutputResourceContract {
-		resourceContract, err := e.constructResourceContract(resource, context)
+		resourceContract, err := e.constructResourceContract(resource, serviceInstance.SmithResource, context)
 		if err != nil {
 			return nil, false, err
 		}

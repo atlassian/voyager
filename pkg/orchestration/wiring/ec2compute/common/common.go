@@ -9,10 +9,10 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -138,13 +138,13 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	var references []smith_v1.Reference
 
 	for _, dependency := range dependencies {
-		if !dependency.Contract.IsEmpty() {
-			if dependency.Type != ups.ResourceType {
-				return nil, false, errors.Errorf("Wiring of %s to EC2Compute by resource contract is not supported yet", dependency.Type)
-			}
-			// TODO(kopper): Implement proper support, not only for UPS.
-			bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, wiringutil.ServiceInstanceResourceName(dependency.Name), false))
+		bound := false
+		if bindableShape, ok := dependency.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape); ok {
+			resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
+			bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceReference, false))
+			continue
 		}
+		// DEPRECATED: binding using raw SmithResources, use resource contracts instead
 		for _, resource := range dependency.SmithResources {
 			// TODO can be plugin
 			if resource.Spec.Plugin != nil {
@@ -159,14 +159,20 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 						references = append(references, smith_v1.Reference{
 							Resource: resource.Name,
 						})
+						bound = true
 					} else {
 						return nil, false, errors.Errorf("unsupported plan %q of service %q (Micros EC2)", microsPlanName, microsClassName)
 					}
 				} else {
 					// We don't want anything that depends on compute to see our bindings - exposed: false
 					bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resource.Name, false))
+					bound = true
 				}
 			}
+		}
+		// check if we wired/bound dependency in at least one way
+		if !bound {
+			return nil, false, errors.Errorf("cannot depend on resource %q of type %q. Only dependencies providing BindableEnvironmentVariablesShape are supported", dependency.Name, dependency.Type)
 		}
 	}
 

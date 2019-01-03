@@ -13,6 +13,7 @@ import (
 	smith_config "github.com/atlassian/voyager/cmd/smith/config"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
@@ -271,7 +272,7 @@ loggingId: logging-id-from-configmap
 	//requireNoDeprecatedWiring(t, ec2compute_v2.ResourceType, observedLogs)
 	requireNoDeprecatedWiring(t, ups.ResourceType, observedLogs)
 	//requireNoDeprecatedWiring(t, aws.Cfn, observedLogs)
-	//requireNoDeprecatedWiring(t, aws.DynamoDB, observedLogs)
+	requireNoDeprecatedWiring(t, aws.DynamoDB, observedLogs)
 	//requireNoDeprecatedWiring(t, aws.S3, observedLogs)
 	//requireNoDeprecatedWiring(t, postgres.ResourceType, observedLogs)
 	//requireNoDeprecatedWiring(t, rds.ResourceType, observedLogs)

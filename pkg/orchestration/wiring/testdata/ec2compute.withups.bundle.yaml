@@ -25,7 +25,8 @@ spec:
           clusterServicePlanExternalID: 86064792-7ea2-467b-af93-ac9694d96d52
   - name: compute--basic--binding
     references:
-    - name: basic--instance-metadata-name
+    - example: aname
+      name: basic--instance-metadata-name
       path: metadata.name
       resource: basic--instance
     spec:

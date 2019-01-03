@@ -18,6 +18,7 @@ go_library(
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/iam:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",
         "//pkg/util:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",

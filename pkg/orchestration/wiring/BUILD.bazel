@@ -36,6 +36,7 @@ go_test(
         "//cmd/smith/config:go_default_library",
         "//pkg/apis/orchestration/meta:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/orchestration/wiring/aws:go_default_library",
         "//pkg/orchestration/wiring/legacy:go_default_library",
         "//pkg/orchestration/wiring/registry:go_default_library",
         "//pkg/orchestration/wiring/ups:go_default_library",

@@ -397,7 +397,8 @@ spec:
           secretName: ec2--stream
   - name: ec2--dynamo-basic--binding
     references:
-    - name: dynamo-basic--instance-metadata-name
+    - example: aname
+      name: dynamo-basic--instance-metadata-name
       path: metadata.name
       resource: dynamo-basic--instance
     spec:
@@ -412,7 +413,8 @@ spec:
           secretName: ec2--dynamo-basic
   - name: ec2--dynamo-complex--binding
     references:
-    - name: dynamo-complex--instance-metadata-name
+    - example: aname
+      name: dynamo-complex--instance-metadata-name
       path: metadata.name
       resource: dynamo-complex--instance
     spec:
@@ -688,7 +690,8 @@ spec:
           secretName: kc--stream
   - name: kc--dynamo-basic--binding
     references:
-    - name: dynamo-basic--instance-metadata-name
+    - example: aname
+      name: dynamo-basic--instance-metadata-name
       path: metadata.name
       resource: dynamo-basic--instance
     spec:
@@ -703,7 +706,8 @@ spec:
           secretName: kc--dynamo-basic
   - name: kc--dynamo-complex--binding
     references:
-    - name: dynamo-complex--instance-metadata-name
+    - example: aname
+      name: dynamo-complex--instance-metadata-name
       path: metadata.name
       resource: dynamo-complex--instance
     spec:
