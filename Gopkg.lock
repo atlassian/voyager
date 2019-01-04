@@ -126,7 +126,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a34f2509f89a65a91e4550773c883d29d26dd0e9a5260fc88983cb9906894eec"
+  digest = "1:66ab859642baf88a8eca757e5fd2e6052031ac7611ab86596992f160c1fd2bd2"
   name = "github.com/atlassian/smith"
   packages = [
     ".",
@@ -153,7 +153,7 @@
     "pkg/util/logz",
   ]
   pruneopts = "NT"
-  revision = "f5abf88229397ff19ec52c701cb83e08d1eb5e78"
+  revision = "b8afac4bb73aed4af7b2a6a5ae287ae8cd9dca28"
 
 [[projects]]
   digest = "1:07918ac16957399fa68bf94b3ab26dccccc6992f1ccbcf589896734569a0a7e7"
@@ -1640,7 +1640,6 @@
     "github.com/go-openapi/errors",
     "github.com/go-openapi/runtime",
     "github.com/go-openapi/runtime/client",
-    "github.com/go-openapi/spec",
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/swag",
     "github.com/go-openapi/validate",
