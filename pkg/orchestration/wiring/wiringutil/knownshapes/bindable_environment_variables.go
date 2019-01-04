@@ -9,33 +9,34 @@ const (
 	BindableEnvironmentVariablesShape wiringplugin.ShapeName = "voyager.atl-paas.net/BindableEnvironmentVariables"
 )
 
-type ServiceInstanceReference interface {
-	Reference() wiringplugin.ProtoReference
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin.Shape
+type BindableEnvironmentVariables struct {
+	wiringplugin.ShapeMeta `json:",inline"`
+	Data                   BindableEnvironmentVariablesData `json:"data"`
 }
 
 // +k8s:deepcopy-gen=true
-// +k8s:deepcopy-gen:interfaces=github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin.Shape
-type bindableEnvironmentVariables struct {
-	wiringplugin.ShapeMeta           `json:",inline"`
+type BindableEnvironmentVariablesData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
 	Prefix                           string `json:"prefix,omitempty"`
 }
 
-func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *bindableEnvironmentVariables {
-	return &bindableEnvironmentVariables{
-		ShapeMeta: wiringplugin.ShapeMeta{BindableEnvironmentVariablesShape},
-		BindableShapeStruct: wiringplugin.BindableShapeStruct{
-			ServiceInstanceName: wiringplugin.ProtoReference{
-				Resource: resourceName,
-				Path:     "metadata.name",
-			}},
+func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *BindableEnvironmentVariables {
+	return &BindableEnvironmentVariables{
+		ShapeMeta: wiringplugin.ShapeMeta{
+			ShapeName: BindableEnvironmentVariablesShape,
+		},
+		Data: BindableEnvironmentVariablesData{
+			BindableShapeStruct: wiringplugin.BindableShapeStruct{
+				ServiceInstanceName: wiringplugin.ProtoReference{
+					Resource: resourceName,
+					Path:     "metadata.name",
+				}},
+		},
 	}
 }
 
-func (b *bindableEnvironmentVariables) Name() wiringplugin.ShapeName {
+func (b *BindableEnvironmentVariables) Name() wiringplugin.ShapeName {
 	return b.ShapeMeta.ShapeName
-}
-
-func (b *bindableEnvironmentVariables) Reference() wiringplugin.ProtoReference {
-	return b.BindableShapeStruct.ServiceInstanceName
 }

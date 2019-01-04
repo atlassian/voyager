@@ -10,9 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
@@ -134,38 +132,38 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		found := false
-		if !dep.Contract.IsEmpty() {
-			if dep.Type != ups.ResourceType && dep.Type != aws.DynamoDB {
-				return nil, false, errors.Errorf("Wiring of %s to EC2Compute by resource contract is not supported yet", dep.Type)
-			}
-			bindableShape, err := dep.Contract.GetShape(knownshapes.BindableEnvironmentVariablesShape)
-			if err != nil {
-				return nil, false, errors.Wrap(err, "failed to bind to ServiceInstance")
-			}
-			found = true
-			resourceReference := bindableShape.(knownshapes.ServiceInstanceReference).Reference()
+		bound := false
+
+		if bindableShape, ok := dep.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape); ok {
+			resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
 			// We don't want anything that depends on compute to see our bindings - exposed: false
 			binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference, false)
 			smithResources = append(smithResources, binding)
 			bindingResources = append(bindingResources, binding)
+			continue
 		}
-		for _, dependencyObj := range dep.SmithResources {
-			if dependencyObj.Spec.Object == nil {
-				// TODO support plugins
-				continue
-			}
-			dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
-			switch dependencyObjGVK.GroupKind() {
-			case instanceGK:
-				found = true
-				// We don't want anything that depends on compute to see our bindings - exposed: false
-				binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
-				smithResources = append(smithResources, binding)
-				bindingResources = append(bindingResources, binding)
+
+		// DEPRECATED: binding using raw SmithResources, use resource contracts instead
+		if len(dep.SmithResources) > 0 {
+			for _, dependencyObj := range dep.SmithResources {
+				if dependencyObj.Spec.Object == nil {
+					// TODO support plugins
+					continue
+				}
+				dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
+				switch dependencyObjGVK.GroupKind() {
+				case instanceGK:
+					bound = true
+					// We don't want anything that depends on compute to see our bindings - exposed: false
+					binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
+					smithResources = append(smithResources, binding)
+					bindingResources = append(bindingResources, binding)
+				}
 			}
 		}
-		if !found {
+
+		// check if we wired/bound dependency in at least one way
+		if !bound {
 			return nil, false, errors.Errorf("cannot depend on resource %q of type %q. Only ServiceInstance type is supported", dep.Name, dep.Type)
 		}
 	}

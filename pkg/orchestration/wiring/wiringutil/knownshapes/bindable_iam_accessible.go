@@ -12,26 +12,35 @@ const (
 
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin.Shape
-type bindableIamAccessible struct {
-	wiringplugin.ShapeMeta           `json:",inline"`
+type BindableIamAccessible struct {
+	wiringplugin.ShapeMeta `json:",inline"`
+	Data                   BindableIamAccessibleData `json:"data"`
+}
+
+// +k8s:deepcopy-gen=true
+type BindableIamAccessibleData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
 	//IAMRoleARN    BindingProtoReference
 	//IAMProfileARN BindingProtoReference
 	IAMPolicySnippet wiringplugin.BindingProtoReference
 }
 
-func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnippetPath string) *bindableIamAccessible {
-	return &bindableIamAccessible{
-		ShapeMeta: wiringplugin.ShapeMeta{BindableIamAccessibleShape},
-		BindableShapeStruct: wiringplugin.BindableShapeStruct{
-			ServiceInstanceName: wiringplugin.ProtoReference{
-				Resource: resourceName,
-				Path:     "metadata.name",
-			}},
-		IAMPolicySnippet: wiringplugin.BindingProtoReference{Path: IAMPolicySnippetPath},
+func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnippetPath string) *BindableIamAccessible {
+	return &BindableIamAccessible{
+		ShapeMeta: wiringplugin.ShapeMeta{
+			ShapeName: BindableIamAccessibleShape,
+		},
+		Data: BindableIamAccessibleData{
+			BindableShapeStruct: wiringplugin.BindableShapeStruct{
+				ServiceInstanceName: wiringplugin.ProtoReference{
+					Resource: resourceName,
+					Path:     "metadata.name",
+				}},
+			IAMPolicySnippet: wiringplugin.BindingProtoReference{Path: IAMPolicySnippetPath},
+		},
 	}
 }
 
-func (s *bindableIamAccessible) Name() wiringplugin.ShapeName {
+func (s *BindableIamAccessible) Name() wiringplugin.ShapeName {
 	return BindableIamAccessibleShape
 }

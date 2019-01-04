@@ -115,13 +115,8 @@ func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResou
 	return wiringplugin.ResourceContract{
 		Shapes: []wiringplugin.Shape{
 			knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
-			knownshapes.NewBindableIamAccessible(smithResource.Name, "IamPolicySnippet"),
+			// knownshapes.NewBindableIamAccessible(smithResource.Name, "IamPolicySnippet"),
 		},
-		//Data: []wiringplugin.DataItem{
-		//	{
-		//		Name: "fakeNotEmptyContract",
-		//	},
-		//},
 	}, nil
 }
 
