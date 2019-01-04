@@ -120,7 +120,7 @@ generate-bazel-all: goimports update-vendor
 
 # This builds (not tests) all the tests with a 'manual' tag to ensure they can be compiled
 define bazel-build-manual
-bazel build $(BAZEL_OPTIONS) $$(bazel query $(BAZEL_OPTIONS) 'attr(tags, manual, kind(test, //... -//vendor/...))')
+bazel build $(BAZEL_OPTIONS) $$(bazel query 'attr(tags, manual, kind(test, //... -//vendor/...))')
 endef
 
 define bazel-test-all
