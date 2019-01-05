@@ -10,7 +10,7 @@ import (
 
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission/rps"
 	"github.com/atlassian/voyager/pkg/util"
-	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
+	. "github.com/atlassian/voyager/pkg/util/httputil/httptest" // nolint
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
