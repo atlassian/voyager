@@ -224,7 +224,7 @@ func (c *Controller) startPollingServiceCentral(ctx context.Context) {
 
 // startPollingReleaseManagementSystem asynchronously polls Deployinator and processes results.
 func (c *Controller) startPollingReleaseManagementSystem(ctx context.Context) {
-	c.Logger.Sugar().Infof("Starting Service Central polling every %s", releaseManagementPollPeriod)
+	c.Logger.Sugar().Infof("Starting Release Management polling every %s", releaseManagementPollPeriod)
 	// add a bit of offset & jitter so deployments across environments don't spam RMS
 	time.Sleep(time.Duration(baseDelayProcSec+rand.Intn(baseDelayProcSec)) * time.Second)
 
