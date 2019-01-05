@@ -20,6 +20,6 @@ go_library(
 go_binary(
     name = "crd",
     embed = [":go_default_library"],
-    pure = "on",
+    race = "on",
     visibility = ["//visibility:public"],
 )
