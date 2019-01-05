@@ -6,6 +6,7 @@ def define_command_targets(name, binary_embed):
         name = name,
         embed = binary_embed,
         pure = "on",
+        tags = ["manual"],
         visibility = ["//visibility:public"],
     )
 
@@ -13,7 +14,6 @@ def define_command_targets(name, binary_embed):
         name = name + "_race",
         embed = binary_embed,
         race = "on",
-        tags = ["manual"],
         visibility = ["//visibility:public"],
     )
 
