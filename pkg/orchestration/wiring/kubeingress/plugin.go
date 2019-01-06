@@ -51,7 +51,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentSpec, retriable, err := extractKubeComputeDependency(context.Dependencies)
+	deploymentSpec, retriable, err := extractKubeComputeDependency(&context.Dependencies)
 	if err != nil {
 		return nil, retriable, err
 	}
@@ -153,7 +153,7 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 	// internalDNS rules
 	for _, dependency := range context.Dependants {
 		if dependency.Type == internaldns.ResourceType {
-			var internalDNSSpec internaldns.UserSpec
+			var internalDNSSpec internaldns.Spec
 			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
 				return wiringplugin.WiredSmithResource{}, err
 			}
@@ -232,14 +232,14 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
+func extractSingleDependencyOfType(dependencies *[]wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
 	var matchedDependency *wiringplugin.WiredDependency = nil
-	for x := range dependencies {
-		if dependencies[x].Type == resourceType {
+	for x := range *dependencies {
+		if (*dependencies)[x].Type == resourceType {
 			if matchedDependency != nil {
 				return nil, false, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
 			}
-			matchedDependency = &dependencies[x]
+			matchedDependency = &(*dependencies)[x]
 		}
 	}
 
@@ -250,7 +250,7 @@ func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, 
 	return matchedDependency, false, nil
 }
 
-func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
+func extractKubeComputeDependency(dependencies *[]wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
 	// Require exactly one KubeCompute dependency
 	var kubeComputeDependency, retriable, err = extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
 	if err != nil {

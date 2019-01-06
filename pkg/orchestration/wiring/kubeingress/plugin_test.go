@@ -56,7 +56,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("valid single dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{computeDep}
 
-		res, _, err := extractKubeComputeDependency(deps)
+		res, _, err := extractKubeComputeDependency(&deps)
 		assert.NoError(t, err)
 		assert.ObjectsAreEqual(deploymentObj, res)
 	})
@@ -64,7 +64,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("invalid: no dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{}
 
-		_, retriable, err := extractKubeComputeDependency(deps)
+		_, retriable, err := extractKubeComputeDependency(&deps)
 		assert.Error(t, err)
 		assert.False(t, retriable)
 	})
@@ -72,7 +72,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("invalid: multiple dependencies", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{computeDep, computeDep}
 
-		_, retriable, err := extractKubeComputeDependency(deps)
+		_, retriable, err := extractKubeComputeDependency(&deps)
 		assert.Error(t, err)
 		assert.False(t, retriable)
 	})
@@ -80,7 +80,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("valid dependency on single kubecompute and multiple non-kubecompute resource", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{nonComputeDep, computeDep, nonComputeDep}
 
-		res, _, err := extractKubeComputeDependency(deps)
+		res, _, err := extractKubeComputeDependency(&deps)
 		assert.NoError(t, err)
 		assert.ObjectsAreEqual(deploymentObj, res)
 	})
@@ -88,7 +88,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{nonComputeDep}
 
-		_, retriable, err := extractKubeComputeDependency(deps)
+		_, retriable, err := extractKubeComputeDependency(&deps)
 		assert.Error(t, err)
 		assert.False(t, retriable)
 	})
