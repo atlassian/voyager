@@ -125,7 +125,7 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 }
 
 // buildIngressResource constructs the Kube / KITT Ingress object
-// with a default rule, plus all aliases rules from dependants internalDNS resources
+// with a default rule, plus all aliases rules from dependant internalDNS resources
 func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
 	var ingressRules []ext_v1b1.IngressRule
 	ingressName := string(resource.Name) + "-" + ingressPostfix
@@ -232,15 +232,34 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
+func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
+	var matchedDependency *wiringplugin.WiredDependency = nil
+	for x := range dependencies {
+		if dependencies[x].Type == resourceType {
+			if matchedDependency != nil {
+				return nil, false, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
+			}
+			matchedDependency = &dependencies[x]
+		}
+	}
+
+	if matchedDependency == nil {
+		return nil, false, errors.Errorf("must depend on a single %s resource, but none were found", resourceType)
+	}
+
+	return matchedDependency, false, nil
+}
+
 func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
 	// Require exactly one KubeCompute dependency
-	if len(dependencies) != 1 || dependencies[0].Type != apik8scompute.ResourceType {
-		return nil, false, errors.Errorf("must depend on a single %s resource. %d dependencies were given", apik8scompute.ResourceType, len(dependencies))
+	var kubeComputeDependency, retriable, err = extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
+	if err != nil {
+		return nil, retriable, err
 	}
 
 	// Extract the deployment created by the KubeCompute dependency
 	var deploymentResource *smith_v1.Resource
-	for _, res := range dependencies[0].SmithResources {
+	for _, res := range kubeComputeDependency.SmithResources {
 		// TODO: Better way of identifying the correct deployment
 		// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
 		if res.Spec.Object.GetObjectKind().GroupVersionKind() == k8s.DeploymentGVK {

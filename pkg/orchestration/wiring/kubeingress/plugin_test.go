@@ -77,6 +77,14 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 		assert.False(t, retriable)
 	})
 
+	t.Run("valid dependency on single kubecompute and multiple non-kubecompute resource", func(t *testing.T) {
+		deps := []wiringplugin.WiredDependency{nonComputeDep, computeDep, nonComputeDep}
+
+		res, _, err := extractKubeComputeDependency(deps)
+		assert.NoError(t, err)
+		assert.ObjectsAreEqual(deploymentObj, res)
+	})
+
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{nonComputeDep}
 
