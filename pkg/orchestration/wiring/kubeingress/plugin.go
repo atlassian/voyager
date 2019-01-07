@@ -267,12 +267,12 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 
 func extractSingleDependencyOfType(dependencies *[]wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
 	var matchedDependency *wiringplugin.WiredDependency
-	for x := range *dependencies {
-		if (*dependencies)[x].Type == resourceType {
+	for _, dependency := range *dependencies {
+		if dependency.Type == resourceType {
 			if matchedDependency != nil {
 				return nil, false, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
 			}
-			matchedDependency = &(*dependencies)[x]
+			matchedDependency = &dependency
 		}
 	}
 
