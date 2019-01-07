@@ -35,6 +35,7 @@ func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnipp
 				ServiceInstanceName: wiringplugin.ProtoReference{
 					Resource: resourceName,
 					Path:     "metadata.name",
+					Example:  "aname",
 				}},
 			IAMPolicySnippet: wiringplugin.BindingProtoReference{Path: IAMPolicySnippetPath},
 		},

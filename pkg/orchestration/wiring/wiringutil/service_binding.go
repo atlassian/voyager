@@ -33,14 +33,10 @@ func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, pro
 // TODO(kopper): Remove V2 suffix
 func ConsumerProducerServiceBindingV2(consumer, producer voyager.ResourceName, resourceReference wiringplugin.ProtoReference,
 	exposed bool) wiringplugin.WiredSmithResource {
-
-	serviceInstanceRef := smith_v1.Reference{
-		Name:     ReferenceName(resourceReference.Resource, "metadata", "name"),
-		Resource: resourceReference.Resource,
-		Path:     resourceReference.Path,
-	}
 	bindingResourceName := ConsumerProducerResourceNameWithPostfix(consumer, producer, "binding")
 	bindingMetaName := ConsumerProducerMetaName(consumer, producer)
+	referenceName := ReferenceName(resourceReference.Resource, "metadata", "name")
+	serviceInstanceRef := resourceReference.ToReference(referenceName)
 	return ServiceBinding(bindingResourceName, bindingMetaName, serviceInstanceRef, exposed)
 }
 

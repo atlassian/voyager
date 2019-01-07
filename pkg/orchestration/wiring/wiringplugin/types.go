@@ -62,6 +62,18 @@ type ProtoReference struct {
 	Modifier string                `json:"modifier,omitempty"`
 }
 
+// ToReference should be used to augment ProtoReference with missing information to
+// get a full Reference.
+func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: r.Resource,
+		Path:     r.Path,
+		Example:  r.Example,
+		Modifier: r.Modifier,
+	}
+}
+
 // DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
 // since it doesn't know it's JSON).
 func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {

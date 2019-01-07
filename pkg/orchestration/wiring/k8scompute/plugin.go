@@ -144,21 +144,19 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		}
 
 		// DEPRECATED: binding using raw SmithResources, use resource contracts instead
-		if len(dep.SmithResources) > 0 {
-			for _, dependencyObj := range dep.SmithResources {
-				if dependencyObj.Spec.Object == nil {
-					// TODO support plugins
-					continue
-				}
-				dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
-				switch dependencyObjGVK.GroupKind() {
-				case instanceGK:
-					bound = true
-					// We don't want anything that depends on compute to see our bindings - exposed: false
-					binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
-					smithResources = append(smithResources, binding)
-					bindingResources = append(bindingResources, binding)
-				}
+		for _, dependencyObj := range dep.SmithResources {
+			if dependencyObj.Spec.Object == nil {
+				// TODO support plugins
+				continue
+			}
+			dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
+			switch dependencyObjGVK.GroupKind() {
+			case instanceGK:
+				bound = true
+				// We don't want anything that depends on compute to see our bindings - exposed: false
+				binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
+				smithResources = append(smithResources, binding)
+				bindingResources = append(bindingResources, binding)
 			}
 		}
 

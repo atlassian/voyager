@@ -32,6 +32,7 @@ func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *Bindab
 				ServiceInstanceName: wiringplugin.ProtoReference{
 					Resource: resourceName,
 					Path:     "metadata.name",
+					Example:  "aname",
 				}},
 		},
 	}
