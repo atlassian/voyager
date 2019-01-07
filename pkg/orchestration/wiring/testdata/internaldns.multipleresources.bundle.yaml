@@ -175,7 +175,7 @@ spec:
             stateName: state1
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress1-ingress
+  - name: ingress1--ingress
     references:
     - resource: ingress1-service
     spec:
@@ -186,7 +186,7 @@ spec:
           annotations:
             contour.heptio.com/request-timeout: 60s
             voyager.atl-paas.net/ingressType: private
-          name: ingress1-ingress
+          name: ingress1--ingress
         spec:
           rules:
           - host: test-servicename--ingress1.testregion.testenv.k8s.atl-paas.net
@@ -230,7 +230,7 @@ spec:
             stateName: state1
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress2-ingress
+  - name: ingress2--ingress
     references:
     - resource: ingress2-service
     spec:
@@ -241,7 +241,7 @@ spec:
           annotations:
             contour.heptio.com/request-timeout: 60s
             voyager.atl-paas.net/ingressType: private
-          name: ingress2-ingress
+          name: ingress2--ingress
         spec:
           rules:
           - host: test-servicename--ingress2.testregion.testenv.k8s.atl-paas.net
@@ -268,9 +268,9 @@ spec:
   - name: i11--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress1-ingress-metadata-endpoint
+      name: ingress1--ingress-metadata-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress1-ingress
+      resource: ingress1--ingress
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -288,13 +288,13 @@ spec:
               type: Simple
             environmentType: testenv
             serviceName: test-servicename
-            target: '!{ingress1-ingress-metadata-endpoint}'
+            target: '!{ingress1--ingress-metadata-endpoint}'
   - name: i12--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress1-ingress-metadata-endpoint
+      name: ingress1--ingress-metadata-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress1-ingress
+      resource: ingress1--ingress
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -312,13 +312,13 @@ spec:
               type: Simple
             environmentType: testenv
             serviceName: test-servicename
-            target: '!{ingress1-ingress-metadata-endpoint}'
+            target: '!{ingress1--ingress-metadata-endpoint}'
   - name: i21--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress2-ingress-metadata-endpoint
+      name: ingress2--ingress-metadata-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress2-ingress
+      resource: ingress2--ingress
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -336,13 +336,13 @@ spec:
               type: Simple
             environmentType: testenv
             serviceName: test-servicename
-            target: '!{ingress2-ingress-metadata-endpoint}'
+            target: '!{ingress2--ingress-metadata-endpoint}'
   - name: i22--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress2-ingress-metadata-endpoint
+      name: ingress2--ingress-metadata-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress2-ingress
+      resource: ingress2--ingress
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -360,5 +360,5 @@ spec:
               type: Simple
             environmentType: testenv
             serviceName: test-servicename
-            target: '!{ingress2-ingress-metadata-endpoint}'
+            target: '!{ingress2--ingress-metadata-endpoint}'
 status: {}

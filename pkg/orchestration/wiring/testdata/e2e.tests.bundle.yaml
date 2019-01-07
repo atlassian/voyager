@@ -990,7 +990,7 @@ spec:
             stateName: noderefapp
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress-ingress
+  - name: ingress--ingress
     references:
     - resource: ingress-service
     spec:
@@ -1001,7 +1001,7 @@ spec:
           annotations:
             contour.heptio.com/request-timeout: 60s
             voyager.atl-paas.net/ingressType: private
-          name: ingress-ingress
+          name: ingress--ingress
         spec:
           rules:
           - host: test-servicename--ingress.testregion.testenv.k8s.atl-paas.net
