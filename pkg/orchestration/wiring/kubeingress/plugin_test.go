@@ -39,7 +39,7 @@ func TestBuildingIngressResource(t *testing.T) {
 						Name: "somename-ingress",
 						Annotations: map[string]string{
 							kittIngressTypeAnnotation: "private",
-							contourTimeoutAnnotation:  "120s",
+							contourTimeoutAnnotation:  "60s",
 						},
 					},
 					Spec: ext_v1b1.IngressSpec{
@@ -79,7 +79,7 @@ func TestBuildingIngressResource(t *testing.T) {
 	})
 
 	t.Run("from-spec no ingress", func(t *testing.T) {
-		var res, err = buildIngressResourceFromSpec(serviceName, emptyStateResource.Name, 120, &wiringplugin.WiringContext{})
+		var res, err = buildIngressResourceFromSpec(serviceName, emptyStateResource.Name, 60, &wiringplugin.WiringContext{})
 		assert.NoError(t, err)
 		assert.Equal(t, validOutput, *res)
 	})
