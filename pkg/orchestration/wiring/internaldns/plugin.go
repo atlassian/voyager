@@ -55,7 +55,6 @@ func New() *WiringPlugin {
 			InstanceSpec:                  getInstanceSpec,
 			References:                    getReferences,
 			ObjectMeta:                    getObjectMeta,
-			OutputResourceContract:        false,
 		},
 	}
 }

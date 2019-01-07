@@ -337,7 +337,8 @@ spec:
             resource_name: datastore
   - name: ec2--asap--binding
     references:
-    - name: asap--instance-metadata-name
+    - example: aname
+      name: asap--instance-metadata-name
       path: metadata.name
       resource: asap--instance
     spec:
@@ -367,7 +368,8 @@ spec:
           secretName: ec2--basic
   - name: ec2--files--binding
     references:
-    - name: files--instance-metadata-name
+    - example: aname
+      name: files--instance-metadata-name
       path: metadata.name
       resource: files--instance
     spec:
@@ -382,7 +384,8 @@ spec:
           secretName: ec2--files
   - name: ec2--stream--binding
     references:
-    - name: stream--instance-metadata-name
+    - example: aname
+      name: stream--instance-metadata-name
       path: metadata.name
       resource: stream--instance
     spec:
@@ -429,7 +432,8 @@ spec:
           secretName: ec2--dynamo-complex
   - name: ec2--datastore--binding
     references:
-    - name: datastore--instance-metadata-name
+    - example: aname
+      name: datastore--instance-metadata-name
       path: metadata.name
       resource: datastore--instance
     spec:
@@ -444,7 +448,8 @@ spec:
           secretName: ec2--datastore
   - name: ec2--notification-sns--binding
     references:
-    - name: notification-sns--instance-metadata-name
+    - example: aname
+      name: notification-sns--instance-metadata-name
       path: metadata.name
       resource: notification-sns--instance
     spec:
@@ -630,7 +635,8 @@ spec:
               name: ec2--secretenvvar
   - name: kc--asap--binding
     references:
-    - name: asap--instance-metadata-name
+    - example: aname
+      name: asap--instance-metadata-name
       path: metadata.name
       resource: asap--instance
     spec:
@@ -660,7 +666,8 @@ spec:
           secretName: kc--basic
   - name: kc--files--binding
     references:
-    - name: files--instance-metadata-name
+    - example: aname
+      name: files--instance-metadata-name
       path: metadata.name
       resource: files--instance
     spec:
@@ -675,7 +682,8 @@ spec:
           secretName: kc--files
   - name: kc--stream--binding
     references:
-    - name: stream--instance-metadata-name
+    - example: aname
+      name: stream--instance-metadata-name
       path: metadata.name
       resource: stream--instance
     spec:
@@ -722,7 +730,8 @@ spec:
           secretName: kc--dynamo-complex
   - name: kc--datastore--binding
     references:
-    - name: datastore--instance-metadata-name
+    - example: aname
+      name: datastore--instance-metadata-name
       path: metadata.name
       resource: datastore--instance
     spec:
@@ -737,7 +746,8 @@ spec:
           secretName: kc--datastore
   - name: kc--notification-sns--binding
     references:
-    - name: notification-sns--instance-metadata-name
+    - example: aname
+      name: notification-sns--instance-metadata-name
       path: metadata.name
       resource: notification-sns--instance
     spec:

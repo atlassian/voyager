@@ -85,7 +85,6 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 	}
 
 	entangler := &wiring.Entangler{
-		Logger:          config.Logger,
 		Plugins:         cc.Plugins,
 		ClusterLocation: opts.Location.ClusterLocation(),
 		ClusterConfig:   toClusterConfig(opts.Cluster),

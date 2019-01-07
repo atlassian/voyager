@@ -31,7 +31,8 @@ spec:
             serviceName: test-servicename/myasap
   - name: compute--myasap--binding
     references:
-    - name: myasap--instance-metadata-name
+    - example: aname
+      name: myasap--instance-metadata-name
       path: metadata.name
       resource: myasap--instance
     spec:

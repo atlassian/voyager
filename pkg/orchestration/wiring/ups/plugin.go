@@ -25,7 +25,6 @@ func New() *WiringPlugin {
 			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
 			ResourceType:                  ResourceType,
 			InstanceSpec:                  InstanceSpec,
-			OutputResourceContract:        true,
 		},
 	}
 }

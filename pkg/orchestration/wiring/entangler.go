@@ -12,7 +12,6 @@ import (
 	"github.com/ghodss/yaml"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,7 +54,6 @@ type TagNames struct {
 }
 
 type Entangler struct {
-	Logger              *zap.Logger
 	Plugins             map[voyager.ResourceType]wiringplugin.WiringPlugin
 	ClusterLocation     voyager.ClusterLocation
 	ClusterConfig       wiringplugin.ClusterConfig
@@ -90,7 +88,6 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntanglerContext) (
 	}
 
 	w := worker{
-		logger:            en.Logger,
 		plugins:           en.Plugins,
 		allWiredResources: make(map[voyager.ResourceName]*wiredStateResource, len(state.Spec.Resources)),
 	}
@@ -217,7 +214,6 @@ func postProcessResources(resources []smith_v1.Resource) ([]smith_v1.Resource, e
 }
 
 type worker struct {
-	logger            *zap.Logger
 	plugins           map[voyager.ResourceType]wiringplugin.WiringPlugin
 	allWiredResources map[voyager.ResourceName]*wiredStateResource
 	// To preserve deterministic order (map above has random iteration order)
@@ -243,9 +239,6 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		exposedResources := make([]smith_v1.Resource, 0, len(res.WiringResult.Resources)) // optimistic allocation
 		for _, wiredResource := range res.WiringResult.Resources {
 			if wiredResource.Exposed {
-				w.logger.Warn(wiringResourcesDirectlyIsDeprecatedMsg,
-					zap.String("resourceName", string(wiredResource.SmithResource.Name)),
-					zap.String("resourceType", string(res.Type)))
 				exposedResources = append(exposedResources, wiredResource.SmithResource)
 			}
 		}

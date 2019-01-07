@@ -164,7 +164,8 @@ spec:
             serviceName: test-servicename
   - name: compute--fanouttopic--binding
     references:
-    - name: fanouttopic--instance-metadata-name
+    - example: aname
+      name: fanouttopic--instance-metadata-name
       path: metadata.name
       resource: fanouttopic--instance
     spec:

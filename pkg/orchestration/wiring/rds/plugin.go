@@ -82,7 +82,6 @@ func New() *WiringPlugin {
 			ResourceType:                  ResourceType,
 			InstanceSpec:                  instanceSpec,
 			ObjectMeta:                    objectMeta,
-			OutputResourceContract:        false,
 		},
 	}
 }
