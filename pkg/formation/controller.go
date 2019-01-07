@@ -477,6 +477,10 @@ func getDefaults(resourceType voyager.ResourceType, location voyager.ClusterLoca
 				"Protocol": defaultKubeComputeProtocol,
 			},
 		}
+	case voyager.ResourceType("KubeIngress"):
+		return map[string]interface{}{
+			"timeout": 60,
+		}
 	default:
 		return map[string]interface{}{}
 	}

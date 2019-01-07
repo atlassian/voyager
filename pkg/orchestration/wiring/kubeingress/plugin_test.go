@@ -5,13 +5,93 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/stretchr/testify/assert"
 	apps_v1 "k8s.io/api/apps/v1"
+	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestBuildingIngressResource(t *testing.T) {
+	t.Parallel()
+
+	var serviceName smith_v1.ResourceName = "serviceName"
+
+	validOutput := wiringplugin.WiredSmithResource{
+		SmithResource: smith_v1.Resource{
+			Name: "somename-ingress",
+			References: []smith_v1.Reference{
+				{
+					Resource: serviceName,
+				},
+			},
+			Spec: smith_v1.ResourceSpec{
+				Object: &ext_v1b1.Ingress{
+					TypeMeta: meta_v1.TypeMeta{
+						Kind:       k8s.IngressKind,
+						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name: "somename-ingress",
+						Annotations: map[string]string{
+							kittIngressTypeAnnotation: "private",
+							contourTimeoutAnnotation:  "120s",
+						},
+					},
+					Spec: ext_v1b1.IngressSpec{
+						Rules: []ext_v1b1.IngressRule{
+							{
+								Host: "--somename...k8s.atl-paas.net",
+								IngressRuleValue: ext_v1b1.IngressRuleValue{
+									HTTP: &ext_v1b1.HTTPIngressRuleValue{
+										Paths: []ext_v1b1.HTTPIngressPath{
+											{
+												Path: "/",
+												Backend: ext_v1b1.IngressBackend{
+													ServiceName: string(serviceName),
+													ServicePort: intstr.FromInt(8080),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Exposed: true,
+	}
+
+	emptyStateResource := v1.StateResource{
+		Name: "somename",
+	}
+
+	t.Run("E2E no ingress", func(t *testing.T) {
+		var res, err = buildIngressResource(serviceName, &emptyStateResource, &wiringplugin.WiringContext{})
+		assert.NoError(t, err)
+		assert.Equal(t, validOutput, *res)
+	})
+
+	t.Run("from-spec no ingress", func(t *testing.T) {
+		var res, err = buildIngressResourceFromSpec(serviceName, emptyStateResource.Name, 120, &wiringplugin.WiringContext{})
+		assert.NoError(t, err)
+		assert.Equal(t, validOutput, *res)
+	})
+
+	t.Run("from-spec timeout override", func(t *testing.T) {
+		var expectedOutput = validOutput
+		expectedOutput.SmithResource.Spec.Object.(*ext_v1b1.Ingress).ObjectMeta.Annotations[contourTimeoutAnnotation] = "140s"
+		var res, err = buildIngressResourceFromSpec(serviceName, emptyStateResource.Name, 140, &wiringplugin.WiringContext{})
+		assert.NoError(t, err)
+		assert.Equal(t, validOutput, *res)
+	})
+}
 
 func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Parallel()
@@ -58,7 +138,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 
 		res, _, err := extractKubeComputeDependency(&deps)
 		assert.NoError(t, err)
-		assert.ObjectsAreEqual(deploymentObj, res)
+		assert.Equal(t, deploymentObj, res)
 	})
 
 	t.Run("invalid: no dependency", func(t *testing.T) {
@@ -82,7 +162,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 
 		res, _, err := extractKubeComputeDependency(&deps)
 		assert.NoError(t, err)
-		assert.ObjectsAreEqual(deploymentObj, res)
+		assert.Equal(t, deploymentObj, res)
 	})
 
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {

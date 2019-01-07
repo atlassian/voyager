@@ -33,12 +33,15 @@ go_test(
     race = "on",
     deps = [
         "//:go_default_library",
+        "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/k8s:go_default_library",
         "//pkg/orchestration/wiring/k8scompute/api:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",
         "//vendor/k8s.io/api/apps/v1:go_default_library",
+        "//vendor/k8s.io/api/extensions/v1beta1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/intstr:go_default_library",
     ],
 )
