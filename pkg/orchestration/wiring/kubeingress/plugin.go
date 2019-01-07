@@ -12,6 +12,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
@@ -52,7 +53,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentSpec, retriable, err := extractKubeComputeDependency(&context.Dependencies)
+	deploymentSpec, retriable, err := extractKubeComputeDependency(context.Dependencies)
 	if err != nil {
 		return nil, retriable, err
 	}
@@ -71,7 +72,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed building ingress resource")
 	}
-	smithResources = append(smithResources, *ingressResource)
+	smithResources = append(smithResources, ingressResource)
 
 	result := &wiringplugin.WiringResult{
 		Resources: smithResources,
@@ -125,9 +126,9 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 	return serviceResource
 }
 
-func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (*wiringplugin.WiredSmithResource, error) {
+func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
 	var ingressRules []ext_v1b1.IngressRule
-	ingressName := string(resourceName) + "-" + ingressPostfix
+	ingressName := wiringutil.ResourceNameWithPostfix(resourceName, ingressPostfix)
 	ingressRuleValue := ext_v1b1.IngressRuleValue{
 		HTTP: &ext_v1b1.HTTPIngressRuleValue{
 			Paths: []ext_v1b1.HTTPIngressPath{
@@ -154,7 +155,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 		if dependency.Type == internaldns.ResourceType {
 			var internalDNSSpec internaldns.Spec
 			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
-				return nil, err
+				return wiringplugin.WiredSmithResource{}, err
 			}
 			for _, alias := range internalDNSSpec.Aliases {
 				ingressRules = append(ingressRules, ext_v1b1.IngressRule{
@@ -171,7 +172,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 
 	ingressResource := wiringplugin.WiredSmithResource{
 		SmithResource: smith_v1.Resource{
-			Name: smith_v1.ResourceName(ingressName),
+			Name: ingressName,
 			References: []smith_v1.Reference{
 				{
 					Resource: serviceName,
@@ -184,7 +185,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
 					},
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name: ingressName,
+						Name: string(ingressName),
 						Annotations: map[string]string{
 							kittIngressTypeAnnotation: "private",
 							// incoming requests pass through ALB and Envoy
@@ -199,18 +200,18 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 		Exposed: true,
 	}
 
-	return &ingressResource, nil
+	return ingressResource, nil
 }
 
 // buildIngressResource constructs the Kube / KITT Ingress object
 // with a default rule, plus all alias rules from dependant internalDNS resources
-func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiredSmithResource, error) {
+func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
 	var timeout = defaultContourTimeout
 
 	if resource.Defaults != nil {
 		var rawDefaultsSpec Spec
 		if err := json.Unmarshal(resource.Defaults.Raw, &rawDefaultsSpec); err != nil {
-			return nil, errors.WithStack(err)
+			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
 		}
 		if rawDefaultsSpec.IngressTimeout != nil {
 			timeout = *rawDefaultsSpec.IngressTimeout
@@ -220,20 +221,20 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 	if resource.Spec != nil {
 		var rawIngressSpec Spec
 		if err := json.Unmarshal(resource.Spec.Raw, &rawIngressSpec); err != nil {
-			return nil, errors.WithStack(err)
+			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
 		}
 
 		if rawIngressSpec.IngressTimeout != nil {
 			timeout = *rawIngressSpec.IngressTimeout
 
 			if timeout < 1 || timeout > 300 {
-				return nil, errors.Errorf(
+				return wiringplugin.WiredSmithResource{}, errors.Errorf(
 					"ingress timeout must be between one second and five minutes (was given %d seconds)", timeout)
 			}
 		}
 	}
 
-	return buildIngressResourceFromSpec(serviceName, resource.Name, timeout, context)
+	return buildIngressResourceFromSpec(serviceResourceName, resource.Name, timeout, context)
 
 }
 
@@ -265,14 +266,14 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractSingleDependencyOfType(dependencies *[]wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
+func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
 	var matchedDependency *wiringplugin.WiredDependency
-	for _, dependency := range *dependencies {
+	for x, dependency := range dependencies {
 		if dependency.Type == resourceType {
 			if matchedDependency != nil {
 				return nil, false, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
 			}
-			matchedDependency = &dependency
+			matchedDependency = &dependencies[x]
 		}
 	}
 
@@ -283,20 +284,20 @@ func extractSingleDependencyOfType(dependencies *[]wiringplugin.WiredDependency,
 	return matchedDependency, false, nil
 }
 
-func extractKubeComputeDependency(dependencies *[]wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
+func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
 	// Require exactly one KubeCompute dependency
-	var kubeComputeDependency, retriable, err = extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
+	kubeComputeDependency, retriable, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
 	if err != nil {
 		return nil, retriable, err
 	}
 
 	// Extract the deployment created by the KubeCompute dependency
 	var deploymentResource *smith_v1.Resource
-	for _, res := range kubeComputeDependency.SmithResources {
+	for x, res := range kubeComputeDependency.SmithResources {
 		// TODO: Better way of identifying the correct deployment
 		// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
 		if res.Spec.Object.GetObjectKind().GroupVersionKind() == k8s.DeploymentGVK {
-			deploymentResource = &res
+			deploymentResource = &kubeComputeDependency.SmithResources[x]
 			break
 		}
 	}
