@@ -5,12 +5,15 @@ go_library(
     srcs = [
         "bindable_environment_variables.go",
         "bindable_iam_accessible.go",
+        "sns_subscribable.go",
         "zz_generated.deepcopy.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
     visibility = ["//visibility:public"],
     deps = [
+        "//:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
     ],
 )

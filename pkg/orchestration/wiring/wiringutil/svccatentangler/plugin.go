@@ -25,6 +25,9 @@ type SvcCatEntangler struct {
 	References   func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
 
 	ResourceType voyager.ResourceType
+
+	// optional shapes by resource type
+	OptionalShapes func(*orch_v1.StateResource) ([]wiringplugin.ShapeName, error)
 }
 
 type partialSpec struct {
@@ -109,11 +112,27 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 	}, nil
 }
 
-func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource smith_v1.Resource, context *wiringplugin.WiringContext) (wiringplugin.ResourceContract, error) {
-	return wiringplugin.ResourceContract{
-		Shapes: []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
-		},
+func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
+	supportedShapes := []wiringplugin.Shape{
+		knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
+	}
+	if e.OptionalShapes != nil {
+		optionalShapes, err := e.OptionalShapes(resource)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %s of type %s", resource.Name, resource.Type)
+		}
+		for _, shape := range optionalShapes {
+			switch shape {
+			case knownshapes.SnsSubscribableShape:
+				supportedShapes = append(supportedShapes, knownshapes.NewSnsSubscribable(smithResource.Name, resource.Name))
+				break
+			default:
+				return nil, errors.Errorf("shape type %s is not supported yet", shape)
+			}
+		}
+	}
+	return &wiringplugin.ResourceContract{
+		Shapes: supportedShapes,
 	}, nil
 }
 
@@ -133,7 +152,7 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 	}
 
 	result := &wiringplugin.WiringResult{
-		Contract:  resourceContract,
+		Contract:  *resourceContract,
 		Resources: []wiringplugin.WiredSmithResource{serviceInstance},
 	}
 

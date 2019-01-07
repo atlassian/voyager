@@ -2,13 +2,13 @@ package sqs
 
 import (
 	"encoding/json"
-	"fmt"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -20,17 +20,11 @@ import (
 const (
 	ResourceType voyager.ResourceType = "SQS"
 
-	// This has to match up with what ends up in the bind credentials for
-	// something that emits a topic.
-	snsTopicArnOutputNameKey = "TopicArn"
+	snsTopicArnReferenceNameSuffix = "TopicArn"
 
 	clusterServiceClassExternalName = "sqs"
 	clusterServiceClassExternalID   = "06068066-7f66-4297-8683-a1ba0a2b7401"
 	clusterServicePlanExternalID    = "56393d2c-d936-4634-a178-19f491a3551a"
-)
-
-var (
-	serviceInstanceGVK = sc_v1b1.SchemeGroupVersion.WithKind("ServiceInstance")
 )
 
 type snsSubscription struct {
@@ -58,31 +52,23 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	var references []smith_v1.Reference
 
 	for _, dependency := range context.Dependencies {
-		for _, resource := range dependency.SmithResources {
-			if resource.Spec.Object == nil {
-				continue
-			}
-			if resource.Spec.Object.GetObjectKind().GroupVersionKind() != serviceInstanceGVK {
-				continue
-			}
-
-			// We don't want anything that depends on us to see our bindings - exposed: false
-			serviceBinding := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resource.Name, false)
-			wiredResources = append(wiredResources, serviceBinding)
-
-			topicArnRef := smith_v1.Reference{
-				Name:     wiringutil.ReferenceName(serviceBinding.SmithResource.Name, snsTopicArnOutputNameKey),
-				Resource: serviceBinding.SmithResource.Name,
-				Path:     fmt.Sprintf("data.%s", snsTopicArnOutputNameKey),
-				Example:  `"arn:aws:sns:us-east-1:123456789012:example"`,
-				Modifier: smith_v1.ReferenceModifierBindSecret,
-			}
-			references = append(references, topicArnRef)
-			snsSubscriptions = append(snsSubscriptions, snsSubscription{
-				TopicArn:   topicArnRef.Ref(),
-				Attributes: dependency.Attributes,
-			})
+		snsShape, hasSnsShape := dependency.Contract.FindShape(knownshapes.SnsSubscribableShape)
+		if !hasSnsShape {
+			continue
 		}
+		snsSubscribableData := snsShape.(*knownshapes.SnsSubscribable).Data
+
+		resourceRef := snsSubscribableData.BindableShapeStruct.ServiceInstanceName
+		serviceBinding := wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceRef, false)
+		wiredResources = append(wiredResources, serviceBinding)
+
+		referenceName := wiringutil.ReferenceName(serviceBinding.SmithResource.Name, snsTopicArnReferenceNameSuffix)
+		topicArnRef := snsSubscribableData.TopicArnRef.ToReference(referenceName, stateResource.Name)
+		references = append(references, topicArnRef)
+		snsSubscriptions = append(snsSubscriptions, snsSubscription{
+			TopicArn:   topicArnRef.Ref(),
+			Attributes: dependency.Attributes,
+		})
 	}
 
 	serviceInstance, err := constructServiceInstance(stateResource, context, references, snsSubscriptions)
