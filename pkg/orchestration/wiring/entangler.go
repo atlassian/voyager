@@ -9,7 +9,7 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
-	yaml "github.com/ghodss/yaml"
+	"github.com/ghodss/yaml"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +28,8 @@ const (
 	// tags in the configmap because it's at the same level as legacyConfig
 	// (i.e. want to make it obvious they should be removed at the same time).
 	legacyEnvironmentTagName = "environment"
+
+	wiringResourcesDirectlyIsDeprecatedMsg = "wiring dependencies as SmithResources is deprecated, use ResourceContracts instead"
 )
 
 // EntanglerContext contains information that is required by autowiring.

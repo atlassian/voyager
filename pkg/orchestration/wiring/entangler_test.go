@@ -253,11 +253,12 @@ loggingId: logging-id-from-configmap
 	state.SetLabels(labels)
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
-	return ent.Entangle(state, &EntanglerContext{
+	bundle, retriable, err := ent.Entangle(state, &EntanglerContext{
 		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceName: serviceName,
 		Config:      configMap.Data,
 	})
+	return bundle, retriable, err
 }
 
 func entangleTestFileState(t *testing.T, filePrefix string) (*smith_v1.Bundle, bool, error) {

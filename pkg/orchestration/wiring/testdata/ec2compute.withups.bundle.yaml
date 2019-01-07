@@ -13,41 +13,35 @@ metadata:
     uid: ""
 spec:
   resources:
-  - name: myasap--instance
+  - name: basic--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: ASAPKey
-          name: myasap
+          name: basic
         spec:
-          clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
-          clusterServicePlanExternalID: 07bb749b-3500-454a-87cd-1244534083f0
-          parameters:
-            creator: micros2
-            keyName: myasap
-            serviceName: test-servicename/myasap
-  - name: compute--myasap--binding
+          clusterServiceClassExternalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+          clusterServicePlanExternalID: 86064792-7ea2-467b-af93-ac9694d96d52
+  - name: compute--basic--binding
     references:
     - example: aname
-      name: myasap--instance-metadata-name
+      name: basic--instance-metadata-name
       path: metadata.name
-      resource: myasap--instance
+      resource: basic--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceBinding
         metadata:
-          name: compute--myasap
+          name: compute--basic
         spec:
           instanceRef:
-            name: '!{myasap--instance-metadata-name}'
-          secretName: compute--myasap
+            name: '!{basic--instance-metadata-name}'
+          secretName: compute--basic
   - name: compute--secretenvvar
     references:
-    - resource: compute--myasap--binding
+    - resource: compute--basic--binding
     spec:
       plugin:
         name: secretenvvar
@@ -58,7 +52,7 @@ spec:
           outputSecretKey: ec2ComputeEnvVars
   - name: compute---iamrole
     references:
-    - resource: compute--myasap--binding
+    - resource: compute--basic--binding
     spec:
       plugin:
         name: iamrole
@@ -160,7 +154,7 @@ spec:
               region: testregion
             meaninglesskey: used as an example
             notifications:
-              email: an_owner@example.com
+              email: notification@email.com
               pagerduty:
                 cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
                 generic: "123123123123123"
@@ -171,7 +165,6 @@ spec:
               ssamAccessLevel: access-level-from-configmap
             tags:
               business_unit: some_unit
-              key: a-tag
               platform: voyager
               resource_owner: an_owner
           parametersFrom:
