@@ -14,6 +14,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -131,7 +132,18 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		found := false
+		bound := false
+
+		if bindableShape, ok := dep.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape); ok {
+			resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
+			// We don't want anything that depends on compute to see our bindings - exposed: false
+			binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference, false)
+			smithResources = append(smithResources, binding)
+			bindingResources = append(bindingResources, binding)
+			continue
+		}
+
+		// DEPRECATED: binding using raw SmithResources, use resource contracts instead
 		for _, dependencyObj := range dep.SmithResources {
 			if dependencyObj.Spec.Object == nil {
 				// TODO support plugins
@@ -140,14 +152,16 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
 			switch dependencyObjGVK.GroupKind() {
 			case instanceGK:
-				found = true
+				bound = true
 				// We don't want anything that depends on compute to see our bindings - exposed: false
 				binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
 				smithResources = append(smithResources, binding)
 				bindingResources = append(bindingResources, binding)
 			}
 		}
-		if !found {
+
+		// check if we wired/bound dependency in at least one way
+		if !bound {
 			return nil, false, errors.Errorf("cannot depend on resource %q of type %q. Only ServiceInstance type is supported", dep.Name, dep.Type)
 		}
 	}

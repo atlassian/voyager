@@ -62,6 +62,18 @@ type ProtoReference struct {
 	Modifier string                `json:"modifier,omitempty"`
 }
 
+// ToReference should be used to augment ProtoReference with missing information to
+// get a full Reference.
+func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: r.Resource,
+		Path:     r.Path,
+		Example:  r.Example,
+		Modifier: r.Modifier,
+	}
+}
+
 // DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
 // since it doesn't know it's JSON).
 func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
@@ -83,6 +95,20 @@ type ResourceContract struct {
 	Shapes []Shape               `json:"shapes,omitempty"`
 	Refs   []NamedProtoReference `json:"refs,omitempty"`
 	Data   []DataItem            `json:"data,omitempty"`
+}
+
+func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found */) {
+	for _, shape := range c.Shapes {
+		if shape.Name() == shapeName {
+			return shape, true
+		}
+	}
+
+	return nil, false
+}
+
+func (c *ResourceContract) IsEmpty() bool {
+	return len(c.Shapes) == 0 && len(c.Refs) == 0 && len(c.Data) == 0
 }
 
 // DataItem is a named bit of data made available by an autowiring function.

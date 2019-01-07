@@ -31,7 +31,8 @@ spec:
             serviceName: test-servicename/asap
   - name: kubecompute-simple--asap--binding
     references:
-    - name: asap--instance-metadata-name
+    - example: aname
+      name: asap--instance-metadata-name
       path: metadata.name
       resource: asap--instance
     spec:
