@@ -8,7 +8,6 @@ go_library(
     deps = [
         "//:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
-        "//pkg/k8s:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",
@@ -17,6 +16,5 @@ go_library(
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
     ],
 )
