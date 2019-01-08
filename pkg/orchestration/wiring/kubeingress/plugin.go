@@ -71,7 +71,13 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 	smithResources = append(smithResources, ingressResource)
 
+	contract := wiringplugin.ResourceContract{
+		Shapes: []wiringplugin.Shape{
+			knownshapes.NewIngressEndpoint(ingressResource.Name),
+		},
+	}
 	result := &wiringplugin.WiringResult{
+		Contract:  contract,
 		Resources: smithResources,
 	}
 
