@@ -128,7 +128,7 @@ func (in *SnsSubscribable) DeepCopyShape() wiringplugin.Shape {
 func (in *SnsSubscribableData) DeepCopyInto(out *SnsSubscribableData) {
 	*out = *in
 	in.BindableShapeStruct.DeepCopyInto(&out.BindableShapeStruct)
-	in.TopicArnRef.DeepCopyInto(&out.TopicArnRef)
+	in.TopicARN.DeepCopyInto(&out.TopicARN)
 	return
 }
 

@@ -16,6 +16,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type OptionalShapeFunc func(*orch_v1.StateResource, *smith_v1.Resource, *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
+
+func NoOptionalShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	return nil, nil
+}
+
 type SvcCatEntangler struct {
 	ClusterServiceClassExternalID servicecatalog.ClassExternalID
 	ClusterServicePlanExternalID  servicecatalog.PlanExternalID
@@ -27,7 +33,7 @@ type SvcCatEntangler struct {
 	ResourceType voyager.ResourceType
 
 	// optional shapes by resource type
-	OptionalShapes func(*orch_v1.StateResource) ([]wiringplugin.ShapeName, error)
+	OptionalShapes OptionalShapeFunc
 }
 
 type partialSpec struct {
@@ -112,25 +118,15 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 	}, nil
 }
 
-func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
+func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
 	supportedShapes := []wiringplugin.Shape{
 		knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
 	}
-	if e.OptionalShapes != nil {
-		optionalShapes, err := e.OptionalShapes(resource)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %s of type %s", resource.Name, resource.Type)
-		}
-		for _, shape := range optionalShapes {
-			switch shape {
-			case knownshapes.SnsSubscribableShape:
-				supportedShapes = append(supportedShapes, knownshapes.NewSnsSubscribable(smithResource.Name, resource.Name))
-				break
-			default:
-				return nil, errors.Errorf("shape type %s is not supported yet", shape)
-			}
-		}
+	optionalShapes, err := e.OptionalShapes(resource, smithResource, context)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %q of type %q", resource.Name, resource.Type)
 	}
+	supportedShapes = append(supportedShapes, optionalShapes...)
 	return &wiringplugin.ResourceContract{
 		Shapes: supportedShapes,
 	}, nil
@@ -146,7 +142,7 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 		return nil, false, err
 	}
 
-	resourceContract, err := e.constructResourceContract(resource, serviceInstance.SmithResource, context)
+	resourceContract, err := e.constructResourceContract(resource, &serviceInstance.SmithResource, context)
 	if err != nil {
 		return nil, false, err
 	}

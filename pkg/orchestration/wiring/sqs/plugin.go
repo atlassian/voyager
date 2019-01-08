@@ -63,7 +63,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		wiredResources = append(wiredResources, serviceBinding)
 
 		referenceName := wiringutil.ReferenceName(serviceBinding.SmithResource.Name, snsTopicArnReferenceNameSuffix)
-		topicArnRef := snsSubscribableData.TopicArnRef.ToReference(referenceName, stateResource.Name)
+		topicArnRef := snsSubscribableData.TopicARN.ToReference(referenceName, serviceBinding.SmithResource.Name)
 		references = append(references, topicArnRef)
 		snsSubscriptions = append(snsSubscriptions, snsSubscription{
 			TopicArn:   topicArnRef.Ref(),

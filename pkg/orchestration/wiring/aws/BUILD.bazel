@@ -16,6 +16,7 @@ go_library(
         "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/svccatentangler:go_default_library",
         "//pkg/servicecatalog:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
     ],

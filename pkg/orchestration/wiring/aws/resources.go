@@ -1,11 +1,13 @@
 package aws
 
 import (
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
 )
 
@@ -29,22 +31,24 @@ const (
 	CfnPrefix oap.EnvVarPrefix               = "CF"
 )
 
-func snsSubscribableForSnsV1Template(resource *orch_v1.StateResource) ([]wiringplugin.ShapeName, error) {
+func snsSubscribableForSnsV1Template(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
 	templateName, err := oap.TemplateName(resource.Spec)
 	if err != nil {
 		return nil, err
 	}
 	if templateName == "sns-v1" {
-		return []wiringplugin.ShapeName{knownshapes.SnsSubscribableShape}, nil
+		return []wiringplugin.Shape{
+			knownshapes.NewSnsSubscribable(smithResource.Name),
+		}, nil
 	}
-	return []wiringplugin.ShapeName{}, nil
+	return nil, nil
 }
 
 // All osb-aws-provider resources are 'almost' the same, differing only in the service/plan names,
 // what they need passed in the ServiceEnvironment.
 var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	DynamoDB: Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, DynamoPrefix, nil),
-	S3:       Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, S3Prefix, nil),
+	DynamoDB: Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, DynamoPrefix, svccatentangler.NoOptionalShapes),
+	S3:       Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, S3Prefix, svccatentangler.NoOptionalShapes),
 	Cfn:      Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, CfnPrefix, snsSubscribableForSnsV1Template),
 }
 

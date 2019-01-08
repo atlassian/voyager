@@ -37,7 +37,7 @@ func Resource(resourceType voyager.ResourceType,
 	clusterServicePlanExternalID servicecatalog.PlanExternalID,
 	generateServiceEnvironment ServiceEnvironmentGenerator,
 	envResourcePrefix oap.EnvVarPrefix,
-	optionalShapes func(*orch_v1.StateResource) ([]wiringplugin.ShapeName, error),
+	optionalShapes svccatentangler.OptionalShapeFunc,
 ) *WiringPlugin {
 	wiringPlugin := &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{

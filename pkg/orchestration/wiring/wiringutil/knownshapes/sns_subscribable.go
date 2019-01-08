@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
-	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 )
 
 const (
@@ -27,10 +25,10 @@ type SnsSubscribable struct {
 // +k8s:deepcopy-gen=true
 type SnsSubscribableData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
-	TopicArnRef                      wiringutil.BindSecretReference `json:"topicArnRef"`
+	TopicARN                         wiringplugin.BindingSecretProtoReference `json:"topicArn"`
 }
 
-func NewSnsSubscribable(smithResourceName smith_v1.ResourceName, voyagerResourceName voyager.ResourceName) *SnsSubscribable {
+func NewSnsSubscribable(smithResourceName smith_v1.ResourceName) *SnsSubscribable {
 	return &SnsSubscribable{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: SnsSubscribableShape,
@@ -42,10 +40,9 @@ func NewSnsSubscribable(smithResourceName smith_v1.ResourceName, voyagerResource
 					Path:     "metadata.name",
 					Example:  "aname",
 				}},
-			TopicArnRef: wiringutil.BindSecretReference{
-				ProducerResource: voyagerResourceName,
-				Path:             fmt.Sprintf("data.%s", snsTopicArnOutputNameKey),
-				Example:          `"arn:aws:sns:us-east-1:123456789012:example"`,
+			TopicARN: wiringplugin.BindingSecretProtoReference{
+				Path:    fmt.Sprintf("data.%s", snsTopicArnOutputNameKey),
+				Example: `"arn:aws:sns:us-east-1:123456789012:example"`,
 			},
 		},
 	}
