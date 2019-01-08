@@ -11,12 +11,14 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smithClient_v1 "github.com/atlassian/smith/pkg/client/clientset_generated/clientset/typed/smith/v1"
 	"github.com/atlassian/voyager"
+	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
 	orch_v1client "github.com/atlassian/voyager/pkg/orchestration/client/typed/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring"
 	"github.com/atlassian/voyager/pkg/util/layers"
+	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -111,12 +113,16 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		return false, false, nil, errors.Errorf("configMapName is not provided in state spec for %q", state.GetName())
 	}
 	key := ByConfigMapNameIndexKey(state.Namespace, state.Spec.ConfigMapName)
-	configMap, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(key)
+	configMapInterface, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		return false, false, nil, errors.WithStack(err)
 	}
 	if !exists {
 		return false, false, nil, errors.Errorf("missing ConfigMap %q (key: %q) in informer", state.Spec.ConfigMapName, key)
+	}
+	serviceProperties, err := parseConfigMap(configMapInterface.(*core_v1.ConfigMap))
+	if err != nil {
+		return false, false, nil, errors.WithStack(err)
 	}
 
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
@@ -126,9 +132,9 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 
 	// Entangle the state, passing in the namespace and and configmap as context
 	entanglerContext := &wiring.EntanglerContext{
-		Config:      configMap.(*core_v1.ConfigMap).Data,
-		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
-		ServiceName: serviceName,
+		ServiceName:       serviceName,
+		Label:             layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
+		ServiceProperties: *serviceProperties,
 	}
 	bundleSpec, retriable, err := c.Entangler.Entangle(state, entanglerContext)
 	if err != nil {
@@ -149,6 +155,25 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 	realBundle, _ := bundle.(*smith_v1.Bundle)
 
 	return conflict, retriable, realBundle, err
+}
+
+func parseConfigMap(configMap *core_v1.ConfigMap) (*orch_meta.ServiceProperties, error) {
+	configMapConfigData, ok := configMap.BinaryData[orch_meta.ConfigMapConfigKey]
+	if !ok {
+		dataAsString, ok := configMap.Data[orch_meta.ConfigMapConfigKey]
+		if !ok {
+			return nil, errors.Errorf("ConfigMap does not contain expected field %q", orch_meta.ConfigMapConfigKey)
+		}
+		configMapConfigData = []byte(dataAsString)
+	}
+
+	serviceProperties := &orch_meta.ServiceProperties{}
+	err := yaml.Unmarshal(configMapConfigData, serviceProperties)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return serviceProperties, nil
 }
 
 func copyCondition(bundle *smith_v1.Bundle, condType cond_v1.ConditionType, cond *cond_v1.Condition) {

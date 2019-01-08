@@ -200,24 +200,6 @@ func makePluginContainers(t *testing.T) map[smith_v1.PluginName]smith_plugin.Con
 
 func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voyager.ResourceType]wiringplugin.WiringPlugin) (*smith_v1.Bundle, bool, error) {
 	// Run the entangle
-	configMap := core_v1.ConfigMap{
-		Data: map[string]string{
-			orch_meta.ConfigMapConfigKey: `
-resourceOwner: an_owner
-businessUnit: some_unit
-notifications:
-   email: an_owner@example.com
-   lowPriority:
-      cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-      generic: "123123123123123"
-   main:
-      cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-      generic: "123123123123123"
-ssamAccessLevel: access-level-from-configmap
-loggingId: logging-id-from-configmap
-`,
-		},
-	}
 	ent := Entangler{
 		Plugins: wiringPlugins,
 		ClusterLocation: voyager.ClusterLocation{
@@ -254,9 +236,25 @@ loggingId: logging-id-from-configmap
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
 	bundle, retriable, err := ent.Entangle(state, &EntanglerContext{
-		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceName: serviceName,
-		Config:      configMap.Data,
+		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
+		ServiceProperties: orch_meta.ServiceProperties{
+			ResourceOwner: "an_owner",
+			BusinessUnit:  "some_unit",
+			Notifications: orch_meta.Notifications{
+				Email: "an_owner@example.com",
+				LowPriorityPagerdutyEndpoint: orch_meta.PagerDuty{
+					CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312",
+					Generic:    "123123123123123",
+				},
+				PagerdutyEndpoint: orch_meta.PagerDuty{
+					CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312",
+					Generic:    "123123123123123",
+				},
+			},
+			SSAMAccessLevel: "access-level-from-configmap",
+			LoggingID:       "logging-id-from-configmap",
+		},
 	})
 	return bundle, retriable, err
 }
