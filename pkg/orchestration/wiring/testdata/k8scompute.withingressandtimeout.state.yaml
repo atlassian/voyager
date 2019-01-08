@@ -37,6 +37,6 @@ spec:
   - type: KubeIngress
     name: myingress
     spec:
-      timeout: 100
+      timeoutSeconds: 100
     dependsOn:
       - kubecompute-simple

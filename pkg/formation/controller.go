@@ -479,7 +479,7 @@ func getDefaults(resourceType voyager.ResourceType, location voyager.ClusterLoca
 		}
 	case voyager.ResourceType("KubeIngress"):
 		return map[string]interface{}{
-			"timeout": 60,
+			"timeoutSeconds": 60,
 		}
 	default:
 		return map[string]interface{}{}

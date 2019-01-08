@@ -213,8 +213,8 @@ func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *o
 		if err := json.Unmarshal(resource.Defaults.Raw, &rawDefaultsSpec); err != nil {
 			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
 		}
-		if rawDefaultsSpec.IngressTimeout != nil {
-			timeout = *rawDefaultsSpec.IngressTimeout
+		if rawDefaultsSpec.TimeoutSeconds != nil {
+			timeout = *rawDefaultsSpec.TimeoutSeconds
 		}
 	}
 
@@ -224,8 +224,8 @@ func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *o
 			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
 		}
 
-		if rawIngressSpec.IngressTimeout != nil {
-			timeout = *rawIngressSpec.IngressTimeout
+		if rawIngressSpec.TimeoutSeconds != nil {
+			timeout = *rawIngressSpec.TimeoutSeconds
 
 			if timeout < 1 || timeout > 300 {
 				return wiringplugin.WiredSmithResource{}, errors.Errorf(
