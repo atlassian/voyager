@@ -236,18 +236,11 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 			// the topological sort.
 			return false, errors.Errorf("resource %q of type %q has a dependency that has not been wired yet: %q", resource.Name, resource.Type, dep)
 		}
-		exposedResources := make([]smith_v1.Resource, 0, len(res.WiringResult.Resources)) // optimistic allocation
-		for _, wiredResource := range res.WiringResult.Resources {
-			if wiredResource.Exposed {
-				exposedResources = append(exposedResources, wiredResource.SmithResource)
-			}
-		}
 		deps = append(deps, wiringplugin.WiredDependency{
-			Name:           res.Name,
-			Type:           res.Type,
-			Contract:       res.WiringResult.Contract,
-			SmithResources: exposedResources,
-			Attributes:     dep.Attributes,
+			Name:       res.Name,
+			Type:       res.Type,
+			Contract:   res.WiringResult.Contract,
+			Attributes: dep.Attributes,
 		})
 	}
 	wiringContext := &wiringplugin.WiringContext{
@@ -269,7 +262,7 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		WiringResult: *result,
 	}
 	for _, wiredResource := range result.Resources {
-		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource.SmithResource)
+		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource)
 	}
 	return false, nil
 }

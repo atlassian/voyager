@@ -56,14 +56,14 @@ func InstanceID(resourceSpec *runtime.RawExtension) (string, error) {
 	return spec.InstanceID, nil
 }
 
-func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
+func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (smith_v1.Resource, error) {
 	serviceInstanceExternalID, err := InstanceID(resource.Spec)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 	serviceInstanceSpecBytes, err := e.InstanceSpec(resource, context)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 	var parameters *runtime.RawExtension
 	if serviceInstanceSpecBytes != nil {
@@ -76,7 +76,7 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 	if e.ObjectMeta != nil {
 		objectMeta, err = e.ObjectMeta(resource, context)
 		if err != nil {
-			return wiringplugin.WiredSmithResource{}, err
+			return smith_v1.Resource{}, err
 		}
 	}
 
@@ -88,33 +88,30 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 	if e.References != nil {
 		references, err = e.References(resource, context)
 		if err != nil {
-			return wiringplugin.WiredSmithResource{}, err
+			return smith_v1.Resource{}, err
 		}
 	}
 
-	return wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name:       wiringutil.ServiceInstanceResourceName(resource.Name),
-			References: references,
-			Spec: smith_v1.ResourceSpec{
-				Object: &sc_v1b1.ServiceInstance{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       "ServiceInstance",
-						APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+	return smith_v1.Resource{
+		Name:       wiringutil.ServiceInstanceResourceName(resource.Name),
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: &sc_v1b1.ServiceInstance{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       "ServiceInstance",
+					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: objectMeta,
+				Spec: sc_v1b1.ServiceInstanceSpec{
+					PlanReference: sc_v1b1.PlanReference{
+						ClusterServiceClassExternalID: string(e.ClusterServiceClassExternalID),
+						ClusterServicePlanExternalID:  string(e.ClusterServicePlanExternalID),
 					},
-					ObjectMeta: objectMeta,
-					Spec: sc_v1b1.ServiceInstanceSpec{
-						PlanReference: sc_v1b1.PlanReference{
-							ClusterServiceClassExternalID: string(e.ClusterServiceClassExternalID),
-							ClusterServicePlanExternalID:  string(e.ClusterServicePlanExternalID),
-						},
-						Parameters: parameters,
-						ExternalID: serviceInstanceExternalID,
-					},
+					Parameters: parameters,
+					ExternalID: serviceInstanceExternalID,
 				},
 			},
 		},
-		Exposed: true,
 	}, nil
 }
 
@@ -142,14 +139,14 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 		return nil, false, err
 	}
 
-	resourceContract, err := e.constructResourceContract(resource, &serviceInstance.SmithResource, context)
+	resourceContract, err := e.constructResourceContract(resource, &serviceInstance, context)
 	if err != nil {
 		return nil, false, err
 	}
 
 	result := &wiringplugin.WiringResult{
 		Contract:  *resourceContract,
-		Resources: []wiringplugin.WiredSmithResource{serviceInstance},
+		Resources: []smith_v1.Resource{serviceInstance},
 	}
 
 	return result, false, nil

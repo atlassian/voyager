@@ -34,8 +34,6 @@ type WiredDependency struct {
 	Name     voyager.ResourceName
 	Type     voyager.ResourceType
 	Contract ResourceContract
-	// DEPRECATED: use Contract
-	SmithResources []smith_v1.Resource
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}
 }
@@ -169,13 +167,7 @@ type DataItem struct {
 
 type WiringResult struct {
 	Contract  ResourceContract
-	Resources []WiredSmithResource
-}
-
-type WiredSmithResource struct {
-	SmithResource smith_v1.Resource
-	// DEPRECATED: use Shapes, Refs and/or Data in ResourceContract to expose information
-	Exposed bool
+	Resources []smith_v1.Resource
 }
 
 // StateContext is used as input for the plugins. Everything in the StateContext

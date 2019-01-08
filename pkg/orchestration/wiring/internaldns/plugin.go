@@ -140,7 +140,7 @@ func getReferences(resource *orch_v1.StateResource, context *wiringplugin.Wiring
 	if err != nil {
 		return nil, err
 	}
-	ingressResourceReferenceName, err := getReferenceNameByGVK(ingressDependency.SmithResources, schema.GroupVersionKind{
+	ingressResourceReferenceName, err := getReferenceNameByGVK(ingressDependency., schema.GroupVersionKind{
 		Group:   "extensions",
 		Version: "v1beta1",
 		Kind:    k8s.IngressKind,
