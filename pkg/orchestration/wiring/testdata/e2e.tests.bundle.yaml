@@ -105,7 +105,8 @@ spec:
             serviceName: test-servicename
   - name: notification-sqs--notification-sns--binding
     references:
-    - name: notification-sns--instance-metadata-name
+    - example: aname
+      name: notification-sns--instance-metadata-name
       path: metadata.name
       resource: notification-sns--instance
     spec:

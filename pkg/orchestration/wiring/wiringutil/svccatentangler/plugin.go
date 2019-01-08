@@ -16,6 +16,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type OptionalShapeFunc func(*orch_v1.StateResource, *smith_v1.Resource, *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
+
+func NoOptionalShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	return nil, nil
+}
+
 type SvcCatEntangler struct {
 	ClusterServiceClassExternalID servicecatalog.ClassExternalID
 	ClusterServicePlanExternalID  servicecatalog.PlanExternalID
@@ -25,6 +31,9 @@ type SvcCatEntangler struct {
 	References   func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
 
 	ResourceType voyager.ResourceType
+
+	// optional shapes by resource type
+	OptionalShapes OptionalShapeFunc
 }
 
 type partialSpec struct {
@@ -109,11 +118,17 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 	}, nil
 }
 
-func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource smith_v1.Resource, context *wiringplugin.WiringContext) (wiringplugin.ResourceContract, error) {
-	return wiringplugin.ResourceContract{
-		Shapes: []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
-		},
+func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
+	supportedShapes := []wiringplugin.Shape{
+		knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
+	}
+	optionalShapes, err := e.OptionalShapes(resource, smithResource, context)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %q of type %q", resource.Name, resource.Type)
+	}
+	supportedShapes = append(supportedShapes, optionalShapes...)
+	return &wiringplugin.ResourceContract{
+		Shapes: supportedShapes,
 	}, nil
 }
 
@@ -127,13 +142,13 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 		return nil, false, err
 	}
 
-	resourceContract, err := e.constructResourceContract(resource, serviceInstance.SmithResource, context)
+	resourceContract, err := e.constructResourceContract(resource, &serviceInstance.SmithResource, context)
 	if err != nil {
 		return nil, false, err
 	}
 
 	result := &wiringplugin.WiringResult{
-		Contract:  resourceContract,
+		Contract:  *resourceContract,
 		Resources: []wiringplugin.WiredSmithResource{serviceInstance},
 	}
 
