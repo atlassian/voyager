@@ -19,12 +19,15 @@ func TestNames(t *testing.T) {
 	iamInst, err := PluginServiceInstance(EC2ComputeType, computeName, "", false, nil, &wiringplugin.WiringContext{}, []string{}, []string{})
 	require.NoError(t, err)
 
-	iamBinding := ServiceBinding(computeName, iamInst.SmithResource.Name)
+	iamBinding := ServiceBinding(computeName, iamInst.Name)
 
 	var someProducerName voyager.ResourceName = "iamrole"
-	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, "instance1", false)
+	protoReference := wiringplugin.ProtoReference{
+		Resource: "instance1",
+	}
+	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, protoReference)
 
-	assert.NotEqual(t, potentiallyConflictingBinding.SmithResource.Name, iamBinding.SmithResource.Name)
-	assert.NotEqual(t, potentiallyConflictingBinding.SmithResource.Spec.Object.(meta_v1.Object).GetName(),
-		iamBinding.SmithResource.Spec.Object.(meta_v1.Object).GetName())
+	assert.NotEqual(t, potentiallyConflictingBinding.Name, iamBinding.Name)
+	assert.NotEqual(t, potentiallyConflictingBinding.Spec.Object.(meta_v1.Object).GetName(),
+		iamBinding.Spec.Object.(meta_v1.Object).GetName())
 }

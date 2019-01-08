@@ -18,41 +18,39 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resourceName voyager.ResourceName) wiringplugin.WiredSmithResource {
-	return wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name: wiringutil.ResourceNameWithPostfix(resourceName, "ingress"),
-			References: []smith_v1.Reference{
-				{
-					Resource: serviceResourceName,
-				},
+func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resourceName voyager.ResourceName) smith_v1.Resource {
+	return smith_v1.Resource{
+		Name: wiringutil.ResourceNameWithPostfix(resourceName, "ingress"),
+		References: []smith_v1.Reference{
+			{
+				Resource: serviceResourceName,
 			},
-			Spec: smith_v1.ResourceSpec{
-				Object: &ext_v1b1.Ingress{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       k8s.IngressKind,
-						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
+		},
+		Spec: smith_v1.ResourceSpec{
+			Object: &ext_v1b1.Ingress{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.IngressKind,
+					APIVersion: ext_v1b1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: string(wiringutil.ResourceNameWithPostfix(resourceName, "ingress")),
+					Annotations: map[string]string{
+						kittIngressTypeAnnotation: "private",
+						contourTimeoutAnnotation:  "60s",
 					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: string(wiringutil.ResourceNameWithPostfix(resourceName, "ingress")),
-						Annotations: map[string]string{
-							kittIngressTypeAnnotation: "private",
-							contourTimeoutAnnotation:  "60s",
-						},
-					},
-					Spec: ext_v1b1.IngressSpec{
-						Rules: []ext_v1b1.IngressRule{
-							{
-								Host: "--somename...k8s.atl-paas.net",
-								IngressRuleValue: ext_v1b1.IngressRuleValue{
-									HTTP: &ext_v1b1.HTTPIngressRuleValue{
-										Paths: []ext_v1b1.HTTPIngressPath{
-											{
-												Path: "/",
-												Backend: ext_v1b1.IngressBackend{
-													ServiceName: string(serviceResourceName),
-													ServicePort: intstr.FromInt(8080),
-												},
+				},
+				Spec: ext_v1b1.IngressSpec{
+					Rules: []ext_v1b1.IngressRule{
+						{
+							Host: "--somename...k8s.atl-paas.net",
+							IngressRuleValue: ext_v1b1.IngressRuleValue{
+								HTTP: &ext_v1b1.HTTPIngressRuleValue{
+									Paths: []ext_v1b1.HTTPIngressPath{
+										{
+											Path: "/",
+											Backend: ext_v1b1.IngressBackend{
+												ServiceName: string(serviceResourceName),
+												ServicePort: intstr.FromInt(8080),
 											},
 										},
 									},
@@ -63,7 +61,6 @@ func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resour
 				},
 			},
 		},
-		Exposed: true,
 	}
 }
 
@@ -90,7 +87,7 @@ func TestBuildingIngressResource(t *testing.T) {
 
 	t.Run("from-spec timeout override", func(t *testing.T) {
 		var expectedOutput = getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name)
-		expectedOutput.SmithResource.Spec.Object.(*ext_v1b1.Ingress).ObjectMeta.Annotations[contourTimeoutAnnotation] = "140s"
+		expectedOutput.Spec.Object.(*ext_v1b1.Ingress).ObjectMeta.Annotations[contourTimeoutAnnotation] = "140s"
 		var res, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 140, &wiringplugin.WiringContext{})
 		assert.NoError(t, err)
 		assert.Equal(t, expectedOutput, res)
@@ -128,29 +125,15 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 				},
 			},
 		},
-		SmithResources: []smith_v1.Resource{
-			smith_v1.Resource{
-				Spec: smith_v1.ResourceSpec{
-					Object: deploymentObj,
-				},
-			},
-		},
 	}
 
 	nonComputeDep := wiringplugin.WiredDependency{
-		Type: voyager.ResourceType("MiscellaneousResource"),
-		SmithResources: []smith_v1.Resource{
-			smith_v1.Resource{
-				Spec: smith_v1.ResourceSpec{
-					Object: &apps_v1.ReplicaSet{
-						TypeMeta: meta_v1.TypeMeta{
-							Kind:       k8s.DeploymentKind,
-							APIVersion: apps_v1.SchemeGroupVersion.String(),
-						},
-					},
-				},
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{
+				knownshapes.NewBindableEnvironmentVariables(smith_v1.ResourceName("nonComputeDep")),
 			},
 		},
+		Type: voyager.ResourceType("MiscellaneousResource"),
 	}
 
 	t.Run("valid single dependency", func(t *testing.T) {

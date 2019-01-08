@@ -78,6 +78,11 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	wiredResources = append(wiredResources, serviceInstance)
 
 	result := &wiringplugin.WiringResult{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{
+				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name),
+			},
+		},
 		Resources: wiredResources,
 	}
 
