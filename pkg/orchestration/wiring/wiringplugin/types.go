@@ -49,9 +49,6 @@ type DependantResource struct {
 	Resource   orch_v1.StateResource
 }
 
-// ProtoReferenceName is the name of a proto reference.
-type ProtoReferenceName string
-
 // ProtoReference represents bits of information that need to be augmented with more information to
 // construct a valid Smith reference.
 // +k8s:deepcopy-gen=true
@@ -79,13 +76,6 @@ func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Refer
 func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
 	*out = *r
 	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// NamedProtoReference is a ProtoReference that has a name.
-// That name is typically used to find the needed proto reference in a list/map.
-type NamedProtoReference struct {
-	Name           ProtoReferenceName `json:"name"`
-	ProtoReference `json:",inline"`
 }
 
 // BindingProtoReference is a reference to the ServiceBinding's contents.
@@ -139,9 +129,7 @@ func (r *BindingSecretProtoReference) ToReference(name smith_v1.ReferenceName, b
 // It is the API of a resource that can be depended upon and hence should not change unexpectedly without
 // a proper migration path to a new version.
 type ResourceContract struct {
-	Shapes []Shape               `json:"shapes,omitempty"`
-	Refs   []NamedProtoReference `json:"refs,omitempty"`
-	Data   []DataItem            `json:"data,omitempty"`
+	Shapes []Shape `json:"shapes,omitempty"`
 }
 
 func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found */) {
@@ -152,19 +140,6 @@ func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found 
 	}
 
 	return nil, false
-}
-
-func (c *ResourceContract) IsEmpty() bool {
-	return len(c.Shapes) == 0 && len(c.Refs) == 0 && len(c.Data) == 0
-}
-
-// DataItem is a named bit of data made available by an autowiring function.
-type DataItem struct {
-	Name string
-	// Data is the data for this item.
-	// Only contains types produced by json.Unmarshal() and also int64:
-	// bool, int64, float64, string, []interface{}, map[string]interface{}, json.Number and nil
-	Data interface{}
 }
 
 type WiringResult struct {
