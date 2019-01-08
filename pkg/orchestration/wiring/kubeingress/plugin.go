@@ -40,7 +40,6 @@ const (
 	clusterHostPath = "k8s.atl-paas.net"
 
 	servicePostfix = "service"
-	ingressPostfix = "ingress"
 
 	defaultContourTimeout = 60
 )
@@ -61,30 +60,24 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	deploymentName := deploymentSpec.Name
 	deploymentLabels := deploymentSpec.Spec.Template.ObjectMeta.Labels
 
-	var smithResources []wiringplugin.WiredSmithResource
-
 	// Build the Service
-	serviceResource := buildServiceResource(smith_v1.ResourceName(deploymentName), deploymentLabels, resource, context)
-	smithResources = append(smithResources, serviceResource)
+	serviceResource := buildServiceResource(smith_v1.ResourceName(deploymentName), deploymentLabels, resource.Name)
 
 	// Build the Ingress
 	ingressResource, err := buildIngressResource(serviceResource.SmithResource.Name, resource, context)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed building ingress resource")
 	}
-	smithResources = append(smithResources, ingressResource)
 
 	result := &wiringplugin.WiringResult{
-		Resources: smithResources,
+		Resources: []wiringplugin.WiredSmithResource{serviceResource, ingressResource},
 	}
 
 	return result, false, nil
 }
 
 // buildServiceResource constructs the Kube Service object
-func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels map[string]string, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiredSmithResource {
-	serviceName := string(resource.Name) + "-" + servicePostfix
-
+func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels map[string]string, resourceName voyager.ResourceName) wiringplugin.WiredSmithResource {
 	serviceSpec := core_v1.ServiceSpec{
 		Ports: []core_v1.ServicePort{
 			{
@@ -101,7 +94,7 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 
 	serviceResource := wiringplugin.WiredSmithResource{
 		SmithResource: smith_v1.Resource{
-			Name: smith_v1.ResourceName(serviceName),
+			Name: wiringutil.ResourceNameWithPostfix(resourceName, servicePostfix),
 			References: []smith_v1.Reference{
 				{
 					Resource: deploymentName,
@@ -114,7 +107,7 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 						APIVersion: core_v1.SchemeGroupVersion.String(),
 					},
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name: serviceName,
+						Name: wiringutil.MetaNameWithPostfix(resourceName, servicePostfix),
 					},
 					Spec: serviceSpec,
 				},
@@ -128,7 +121,6 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 
 func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
 	var ingressRules []ext_v1b1.IngressRule
-	ingressName := wiringutil.ResourceNameWithPostfix(resourceName, ingressPostfix)
 	ingressRuleValue := ext_v1b1.IngressRuleValue{
 		HTTP: &ext_v1b1.HTTPIngressRuleValue{
 			Paths: []ext_v1b1.HTTPIngressPath{
@@ -172,7 +164,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 
 	ingressResource := wiringplugin.WiredSmithResource{
 		SmithResource: smith_v1.Resource{
-			Name: ingressName,
+			Name: wiringutil.ResourceName(resourceName),
 			References: []smith_v1.Reference{
 				{
 					Resource: serviceName,
@@ -185,7 +177,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
 					},
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name: string(ingressName),
+						Name: wiringutil.MetaName(resourceName),
 						Annotations: map[string]string{
 							kittIngressTypeAnnotation: "private",
 							// incoming requests pass through ALB and Envoy
