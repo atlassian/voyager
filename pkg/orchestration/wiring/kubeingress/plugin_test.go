@@ -1,7 +1,6 @@
 package kubeingress
 
 import (
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"testing"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
@@ -10,6 +9,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/stretchr/testify/assert"
 	apps_v1 "k8s.io/api/apps/v1"
 	ext_v1b1 "k8s.io/api/extensions/v1beta1"
@@ -70,7 +70,6 @@ func TestBuildingIngressResource(t *testing.T) {
 	t.Parallel()
 
 	var serviceResourceName smith_v1.ResourceName = "myResource"
-
 
 	emptyStateResource := v1.StateResource{
 		Name: "somename",
