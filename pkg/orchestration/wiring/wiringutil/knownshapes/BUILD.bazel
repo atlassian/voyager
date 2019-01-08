@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bindable_environment_variables.go",
+        "bindable_iam_accessible.go",
+        "ingress_endpoint.go",
+        "labelled.go",
+        "sns_subscribable.go",
+        "zz_generated.deepcopy.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["types_test.go"],
+    embed = [":go_default_library"],
+    race = "on",
+    deps = ["//pkg/orchestration/wiring/wiringplugin:go_default_library"],
+)
