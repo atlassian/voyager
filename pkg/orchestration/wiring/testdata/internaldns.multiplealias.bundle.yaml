@@ -84,7 +84,7 @@ spec:
               securityContext: {}
               serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
-  - name: ingress-service
+  - name: ingress--service
     references:
     - resource: kubecompute-simple
     spec:
@@ -92,7 +92,7 @@ spec:
         apiVersion: v1
         kind: Service
         metadata:
-          name: ingress-service
+          name: ingress--service
         spec:
           ports:
           - name: http
@@ -104,9 +104,9 @@ spec:
             stateName: state1
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress--ingress
+  - name: ingress
     references:
-    - resource: ingress-service
+    - resource: ingress--service
     spec:
       object:
         apiVersion: extensions/v1beta1
@@ -115,50 +115,50 @@ spec:
           annotations:
             contour.heptio.com/request-timeout: 60s
             voyager.atl-paas.net/ingressType: private
-          name: ingress--ingress
+          name: ingress
         spec:
           rules:
           - host: test-servicename--ingress.testregion.testenv.k8s.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: ingress--service
                   servicePort: 8080
                 path: /
           - host: foo1.staging.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: ingress--service
                   servicePort: 8080
                 path: /
           - host: foo2.staging.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: ingress--service
                   servicePort: 8080
                 path: /
           - host: foo3.staging.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: ingress--service
                   servicePort: 8080
                 path: /
           - host: foo4.staging.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: ingress--service
                   servicePort: 8080
                 path: /
   - name: internaldns--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress--ingress-metadata-endpoint
+      name: ingress-metadata-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress--ingress
+      resource: ingress
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -182,5 +182,5 @@ spec:
               type: Simple
             environmentType: testenv
             serviceName: test-servicename
-            target: '!{ingress--ingress-metadata-endpoint}'
+            target: '!{ingress-metadata-endpoint}'
 status: {}

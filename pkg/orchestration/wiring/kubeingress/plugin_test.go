@@ -20,7 +20,7 @@ import (
 func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resourceName voyager.ResourceName) wiringplugin.WiredSmithResource {
 	return wiringplugin.WiredSmithResource{
 		SmithResource: smith_v1.Resource{
-			Name: wiringutil.ResourceNameWithPostfix(resourceName, "ingress"),
+			Name: wiringutil.ResourceName(resourceName),
 			References: []smith_v1.Reference{
 				{
 					Resource: serviceResourceName,
@@ -33,7 +33,7 @@ func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resour
 						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
 					},
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name: string(wiringutil.ResourceNameWithPostfix(resourceName, "ingress")),
+						Name: wiringutil.MetaName(resourceName),
 						Annotations: map[string]string{
 							kittIngressTypeAnnotation: "private",
 							contourTimeoutAnnotation:  "60s",
