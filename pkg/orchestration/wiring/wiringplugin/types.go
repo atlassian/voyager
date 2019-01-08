@@ -88,6 +88,53 @@ type NamedProtoReference struct {
 	ProtoReference `json:",inline"`
 }
 
+// BindingProtoReference is a reference to the ServiceBinding's contents.
+// +k8s:deepcopy-gen=true
+type BindingProtoReference struct {
+	Path    string      `json:"path,omitempty"`
+	Example interface{} `json:"example,omitempty"`
+}
+
+func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
+	*out = *r
+	out.Example = runtime.DeepCopyJSONValue(r.Example)
+}
+
+// ToReference should be used to augment BindingProtoReference with missing information to
+// get a full Reference.
+func (r *BindingProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: bindingResourceName,
+		Path:     r.Path,
+		Example:  r.Example,
+	}
+}
+
+// BindingProtoReference is a reference to the ServiceBinding's Secret's contents.
+// +k8s:deepcopy-gen=true
+type BindingSecretProtoReference struct {
+	Path    string      `json:"path,omitempty"`
+	Example interface{} `json:"example,omitempty"`
+}
+
+func (r *BindingSecretProtoReference) DeepCopyInto(out *BindingSecretProtoReference) {
+	*out = *r
+	out.Example = runtime.DeepCopyJSONValue(r.Example)
+}
+
+// ToReference should be used to augment BindingSecretProtoReference with missing information to
+// get a full Reference.
+func (r *BindingSecretProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: bindingResourceName,
+		Path:     r.Path,
+		Example:  r.Example,
+		Modifier: smith_v1.ReferenceModifierBindSecret,
+	}
+}
+
 // ResourceContract contains information about a resource for consumption by other autowiring functions.
 // It is the API of a resource that can be depended upon and hence should not change unexpectedly without
 // a proper migration path to a new version.

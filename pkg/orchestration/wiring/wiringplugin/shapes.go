@@ -1,7 +1,5 @@
 package wiringplugin
 
-import "k8s.io/apimachinery/pkg/runtime"
-
 // ShapeName is a globally unique identifier for the type of a shape.
 type ShapeName string
 
@@ -39,18 +37,5 @@ type ShapeMeta struct {
 // one ServiceBinding needs to be created to consume values from those shapes.
 // +k8s:deepcopy-gen=true
 type BindableShapeStruct struct {
-	ServiceInstanceName ProtoReference
-}
-
-// +k8s:deepcopy-gen=true
-type BindingProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
-}
-
-// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
-// since it doesn't know it's JSON).
-func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
+	ServiceInstanceName ProtoReference `json:"serviceInstanceName"`
 }

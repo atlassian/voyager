@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "bindable_environment_variables.go",
         "bindable_iam_accessible.go",
+        "sns_subscribable.go",
         "zz_generated.deepcopy.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
