@@ -3,6 +3,7 @@ package kubeingress
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
@@ -11,6 +12,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
@@ -40,7 +42,7 @@ const (
 	servicePostfix = "service"
 	ingressPostfix = "ingress"
 
-	defaultContourTimeout = "120s"
+	defaultContourTimeout = 60
 )
 
 // WireUp is the main autowiring function for KubeIngress
@@ -51,9 +53,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentSpec, retriable, err := extractKubeComputeDependency(context.Dependencies)
+	deploymentSpec, err := extractKubeComputeDependency(context.Dependencies)
 	if err != nil {
-		return nil, retriable, err
+		return nil, false, err
 	}
 
 	deploymentName := deploymentSpec.Name
@@ -124,11 +126,9 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 	return serviceResource
 }
 
-// buildIngressResource constructs the Kube / KITT Ingress object
-// with a default rule, plus all aliases rules from dependants internalDNS resources
-func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
+func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
 	var ingressRules []ext_v1b1.IngressRule
-	ingressName := string(resource.Name) + "-" + ingressPostfix
+	ingressName := wiringutil.ResourceNameWithPostfix(resourceName, ingressPostfix)
 	ingressRuleValue := ext_v1b1.IngressRuleValue{
 		HTTP: &ext_v1b1.HTTPIngressRuleValue{
 			Paths: []ext_v1b1.HTTPIngressPath{
@@ -144,7 +144,7 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 	}
 
 	// default rule
-	hostname := buildIngressHostName(resource.Name, context.StateContext)
+	hostname := buildIngressHostName(resourceName, context.StateContext)
 	ingressRules = append(ingressRules, ext_v1b1.IngressRule{
 		Host:             hostname,
 		IngressRuleValue: ingressRuleValue,
@@ -153,7 +153,7 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 	// internalDNS rules
 	for _, dependency := range context.Dependants {
 		if dependency.Type == internaldns.ResourceType {
-			var internalDNSSpec internaldns.UserSpec
+			var internalDNSSpec internaldns.Spec
 			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
 				return wiringplugin.WiredSmithResource{}, err
 			}
@@ -172,7 +172,7 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 
 	ingressResource := wiringplugin.WiredSmithResource{
 		SmithResource: smith_v1.Resource{
-			Name: smith_v1.ResourceName(ingressName),
+			Name: ingressName,
 			References: []smith_v1.Reference{
 				{
 					Resource: serviceName,
@@ -185,13 +185,12 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
 					},
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name: ingressName,
+						Name: string(ingressName),
 						Annotations: map[string]string{
 							kittIngressTypeAnnotation: "private",
 							// incoming requests pass through ALB and Envoy
 							// KITT will set ALB's timeout to 5 minutes, so that it is higher than any reasonable value supplied by the user
-							// Contour timeout is fixed for now at 120 seconds, but we should eventually allow users to set any values <= 5 minutes
-							contourTimeoutAnnotation: defaultContourTimeout,
+							contourTimeoutAnnotation: strconv.Itoa(timeout) + "s",
 						},
 					},
 					Spec: ingressSpec,
@@ -202,6 +201,41 @@ func buildIngressResource(serviceName smith_v1.ResourceName, resource *orch_v1.S
 	}
 
 	return ingressResource, nil
+}
+
+// buildIngressResource constructs the Kube / KITT Ingress object
+// with a default rule, plus all alias rules from dependant internalDNS resources
+func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
+	var timeout = defaultContourTimeout
+
+	if resource.Defaults != nil {
+		var rawDefaultsSpec Spec
+		if err := json.Unmarshal(resource.Defaults.Raw, &rawDefaultsSpec); err != nil {
+			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
+		}
+		if rawDefaultsSpec.TimeoutSeconds != nil {
+			timeout = *rawDefaultsSpec.TimeoutSeconds
+		}
+	}
+
+	if resource.Spec != nil {
+		var rawIngressSpec Spec
+		if err := json.Unmarshal(resource.Spec.Raw, &rawIngressSpec); err != nil {
+			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
+		}
+
+		if rawIngressSpec.TimeoutSeconds != nil {
+			timeout = *rawIngressSpec.TimeoutSeconds
+
+			if timeout < 1 || timeout > 300 {
+				return wiringplugin.WiredSmithResource{}, errors.Errorf(
+					"ingress timeout must be between one second and five minutes (was given %d seconds)", timeout)
+			}
+		}
+	}
+
+	return buildIngressResourceFromSpec(serviceResourceName, resource.Name, timeout, context)
+
 }
 
 func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.StateContext) string {
@@ -232,31 +266,50 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
+func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, error) {
+	var matchedDependency *wiringplugin.WiredDependency
+	for x, dependency := range dependencies {
+		if dependency.Type == resourceType {
+			if matchedDependency != nil {
+				return nil, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
+			}
+			matchedDependency = &dependencies[x]
+		}
+	}
+
+	if matchedDependency == nil {
+		return nil, errors.Errorf("must depend on a single %s resource, but none were found", resourceType)
+	}
+
+	return matchedDependency, nil
+}
+
+func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, error) {
 	// Require exactly one KubeCompute dependency
-	if len(dependencies) != 1 || dependencies[0].Type != apik8scompute.ResourceType {
-		return nil, false, errors.Errorf("must depend on a single %s resource. %d dependencies were given", apik8scompute.ResourceType, len(dependencies))
+	kubeComputeDependency, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
+	if err != nil {
+		return nil, err
 	}
 
 	// Extract the deployment created by the KubeCompute dependency
 	var deploymentResource *smith_v1.Resource
-	for _, res := range dependencies[0].SmithResources {
+	for x, res := range kubeComputeDependency.SmithResources {
 		// TODO: Better way of identifying the correct deployment
 		// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
 		if res.Spec.Object.GetObjectKind().GroupVersionKind() == k8s.DeploymentGVK {
-			deploymentResource = &res
+			deploymentResource = &kubeComputeDependency.SmithResources[x]
 			break
 		}
 	}
 
 	if deploymentResource == nil {
-		return nil, false, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
+		return nil, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
 	}
 
 	deploymentSpec, ok := deploymentResource.Spec.Object.(*apps_v1.Deployment)
 	if !ok {
-		return nil, false, errors.New("cannot cast Deployment to expected spec type")
+		return nil, errors.New("cannot cast Deployment to expected spec type")
 	}
 
-	return deploymentSpec, false, nil
+	return deploymentSpec, nil
 }

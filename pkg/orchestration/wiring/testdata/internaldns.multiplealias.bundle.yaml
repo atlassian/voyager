@@ -104,7 +104,7 @@ spec:
             stateName: state1
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress-ingress
+  - name: ingress--ingress
     references:
     - resource: ingress-service
     spec:
@@ -113,9 +113,9 @@ spec:
         kind: Ingress
         metadata:
           annotations:
-            contour.heptio.com/request-timeout: 120s
+            contour.heptio.com/request-timeout: 60s
             voyager.atl-paas.net/ingressType: private
-          name: ingress-ingress
+          name: ingress--ingress
         spec:
           rules:
           - host: test-servicename--ingress.testregion.testenv.k8s.atl-paas.net
@@ -156,9 +156,9 @@ spec:
   - name: internaldns--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress-ingress-metadata-endpoint
+      name: ingress--ingress-metadata-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress-ingress
+      resource: ingress--ingress
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -182,5 +182,5 @@ spec:
               type: Simple
             environmentType: testenv
             serviceName: test-servicename
-            target: '!{ingress-ingress-metadata-endpoint}'
+            target: '!{ingress--ingress-metadata-endpoint}'
 status: {}

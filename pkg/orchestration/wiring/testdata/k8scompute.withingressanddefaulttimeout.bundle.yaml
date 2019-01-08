@@ -68,14 +68,15 @@ spec:
                     name: common-secrets
                     optional: true
                 image: docker.example.com/atlassian/micros-analytics:0.1.8
+                imagePullPolicy: IfNotPresent
                 name: microservice
                 resources:
                   limits:
-                    cpu: "0"
-                    memory: "0"
+                    cpu: 250m
+                    memory: 150Mi
                   requests:
-                    cpu: "0"
-                    memory: "0"
+                    cpu: 50m
+                    memory: 50Mi
                 terminationMessagePath: /dev/termination-log
                 terminationMessagePolicy: File
               dnsPolicy: ClusterFirst
@@ -84,7 +85,30 @@ spec:
               securityContext: {}
               serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
-  - name: ingress-service
+  - name: kubecompute-simple--hpa
+    references:
+    - name: kubecompute-simple-metadata-name
+      path: metadata.name
+      resource: kubecompute-simple
+    spec:
+      object:
+        apiVersion: autoscaling/v2beta1
+        kind: HorizontalPodAutoscaler
+        metadata:
+          name: kubecompute-simple--hpa
+        spec:
+          maxReplicas: 5
+          metrics:
+          - resource:
+              name: cpu
+              targetAverageUtilization: 80
+            type: Resource
+          minReplicas: 1
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: '!{kubecompute-simple-metadata-name}'
+  - name: myingress-service
     references:
     - resource: kubecompute-simple
     spec:
@@ -92,7 +116,7 @@ spec:
         apiVersion: v1
         kind: Service
         metadata:
-          name: ingress-service
+          name: myingress-service
         spec:
           ports:
           - name: http
@@ -104,56 +128,25 @@ spec:
             stateName: state1
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress--ingress
+  - name: myingress--ingress
     references:
-    - resource: ingress-service
+    - resource: myingress-service
     spec:
       object:
         apiVersion: extensions/v1beta1
         kind: Ingress
         metadata:
           annotations:
-            contour.heptio.com/request-timeout: 60s
+            contour.heptio.com/request-timeout: 100s
             voyager.atl-paas.net/ingressType: private
-          name: ingress--ingress
+          name: myingress--ingress
         spec:
           rules:
-          - host: test-servicename--ingress.testregion.testenv.k8s.atl-paas.net
+          - host: test-servicename--myingress.testregion.testenv.k8s.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: myingress-service
                   servicePort: 8080
                 path: /
-          - host: foo.staging.atl-paas.net
-            http:
-              paths:
-              - backend:
-                  serviceName: ingress-service
-                  servicePort: 8080
-                path: /
-  - name: internaldns--instance
-    references:
-    - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress--ingress-metadata-endpoint
-      path: metadata.annotations['atlassian\.com/ingress\.endpoint']
-      resource: ingress--ingress
-    spec:
-      object:
-        apiVersion: servicecatalog.k8s.io/v1beta1
-        kind: ServiceInstance
-        metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: InternalDNS
-          name: internaldns
-        spec:
-          clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
-          clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
-          parameters:
-            aliases:
-            - name: foo.staging.atl-paas.net
-              type: Simple
-            environmentType: testenv
-            serviceName: test-servicename
-            target: '!{ingress--ingress-metadata-endpoint}'
 status: {}
