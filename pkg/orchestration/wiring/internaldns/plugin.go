@@ -6,7 +6,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -14,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -121,15 +119,6 @@ func mapEnvironmentType(envType voyager.EnvType) string {
 	return string(envType)
 }
 
-func getReferenceNameByGVK(smithResources []smith_v1.Resource, gvk schema.GroupVersionKind) (smith_v1.ResourceName, error) {
-	for _, smithReference := range smithResources {
-		if smithReference.Spec.Object.GetObjectKind().GroupVersionKind() == gvk {
-			return smithReference.Name, nil
-		}
-	}
-	return "", errors.New("could not find smith resource for requested GVK")
-}
-
 // svccatentangler plugin expects reference function to return a slice of reference
 // in this internaldns case, it will always be only one reference, because it's limited by getIngressDependency method
 func getReferences(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
@@ -139,20 +128,12 @@ func getReferences(resource *orch_v1.StateResource, context *wiringplugin.Wiring
 	if err != nil {
 		return nil, err
 	}
-	ingressResourceReferenceName, err := getReferenceNameByGVK(ingressDependency., schema.GroupVersionKind{
-		Group:   "extensions",
-		Version: "v1beta1",
-		Kind:    k8s.IngressKind,
-	})
-	if err != nil {
-		return nil, err
-	}
 	shape, found := ingressDependency.Contract.FindShape(knownshapes.IngressEndpointShape)
 	if !found {
 		return nil, errors.Errorf("shape %q is required to create binding for %q but was not found", knownshapes.IngressEndpointShape, ingressDependency.Name)
 	}
 	ingressEndpoint := shape.(*knownshapes.IngressEndpoint).Data.IngressEndpoint
-	referenceName := wiringutil.ReferenceName(ingressResourceReferenceName, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
+	referenceName := wiringutil.ReferenceName(ingressEndpoint.Resource, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
 	references = append(references, ingressEndpoint.ToReference(referenceName))
 	return references, nil
 }
