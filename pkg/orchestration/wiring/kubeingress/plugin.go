@@ -53,9 +53,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentSpec, retriable, err := extractKubeComputeDependency(context.Dependencies)
+	deploymentSpec, err := extractKubeComputeDependency(context.Dependencies)
 	if err != nil {
-		return nil, retriable, err
+		return nil, false, err
 	}
 
 	deploymentName := deploymentSpec.Name
@@ -266,29 +266,29 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, bool /* retriable */, error) {
+func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, error) {
 	var matchedDependency *wiringplugin.WiredDependency
 	for x, dependency := range dependencies {
 		if dependency.Type == resourceType {
 			if matchedDependency != nil {
-				return nil, false, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
+				return nil, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
 			}
 			matchedDependency = &dependencies[x]
 		}
 	}
 
 	if matchedDependency == nil {
-		return nil, false, errors.Errorf("must depend on a single %s resource, but none were found", resourceType)
+		return nil, errors.Errorf("must depend on a single %s resource, but none were found", resourceType)
 	}
 
-	return matchedDependency, false, nil
+	return matchedDependency, nil
 }
 
-func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, bool /* retriable */, error) {
+func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, error) {
 	// Require exactly one KubeCompute dependency
-	kubeComputeDependency, retriable, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
+	kubeComputeDependency, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
 	if err != nil {
-		return nil, retriable, err
+		return nil, err
 	}
 
 	// Extract the deployment created by the KubeCompute dependency
@@ -303,13 +303,13 @@ func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (
 	}
 
 	if deploymentResource == nil {
-		return nil, false, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
+		return nil, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
 	}
 
 	deploymentSpec, ok := deploymentResource.Spec.Object.(*apps_v1.Deployment)
 	if !ok {
-		return nil, false, errors.New("cannot cast Deployment to expected spec type")
+		return nil, errors.New("cannot cast Deployment to expected spec type")
 	}
 
-	return deploymentSpec, false, nil
+	return deploymentSpec, nil
 }
