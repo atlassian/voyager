@@ -10,6 +10,7 @@ go_library(
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/svccatentangler:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
