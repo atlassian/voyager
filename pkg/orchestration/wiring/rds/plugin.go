@@ -79,9 +79,10 @@ func New() *WiringPlugin {
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
 			ClusterServiceClassExternalID: clusterServiceClassExternalID,
 			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
-			ResourceType:                  ResourceType,
 			InstanceSpec:                  instanceSpec,
 			ObjectMeta:                    objectMeta,
+			ResourceType:                  ResourceType,
+			OptionalShapes:                svccatentangler.NoOptionalShapes,
 		},
 	}
 }

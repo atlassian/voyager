@@ -22,7 +22,7 @@ type BindableIamAccessibleData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
 	//IAMRoleARN    BindingProtoReference
 	//IAMProfileARN BindingProtoReference
-	IAMPolicySnippet wiringplugin.BindingProtoReference
+	IAMPolicySnippet wiringplugin.BindingSecretProtoReference
 }
 
 func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnippetPath string) *BindableIamAccessible {
@@ -37,7 +37,9 @@ func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnipp
 					Path:     "metadata.name",
 					Example:  "aname",
 				}},
-			IAMPolicySnippet: wiringplugin.BindingProtoReference{Path: IAMPolicySnippetPath},
+			IAMPolicySnippet: wiringplugin.BindingSecretProtoReference{
+				Path: IAMPolicySnippetPath,
+			},
 		},
 	}
 }
