@@ -11,7 +11,8 @@ build:ci --curses=no
 build:ci --experimental_sandbox_base=/dev/shm
 
 # Pass -test.v to each test binary to print the test names
-test:ci --test_output=all --test_arg="-test.v"
+test:ci --test_arg="-test.v"
+test:ci --test_output=all
 test:ci --test_verbose_timeout_warnings
 
 try-import user.bazelrc
