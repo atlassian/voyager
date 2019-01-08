@@ -9,6 +9,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,14 +18,12 @@ import (
 )
 
 const (
-	ResourceType                       voyager.ResourceType = "InternalDNS"
-	clusterServiceClassExternalID                           = "f77e1881-36f3-42ce-9848-7a811b421dd7"
-	clusterServicePlanExternalID                            = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
-	kubeIngressResourceType            voyager.ResourceType = "KubeIngress"
-	kubeIngressRefMetadata                                  = "metadata"
-	kubeIngressRefMetadataEndpoint                          = "endpoint"
-	kubeIngressRefMetadataEndpointPath                      = "metadata.annotations['atlassian\\.com/ingress\\.endpoint']"
-	kubeIngressRefExample                                   = "ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net"
+	ResourceType                   voyager.ResourceType = "InternalDNS"
+	clusterServiceClassExternalID                       = "f77e1881-36f3-42ce-9848-7a811b421dd7"
+	clusterServicePlanExternalID                        = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
+	kubeIngressResourceType        voyager.ResourceType = "KubeIngress"
+	kubeIngressRefMetadata                              = "metadata"
+	kubeIngressRefMetadataEndpoint                      = "endpoint"
 )
 
 type Alias struct {
@@ -148,13 +147,13 @@ func getReferences(resource *orch_v1.StateResource, context *wiringplugin.Wiring
 	if err != nil {
 		return nil, err
 	}
+	shape, found := ingressDependency.Contract.FindShape(knownshapes.IngressEndpointShape)
+	if !found {
+		return nil, errors.Errorf("shape %q is required to create binding for %q but was not found", knownshapes.IngressEndpointShape, ingressDependency.Name)
+	}
+	ingressEndpoint := shape.(*knownshapes.IngressEndpoint).Data.IngressEndpoint
 	referenceName := wiringutil.ReferenceName(ingressResourceReferenceName, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
-	references = append(references, smith_v1.Reference{
-		Name:     referenceName,
-		Resource: ingressResourceReferenceName,
-		Path:     kubeIngressRefMetadataEndpointPath,
-		Example:  kubeIngressRefExample,
-	})
+	references = append(references, ingressEndpoint.ToReference(referenceName))
 	return references, nil
 }
 
