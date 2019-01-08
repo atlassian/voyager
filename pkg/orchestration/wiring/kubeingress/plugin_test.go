@@ -5,29 +5,129 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/stretchr/testify/assert"
 	apps_v1 "k8s.io/api/apps/v1"
+	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resourceName voyager.ResourceName) wiringplugin.WiredSmithResource {
+	return wiringplugin.WiredSmithResource{
+		SmithResource: smith_v1.Resource{
+			Name: wiringutil.ResourceNameWithPostfix(resourceName, "ingress"),
+			References: []smith_v1.Reference{
+				{
+					Resource: serviceResourceName,
+				},
+			},
+			Spec: smith_v1.ResourceSpec{
+				Object: &ext_v1b1.Ingress{
+					TypeMeta: meta_v1.TypeMeta{
+						Kind:       k8s.IngressKind,
+						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name: string(wiringutil.ResourceNameWithPostfix(resourceName, "ingress")),
+						Annotations: map[string]string{
+							kittIngressTypeAnnotation: "private",
+							contourTimeoutAnnotation:  "60s",
+						},
+					},
+					Spec: ext_v1b1.IngressSpec{
+						Rules: []ext_v1b1.IngressRule{
+							{
+								Host: "--somename...k8s.atl-paas.net",
+								IngressRuleValue: ext_v1b1.IngressRuleValue{
+									HTTP: &ext_v1b1.HTTPIngressRuleValue{
+										Paths: []ext_v1b1.HTTPIngressPath{
+											{
+												Path: "/",
+												Backend: ext_v1b1.IngressBackend{
+													ServiceName: string(serviceResourceName),
+													ServicePort: intstr.FromInt(8080),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Exposed: true,
+	}
+}
+
+func TestBuildingIngressResource(t *testing.T) {
+	t.Parallel()
+
+	var serviceResourceName smith_v1.ResourceName = "myResource"
+
+	emptyStateResource := v1.StateResource{
+		Name: "somename",
+	}
+
+	t.Run("E2E no ingress", func(t *testing.T) {
+		var res, err = buildIngressResource(serviceResourceName, &emptyStateResource, &wiringplugin.WiringContext{})
+		assert.NoError(t, err)
+		assert.Equal(t, getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name), res)
+	})
+
+	t.Run("from-spec no ingress", func(t *testing.T) {
+		var res, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 60, &wiringplugin.WiringContext{})
+		assert.NoError(t, err)
+		assert.Equal(t, getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name), res)
+	})
+
+	t.Run("from-spec timeout override", func(t *testing.T) {
+		var expectedOutput = getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name)
+		expectedOutput.SmithResource.Spec.Object.(*ext_v1b1.Ingress).ObjectMeta.Annotations[contourTimeoutAnnotation] = "140s"
+		var res, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 140, &wiringplugin.WiringContext{})
+		assert.NoError(t, err)
+		assert.Equal(t, expectedOutput, res)
+	})
+}
 
 func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Parallel()
-
+	const deploymentName = "Some Deployment"
+	labels := map[string]string{"a": "b", "c": "d"}
 	deploymentObj := &apps_v1.Deployment{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.DeploymentKind,
 			APIVersion: apps_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "Some Deployment",
+			Name:   deploymentName,
+			Labels: labels,
 		},
 	}
 
 	computeDep := wiringplugin.WiredDependency{
+		Name: deploymentName,
 		Type: apik8scompute.ResourceType,
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{
+				&knownshapes.Labelled{
+					ShapeMeta: wiringplugin.ShapeMeta{
+						ShapeName: knownshapes.LabelledShape,
+					},
+					Data: knownshapes.LabelledData{
+						Target: smith_v1.ResourceName(deploymentName),
+						Labels: labels,
+					},
+				},
+			},
+		},
 		SmithResources: []smith_v1.Resource{
 			smith_v1.Resource{
 				Spec: smith_v1.ResourceSpec{
@@ -56,33 +156,40 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("valid single dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{computeDep}
 
-		res, _, err := extractKubeComputeDependency(deps)
+		resName, labels, err := extractKubeComputeDependencyDetails(deps)
 		assert.NoError(t, err)
-		assert.ObjectsAreEqual(deploymentObj, res)
+		assert.Equal(t, deploymentObj.Name, string(resName))
+		assert.Equal(t, deploymentObj.Labels, labels)
 	})
 
 	t.Run("invalid: no dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{}
 
-		_, retriable, err := extractKubeComputeDependency(deps)
+		_, _, err := extractKubeComputeDependencyDetails(deps)
 		assert.Error(t, err)
-		assert.False(t, retriable)
 	})
 
 	t.Run("invalid: multiple dependencies", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{computeDep, computeDep}
 
-		_, retriable, err := extractKubeComputeDependency(deps)
+		_, _, err := extractKubeComputeDependencyDetails(deps)
 		assert.Error(t, err)
-		assert.False(t, retriable)
+	})
+
+	t.Run("valid dependency on single kubecompute and multiple non-kubecompute resource", func(t *testing.T) {
+		deps := []wiringplugin.WiredDependency{nonComputeDep, computeDep, nonComputeDep}
+
+		resName, labels, err := extractKubeComputeDependencyDetails(deps)
+		assert.NoError(t, err)
+		assert.Equal(t, deploymentObj.Name, string(resName))
+		assert.Equal(t, deploymentObj.Labels, labels)
 	})
 
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{nonComputeDep}
 
-		_, retriable, err := extractKubeComputeDependency(deps)
+		_, _, err := extractKubeComputeDependencyDetails(deps)
 		assert.Error(t, err)
-		assert.False(t, retriable)
 	})
 }
 

@@ -24,15 +24,6 @@ const (
 	kubeIngressRefMetadataEndpoint                      = "endpoint"
 )
 
-type Alias struct {
-	AliasType string `json:"type"`
-	Name      string `json:"name"`
-}
-
-type UserSpec struct {
-	Aliases []Alias `json:"aliases"`
-}
-
 type autowiringOnlySpec struct {
 	Target          string              `json:"target"`
 	ServiceName     voyager.ServiceName `json:"serviceName"`

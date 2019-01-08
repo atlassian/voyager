@@ -335,6 +335,11 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 
 	result := &wiringplugin.WiringResult{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{
+				knownshapes.NewLabelled(deployment.SmithResource.Name, labelMap),
+			},
+		},
 		Resources: smithResources,
 	}
 
