@@ -54,7 +54,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	for _, dependency := range context.Dependencies {
 		snsShape, hasSnsShape := dependency.Contract.FindShape(knownshapes.SnsSubscribableShape)
 		if !hasSnsShape {
-			continue
+			return nil, false, errors.Errorf("sqs is allowed to depend only on sns resource, but SnsSubscribableShape was not found in %q", dependency.Name)
 		}
 		snsSubscribableData := snsShape.(*knownshapes.SnsSubscribable).Data
 
