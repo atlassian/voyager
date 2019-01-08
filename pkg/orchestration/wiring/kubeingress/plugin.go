@@ -13,6 +13,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
@@ -74,7 +75,13 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 	smithResources = append(smithResources, ingressResource)
 
+	contract := wiringplugin.ResourceContract{
+		Shapes: []wiringplugin.Shape{
+			knownshapes.NewIngressEndpoint(ingressResource.SmithResource.Name),
+		},
+	}
 	result := &wiringplugin.WiringResult{
+		Contract:  contract,
 		Resources: smithResources,
 	}
 
@@ -197,7 +204,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 				},
 			},
 		},
-		Exposed: true,
+		Exposed: false,
 	}
 
 	return ingressResource, nil

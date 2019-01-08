@@ -62,7 +62,7 @@ func getExpectedResourceOutput(serviceResourceName smith_v1.ResourceName, resour
 				},
 			},
 		},
-		Exposed: true,
+		Exposed: false,
 	}
 }
 
