@@ -41,5 +41,5 @@ func NewIngressEndpoint(resourceName smith_v1.ResourceName) *IngressEndpoint {
 }
 
 func (s *IngressEndpoint) Name() wiringplugin.ShapeName {
-	return IngressEndpointShape
+	return s.ShapeName
 }
