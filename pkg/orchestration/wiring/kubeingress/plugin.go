@@ -52,13 +52,13 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentName, deploymentLabels, err := extractKubeComputeDependencyDetails(context.Dependencies)
+	deploymentResourceName, deploymentLabels, err := extractKubeComputeDetails(context)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// Build the Service
-	serviceResource := buildServiceResource(smith_v1.ResourceName(deploymentName), deploymentLabels, resource.Name)
+	serviceResource := buildServiceResource(deploymentResourceName, deploymentLabels, resource.Name)
 
 	// Build the Ingress
 	ingressResource, err := buildIngressResource(serviceResource.SmithResource.Name, resource, context)
@@ -260,49 +260,24 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, error) {
-	var matchedDependency *wiringplugin.WiredDependency
-	for x, dependency := range dependencies {
-		if dependency.Type == resourceType {
-			if matchedDependency != nil {
-				return nil, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
-			}
-			matchedDependency = &dependencies[x]
-		}
-	}
-
-	if matchedDependency == nil {
-		return nil, errors.Errorf("must depend on a single %s resource, but none were found", resourceType)
-	}
-
-	return matchedDependency, nil
-}
-
-func extractKubeComputeDependencyDetails(dependencies []wiringplugin.WiredDependency) (smith_v1.ResourceName, map[string]string, error) {
+func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, map[string]string, error) {
 	// Require exactly one KubeCompute dependency
-	kubeComputeDependency, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
+	kubeComputeDependency, err := context.TheOnlyDependencyOfType(apik8scompute.ResourceType)
 	if err != nil {
 		return "", nil, err
-	}
-
-	shapes := kubeComputeDependency.Contract.FindAllShapes(knownshapes.LabelledShape)
-	if len(shapes) == 0 {
-		return "", nil, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
 	}
 
 	// Find labels attached to deployment object
 	// TODO: Better way of identifying the correct deployment
 	// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
-	deploymentResourceName := wiringutil.ResourceName(kubeComputeDependency.Name)
-	for _, shape := range shapes {
-		labelledShape, ok := shape.(*knownshapes.Labelled)
-		if !ok {
-			return "", nil, errors.Errorf("cannot cast LabelledShape %q to expected type", shape.Name())
-		}
-		if labelledShape.Data.Target == deploymentResourceName {
-			return labelledShape.Data.Target, labelledShape.Data.Labels, nil
-		}
+	shape, found := kubeComputeDependency.Contract.FindShape(knownshapes.SetOfPodsSelectableByLabelsShape)
+	if !found {
+		return "", nil, errors.Errorf("failed to find %q shape in %q's contract", knownshapes.SetOfPodsSelectableByLabelsShape, apik8scompute.ResourceType)
 	}
 
-	return "", nil, errors.Errorf("labelled shape for deployment object %q not found", deploymentResourceName)
+	setOfPodsSelectableByLabelsShape, ok := shape.(*knownshapes.SetOfPodsSelectableByLabels)
+	if !ok {
+		return "", nil, errors.Errorf("cannot cast shape %q to expected type", shape.Name())
+	}
+	return setOfPodsSelectableByLabelsShape.Data.DeploymentResourceName, setOfPodsSelectableByLabelsShape.Data.Labels, nil
 }

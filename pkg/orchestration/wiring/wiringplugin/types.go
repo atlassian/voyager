@@ -7,6 +7,7 @@ import (
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
+	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -27,6 +28,24 @@ type WiringContext struct {
 	StateContext StateContext
 	Dependencies []WiredDependency
 	Dependants   []DependantResource
+}
+
+func (c *WiringContext) TheOnlyDependencyOfType(dependencyType voyager.ResourceType) (*WiredDependency, error) {
+	var matchedDependency *WiredDependency
+	for i, dependency := range c.Dependencies {
+		if dependency.Type == dependencyType {
+			if matchedDependency != nil {
+				return nil, errors.Errorf("must depend on a single %q resource, but multiple were found", dependencyType)
+			}
+			matchedDependency = &c.Dependencies[i]
+		}
+	}
+
+	if matchedDependency == nil {
+		return nil, errors.Errorf("must depend on a single %q resource, but none were found", dependencyType)
+	}
+
+	return matchedDependency, nil
 }
 
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.
@@ -140,17 +159,6 @@ func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found 
 	}
 
 	return nil, false
-}
-
-func (c *ResourceContract) FindAllShapes(shapeName ShapeName) []Shape {
-	var shapes []Shape
-	for _, shape := range c.Shapes {
-		if shape.Name() == shapeName {
-			shapes = append(shapes, shape)
-		}
-	}
-
-	return shapes
 }
 
 type WiringResult struct {
