@@ -174,17 +174,6 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("valid dependency on single kubecompute and multiple non-kubecompute resource", func(t *testing.T) {
-		context := wiringplugin.WiringContext{
-			Dependencies: []wiringplugin.WiredDependency{nonComputeDep, computeDep, nonComputeDep},
-		}
-
-		resName, labels, err := extractKubeComputeDetails(&context)
-		assert.NoError(t, err)
-		assert.Equal(t, deploymentObj.Name, string(resName))
-		assert.Equal(t, deploymentObj.Labels, labels)
-	})
-
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {
 		context := wiringplugin.WiringContext{
 			Dependencies: []wiringplugin.WiredDependency{nonComputeDep},

@@ -30,22 +30,15 @@ type WiringContext struct {
 	Dependants   []DependantResource
 }
 
-func (c *WiringContext) TheOnlyDependencyOfType(dependencyType voyager.ResourceType) (*WiredDependency, error) {
-	var matchedDependency *WiredDependency
-	for i, dependency := range c.Dependencies {
-		if dependency.Type == dependencyType {
-			if matchedDependency != nil {
-				return nil, errors.Errorf("must depend on a single %q resource, but multiple were found", dependencyType)
-			}
-			matchedDependency = &c.Dependencies[i]
-		}
+func (c *WiringContext) TheOnlyDependency() (*WiredDependency, error) {
+	switch len(c.Dependencies) {
+	case 0:
+		return nil, errors.New("must depend on a single resource, but none was found")
+	case 1:
+		return &c.Dependencies[0], nil
+	default:
+		return nil, errors.Errorf("must depend on a single resource, but multiple were found")
 	}
-
-	if matchedDependency == nil {
-		return nil, errors.Errorf("must depend on a single %q resource, but none were found", dependencyType)
-	}
-
-	return matchedDependency, nil
 }
 
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.

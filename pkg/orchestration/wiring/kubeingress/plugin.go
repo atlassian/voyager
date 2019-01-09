@@ -10,7 +10,6 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -262,7 +261,7 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 
 func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, map[string]string, error) {
 	// Require exactly one KubeCompute dependency
-	kubeComputeDependency, err := context.TheOnlyDependencyOfType(apik8scompute.ResourceType)
+	kubeComputeDependency, err := context.TheOnlyDependency()
 	if err != nil {
 		return "", nil, err
 	}
@@ -272,7 +271,7 @@ func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.Re
 	// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
 	shape, found := kubeComputeDependency.Contract.FindShape(knownshapes.SetOfPodsSelectableByLabelsShape)
 	if !found {
-		return "", nil, errors.Errorf("failed to find %q shape in %q's contract", knownshapes.SetOfPodsSelectableByLabelsShape, apik8scompute.ResourceType)
+		return "", nil, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfPodsSelectableByLabelsShape, kubeComputeDependency.Name)
 	}
 
 	setOfPodsSelectableByLabelsShape, ok := shape.(*knownshapes.SetOfPodsSelectableByLabels)
