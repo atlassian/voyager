@@ -142,6 +142,17 @@ func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found 
 	return nil, false
 }
 
+func (c *ResourceContract) FindAllShapes(shapeName ShapeName) []Shape {
+	var shapes []Shape
+	for _, shape := range c.Shapes {
+		if shape.Name() == shapeName {
+			shapes = append(shapes, shape)
+		}
+	}
+
+	return shapes
+}
+
 type WiringResult struct {
 	Contract  ResourceContract
 	Resources []WiredSmithResource

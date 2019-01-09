@@ -10,6 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/stretchr/testify/assert"
 	apps_v1 "k8s.io/api/apps/v1"
 	ext_v1b1 "k8s.io/api/extensions/v1beta1"
@@ -98,19 +99,35 @@ func TestBuildingIngressResource(t *testing.T) {
 
 func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Parallel()
-
+	const deploymentName = "Some Deployment"
+	labels := map[string]string{"a": "b", "c": "d"}
 	deploymentObj := &apps_v1.Deployment{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       k8s.DeploymentKind,
 			APIVersion: apps_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name: "Some Deployment",
+			Name:   deploymentName,
+			Labels: labels,
 		},
 	}
 
 	computeDep := wiringplugin.WiredDependency{
+		Name: deploymentName,
 		Type: apik8scompute.ResourceType,
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{
+				&knownshapes.Labelled{
+					ShapeMeta: wiringplugin.ShapeMeta{
+						ShapeName: knownshapes.LabelledShape,
+					},
+					Data: knownshapes.LabelledData{
+						Target: smith_v1.ResourceName(deploymentName),
+						Labels: labels,
+					},
+				},
+			},
+		},
 		SmithResources: []smith_v1.Resource{
 			smith_v1.Resource{
 				Spec: smith_v1.ResourceSpec{
@@ -139,37 +156,39 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 	t.Run("valid single dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{computeDep}
 
-		res, err := extractKubeComputeDependency(deps)
+		resName, labels, err := extractKubeComputeDependencyDetails(deps)
 		assert.NoError(t, err)
-		assert.Equal(t, deploymentObj, res)
+		assert.Equal(t, deploymentObj.Name, string(resName))
+		assert.Equal(t, deploymentObj.Labels, labels)
 	})
 
 	t.Run("invalid: no dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{}
 
-		_, err := extractKubeComputeDependency(deps)
+		_, _, err := extractKubeComputeDependencyDetails(deps)
 		assert.Error(t, err)
 	})
 
 	t.Run("invalid: multiple dependencies", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{computeDep, computeDep}
 
-		_, err := extractKubeComputeDependency(deps)
+		_, _, err := extractKubeComputeDependencyDetails(deps)
 		assert.Error(t, err)
 	})
 
 	t.Run("valid dependency on single kubecompute and multiple non-kubecompute resource", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{nonComputeDep, computeDep, nonComputeDep}
 
-		res, err := extractKubeComputeDependency(deps)
+		resName, labels, err := extractKubeComputeDependencyDetails(deps)
 		assert.NoError(t, err)
-		assert.Equal(t, deploymentObj, res)
+		assert.Equal(t, deploymentObj.Name, string(resName))
+		assert.Equal(t, deploymentObj.Labels, labels)
 	})
 
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {
 		deps := []wiringplugin.WiredDependency{nonComputeDep}
 
-		_, err := extractKubeComputeDependency(deps)
+		_, _, err := extractKubeComputeDependencyDetails(deps)
 		assert.Error(t, err)
 	})
 }

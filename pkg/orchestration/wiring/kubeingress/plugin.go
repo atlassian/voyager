@@ -15,7 +15,6 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/pkg/errors"
-	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,13 +52,10 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentSpec, err := extractKubeComputeDependency(context.Dependencies)
+	deploymentName, deploymentLabels, err := extractKubeComputeDependencyDetails(context.Dependencies)
 	if err != nil {
 		return nil, false, err
 	}
-
-	deploymentName := deploymentSpec.Name
-	deploymentLabels := deploymentSpec.Spec.Template.ObjectMeta.Labels
 
 	// Build the Service
 	serviceResource := buildServiceResource(smith_v1.ResourceName(deploymentName), deploymentLabels, resource.Name)
@@ -282,32 +278,31 @@ func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, 
 	return matchedDependency, nil
 }
 
-func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, error) {
+func extractKubeComputeDependencyDetails(dependencies []wiringplugin.WiredDependency) (smith_v1.ResourceName, map[string]string, error) {
 	// Require exactly one KubeCompute dependency
 	kubeComputeDependency, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	// Extract the deployment created by the KubeCompute dependency
-	var deploymentResource *smith_v1.Resource
-	for x, res := range kubeComputeDependency.SmithResources {
-		// TODO: Better way of identifying the correct deployment
-		// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
-		if res.Spec.Object.GetObjectKind().GroupVersionKind() == k8s.DeploymentGVK {
-			deploymentResource = &kubeComputeDependency.SmithResources[x]
-			break
+	shapes := kubeComputeDependency.Contract.FindAllShapes(knownshapes.LabelledShape)
+	if len(shapes) == 0 {
+		return "", nil, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
+	}
+
+	// Find labels attached to deployment object
+	// TODO: Better way of identifying the correct deployment
+	// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
+	deploymentResourceName := wiringutil.ResourceName(kubeComputeDependency.Name)
+	for _, shape := range shapes {
+		labelledShape, ok := shape.(*knownshapes.Labelled)
+		if !ok {
+			return "", nil, errors.Errorf("cannot cast LabelledShape %q to expected type", shape.Name())
+		}
+		if labelledShape.Data.Target == deploymentResourceName {
+			return labelledShape.Data.Target, labelledShape.Data.Labels, nil
 		}
 	}
 
-	if deploymentResource == nil {
-		return nil, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
-	}
-
-	deploymentSpec, ok := deploymentResource.Spec.Object.(*apps_v1.Deployment)
-	if !ok {
-		return nil, errors.New("cannot cast Deployment to expected spec type")
-	}
-
-	return deploymentSpec, nil
+	return "", nil, errors.Errorf("labelled shape for deployment object %q not found", deploymentResourceName)
 }
