@@ -138,7 +138,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		}
 
 		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
-		binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference)
+		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
 		bindingResources = append(bindingResources, binding)
 	}

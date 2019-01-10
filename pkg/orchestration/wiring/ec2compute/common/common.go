@@ -141,7 +141,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		}
 
 		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
-		bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceReference))
+		bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference))
 	}
 
 	dependencyReferences := make([]smith_v1.Reference, 0, len(bindingResources))

@@ -22,7 +22,10 @@ func TestNames(t *testing.T) {
 	iamBinding := ServiceBinding(computeName, iamInst.Name)
 
 	var someProducerName voyager.ResourceName = "iamrole"
-	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, "instance1")
+	protoReference := wiringplugin.ProtoReference{
+		Resource: "instance1",
+	}
+	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, protoReference)
 
 	assert.NotEqual(t, potentiallyConflictingBinding.Name, iamBinding.Name)
 	assert.NotEqual(t, potentiallyConflictingBinding.Spec.Object.(meta_v1.Object).GetName(),
