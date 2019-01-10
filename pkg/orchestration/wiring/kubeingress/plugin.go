@@ -60,7 +60,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	serviceResource := buildServiceResource(deploymentResourceName, deploymentLabels, resource.Name)
 
 	// Build the Ingress
-	ingressResource, err := buildIngressResource(serviceResource.SmithResource.Name, resource, context)
+	ingressResource, err := buildIngressResource(serviceResource.Name, resource, context)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed building ingress resource")
 	}
@@ -68,17 +68,17 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	result := &wiringplugin.WiringResult{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
-				knownshapes.NewIngressEndpoint(ingressResource.SmithResource.Name),
+				knownshapes.NewIngressEndpoint(ingressResource.Name),
 			},
 		},
-		Resources: []wiringplugin.WiredSmithResource{serviceResource, ingressResource},
+		Resources: []smith_v1.Resource{serviceResource, ingressResource},
 	}
 
 	return result, false, nil
 }
 
 // buildServiceResource constructs the Kube Service object
-func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels map[string]string, resourceName voyager.ResourceName) wiringplugin.WiredSmithResource {
+func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels map[string]string, resourceName voyager.ResourceName) smith_v1.Resource {
 	serviceSpec := core_v1.ServiceSpec{
 		Ports: []core_v1.ServicePort{
 			{
@@ -93,34 +93,31 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 		SessionAffinity: "None",
 	}
 
-	serviceResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name: wiringutil.ResourceNameWithPostfix(resourceName, servicePostfix),
-			References: []smith_v1.Reference{
-				{
-					Resource: deploymentName,
-				},
-			},
-			Spec: smith_v1.ResourceSpec{
-				Object: &core_v1.Service{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       k8s.ServiceKind,
-						APIVersion: core_v1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.MetaNameWithPostfix(resourceName, servicePostfix),
-					},
-					Spec: serviceSpec,
-				},
+	serviceResource := smith_v1.Resource{
+		Name: wiringutil.ResourceNameWithPostfix(resourceName, servicePostfix),
+		References: []smith_v1.Reference{
+			{
+				Resource: deploymentName,
 			},
 		},
-		Exposed: false,
+		Spec: smith_v1.ResourceSpec{
+			Object: &core_v1.Service{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.ServiceKind,
+					APIVersion: core_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaNameWithPostfix(resourceName, servicePostfix),
+				},
+				Spec: serviceSpec,
+			},
+		},
 	}
 
 	return serviceResource
 }
 
-func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
+func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (smith_v1.Resource, error) {
 	var ingressRules []ext_v1b1.IngressRule
 	ingressRuleValue := ext_v1b1.IngressRuleValue{
 		HTTP: &ext_v1b1.HTTPIngressRuleValue{
@@ -148,7 +145,7 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 		if dependency.Type == internaldns.ResourceType {
 			var internalDNSSpec internaldns.Spec
 			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
-				return wiringplugin.WiredSmithResource{}, err
+				return smith_v1.Resource{}, err
 			}
 			for _, alias := range internalDNSSpec.Aliases {
 				ingressRules = append(ingressRules, ext_v1b1.IngressRule{
@@ -163,34 +160,31 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 		Rules: ingressRules,
 	}
 
-	ingressResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name: wiringutil.ResourceName(resourceName),
-			References: []smith_v1.Reference{
-				{
-					Resource: serviceName,
-				},
-			},
-			Spec: smith_v1.ResourceSpec{
-				Object: &ext_v1b1.Ingress{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       k8s.IngressKind,
-						APIVersion: ext_v1b1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.MetaName(resourceName),
-						Annotations: map[string]string{
-							kittIngressTypeAnnotation: "private",
-							// incoming requests pass through ALB and Envoy
-							// KITT will set ALB's timeout to 5 minutes, so that it is higher than any reasonable value supplied by the user
-							contourTimeoutAnnotation: strconv.Itoa(timeout) + "s",
-						},
-					},
-					Spec: ingressSpec,
-				},
+	ingressResource := smith_v1.Resource{
+		Name: wiringutil.ResourceName(resourceName),
+		References: []smith_v1.Reference{
+			{
+				Resource: serviceName,
 			},
 		},
-		Exposed: false,
+		Spec: smith_v1.ResourceSpec{
+			Object: &ext_v1b1.Ingress{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.IngressKind,
+					APIVersion: ext_v1b1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaName(resourceName),
+					Annotations: map[string]string{
+						kittIngressTypeAnnotation: "private",
+						// incoming requests pass through ALB and Envoy
+						// KITT will set ALB's timeout to 5 minutes, so that it is higher than any reasonable value supplied by the user
+						contourTimeoutAnnotation: strconv.Itoa(timeout) + "s",
+					},
+				},
+				Spec: ingressSpec,
+			},
+		},
 	}
 
 	return ingressResource, nil
@@ -198,13 +192,13 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 
 // buildIngressResource constructs the Kube / KITT Ingress object
 // with a default rule, plus all alias rules from dependant internalDNS resources
-func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (wiringplugin.WiredSmithResource, error) {
+func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (smith_v1.Resource, error) {
 	var timeout = defaultContourTimeout
 
 	if resource.Defaults != nil {
 		var rawDefaultsSpec Spec
 		if err := json.Unmarshal(resource.Defaults.Raw, &rawDefaultsSpec); err != nil {
-			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
+			return smith_v1.Resource{}, errors.WithStack(err)
 		}
 		if rawDefaultsSpec.TimeoutSeconds != nil {
 			timeout = *rawDefaultsSpec.TimeoutSeconds
@@ -214,14 +208,14 @@ func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *o
 	if resource.Spec != nil {
 		var rawIngressSpec Spec
 		if err := json.Unmarshal(resource.Spec.Raw, &rawIngressSpec); err != nil {
-			return wiringplugin.WiredSmithResource{}, errors.WithStack(err)
+			return smith_v1.Resource{}, errors.WithStack(err)
 		}
 
 		if rawIngressSpec.TimeoutSeconds != nil {
 			timeout = *rawIngressSpec.TimeoutSeconds
 
 			if timeout < 1 || timeout > 300 {
-				return wiringplugin.WiredSmithResource{}, errors.Errorf(
+				return smith_v1.Resource{}, errors.Errorf(
 					"ingress timeout must be between one second and five minutes (was given %d seconds)", timeout)
 			}
 		}

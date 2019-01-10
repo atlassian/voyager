@@ -31,7 +31,7 @@ const (
 )
 
 func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voyager.ResourceName, serviceName voyager.ServiceName, createInstanceProfile bool, dependencyReferences []smith_v1.Reference,
-	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (wiringplugin.WiredSmithResource, error) {
+	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (smith_v1.Resource, error) {
 
 	iamRoleSpecJSONMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&iam_plugin.Spec{
 		OAPResourceName:       string(resourceName) + namePostfix,
@@ -43,27 +43,24 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voya
 		ComputeType:           computeType,
 	})
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 
-	instanceResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name:       wiringutil.ResourceNameWithPostfix(resourceName, namePostfix),
-			References: dependencyReferences,
-			Spec: smith_v1.ResourceSpec{
-				Plugin: &smith_v1.PluginSpec{
-					Name:       iamPluginTypeName,
-					ObjectName: wiringutil.MetaNameWithPostfix(resourceName, namePostfix),
-					Spec:       iamRoleSpecJSONMap,
-				},
+	instanceResource := smith_v1.Resource{
+		Name:       wiringutil.ResourceNameWithPostfix(resourceName, namePostfix),
+		References: dependencyReferences,
+		Spec: smith_v1.ResourceSpec{
+			Plugin: &smith_v1.PluginSpec{
+				Name:       iamPluginTypeName,
+				ObjectName: wiringutil.MetaNameWithPostfix(resourceName, namePostfix),
+				Spec:       iamRoleSpecJSONMap,
 			},
 		},
-		Exposed: false, // Why anything would want to depend on ServiceInstance that provisions the IAM role?
 	}
 
 	return instanceResource, nil
 }
 
-func ServiceBinding(compute voyager.ResourceName, iamPluginServiceInstance smith_v1.ResourceName) wiringplugin.WiredSmithResource {
-	return wiringutil.ResourceInternalServiceBinding(compute, iamPluginServiceInstance, namePostfix, true)
+func ServiceBinding(compute voyager.ResourceName, iamPluginServiceInstance smith_v1.ResourceName) smith_v1.Resource {
+	return wiringutil.ResourceInternalServiceBinding(compute, iamPluginServiceInstance, namePostfix)
 }

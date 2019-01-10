@@ -42,7 +42,8 @@ spec:
             serviceName: test-servicename
   - name: compute--basic--binding
     references:
-    - name: basic--instance-metadata-name
+    - example: aname
+      name: basic--instance-metadata-name
       path: metadata.name
       resource: basic--instance
     spec:
