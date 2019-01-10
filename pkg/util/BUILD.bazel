@@ -20,6 +20,7 @@ go_library(
         "//pkg/util/crash:go_default_library",
         "//pkg/util/httputil:go_default_library",
         "//pkg/util/logz:go_default_library",
+        "//pkg/util/tlsutil:go_default_library",
         "//vendor/github.com/atlassian/ctrl/process:go_default_library",
         "//vendor/github.com/go-chi/chi:go_default_library",
         "//vendor/github.com/go-chi/chi/middleware:go_default_library",

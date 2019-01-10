@@ -9,6 +9,7 @@ import (
 
 	"github.com/atlassian/ctrl/process"
 	"github.com/atlassian/voyager/pkg/options"
+	"github.com/atlassian/voyager/pkg/util/tlsutil"
 	"github.com/go-chi/chi"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -65,62 +66,9 @@ func (a *HTTPServer) Run(ctx context.Context) error {
 		}
 	}
 
-	server.TLSConfig = &tls.Config{
-		// Can't use SSLv3 because of POODLE and BEAST
-		// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
-		// Can't use TLSv1.1 because of RC4 cipher usage
-		MinVersion: tls.VersionTLS12,
-
-		// enable HTTP2 for go's 1.7 HTTP Server
-		NextProtos: []string{"h2", "http/1.1"},
-
-		// aggregator posts client cert
-		ClientAuth: tls.VerifyClientCertIfGiven,
-
-		// set client CAs
-		ClientCAs: clientCAs,
-
-		// List of cipher suites comes from the standard: https://hello.atlassian.net/wiki/spaces/PMP/pages/139162517
-		// IANA names were mapped from:
-		//  - https://testssl.sh/openssl-iana.mapping.html
-		//  - https://ciphersuite.info/
-		CipherSuites: []uint16{
-
-			// These aren't supported in Go
-
-			// ECDHE-ECDSA-AES256-SHA384
-			//tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
-			// ECDHE-RSA-AES256-SHA384
-			//tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-			// ECDHE-ECDSA-CHACHA20-POLY1305
-			//tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-			// ECDHE-RSA-CHACHA20-POLY1305
-			//tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-
-			// Recommended in the standard
-
-			// ECDHE-ECDSA-AES128-SHA256
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
-			// ECDHE-ECDSA-AES128-SHA
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-			// ECDHE-ECDSA-AES256-SHA
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-			// ECDHE-RSA-AES128-SHA256
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-			// ECDHE-ECDSA-AES128-GCM-SHA256
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			// ECDHE-ECDSA-AES256-GCM-SHA384
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			// ECDHE-RSA-AES128-GCM-SHA256
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			// ECDHE-RSA-AES256-GCM-SHA384
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			// ECDHE-RSA-AES128-SHA
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-			// ECDHE-RSA-AES256-SHA
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-		},
-	}
+	server.TLSConfig = tlsutil.DefaultTLSConfig()
+	server.TLSConfig.ClientAuth = tls.VerifyClientCertIfGiven
+	server.TLSConfig.ClientCAs = clientCAs
 
 	return process.StartStopTLSServer(ctx, server, defaultShutdownTimeout, a.config.TLSCert, a.config.TLSKey)
 }
