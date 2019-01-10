@@ -132,38 +132,15 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		bound := false
-
-		if bindableShape, ok := dep.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape); ok {
-			resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
-			// We don't want anything that depends on compute to see our bindings - exposed: false
-			binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference, false)
-			smithResources = append(smithResources, binding)
-			bindingResources = append(bindingResources, binding)
-			continue
+		bindableShape, found := dep.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape)
+		if !found {
+			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dep.Name, dep.Type, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
-		// DEPRECATED: binding using raw SmithResources, use resource contracts instead
-		for _, dependencyObj := range dep.SmithResources {
-			if dependencyObj.Spec.Object == nil {
-				// TODO support plugins
-				continue
-			}
-			dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
-			switch dependencyObjGVK.GroupKind() {
-			case instanceGK:
-				bound = true
-				// We don't want anything that depends on compute to see our bindings - exposed: false
-				binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
-				smithResources = append(smithResources, binding)
-				bindingResources = append(bindingResources, binding)
-			}
-		}
-
-		// check if we wired/bound dependency in at least one way
-		if !bound {
-			return nil, false, errors.Errorf("cannot depend on resource %q of type %q. Only ServiceInstance type is supported", dep.Name, dep.Type)
-		}
+		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
+		binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference, false)
+		smithResources = append(smithResources, binding)
+		bindingResources = append(bindingResources, binding)
 	}
 
 	var iamRoleRef *smith_v1.Reference

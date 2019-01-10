@@ -354,7 +354,8 @@ spec:
           secretName: ec2--asap
   - name: ec2--basic--binding
     references:
-    - name: basic--instance-metadata-name
+    - example: aname
+      name: basic--instance-metadata-name
       path: metadata.name
       resource: basic--instance
     spec:
@@ -465,7 +466,8 @@ spec:
           secretName: ec2--notification-sns
   - name: ec2--notification-sqs--binding
     references:
-    - name: notification-sqs--instance-metadata-name
+    - example: aname
+      name: notification-sqs--instance-metadata-name
       path: metadata.name
       resource: notification-sqs--instance
     spec:
@@ -652,7 +654,8 @@ spec:
           secretName: kc--asap
   - name: kc--basic--binding
     references:
-    - name: basic--instance-metadata-name
+    - example: aname
+      name: basic--instance-metadata-name
       path: metadata.name
       resource: basic--instance
     spec:
@@ -763,7 +766,8 @@ spec:
           secretName: kc--notification-sns
   - name: kc--notification-sqs--binding
     references:
-    - name: notification-sqs--instance-metadata-name
+    - example: aname
+      name: notification-sqs--instance-metadata-name
       path: metadata.name
       resource: notification-sqs--instance
     spec:

@@ -46,8 +46,6 @@ type WiredDependency struct {
 	Name     voyager.ResourceName
 	Type     voyager.ResourceType
 	Contract ResourceContract
-	// DEPRECATED: use Contract
-	SmithResources []smith_v1.Resource
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}
 }

@@ -120,29 +120,10 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 				knownshapes.NewSetOfPodsSelectableByLabels(smith_v1.ResourceName(deploymentName), labels),
 			},
 		},
-		SmithResources: []smith_v1.Resource{
-			smith_v1.Resource{
-				Spec: smith_v1.ResourceSpec{
-					Object: deploymentObj,
-				},
-			},
-		},
 	}
 
 	nonComputeDep := wiringplugin.WiredDependency{
 		Type: voyager.ResourceType("MiscellaneousResource"),
-		SmithResources: []smith_v1.Resource{
-			smith_v1.Resource{
-				Spec: smith_v1.ResourceSpec{
-					Object: &apps_v1.ReplicaSet{
-						TypeMeta: meta_v1.TypeMeta{
-							Kind:       k8s.DeploymentKind,
-							APIVersion: apps_v1.SchemeGroupVersion.String(),
-						},
-					},
-				},
-			},
-		},
 	}
 
 	t.Run("valid single dependency", func(t *testing.T) {
