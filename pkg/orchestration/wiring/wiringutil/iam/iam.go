@@ -58,12 +58,11 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voya
 				},
 			},
 		},
-		Exposed: false, // Why anything would want to depend on ServiceInstance that provisions the IAM role?
 	}
 
 	return instanceResource, nil
 }
 
 func ServiceBinding(compute voyager.ResourceName, iamPluginServiceInstance smith_v1.ResourceName) wiringplugin.WiredSmithResource {
-	return wiringutil.ResourceInternalServiceBinding(compute, iamPluginServiceInstance, namePostfix, true)
+	return wiringutil.ResourceInternalServiceBinding(compute, iamPluginServiceInstance, namePostfix)
 }

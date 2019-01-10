@@ -86,7 +86,6 @@ func generateSecretEnvVarsResource(stateResource *orch_v1.StateResource, compute
 				},
 			},
 		},
-		Exposed: false,
 	}
 
 	return instanceResource, objectName, nil
@@ -144,7 +143,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		}
 
 		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
-		bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceReference, false))
+		bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceReference))
 	}
 
 	dependencyReferences := make([]smith_v1.Reference, 0, len(bindingResources))
@@ -233,7 +232,6 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 				},
 			},
 		},
-		Exposed: true,
 	}
 
 	// Wire Result

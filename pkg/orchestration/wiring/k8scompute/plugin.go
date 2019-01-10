@@ -138,7 +138,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		}
 
 		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
-		binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference, false)
+		binding := wiringutil.ConsumerProducerServiceBindingV2(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
 		bindingResources = append(bindingResources, binding)
 	}
@@ -256,7 +256,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 
 	// The final wired deployment object
 	deployment := wiringplugin.WiredSmithResource{
-		Exposed: true,
 		SmithResource: smith_v1.Resource{
 			Name:       wiringutil.ResourceName(resource.Name),
 			References: references,
@@ -289,7 +288,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 
 		// The final wired HPA object
 		hpa := wiringplugin.WiredSmithResource{
-			Exposed: true,
 			SmithResource: smith_v1.Resource{
 				Name:       wiringutil.ResourceNameWithPostfix(resource.Name, hpaPostfix),
 				References: []smith_v1.Reference{deploymentNameRef},
@@ -346,7 +344,6 @@ func generateSecretEnvVarsResource(compute voyager.ResourceName, spec *Spec, dep
 				},
 			},
 		},
-		Exposed: false,
 	}
 
 	return instanceResource, nil

@@ -59,7 +59,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		snsSubscribableData := snsShape.(*knownshapes.SnsSubscribable).Data
 
 		resourceRef := snsSubscribableData.BindableShapeStruct.ServiceInstanceName
-		serviceBinding := wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceRef, false)
+		serviceBinding := wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceRef)
 		wiredResources = append(wiredResources, serviceBinding)
 
 		referenceName := wiringutil.ReferenceName(serviceBinding.SmithResource.Name, snsTopicArnReferenceNameSuffix)
@@ -164,7 +164,6 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 				},
 			},
 		},
-		Exposed: true,
 	}, nil
 }
 

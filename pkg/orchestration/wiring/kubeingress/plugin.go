@@ -114,7 +114,6 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 				},
 			},
 		},
-		Exposed: false,
 	}
 
 	return serviceResource
@@ -190,7 +189,6 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 				},
 			},
 		},
-		Exposed: false,
 	}
 
 	return ingressResource, nil

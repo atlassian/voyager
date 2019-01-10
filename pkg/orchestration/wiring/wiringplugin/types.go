@@ -159,8 +159,6 @@ type WiringResult struct {
 
 type WiredSmithResource struct {
 	SmithResource smith_v1.Resource
-	// DEPRECATED: use Shapes, Refs and/or Data in ResourceContract to expose information
-	Exposed bool
 }
 
 // StateContext is used as input for the plugins. Everything in the StateContext

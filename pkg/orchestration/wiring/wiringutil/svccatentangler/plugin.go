@@ -114,7 +114,6 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 				},
 			},
 		},
-		Exposed: true,
 	}, nil
 }
 
