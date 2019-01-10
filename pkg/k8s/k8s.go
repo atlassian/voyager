@@ -15,6 +15,7 @@ const (
 	DeploymentKind              = "Deployment"
 	NamespaceKind               = "Namespace"
 	PodKind                     = "Pod"
+	PodDisruptionBudgetKind     = "PodDisruptionBudget"
 	ReplicaSetKind              = "ReplicaSet"
 	RoleKind                    = "Role"
 	RoleBindingKind             = "RoleBinding"

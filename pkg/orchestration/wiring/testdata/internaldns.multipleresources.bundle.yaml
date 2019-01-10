@@ -57,6 +57,27 @@ spec:
                 resourceName: c1
                 stateName: state1
             spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - c1
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                    weight: 75
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - c1
+                      topologyKey: kubernetes.io/hostname
+                    weight: 50
               containers:
               - env:
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
@@ -84,6 +105,22 @@ spec:
               securityContext: {}
               serviceAccountName: '!{c1--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
+  - name: c1--pdb
+    references:
+    - name: c1-metadata-name
+      path: metadata.name
+      resource: c1
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: c1--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: c1
   - name: c2--svcacc
     spec:
       object:
@@ -128,6 +165,27 @@ spec:
                 resourceName: c2
                 stateName: state1
             spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - c2
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                    weight: 75
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - c2
+                      topologyKey: kubernetes.io/hostname
+                    weight: 50
               containers:
               - env:
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
@@ -155,6 +213,22 @@ spec:
               securityContext: {}
               serviceAccountName: '!{c2--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
+  - name: c2--pdb
+    references:
+    - name: c2-metadata-name
+      path: metadata.name
+      resource: c2
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: c2--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: c2
   - name: ingress1--service
     references:
     - resource: c1

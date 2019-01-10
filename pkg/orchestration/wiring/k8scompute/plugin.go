@@ -22,6 +22,7 @@ import (
 	apps_v1 "k8s.io/api/apps/v1"
 	autoscaling_v2b1 "k8s.io/api/autoscaling/v2beta1"
 	core_v1 "k8s.io/api/core/v1"
+	policy_v1 "k8s.io/api/policy/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -42,10 +43,13 @@ const (
 	serviceAccountPostFix         = "svcacc"
 	podSecretEnvVarNamePostfix    = "podsecretenvvar"
 	secretPluginNamePostfix       = "secretplugin"
+	pdbPostfix                    = "pdb"
 	hpaPostfix                    = "hpa"
 	podSecretEnvVarPluginTypeName = "podsecretenvvar"
 	bindingOutputRoleARNKey       = "IAMRoleARN"
 	envVarIgnoreRegex             = `^IamPolicySnippet$`
+
+	defaultPodDisruptionBudget = "30%"
 )
 
 var (
@@ -277,7 +281,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		resourceNameLabel: string(resource.Name),
 	}
 
-	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref())
+	affinity := buildAffinity(resource.Name)
+
+	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
 	// The kube deployment object spec
 	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
@@ -307,6 +313,26 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		Resource: deployment.Name,
 		Path:     metadataNamePath,
 	}
+
+	// Add pod disruption budget
+	pdbSpec := buildPodDisruptionBudgetSpec(resource.Name)
+	pdb := smith_v1.Resource{
+		Name:       wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
+		References: []smith_v1.Reference{deploymentNameRef},
+		Spec: smith_v1.ResourceSpec{
+			Object: &policy_v1.PodDisruptionBudget{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.PodDisruptionBudgetKind,
+					APIVersion: policy_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaNameWithPostfix(resource.Name, pdbPostfix),
+				},
+				Spec: pdbSpec,
+			},
+		},
+	}
+	smithResources = append(smithResources, pdb)
 
 	// 0 value for replicas indicates we don't need an HPA
 	if spec.Scaling.MinReplicas > 0 && spec.Scaling.MaxReplicas > 0 {
@@ -399,11 +425,12 @@ func generateSecretEnvVarsResource(compute voyager.ResourceName, renameEnvVar ma
 	return instanceResource, nil
 }
 
-func buildPodSpec(containers []core_v1.Container, serviceAccountName string) core_v1.PodSpec {
+func buildPodSpec(containers []core_v1.Container, serviceAccountName string, affinity *core_v1.Affinity) core_v1.PodSpec {
 	var terminationGracePeriodSeconds int64 = 30
 	return core_v1.PodSpec{
 		Containers:         containers,
 		ServiceAccountName: serviceAccountName,
+		Affinity:           affinity,
 
 		// field with default values
 		DNSPolicy:                     "ClusterFirst",
@@ -473,6 +500,65 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	}
 
 	return containers
+}
+
+func buildAffinity(resourceName voyager.ResourceName) *core_v1.Affinity {
+	return &core_v1.Affinity{
+		PodAntiAffinity: buildAntiAffinity(resourceName),
+	}
+}
+
+func buildAntiAffinity(resourceName voyager.ResourceName) *core_v1.PodAntiAffinity {
+	matchExpressions := []meta_v1.LabelSelectorRequirement{
+		meta_v1.LabelSelectorRequirement{
+			Key:      resourceNameLabel,
+			Operator: "In",
+			Values: []string{
+				string(resourceName),
+			},
+		},
+	}
+
+	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
+	// the app to different zones, and then nodes (where possible)
+	podAffinityTerms := []core_v1.WeightedPodAffinityTerm{
+		core_v1.WeightedPodAffinityTerm{
+			Weight: 75,
+			PodAffinityTerm: core_v1.PodAffinityTerm{
+				LabelSelector: &meta_v1.LabelSelector{
+					MatchExpressions: matchExpressions,
+				},
+				TopologyKey: "failure-domain.beta.kubernetes.io/zone",
+			},
+		},
+		core_v1.WeightedPodAffinityTerm{
+			Weight: 50,
+			PodAffinityTerm: core_v1.PodAffinityTerm{
+				LabelSelector: &meta_v1.LabelSelector{
+					MatchExpressions: matchExpressions,
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		},
+	}
+
+	return &core_v1.PodAntiAffinity{
+		PreferredDuringSchedulingIgnoredDuringExecution: podAffinityTerms,
+	}
+}
+
+func buildPodDisruptionBudgetSpec(resourceName voyager.ResourceName) policy_v1.PodDisruptionBudgetSpec {
+	return policy_v1.PodDisruptionBudgetSpec{
+		MinAvailable: &intstr.IntOrString{
+			Type:   intstr.String,
+			StrVal: defaultPodDisruptionBudget,
+		},
+		Selector: &meta_v1.LabelSelector{
+			MatchLabels: map[string]string{
+				resourceNameLabel: string(resourceName),
+			},
+		},
+	}
 }
 
 func buildHorizontalPodAutoscalerSpec(spec *Spec, deploymentName string) autoscaling_v2b1.HorizontalPodAutoscalerSpec {
