@@ -17,7 +17,7 @@ import (
 // (using ConsumerProducerResourceNameWithPostfix() and ConsumerProducerMetaNameWithPostfix() functions) with
 // different postfixes.
 // DEPRECATED: use ConsumerProducerServiceBindingV2 instead
-func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, producerServiceInstance smith_v1.ResourceName) wiringplugin.WiredSmithResource {
+func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, producerServiceInstance smith_v1.ResourceName) smith_v1.Resource {
 	serviceInstanceRef := smith_v1.Reference{
 		Name:     ReferenceName(producerServiceInstance, "metadata", "name"),
 		Resource: producerServiceInstance,
@@ -29,7 +29,7 @@ func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, pro
 }
 
 // TODO(kopper): Remove V2 suffix
-func ConsumerProducerServiceBindingV2(consumer, producer voyager.ResourceName, resourceReference wiringplugin.ProtoReference) wiringplugin.WiredSmithResource {
+func ConsumerProducerServiceBindingV2(consumer, producer voyager.ResourceName, resourceReference wiringplugin.ProtoReference) smith_v1.Resource {
 	bindingResourceName := ConsumerProducerResourceNameWithPostfix(consumer, producer, "binding")
 	bindingMetaName := ConsumerProducerMetaName(consumer, producer)
 	referenceName := ReferenceName(resourceReference.Resource, "metadata", "name")
@@ -40,7 +40,7 @@ func ConsumerProducerServiceBindingV2(consumer, producer voyager.ResourceName, r
 // ResourceInternalServiceBinding constructs a ServiceBinding that is both produced and consumed by an
 // Orchestration resource resource. This function should be used to generate ServiceBindings that are internal to an
 // Orchestration resource.
-func ResourceInternalServiceBinding(resource voyager.ResourceName, serviceInstance smith_v1.ResourceName, postfix string) wiringplugin.WiredSmithResource {
+func ResourceInternalServiceBinding(resource voyager.ResourceName, serviceInstance smith_v1.ResourceName, postfix string) smith_v1.Resource {
 	serviceInstanceRef := smith_v1.Reference{
 		Name:     ReferenceName(serviceInstance, "metadata", "name"),
 		Resource: serviceInstance,
@@ -54,28 +54,26 @@ func ResourceInternalServiceBinding(resource voyager.ResourceName, serviceInstan
 	return ServiceBinding(bindingResourceName, bindingMetaName, serviceInstanceRef)
 }
 
-func ServiceBinding(bindingResourceName smith_v1.ResourceName, bindingMetaName string, serviceInstanceRef smith_v1.Reference) wiringplugin.WiredSmithResource {
-	return wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			References: []smith_v1.Reference{
-				serviceInstanceRef,
-			},
-			Name: bindingResourceName,
-			Spec: smith_v1.ResourceSpec{
-				Object: &sc_v1b1.ServiceBinding{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       "ServiceBinding",
-						APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+func ServiceBinding(bindingResourceName smith_v1.ResourceName, bindingMetaName string, serviceInstanceRef smith_v1.Reference) smith_v1.Resource {
+	return smith_v1.Resource{
+		References: []smith_v1.Reference{
+			serviceInstanceRef,
+		},
+		Name: bindingResourceName,
+		Spec: smith_v1.ResourceSpec{
+			Object: &sc_v1b1.ServiceBinding{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       "ServiceBinding",
+					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: bindingMetaName,
+				},
+				Spec: sc_v1b1.ServiceBindingSpec{
+					ServiceInstanceRef: sc_v1b1.LocalObjectReference{
+						Name: serviceInstanceRef.Ref(),
 					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: bindingMetaName,
-					},
-					Spec: sc_v1b1.ServiceBindingSpec{
-						ServiceInstanceRef: sc_v1b1.LocalObjectReference{
-							Name: serviceInstanceRef.Ref(),
-						},
-						SecretName: bindingMetaName,
-					},
+					SecretName: bindingMetaName,
 				},
 			},
 		},

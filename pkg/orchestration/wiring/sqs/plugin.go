@@ -47,7 +47,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		return nil, false, errors.Errorf("invalid resource type: %q", stateResource.Type)
 	}
 
-	var wiredResources []wiringplugin.WiredSmithResource
+	var wiredResources []smith_v1.Resource
 	var snsSubscriptions []snsSubscription
 	var references []smith_v1.Reference
 
@@ -62,8 +62,8 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		serviceBinding := wiringutil.ConsumerProducerServiceBindingV2(stateResource.Name, dependency.Name, resourceRef)
 		wiredResources = append(wiredResources, serviceBinding)
 
-		referenceName := wiringutil.ReferenceName(serviceBinding.SmithResource.Name, snsTopicArnReferenceNameSuffix)
-		topicArnRef := snsSubscribableData.TopicARN.ToReference(referenceName, serviceBinding.SmithResource.Name)
+		referenceName := wiringutil.ReferenceName(serviceBinding.Name, snsTopicArnReferenceNameSuffix)
+		topicArnRef := snsSubscribableData.TopicARN.ToReference(referenceName, serviceBinding.Name)
 		references = append(references, topicArnRef)
 		snsSubscriptions = append(snsSubscriptions, snsSubscription{
 			TopicArn:   topicArnRef.Ref(),
@@ -80,7 +80,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	result := &wiringplugin.WiringResult{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
-				knownshapes.NewBindableEnvironmentVariables(serviceInstance.SmithResource.Name),
+				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name),
 			},
 		},
 		Resources: wiredResources,
@@ -89,26 +89,26 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	return result, false, nil
 }
 
-func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, references []smith_v1.Reference, snsSubscriptions []snsSubscription) (wiringplugin.WiredSmithResource, error) {
+func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, references []smith_v1.Reference, snsSubscriptions []snsSubscription) (smith_v1.Resource, error) {
 	instanceID, err := svccatentangler.InstanceID(resource.Spec)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 	serviceName := context.StateContext.ServiceName
 	userServiceName, err := oap.ServiceName(resource.Spec)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 	if userServiceName != "" {
 		serviceName = userServiceName
 	}
 	attributes, alarms, err := constructSqsAttributes(resource, snsSubscriptions)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 	resourceName, err := oap.ResourceName(resource.Spec)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 	if resourceName == "" {
 		resourceName = string(resource.Name)
@@ -132,35 +132,33 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	}
 	serviceInstanceSpecBytes, err := json.Marshal(&serviceInstanceSpec)
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 
-	return wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name:       wiringutil.ServiceInstanceResourceName(resource.Name),
-			References: references,
-			Spec: smith_v1.ResourceSpec{
-				Object: &sc_v1b1.ServiceInstance{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       "ServiceInstance",
-						APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+	return smith_v1.Resource{
+		Name:       wiringutil.ServiceInstanceResourceName(resource.Name),
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: &sc_v1b1.ServiceInstance{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       "ServiceInstance",
+					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.ServiceInstanceMetaName(resource.Name),
+					Annotations: map[string]string{
+						voyager.Domain + "/envResourcePrefix": clusterServiceClassExternalName,
 					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.ServiceInstanceMetaName(resource.Name),
-						Annotations: map[string]string{
-							voyager.Domain + "/envResourcePrefix": clusterServiceClassExternalName,
-						},
+				},
+				Spec: sc_v1b1.ServiceInstanceSpec{
+					PlanReference: sc_v1b1.PlanReference{
+						ClusterServiceClassExternalID: clusterServiceClassExternalID,
+						ClusterServicePlanExternalID:  clusterServicePlanExternalID,
 					},
-					Spec: sc_v1b1.ServiceInstanceSpec{
-						PlanReference: sc_v1b1.PlanReference{
-							ClusterServiceClassExternalID: clusterServiceClassExternalID,
-							ClusterServicePlanExternalID:  clusterServicePlanExternalID,
-						},
-						Parameters: &runtime.RawExtension{
-							Raw: serviceInstanceSpecBytes,
-						},
-						ExternalID: instanceID,
+					Parameters: &runtime.RawExtension{
+						Raw: serviceInstanceSpecBytes,
 					},
+					ExternalID: instanceID,
 				},
 			},
 		},

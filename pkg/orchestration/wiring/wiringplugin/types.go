@@ -154,11 +154,7 @@ func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found 
 
 type WiringResult struct {
 	Contract  ResourceContract
-	Resources []WiredSmithResource
-}
-
-type WiredSmithResource struct {
-	SmithResource smith_v1.Resource
+	Resources []smith_v1.Resource
 }
 
 // StateContext is used as input for the plugins. Everything in the StateContext

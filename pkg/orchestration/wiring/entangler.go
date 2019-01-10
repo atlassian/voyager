@@ -241,7 +241,7 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		WiringResult: *result,
 	}
 	for _, wiredResource := range result.Resources {
-		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource.SmithResource)
+		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource)
 	}
 	return false, nil
 }

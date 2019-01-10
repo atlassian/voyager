@@ -59,7 +59,7 @@ type StateComputeSpec struct {
 	RenameEnvVar map[string]string `json:"rename,omitempty"`
 }
 
-func generateSecretEnvVarsResource(stateResource *orch_v1.StateResource, computeSpec *StateComputeSpec, dependencyReferences []smith_v1.Reference) (wiringplugin.WiredSmithResource, string, error) {
+func generateSecretEnvVarsResource(stateResource *orch_v1.StateResource, computeSpec *StateComputeSpec, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, string, error) {
 	// We use objectName for both the smith resource name and the kubernetes metadata name,
 	// since there's only one of these per state resource (no possibility of clash).
 	objectName := fmt.Sprintf(secretEnvVarFormatString, stateResource.Name)
@@ -71,19 +71,17 @@ func generateSecretEnvVarsResource(stateResource *orch_v1.StateResource, compute
 		IgnoreKeyRegex:  envVarIgnoreRegex,
 	})
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, "", err
+		return smith_v1.Resource{}, "", err
 	}
 
-	instanceResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name:       smith_v1.ResourceName(objectName),
-			References: dependencyReferences,
-			Spec: smith_v1.ResourceSpec{
-				Plugin: &smith_v1.PluginSpec{
-					Name:       secretEnvVarPluginTypeName,
-					ObjectName: objectName,
-					Spec:       secretEnvVarPluginSpec,
-				},
+	instanceResource := smith_v1.Resource{
+		Name:       smith_v1.ResourceName(objectName),
+		References: dependencyReferences,
+		Spec: smith_v1.ResourceSpec{
+			Plugin: &smith_v1.PluginSpec{
+				Name:       secretEnvVarPluginTypeName,
+				ObjectName: objectName,
+				Spec:       secretEnvVarPluginSpec,
 			},
 		},
 	}
@@ -133,7 +131,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		return nil, false, err
 	}
 
-	var bindingResources []wiringplugin.WiredSmithResource
+	var bindingResources []smith_v1.Resource
 	var references []smith_v1.Reference
 
 	for _, dependency := range dependencies {
@@ -149,7 +147,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	dependencyReferences := make([]smith_v1.Reference, 0, len(bindingResources))
 	for _, res := range bindingResources {
 		dependencyReferences = append(dependencyReferences, smith_v1.Reference{
-			Resource: res.SmithResource.Name,
+			Resource: res.Name,
 		})
 	}
 
@@ -172,7 +170,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		}
 		parametersFrom = append(parametersFrom, ref)
 		references = append(references, smith_v1.Reference{
-			Resource: secretEnvVarsResource.SmithResource.Name,
+			Resource: secretEnvVarsResource.Name,
 		})
 		bindingResources = append(bindingResources, secretEnvVarsResource)
 	}
@@ -186,18 +184,18 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		return nil, false, err
 	}
 
-	iamPluginBindingSmithResource := iam.ServiceBinding(stateResource.Name, iamPluginInstanceSmithResource.SmithResource.Name)
+	iamPluginBindingSmithResource := iam.ServiceBinding(stateResource.Name, iamPluginInstanceSmithResource.Name)
 
 	iamRoleRef := smith_v1.Reference{
-		Name:     wiringutil.ReferenceName(iamPluginBindingSmithResource.SmithResource.Name, bindingOutputRoleARNKey),
-		Resource: iamPluginBindingSmithResource.SmithResource.Name,
+		Name:     wiringutil.ReferenceName(iamPluginBindingSmithResource.Name, bindingOutputRoleARNKey),
+		Resource: iamPluginBindingSmithResource.Name,
 		Path:     fmt.Sprintf("data.%s", bindingOutputRoleARNKey),
 		Example:  "arn:aws:iam::123456789012:role/path/role",
 		Modifier: smith_v1.ReferenceModifierBindSecret,
 	}
 	iamInstProfRef := smith_v1.Reference{
-		Name:     wiringutil.ReferenceName(iamPluginBindingSmithResource.SmithResource.Name, bindingOutputInstanceProfileARNKey),
-		Resource: iamPluginBindingSmithResource.SmithResource.Name,
+		Name:     wiringutil.ReferenceName(iamPluginBindingSmithResource.Name, bindingOutputInstanceProfileARNKey),
+		Resource: iamPluginBindingSmithResource.Name,
 		Path:     fmt.Sprintf("data.%s", bindingOutputInstanceProfileARNKey),
 		Example:  "arn:aws:iam::123456789012:instance-profile/path/Webserver",
 		Modifier: smith_v1.ReferenceModifierBindSecret,
@@ -208,27 +206,25 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	if err != nil {
 		return nil, false, err
 	}
-	computeResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name:       wiringutil.ServiceInstanceResourceName(stateResource.Name),
-			References: references,
-			Spec: smith_v1.ResourceSpec{
-				Object: &sc_v1b1.ServiceInstance{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       "ServiceInstance",
-						APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+	computeResource := smith_v1.Resource{
+		Name:       wiringutil.ServiceInstanceResourceName(stateResource.Name),
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: &sc_v1b1.ServiceInstance{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       "ServiceInstance",
+					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.ServiceInstanceMetaName(stateResource.Name),
+				},
+				Spec: sc_v1b1.ServiceInstanceSpec{
+					PlanReference: sc_v1b1.PlanReference{
+						ClusterServiceClassExternalName: ec2ComputeServiceName,
+						ClusterServicePlanExternalName:  ec2ComputePlanName,
 					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.ServiceInstanceMetaName(stateResource.Name),
-					},
-					Spec: sc_v1b1.ServiceInstanceSpec{
-						PlanReference: sc_v1b1.PlanReference{
-							ClusterServiceClassExternalName: ec2ComputeServiceName,
-							ClusterServicePlanExternalName:  ec2ComputePlanName,
-						},
-						Parameters:     serviceInstanceSpec,
-						ParametersFrom: parametersFrom,
-					},
+					Parameters:     serviceInstanceSpec,
+					ParametersFrom: parametersFrom,
 				},
 			},
 		},
