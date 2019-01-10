@@ -7,6 +7,7 @@ import (
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
+	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -27,6 +28,17 @@ type WiringContext struct {
 	StateContext StateContext
 	Dependencies []WiredDependency
 	Dependants   []DependantResource
+}
+
+func (c *WiringContext) TheOnlyDependency() (*WiredDependency, error) {
+	switch len(c.Dependencies) {
+	case 0:
+		return nil, errors.New("must depend on a single resource, but none was found")
+	case 1:
+		return &c.Dependencies[0], nil
+	default:
+		return nil, errors.Errorf("must depend on a single resource, but multiple were found")
+	}
 }
 
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.

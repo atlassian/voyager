@@ -10,12 +10,10 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/pkg/errors"
-	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,16 +51,13 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	deploymentSpec, err := extractKubeComputeDependency(context.Dependencies)
+	deploymentResourceName, deploymentLabels, err := extractKubeComputeDetails(context)
 	if err != nil {
 		return nil, false, err
 	}
 
-	deploymentName := deploymentSpec.Name
-	deploymentLabels := deploymentSpec.Spec.Template.ObjectMeta.Labels
-
 	// Build the Service
-	serviceResource := buildServiceResource(smith_v1.ResourceName(deploymentName), deploymentLabels, resource.Name)
+	serviceResource := buildServiceResource(deploymentResourceName, deploymentLabels, resource.Name)
 
 	// Build the Ingress
 	ingressResource, err := buildIngressResource(serviceResource.SmithResource.Name, resource, context)
@@ -264,50 +259,24 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractSingleDependencyOfType(dependencies []wiringplugin.WiredDependency, resourceType voyager.ResourceType) (*wiringplugin.WiredDependency, error) {
-	var matchedDependency *wiringplugin.WiredDependency
-	for x, dependency := range dependencies {
-		if dependency.Type == resourceType {
-			if matchedDependency != nil {
-				return nil, errors.Errorf("must depend on a single %s resource, but multiple were found", resourceType)
-			}
-			matchedDependency = &dependencies[x]
-		}
-	}
-
-	if matchedDependency == nil {
-		return nil, errors.Errorf("must depend on a single %s resource, but none were found", resourceType)
-	}
-
-	return matchedDependency, nil
-}
-
-func extractKubeComputeDependency(dependencies []wiringplugin.WiredDependency) (*apps_v1.Deployment, error) {
+func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, map[string]string, error) {
 	// Require exactly one KubeCompute dependency
-	kubeComputeDependency, err := extractSingleDependencyOfType(dependencies, apik8scompute.ResourceType)
+	kubeComputeDependency, err := context.TheOnlyDependency()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	// Extract the deployment created by the KubeCompute dependency
-	var deploymentResource *smith_v1.Resource
-	for x, res := range kubeComputeDependency.SmithResources {
-		// TODO: Better way of identifying the correct deployment
-		// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
-		if res.Spec.Object.GetObjectKind().GroupVersionKind() == k8s.DeploymentGVK {
-			deploymentResource = &kubeComputeDependency.SmithResources[x]
-			break
-		}
+	// Find labels attached to deployment object
+	// TODO: Better way of identifying the correct deployment
+	// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
+	shape, found := kubeComputeDependency.Contract.FindShape(knownshapes.SetOfPodsSelectableByLabelsShape)
+	if !found {
+		return "", nil, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfPodsSelectableByLabelsShape, kubeComputeDependency.Name)
 	}
 
-	if deploymentResource == nil {
-		return nil, errors.New("failed to locate Kubernetes Deployment from KubeCompute dependency")
-	}
-
-	deploymentSpec, ok := deploymentResource.Spec.Object.(*apps_v1.Deployment)
+	setOfPodsSelectableByLabelsShape, ok := shape.(*knownshapes.SetOfPodsSelectableByLabels)
 	if !ok {
-		return nil, errors.New("cannot cast Deployment to expected spec type")
+		return "", nil, errors.Errorf("cannot cast shape %q to expected type", shape.Name())
 	}
-
-	return deploymentSpec, nil
+	return setOfPodsSelectableByLabelsShape.Data.DeploymentResourceName, setOfPodsSelectableByLabelsShape.Data.Labels, nil
 }
