@@ -259,18 +259,12 @@ func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.Re
 	if err != nil {
 		return "", nil, err
 	}
-
-	// Find labels attached to deployment object
-	// TODO: Better way of identifying the correct deployment
-	// Because this could break if KubeCompute ever e.g. does Blue/Green deployments
-	shape, found := kubeComputeDependency.Contract.FindShape(knownshapes.SetOfPodsSelectableByLabelsShape)
+	setOfPodsSelectableByLabelsShape, found, err := knownshapes.FindSetOfPodsSelectableByLabelsShape(kubeComputeDependency.Contract.Shapes)
+	if err != nil {
+		return "", nil, err
+	}
 	if !found {
 		return "", nil, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfPodsSelectableByLabelsShape, kubeComputeDependency.Name)
-	}
-
-	setOfPodsSelectableByLabelsShape, ok := shape.(*knownshapes.SetOfPodsSelectableByLabels)
-	if !ok {
-		return "", nil, errors.Errorf("cannot cast shape %q to expected type", shape.Name())
 	}
 	return setOfPodsSelectableByLabelsShape.Data.DeploymentResourceName, setOfPodsSelectableByLabelsShape.Data.Labels, nil
 }

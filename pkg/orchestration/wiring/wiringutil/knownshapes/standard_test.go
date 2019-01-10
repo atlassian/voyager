@@ -15,6 +15,9 @@ const (
 var (
 	_ wiringplugin.Shape = &BindableEnvironmentVariables{}
 	_ wiringplugin.Shape = &BindableIamAccessible{}
+	_ wiringplugin.Shape = &IngressEndpoint{}
+	_ wiringplugin.Shape = &SetOfPodsSelectableByLabels{}
+	_ wiringplugin.Shape = &SnsSubscribable{}
 )
 
 func TestAllKnownShapes(t *testing.T) {
@@ -22,8 +25,10 @@ func TestAllKnownShapes(t *testing.T) {
 
 	allKnownShapes := []wiringplugin.Shape{
 		NewBindableEnvironmentVariables(resourceName),
-		NewSnsSubscribable(resourceName),
 		NewBindableIamAccessible(resourceName, "somePath"),
+		NewIngressEndpoint(resourceName),
+		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
+		NewSnsSubscribable(resourceName),
 	}
 
 	for _, shape := range allKnownShapes {

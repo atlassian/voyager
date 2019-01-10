@@ -41,3 +41,15 @@ func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *Bindab
 func (b *BindableEnvironmentVariables) Name() wiringplugin.ShapeName {
 	return b.ShapeMeta.ShapeName
 }
+
+func FindBindableEnvironmentVariablesShape(shapes []wiringplugin.Shape) (*BindableEnvironmentVariables, bool /*found*/, error) {
+	typed := &BindableEnvironmentVariables{}
+	found, err := FindAndCopyShapeByName(shapes, BindableEnvironmentVariablesShape, typed)
+	if err != nil {
+		return nil, false, err
+	}
+	if found {
+		return typed, true, nil
+	}
+	return nil, false, nil
+}

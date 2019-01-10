@@ -8,6 +8,7 @@ go_library(
         "ingress_endpoint.go",
         "set_of_pods_selectable_by_labels.go",
         "sns_subscribable.go",
+        "util.go",
         "zz_generated.deepcopy.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
@@ -15,6 +16,7 @@ go_library(
     deps = [
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
     ],
 )
 

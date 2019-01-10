@@ -119,11 +119,14 @@ func getReferences(resource *orch_v1.StateResource, context *wiringplugin.Wiring
 	if err != nil {
 		return nil, err
 	}
-	shape, found := ingressDependency.Contract.FindShape(knownshapes.IngressEndpointShape)
+	ingressShape, found, err := knownshapes.FindIngressEndpointShape(ingressDependency.Contract.Shapes)
+	if err != nil {
+		return nil, err
+	}
 	if !found {
 		return nil, errors.Errorf("shape %q is required to create ServiceBinding for %q but was not found", knownshapes.IngressEndpointShape, ingressDependency.Name)
 	}
-	ingressEndpoint := shape.(*knownshapes.IngressEndpoint).Data.IngressEndpoint
+	ingressEndpoint := ingressShape.Data.IngressEndpoint
 	referenceName := wiringutil.ReferenceName(ingressEndpoint.Resource, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
 	references = append(references, ingressEndpoint.ToReference(referenceName))
 	return references, nil
