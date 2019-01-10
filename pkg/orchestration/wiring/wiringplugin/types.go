@@ -142,16 +142,6 @@ type ResourceContract struct {
 	Shapes []Shape `json:"shapes,omitempty"`
 }
 
-func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found */) {
-	for _, shape := range c.Shapes {
-		if shape.Name() == shapeName {
-			return shape, true
-		}
-	}
-
-	return nil, false
-}
-
 type WiringResult struct {
 	Contract  ResourceContract
 	Resources []smith_v1.Resource

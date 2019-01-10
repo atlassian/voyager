@@ -135,12 +135,15 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	var references []smith_v1.Reference
 
 	for _, dependency := range dependencies {
-		bindableShape, found := dependency.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape)
+		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dependency.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
 		if !found {
 			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dependency.Name, dependency.Type, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
-		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
+		resourceReference := bindableShape.Data.ServiceInstanceName
 		bindingResources = append(bindingResources, wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference))
 	}
 

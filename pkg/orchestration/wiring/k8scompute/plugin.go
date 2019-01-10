@@ -132,12 +132,15 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		bindableShape, found := dep.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape)
+		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
 		if !found {
 			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dep.Name, dep.Type, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
-		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
+		resourceReference := bindableShape.Data.ServiceInstanceName
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
 		bindingResources = append(bindingResources, binding)

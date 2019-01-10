@@ -64,11 +64,11 @@ func CopyShape(source, target Shape) error {
 		// Convert by round-tripping to and from JSON
 		data, err := json.Marshal(source)
 		if err != nil {
-			return errors.WithStack(err)
+			return errors.Wrap(err, "failed to marshal source shape")
 		}
 		err = json.Unmarshal(data, target)
 		if err != nil {
-			return errors.WithStack(err)
+			return errors.Wrap(err, "failed to unmarshal JSON into target shape")
 		}
 	}
 	return nil
