@@ -108,7 +108,7 @@ spec:
             apiVersion: apps/v1
             kind: Deployment
             name: '!{kubecompute-simple-metadata-name}'
-  - name: ingress-service
+  - name: ingress--service
     references:
     - resource: kubecompute-simple
     spec:
@@ -116,7 +116,7 @@ spec:
         apiVersion: v1
         kind: Service
         metadata:
-          name: ingress-service
+          name: ingress--service
         spec:
           ports:
           - name: http
@@ -128,25 +128,25 @@ spec:
             stateName: state1
           sessionAffinity: None
           type: ClusterIP
-  - name: ingress-ingress
+  - name: ingress
     references:
-    - resource: ingress-service
+    - resource: ingress--service
     spec:
       object:
         apiVersion: extensions/v1beta1
         kind: Ingress
         metadata:
           annotations:
-            contour.heptio.com/request-timeout: 120s
+            contour.heptio.com/request-timeout: 60s
             voyager.atl-paas.net/ingressType: private
-          name: ingress-ingress
+          name: ingress
         spec:
           rules:
           - host: test-servicename--ingress--branch.testregion.testenv.k8s.atl-paas.net
             http:
               paths:
               - backend:
-                  serviceName: ingress-service
+                  serviceName: ingress--service
                   servicePort: 8080
                 path: /
 status: {}

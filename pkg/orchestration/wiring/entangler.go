@@ -9,7 +9,6 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
-	yaml "github.com/ghodss/yaml"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +27,8 @@ const (
 	// tags in the configmap because it's at the same level as legacyConfig
 	// (i.e. want to make it obvious they should be removed at the same time).
 	legacyEnvironmentTagName = "environment"
+
+	wiringResourcesDirectlyIsDeprecatedMsg = "wiring dependencies as SmithResources is deprecated, use ResourceContracts instead"
 )
 
 // EntanglerContext contains information that is required by autowiring.
@@ -39,8 +40,7 @@ type EntanglerContext struct {
 	// Label
 	Label voyager.Label
 
-	// Config is the configuration pulled from the ConfigMap
-	Config map[string]string
+	ServiceProperties orch_meta.ServiceProperties
 }
 
 type TagNames struct {
@@ -63,20 +63,6 @@ type wiredStateResource struct {
 	Name         voyager.ResourceName
 	Type         voyager.ResourceType
 	WiringResult wiringplugin.WiringResult
-}
-
-func parseConfigMap(data map[string]string) (*orch_meta.ServiceProperties, error) {
-	serviceProperties := orch_meta.ServiceProperties{}
-	configMapConfigData, ok := data[orch_meta.ConfigMapConfigKey]
-	if !ok {
-		return nil, errors.Errorf("ConfigMap does not contain expected field %q", orch_meta.ConfigMapConfigKey)
-	}
-	err := yaml.Unmarshal([]byte(configMapConfigData), &serviceProperties)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return &serviceProperties, nil
 }
 
 func (en *Entangler) Entangle(state *orch_v1.State, context *EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error) {
@@ -107,19 +93,14 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntanglerContext) (
 		return nil, false, errors.Errorf("no legacy config for %s", location)
 	}
 
-	serviceProperties, err := parseConfigMap(context.Config)
-	if err != nil {
-		return nil, false, err
-	}
-
 	tags := make(map[voyager.Tag]string)
-	for tag, val := range serviceProperties.UserTags {
+	for tag, val := range context.ServiceProperties.UserTags {
 		tags[tag] = val
 	}
 
 	tags[en.TagNames.ServiceNameTag] = string(context.ServiceName)
-	tags[en.TagNames.BusinessUnitTag] = serviceProperties.BusinessUnit
-	tags[en.TagNames.ResourceOwnerTag] = serviceProperties.ResourceOwner
+	tags[en.TagNames.BusinessUnitTag] = context.ServiceProperties.BusinessUnit
+	tags[en.TagNames.ResourceOwnerTag] = context.ServiceProperties.ResourceOwner
 	tags[en.TagNames.EnvironmentTypeTag] = string(location.EnvType)
 	tags[en.TagNames.PlatformTag] = "voyager"
 	tags[legacyEnvironmentTagName] = legacyConfig.MicrosEnv
@@ -129,7 +110,7 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntanglerContext) (
 		ClusterConfig:     en.ClusterConfig,
 		LegacyConfig:      *legacyConfig,
 		ServiceName:       context.ServiceName,
-		ServiceProperties: *serviceProperties,
+		ServiceProperties: context.ServiceProperties,
 		Tags:              tags,
 	}
 
@@ -234,18 +215,11 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 			// the topological sort.
 			return false, errors.Errorf("resource %q of type %q has a dependency that has not been wired yet: %q", resource.Name, resource.Type, dep)
 		}
-		exposedResources := make([]smith_v1.Resource, 0, len(res.WiringResult.Resources)) // optimistic allocation
-		for _, wiredResource := range res.WiringResult.Resources {
-			if wiredResource.Exposed {
-				exposedResources = append(exposedResources, wiredResource.SmithResource)
-			}
-		}
 		deps = append(deps, wiringplugin.WiredDependency{
-			Name:           res.Name,
-			Type:           res.Type,
-			Contract:       res.WiringResult.Contract,
-			SmithResources: exposedResources,
-			Attributes:     dep.Attributes,
+			Name:       res.Name,
+			Type:       res.Type,
+			Contract:   res.WiringResult.Contract,
+			Attributes: dep.Attributes,
 		})
 	}
 	wiringContext := &wiringplugin.WiringContext{
@@ -267,7 +241,7 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		WiringResult: *result,
 	}
 	for _, wiredResource := range result.Resources {
-		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource.SmithResource)
+		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource)
 	}
 	return false, nil
 }

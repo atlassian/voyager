@@ -14,6 +14,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -126,30 +127,20 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 	// Prepare environment variables
 	var envFrom []core_v1.EnvFromSource
-	var smithResources []wiringplugin.WiredSmithResource
-	var bindingResources []wiringplugin.WiredSmithResource
+	var smithResources []smith_v1.Resource
+	var bindingResources []smith_v1.Resource
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		found := false
-		for _, dependencyObj := range dep.SmithResources {
-			if dependencyObj.Spec.Object == nil {
-				// TODO support plugins
-				continue
-			}
-			dependencyObjGVK := dependencyObj.Spec.Object.GetObjectKind().GroupVersionKind()
-			switch dependencyObjGVK.GroupKind() {
-			case instanceGK:
-				found = true
-				// We don't want anything that depends on compute to see our bindings - exposed: false
-				binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, dependencyObj.Name, false)
-				smithResources = append(smithResources, binding)
-				bindingResources = append(bindingResources, binding)
-			}
-		}
+		bindableShape, found := dep.Contract.FindShape(knownshapes.BindableEnvironmentVariablesShape)
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q of type %q. Only ServiceInstance type is supported", dep.Name, dep.Type)
+			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dep.Name, dep.Type, knownshapes.BindableEnvironmentVariablesShape)
 		}
+
+		resourceReference := bindableShape.(*knownshapes.BindableEnvironmentVariables).Data.ServiceInstanceName
+		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
+		smithResources = append(smithResources, binding)
+		bindingResources = append(bindingResources, binding)
 	}
 
 	var iamRoleRef *smith_v1.Reference
@@ -159,7 +150,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		bindingReferences := make([]smith_v1.Reference, 0, len(bindingResources))
 		for _, res := range bindingResources {
 			bindingReferences = append(bindingReferences, smith_v1.Reference{
-				Resource: res.SmithResource.Name,
+				Resource: res.Name,
 			})
 		}
 
@@ -168,8 +159,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, err
 		}
 		secretEnvVarRef := smith_v1.Reference{
-			Name:     wiringutil.ReferenceName(secretEnvVarsResource.SmithResource.Name, metadataElement, nameElement),
-			Resource: secretEnvVarsResource.SmithResource.Name,
+			Name:     wiringutil.ReferenceName(secretEnvVarsResource.Name, metadataElement, nameElement),
+			Resource: secretEnvVarsResource.Name,
 			Path:     metadataNamePath,
 		}
 		falseObj := false
@@ -191,11 +182,11 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, err
 		}
 
-		iamPluginBindingSmithResource := iam.ServiceBinding(resource.Name, iamPluginInstanceSmithResource.SmithResource.Name)
+		iamPluginBindingSmithResource := iam.ServiceBinding(resource.Name, iamPluginInstanceSmithResource.Name)
 
 		iamRoleRef = &smith_v1.Reference{
-			Name:     wiringutil.ReferenceName(iamPluginBindingSmithResource.SmithResource.Name, bindingOutputRoleARNKey),
-			Resource: iamPluginBindingSmithResource.SmithResource.Name,
+			Name:     wiringutil.ReferenceName(iamPluginBindingSmithResource.Name, bindingOutputRoleARNKey),
+			Resource: iamPluginBindingSmithResource.Name,
 			Path:     fmt.Sprintf("data.%s", bindingOutputRoleARNKey),
 			Example:  "arn:aws:iam::123456789012:role/path/role",
 			Modifier: smith_v1.ReferenceModifierBindSecret,
@@ -204,28 +195,26 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, iamPluginInstanceSmithResource, iamPluginBindingSmithResource)
 	}
 
-	serviceAccountResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name: wiringutil.ResourceNameWithPostfix(resource.Name, serviceAccountPostFix),
-			Spec: smith_v1.ResourceSpec{
-				Object: &core_v1.ServiceAccount{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       k8s.ServiceAccountKind,
-						APIVersion: core_v1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.MetaNameWithPostfix(resource.Name, serviceAccountPostFix),
-					},
-					ImagePullSecrets: []core_v1.LocalObjectReference{{Name: apik8scompute.DockerImagePullName}},
+	serviceAccountResource := smith_v1.Resource{
+		Name: wiringutil.ResourceNameWithPostfix(resource.Name, serviceAccountPostFix),
+		Spec: smith_v1.ResourceSpec{
+			Object: &core_v1.ServiceAccount{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.ServiceAccountKind,
+					APIVersion: core_v1.SchemeGroupVersion.String(),
 				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaNameWithPostfix(resource.Name, serviceAccountPostFix),
+				},
+				ImagePullSecrets: []core_v1.LocalObjectReference{{Name: apik8scompute.DockerImagePullName}},
 			},
 		},
 	}
 	smithResources = append(smithResources, serviceAccountResource)
 
 	serviceAccountNameRef := smith_v1.Reference{
-		Name:     wiringutil.ReferenceName(serviceAccountResource.SmithResource.Name, metadataElement, nameElement),
-		Resource: serviceAccountResource.SmithResource.Name,
+		Name:     wiringutil.ReferenceName(serviceAccountResource.Name, metadataElement, nameElement),
+		Resource: serviceAccountResource.Name,
 		Path:     metadataNamePath,
 	}
 	references = append(references, serviceAccountNameRef)
@@ -264,22 +253,19 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
 
 	// The final wired deployment object
-	deployment := wiringplugin.WiredSmithResource{
-		Exposed: true,
-		SmithResource: smith_v1.Resource{
-			Name:       wiringutil.ResourceName(resource.Name),
-			References: references,
-			Spec: smith_v1.ResourceSpec{
-				Object: &apps_v1.Deployment{
-					TypeMeta: meta_v1.TypeMeta{
-						Kind:       k8s.DeploymentKind,
-						APIVersion: apps_v1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.MetaName(resource.Name),
-					},
-					Spec: deploymentSpec,
+	deployment := smith_v1.Resource{
+		Name:       wiringutil.ResourceName(resource.Name),
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: &apps_v1.Deployment{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.DeploymentKind,
+					APIVersion: apps_v1.SchemeGroupVersion.String(),
 				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaName(resource.Name),
+				},
+				Spec: deploymentSpec,
 			},
 		},
 	}
@@ -287,8 +273,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	smithResources = append(smithResources, deployment)
 
 	deploymentNameRef := smith_v1.Reference{
-		Name:     wiringutil.ReferenceName(deployment.SmithResource.Name, metadataElement, nameElement),
-		Resource: deployment.SmithResource.Name,
+		Name:     wiringutil.ReferenceName(deployment.Name, metadataElement, nameElement),
+		Resource: deployment.Name,
 		Path:     metadataNamePath,
 	}
 
@@ -297,22 +283,19 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		hpaSpec := buildHorizontalPodAutoscalerSpec(spec, deploymentNameRef.Ref())
 
 		// The final wired HPA object
-		hpa := wiringplugin.WiredSmithResource{
-			Exposed: true,
-			SmithResource: smith_v1.Resource{
-				Name:       wiringutil.ResourceNameWithPostfix(resource.Name, hpaPostfix),
-				References: []smith_v1.Reference{deploymentNameRef},
-				Spec: smith_v1.ResourceSpec{
-					Object: &autoscaling_v2b1.HorizontalPodAutoscaler{
-						TypeMeta: meta_v1.TypeMeta{
-							Kind:       k8s.HorizontalPodAutoscalerKind,
-							APIVersion: autoscaling_v2b1.SchemeGroupVersion.String(),
-						},
-						ObjectMeta: meta_v1.ObjectMeta{
-							Name: wiringutil.MetaNameWithPostfix(resource.Name, hpaPostfix),
-						},
-						Spec: hpaSpec,
+		hpa := smith_v1.Resource{
+			Name:       wiringutil.ResourceNameWithPostfix(resource.Name, hpaPostfix),
+			References: []smith_v1.Reference{deploymentNameRef},
+			Spec: smith_v1.ResourceSpec{
+				Object: &autoscaling_v2b1.HorizontalPodAutoscaler{
+					TypeMeta: meta_v1.TypeMeta{
+						Kind:       k8s.HorizontalPodAutoscalerKind,
+						APIVersion: autoscaling_v2b1.SchemeGroupVersion.String(),
 					},
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name: wiringutil.MetaNameWithPostfix(resource.Name, hpaPostfix),
+					},
+					Spec: hpaSpec,
 				},
 			},
 		}
@@ -321,36 +304,38 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 
 	result := &wiringplugin.WiringResult{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{
+				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),
+			},
+		},
 		Resources: smithResources,
 	}
 
 	return result, false, nil
 }
 
-func generateSecretEnvVarsResource(compute voyager.ResourceName, spec *Spec, dependencyReferences []smith_v1.Reference) (wiringplugin.WiredSmithResource, error) {
+func generateSecretEnvVarsResource(compute voyager.ResourceName, spec *Spec, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
 	secretEnvVarPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretenvvar.PodSpec{
 		IgnoreKeyRegex: envVarIgnoreRegex,
 		RenameEnvVar:   spec.RenameEnvVar,
 	})
 	if err != nil {
-		return wiringplugin.WiredSmithResource{}, err
+		return smith_v1.Resource{}, err
 	}
 
 	// We use objectName for both the smith resource name and the kubernetes metadata name,
 	// since there's only one of these per state resource (no possibility of clash).
-	instanceResource := wiringplugin.WiredSmithResource{
-		SmithResource: smith_v1.Resource{
-			Name:       wiringutil.ResourceNameWithPostfix(compute, podSecretEnvVarNamePostfix),
-			References: dependencyReferences,
-			Spec: smith_v1.ResourceSpec{
-				Plugin: &smith_v1.PluginSpec{
-					Name:       podSecretEnvVarPluginTypeName,
-					ObjectName: wiringutil.MetaNameWithPostfix(compute, podSecretEnvVarNamePostfix),
-					Spec:       secretEnvVarPluginSpec,
-				},
+	instanceResource := smith_v1.Resource{
+		Name:       wiringutil.ResourceNameWithPostfix(compute, podSecretEnvVarNamePostfix),
+		References: dependencyReferences,
+		Spec: smith_v1.ResourceSpec{
+			Plugin: &smith_v1.PluginSpec{
+				Name:       podSecretEnvVarPluginTypeName,
+				ObjectName: wiringutil.MetaNameWithPostfix(compute, podSecretEnvVarNamePostfix),
+				Spec:       secretEnvVarPluginSpec,
 			},
 		},
-		Exposed: false,
 	}
 
 	return instanceResource, nil

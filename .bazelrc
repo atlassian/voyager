@@ -10,7 +10,15 @@ build:ci --verbose_failures
 build:ci --curses=no
 build:ci --experimental_sandbox_base=/dev/shm
 
+# Pass -test.v to each test binary to print the test names
+test:ci --test_arg="-test.v"
 test:ci --test_output=all
 test:ci --test_verbose_timeout_warnings
+
+# NOTE: This is a noop flag to 'bazel query'. We don't have any actual flags we
+# need to pass to it, but we still want it to work with --config=ci (like all
+# the other bazel subcommands we use) so we have to choose some innocuous flag
+# for it accept - until we have some meaningful flags we want it to be given.
+query:ci --color=auto
 
 try-import user.bazelrc

@@ -7,6 +7,7 @@ import (
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
+	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -29,13 +30,22 @@ type WiringContext struct {
 	Dependants   []DependantResource
 }
 
+func (c *WiringContext) TheOnlyDependency() (*WiredDependency, error) {
+	switch len(c.Dependencies) {
+	case 0:
+		return nil, errors.New("must depend on a single resource, but none was found")
+	case 1:
+		return &c.Dependencies[0], nil
+	default:
+		return nil, errors.Errorf("must depend on a single resource, but multiple were found")
+	}
+}
+
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.
 type WiredDependency struct {
 	Name     voyager.ResourceName
 	Type     voyager.ResourceType
 	Contract ResourceContract
-	// DEPRECATED: use Contract
-	SmithResources []smith_v1.Resource
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}
 }
@@ -49,9 +59,6 @@ type DependantResource struct {
 	Resource   orch_v1.StateResource
 }
 
-// ProtoReferenceName is the name of a proto reference.
-type ProtoReferenceName string
-
 // ProtoReference represents bits of information that need to be augmented with more information to
 // construct a valid Smith reference.
 // +k8s:deepcopy-gen=true
@@ -62,6 +69,18 @@ type ProtoReference struct {
 	Modifier string                `json:"modifier,omitempty"`
 }
 
+// ToReference should be used to augment ProtoReference with missing information to
+// get a full Reference.
+func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: r.Resource,
+		Path:     r.Path,
+		Example:  r.Example,
+		Modifier: r.Modifier,
+	}
+}
+
 // DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
 // since it doesn't know it's JSON).
 func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
@@ -69,40 +88,73 @@ func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
 	out.Example = runtime.DeepCopyJSONValue(r.Example)
 }
 
-// NamedProtoReference is a ProtoReference that has a name.
-// That name is typically used to find the needed proto reference in a list/map.
-type NamedProtoReference struct {
-	Name           ProtoReferenceName `json:"name"`
-	ProtoReference `json:",inline"`
+// BindingProtoReference is a reference to the ServiceBinding's contents.
+// +k8s:deepcopy-gen=true
+type BindingProtoReference struct {
+	Path    string      `json:"path,omitempty"`
+	Example interface{} `json:"example,omitempty"`
+}
+
+func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
+	*out = *r
+	out.Example = runtime.DeepCopyJSONValue(r.Example)
+}
+
+// ToReference should be used to augment BindingProtoReference with missing information to
+// get a full Reference.
+func (r *BindingProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: bindingResourceName,
+		Path:     r.Path,
+		Example:  r.Example,
+	}
+}
+
+// BindingProtoReference is a reference to the ServiceBinding's Secret's contents.
+// +k8s:deepcopy-gen=true
+type BindingSecretProtoReference struct {
+	Path    string      `json:"path,omitempty"`
+	Example interface{} `json:"example,omitempty"`
+}
+
+func (r *BindingSecretProtoReference) DeepCopyInto(out *BindingSecretProtoReference) {
+	*out = *r
+	out.Example = runtime.DeepCopyJSONValue(r.Example)
+}
+
+// ToReference should be used to augment BindingSecretProtoReference with missing information to
+// get a full Reference.
+func (r *BindingSecretProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
+	return smith_v1.Reference{
+		Name:     name,
+		Resource: bindingResourceName,
+		Path:     r.Path,
+		Example:  r.Example,
+		Modifier: smith_v1.ReferenceModifierBindSecret,
+	}
 }
 
 // ResourceContract contains information about a resource for consumption by other autowiring functions.
 // It is the API of a resource that can be depended upon and hence should not change unexpectedly without
 // a proper migration path to a new version.
 type ResourceContract struct {
-	Shapes []Shape               `json:"shapes,omitempty"`
-	Refs   []NamedProtoReference `json:"refs,omitempty"`
-	Data   []DataItem            `json:"data,omitempty"`
+	Shapes []Shape `json:"shapes,omitempty"`
 }
 
-// DataItem is a named bit of data made available by an autowiring function.
-type DataItem struct {
-	Name string
-	// Data is the data for this item.
-	// Only contains types produced by json.Unmarshal() and also int64:
-	// bool, int64, float64, string, []interface{}, map[string]interface{}, json.Number and nil
-	Data interface{}
+func (c *ResourceContract) FindShape(shapeName ShapeName) (Shape, bool /* found */) {
+	for _, shape := range c.Shapes {
+		if shape.Name() == shapeName {
+			return shape, true
+		}
+	}
+
+	return nil, false
 }
 
 type WiringResult struct {
 	Contract  ResourceContract
-	Resources []WiredSmithResource
-}
-
-type WiredSmithResource struct {
-	SmithResource smith_v1.Resource
-	// DEPRECATED: use Shapes, Refs and/or Data in ResourceContract to expose information
-	Exposed bool
+	Resources []smith_v1.Resource
 }
 
 // StateContext is used as input for the plugins. Everything in the StateContext

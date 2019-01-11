@@ -46,6 +46,22 @@ func ResourceName(resourceSpec *runtime.RawExtension) (string, error) {
 	return spec.ResourceName, nil
 }
 
+func TemplateName(resourceSpec *runtime.RawExtension) (string, error) {
+	attributes, err := FilterAttributes(resourceSpec)
+	if err != nil {
+		return "", err
+	}
+	templateAttribute, ok := attributes["template"]
+	if !ok {
+		return "", errors.Errorf("attribute template not found in the spec")
+	}
+	templateName, ok := templateAttribute.(string)
+	if !ok {
+		return "", errors.Errorf("attribute template must be string")
+	}
+	return templateName, nil
+}
+
 func Alarms(resourceSpec *runtime.RawExtension) (json.RawMessage, error) {
 	if resourceSpec == nil {
 		return nil, nil
