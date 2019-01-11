@@ -76,7 +76,6 @@ func buildServiceDescriptor(name string, location voyager.Location, version stri
 					},
 				},
 			},
-			Version: version,
 		},
 	}, nil
 }
