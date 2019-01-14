@@ -528,7 +528,7 @@ func buildAntiAffinity(resourceName voyager.ResourceName) *core_v1.PodAntiAffini
 				LabelSelector: &meta_v1.LabelSelector{
 					MatchExpressions: matchExpressions,
 				},
-				TopologyKey: "failure-domain.beta.kubernetes.io/zone",
+				TopologyKey: k8s.LabelZoneFailureDomain,
 			},
 		},
 		core_v1.WeightedPodAffinityTerm{
@@ -537,7 +537,7 @@ func buildAntiAffinity(resourceName voyager.ResourceName) *core_v1.PodAntiAffini
 				LabelSelector: &meta_v1.LabelSelector{
 					MatchExpressions: matchExpressions,
 				},
-				TopologyKey: "kubernetes.io/hostname",
+				TopologyKey: k8s.LabelHostname,
 			},
 		},
 	}
