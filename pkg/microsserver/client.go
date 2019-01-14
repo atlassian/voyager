@@ -1,23 +1,24 @@
 package microsserver
 
 import (
-	"bitbucket.org/atlassianlabs/restclient"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+
+	"bitbucket.org/atlassianlabs/restclient"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	"github.com/atlassian/voyager/pkg/util/httputil"
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 )
 
 const (
-	noUser         = ""
+	noUser       = ""
 	asapAudience = "micros-server"
 )
 
