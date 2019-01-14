@@ -2,6 +2,7 @@ package svccatadmission
 
 import (
 	"context"
+	"github.com/atlassian/voyager/pkg/microsserver"
 	"net/http"
 	"net/url"
 
@@ -21,6 +22,7 @@ type SvcCatAdmission struct {
 	HTTPClient        *http.Client
 	ServiceCentralURL *url.URL
 	RPSURL            *url.URL
+	MicrosServerURL   *url.URL
 	ASAPClientConfig  pkiutil.ASAP
 }
 
@@ -30,6 +32,9 @@ func (s *SvcCatAdmission) SetupAdmissionWebhooks(r *chi.Mux) {
 
 	rpsHTTPClient := util.HTTPClient()
 	rpsCache := rps.NewRPSCache(s.Logger, rps.NewRPSClient(s.Logger, rpsHTTPClient, s.ASAPClientConfig, s.RPSURL))
+
+	microsServerHTTPClient := util.HTTPClient()
+	microsServerClient := microsserver.NewMicrosServerClient(s.Logger, microsServerHTTPClient, s.ASAPClientConfig, s.MicrosServerURL)
 
 	r.Post("/externalid", admission.AdmitFuncHandlerFunc("externalid",
 		func(ctx context.Context, logger *zap.Logger, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
@@ -42,5 +47,9 @@ func (s *SvcCatAdmission) SetupAdmissionWebhooks(r *chi.Mux) {
 	r.Post("/asapkey", admission.AdmitFuncHandlerFunc("asapkey",
 		func(ctx context.Context, logger *zap.Logger, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
 			return AsapKeyAdmitFunc(ctx, admissionReview)
+		}))
+	r.Post("/internaldns", admission.AdmitFuncHandlerFunc("internaldns",
+		func(ctx context.Context, logger *zap.Logger, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
+			return InternalDNSAdmitFunc(ctx, microsServerClient, admissionReview)
 		}))
 }
