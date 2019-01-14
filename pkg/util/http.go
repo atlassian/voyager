@@ -1,11 +1,11 @@
 package util
 
 import (
-	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/atlassian/voyager/pkg/util/tlsutil"
 	"golang.org/x/net/http2"
 )
 
@@ -31,12 +31,9 @@ func DefaultTransport() *http.Transport {
 		}).DialContext,
 
 		TLSHandshakeTimeout: 3 * time.Second,
-		TLSClientConfig: &tls.Config{
-			// Do not use anything less than TLS1.2: POODLE, BEAST, and RC4 exploits in SSLv3, TLS1.0, and TLS1.1
-			MinVersion: tls.VersionTLS12,
-		},
-		MaxIdleConns:    50,
-		IdleConnTimeout: 60 * time.Second,
+		TLSClientConfig:     tlsutil.DefaultTLSClientConfig(),
+		MaxIdleConns:        50,
+		IdleConnTimeout:     60 * time.Second,
 	}
 	if err := http2.ConfigureTransport(transport); err != nil {
 		panic(err)
