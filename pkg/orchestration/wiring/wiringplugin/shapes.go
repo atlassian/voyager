@@ -1,5 +1,12 @@
 package wiringplugin
 
+import (
+	"encoding/json"
+	"reflect"
+
+	"github.com/pkg/errors"
+)
+
 // ShapeName is a globally unique identifier for the type of a shape.
 type ShapeName string
 
@@ -38,4 +45,31 @@ type ShapeMeta struct {
 // +k8s:deepcopy-gen=true
 type BindableShapeStruct struct {
 	ServiceInstanceName ProtoReference `json:"serviceInstanceName"`
+}
+
+// CopyShape copies source shape into the target shape.
+// The main purpose of this function is to convert between typed and UnstructuredShape representations
+// of the same shape.
+func CopyShape(source, target Shape) error {
+	st := reflect.TypeOf(source)
+	tt := reflect.TypeOf(target)
+	switch {
+	case st == tt:
+		// Same type already, just deep copy
+		sv := reflect.ValueOf(source)
+		tv := reflect.ValueOf(target)
+		method := sv.MethodByName("DeepCopyInto")
+		method.Call([]reflect.Value{tv})
+	default:
+		// Convert by round-tripping to and from JSON
+		data, err := json.Marshal(source)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal source shape")
+		}
+		err = json.Unmarshal(data, target)
+		if err != nil {
+			return errors.Wrap(err, "failed to unmarshal JSON into target shape")
+		}
+	}
+	return nil
 }
