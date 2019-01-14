@@ -1,6 +1,6 @@
 package microsserver
 
-type aliasInfo struct {
+type AliasInfo struct {
 	Service service `json:"service"`
 }
 

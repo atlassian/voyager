@@ -7,8 +7,6 @@ import (
 	"net/http"
 
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/servicecentral"
-	"github.com/atlassian/voyager/pkg/util/auth"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -99,23 +97,6 @@ func getServiceName(serviceInstance sc_v1b1.ServiceInstance) (voyager.ServiceNam
 	}
 
 	return otherPlanParameters.Service.ID, nil
-}
-
-func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceName voyager.ServiceName) (*servicecentral.ServiceData, error) {
-	search := fmt.Sprintf("service_name='%s'", serviceName)
-	listData, err := scClient.ListServices(ctx, auth.NoUser(), search)
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error looking up service %q", serviceName)
-	}
-
-	for _, serviceData := range listData {
-		if voyager.ServiceName(serviceData.ServiceName) == serviceName {
-			return &serviceData, nil
-		}
-	}
-
-	return nil, nil
 }
 
 // validateMicrosCreate makes it harder to steal other people's services.

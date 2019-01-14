@@ -12,6 +12,7 @@ import (
 const (
 	serviceInstance = "serviceinstances"
 	serviceBinding  = "servicebindings"
+	ingress         = "ingresses"
 )
 
 var (
@@ -24,6 +25,11 @@ var (
 		Group:    sc_v1b1.SchemeGroupVersion.Group,
 		Version:  sc_v1b1.SchemeGroupVersion.Version,
 		Resource: serviceBinding,
+	}
+	ingressResourceType = metav1.GroupVersionResource{
+		Group:    sc_v1b1.SchemeGroupVersion.Group,
+		Version:  sc_v1b1.SchemeGroupVersion.Version,
+		Resource: ingress,
 	}
 )
 

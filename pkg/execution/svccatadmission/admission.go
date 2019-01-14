@@ -50,6 +50,6 @@ func (s *SvcCatAdmission) SetupAdmissionWebhooks(r *chi.Mux) {
 		}))
 	r.Post("/internaldns", admission.AdmitFuncHandlerFunc("internaldns",
 		func(ctx context.Context, logger *zap.Logger, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
-			return InternalDNSAdmitFunc(ctx, microsServerClient, admissionReview)
+			return InternalDNSAdmitFunc(ctx, microsServerClient, scClient, admissionReview)
 		}))
 }
