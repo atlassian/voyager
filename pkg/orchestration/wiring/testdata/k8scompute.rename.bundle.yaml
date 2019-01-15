@@ -131,6 +131,19 @@ spec:
         kind: ServiceAccount
         metadata:
           name: kubecompute-simple--svcacc
+  - name: kubecompute-simple--pdb
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: kubecompute-simple--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: kubecompute-simple
+              stateName: state1
   - name: kubecompute-simple
     references:
     - name: kubecompute-simple--podsecretenvvar-metadata-name
@@ -185,6 +198,10 @@ spec:
                           operator: In
                           values:
                           - kubecompute-simple
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
                       topologyKey: failure-domain.beta.kubernetes.io/zone
                     weight: 75
                   - podAffinityTerm:
@@ -194,6 +211,10 @@ spec:
                           operator: In
                           values:
                           - kubecompute-simple
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
                       topologyKey: kubernetes.io/hostname
                     weight: 50
               containers:
@@ -230,22 +251,6 @@ spec:
               securityContext: {}
               serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
-  - name: kubecompute-simple--pdb
-    references:
-    - name: kubecompute-simple-metadata-name
-      path: metadata.name
-      resource: kubecompute-simple
-    spec:
-      object:
-        apiVersion: policy/v1beta1
-        kind: PodDisruptionBudget
-        metadata:
-          name: kubecompute-simple--pdb
-        spec:
-          minAvailable: 30%
-          selector:
-            matchLabels:
-              resourceName: kubecompute-simple
   - name: kubecompute-simple--hpa
     references:
     - name: kubecompute-simple-metadata-name

@@ -880,6 +880,19 @@ spec:
         kind: ServiceAccount
         metadata:
           name: kc--svcacc
+  - name: kc--pdb
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: kc--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: kc
+              stateName: noderefapp
   - name: kc
     references:
     - name: kc--podsecretenvvar-metadata-name
@@ -934,6 +947,10 @@ spec:
                           operator: In
                           values:
                           - kc
+                        - key: stateName
+                          operator: In
+                          values:
+                          - noderefapp
                       topologyKey: failure-domain.beta.kubernetes.io/zone
                     weight: 75
                   - podAffinityTerm:
@@ -943,6 +960,10 @@ spec:
                           operator: In
                           values:
                           - kc
+                        - key: stateName
+                          operator: In
+                          values:
+                          - noderefapp
                       topologyKey: kubernetes.io/hostname
                     weight: 50
               containers:
@@ -976,22 +997,6 @@ spec:
               securityContext: {}
               serviceAccountName: '!{kc--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
-  - name: kc--pdb
-    references:
-    - name: kc-metadata-name
-      path: metadata.name
-      resource: kc
-    spec:
-      object:
-        apiVersion: policy/v1beta1
-        kind: PodDisruptionBudget
-        metadata:
-          name: kc--pdb
-        spec:
-          minAvailable: 30%
-          selector:
-            matchLabels:
-              resourceName: kc
   - name: kc--hpa
     references:
     - name: kc-metadata-name

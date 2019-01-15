@@ -3,6 +3,7 @@ package k8scompute
 import (
 	"fmt"
 	"regexp"
+	"sort"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
@@ -281,9 +282,28 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		resourceNameLabel: string(resource.Name),
 	}
 
-	affinity := buildAffinity(resource.Name)
+	affinity := buildAffinity(labelMap)
 
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
+
+	// Add pod disruption budget
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdb := smith_v1.Resource{
+		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
+		Spec: smith_v1.ResourceSpec{
+			Object: &policy_v1.PodDisruptionBudget{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.PodDisruptionBudgetKind,
+					APIVersion: policy_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaNameWithPostfix(resource.Name, pdbPostfix),
+				},
+				Spec: pdbSpec,
+			},
+		},
+	}
+	smithResources = append(smithResources, pdb)
 
 	// The kube deployment object spec
 	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
@@ -313,26 +333,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		Resource: deployment.Name,
 		Path:     metadataNamePath,
 	}
-
-	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(resource.Name)
-	pdb := smith_v1.Resource{
-		Name:       wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
-		References: []smith_v1.Reference{deploymentNameRef},
-		Spec: smith_v1.ResourceSpec{
-			Object: &policy_v1.PodDisruptionBudget{
-				TypeMeta: meta_v1.TypeMeta{
-					Kind:       k8s.PodDisruptionBudgetKind,
-					APIVersion: policy_v1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.MetaNameWithPostfix(resource.Name, pdbPostfix),
-				},
-				Spec: pdbSpec,
-			},
-		},
-	}
-	smithResources = append(smithResources, pdb)
 
 	// 0 value for replicas indicates we don't need an HPA
 	if spec.Scaling.MinReplicas > 0 && spec.Scaling.MaxReplicas > 0 {
@@ -502,21 +502,31 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	return containers
 }
 
-func buildAffinity(resourceName voyager.ResourceName) *core_v1.Affinity {
+func buildAffinity(labelMap map[string]string) *core_v1.Affinity {
 	return &core_v1.Affinity{
-		PodAntiAffinity: buildAntiAffinity(resourceName),
+		PodAntiAffinity: buildAntiAffinity(labelMap),
 	}
 }
 
-func buildAntiAffinity(resourceName voyager.ResourceName) *core_v1.PodAntiAffinity {
-	matchExpressions := []meta_v1.LabelSelectorRequirement{
-		meta_v1.LabelSelectorRequirement{
-			Key:      resourceNameLabel,
-			Operator: "In",
-			Values: []string{
-				string(resourceName),
+func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
+	// Convert the labelMap into a a slice of LabelSelectorRequirements
+	matchExpressions := make([]meta_v1.LabelSelectorRequirement, 0, len(labelMap))
+
+	// Iterate over sorted keys because otherwise this becomes untestable
+	keys := make([]string, 0, len(labelMap))
+	for k := range labelMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		matchExpressions = append(matchExpressions,
+			meta_v1.LabelSelectorRequirement{
+				Key:      k,
+				Operator: meta_v1.LabelSelectorOpIn,
+				Values:   []string{labelMap[k]},
 			},
-		},
+		)
 	}
 
 	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
@@ -547,16 +557,14 @@ func buildAntiAffinity(resourceName voyager.ResourceName) *core_v1.PodAntiAffini
 	}
 }
 
-func buildPodDisruptionBudgetSpec(resourceName voyager.ResourceName) policy_v1.PodDisruptionBudgetSpec {
+func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
 			Type:   intstr.String,
 			StrVal: defaultPodDisruptionBudget,
 		},
 		Selector: &meta_v1.LabelSelector{
-			MatchLabels: map[string]string{
-				resourceNameLabel: string(resourceName),
-			},
+			MatchLabels: labelMap,
 		},
 	}
 }
