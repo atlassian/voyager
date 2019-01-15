@@ -575,7 +575,9 @@ spec:
           secretName: ec2---iamrole
   - name: ec2--instance
     references:
-    - resource: ec2--secretenvvar
+    - name: ec2--secretenvvar-metadata-name
+      path: metadata.name
+      resource: ec2--secretenvvar
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: ec2---iamrole-binding-IAMRoleARN
@@ -635,7 +637,7 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: ec2--secretenvvar
+              name: '!{ec2--secretenvvar-metadata-name}'
   - name: kc--asap--binding
     references:
     - example: aname
