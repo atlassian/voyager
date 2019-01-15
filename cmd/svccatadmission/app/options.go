@@ -47,8 +47,13 @@ func (p *Providers) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
+	microsServerURL, err := url.Parse(rawProviders.MicrosServer)
+	if err != nil {
+		return err
+	}
 	p.ServiceCentralURL = scURL
 	p.RPSURL = rpsURL
+	p.MicrosServerURL = microsServerURL
 	return nil
 }
 
