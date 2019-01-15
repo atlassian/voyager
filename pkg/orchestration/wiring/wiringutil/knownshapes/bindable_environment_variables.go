@@ -19,7 +19,8 @@ type BindableEnvironmentVariables struct {
 // +k8s:deepcopy-gen=true
 type BindableEnvironmentVariablesData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
-	Prefix                           string `json:"prefix,omitempty"`
+	Prefix                           string            `json:"prefix,omitempty"`
+	Vars                             map[string]string `json:"vars,omitempty"`
 }
 
 func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *BindableEnvironmentVariables {

@@ -8,11 +8,13 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
+	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util"
@@ -41,6 +43,7 @@ const (
 
 	serviceAccountPostFix         = "svcacc"
 	podSecretEnvVarNamePostfix    = "podsecretenvvar"
+	secretPluginNamePostfix       = "secretplugin"
 	hpaPostfix                    = "hpa"
 	podSecretEnvVarPluginTypeName = "podsecretenvvar"
 	bindingOutputRoleARNKey       = "IAMRoleARN"
@@ -129,6 +132,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	var envFrom []core_v1.EnvFromSource
 	var smithResources []smith_v1.Resource
 	var bindingResources []smith_v1.Resource
+	var bindingResult []compute.BindingResult
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
@@ -144,40 +148,68 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
 		bindingResources = append(bindingResources, binding)
+		bindingResult = append(bindingResult, compute.BindingResult{
+			ResourceName:            dep.Name,
+			BindableEnvVarShape:     bindableShape,
+			CreatedBindingFromShape: binding,
+		})
 	}
 
 	var iamRoleRef *smith_v1.Reference
 
+	bindingReferences := make([]smith_v1.Reference, 0, len(bindingResult))
+	shouldUseSecretPlugin := true
+	for _, res := range bindingResult {
+		ref := smith_v1.Reference{
+			Resource: res.CreatedBindingFromShape.Name,
+		}
+		bindingReferences = append(bindingReferences, ref)
+		if res.BindableEnvVarShape.Data.Vars == nil {
+			shouldUseSecretPlugin = false
+		}
+	}
+
 	// Reference environment variables retrieved from ServiceBinding objects
-	if len(bindingResources) > 0 {
-		bindingReferences := make([]smith_v1.Reference, 0, len(bindingResources))
-		for _, res := range bindingResources {
-			bindingReferences = append(bindingReferences, smith_v1.Reference{
-				Resource: res.Name,
-			})
+	if len(bindingResult) > 0 {
+		var secretResource smith_v1.Resource
+		var secretErr error
+
+		if shouldUseSecretPlugin {
+			secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
+			if err != nil {
+				return nil, false, err
+			}
+
+			secretResource, secretErr = generateSecretResource(resource.Name, envVars, secretRefs)
+			if secretErr != nil {
+				return nil, false, secretErr
+			}
+
+		} else {
+			secretResource, secretErr = generateSecretEnvVarsResource(resource.Name, spec.RenameEnvVar, bindingReferences)
+			if secretErr != nil {
+				return nil, false, secretErr
+			}
 		}
 
-		secretEnvVarsResource, err := generateSecretEnvVarsResource(resource.Name, spec, bindingReferences)
-		if err != nil {
-			return nil, false, err
-		}
-		secretEnvVarRef := smith_v1.Reference{
-			Name:     wiringutil.ReferenceName(secretEnvVarsResource.Name, metadataElement, nameElement),
-			Resource: secretEnvVarsResource.Name,
+		secretRef := smith_v1.Reference{
+			Name:     wiringutil.ReferenceName(secretResource.Name, metadataElement, nameElement),
+			Resource: secretResource.Name,
 			Path:     metadataNamePath,
 		}
 		falseObj := false
 		envFromSource := core_v1.EnvFromSource{
 			SecretRef: &core_v1.SecretEnvSource{
 				LocalObjectReference: core_v1.LocalObjectReference{
-					Name: secretEnvVarRef.Ref(),
+					Name: secretRef.Ref(),
 				},
 				Optional: &falseObj,
 			},
 		}
+
 		envFrom = append(envFrom, envFromSource)
-		references = append(references, secretEnvVarRef)
-		smithResources = append(smithResources, secretEnvVarsResource)
+		references = append(references, secretRef)
+		smithResources = append(smithResources, secretResource)
 
 		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
 			context.StateContext.ServiceName, false, bindingReferences, context, []string{}, buildKube2iamRoles(context))
@@ -318,10 +350,40 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	return result, false, nil
 }
 
-func generateSecretEnvVarsResource(compute voyager.ResourceName, spec *Spec, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
+func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
+	objectName := wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix)
+
+	secretData := make(map[string][]byte, len(envVars))
+	for key, val := range envVars {
+		secretData[key] = []byte(val)
+	}
+
+	secretPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretplugin.Spec{
+		Data: secretData,
+	})
+	if err != nil {
+		return smith_v1.Resource{}, errors.WithStack(err)
+	}
+
+	instanceResource := smith_v1.Resource{
+		Name:       smith_v1.ResourceName(objectName),
+		References: dependencyReferences,
+		Spec: smith_v1.ResourceSpec{
+			Plugin: &smith_v1.PluginSpec{
+				Name:       secretplugin.PluginName,
+				ObjectName: objectName,
+				Spec:       secretPluginSpec,
+			},
+		},
+	}
+
+	return instanceResource, nil
+}
+
+func generateSecretEnvVarsResource(compute voyager.ResourceName, renameEnvVar map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
 	secretEnvVarPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretenvvar.PodSpec{
 		IgnoreKeyRegex: envVarIgnoreRegex,
-		RenameEnvVar:   spec.RenameEnvVar,
+		RenameEnvVar:   renameEnvVar,
 	})
 	if err != nil {
 		return smith_v1.Resource{}, err
