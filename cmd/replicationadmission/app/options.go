@@ -37,7 +37,6 @@ func (o *Options) DefaultAndValidate() []error {
 	var allErrors []error
 	allErrors = append(allErrors, o.ServerConfig.DefaultAndValidate()...)
 	allErrors = append(allErrors, o.Locations.DefaultAndValidate()...)
-
 	return allErrors
 }
 

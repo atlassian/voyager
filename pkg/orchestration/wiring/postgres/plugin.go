@@ -3,7 +3,9 @@ package postgres
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/atlassian/smith"
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
@@ -21,6 +23,7 @@ const (
 
 	clusterServiceClassExternalID = "8e14a988-0532-49ed-a6cd-31fa0c0fb2a8"
 	clusterServicePlanExternalID  = "10aa2cb5-897d-43f6-b0df-ac4f8a2a758e"
+	deletionDelay                 = 7 * 24 * time.Hour
 
 	postgresEnvResourcePrefix = "pg"
 )
@@ -120,7 +123,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		}
 	}
 
-	// Build final spec, by combining calculated varaibles + user provided variables
+	// Build final spec, by combining calculated variables + user provided variables
 	var finalSpec map[string]interface{}
 
 	// Insert calculated variables
@@ -185,6 +188,7 @@ func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringCon
 	return meta_v1.ObjectMeta{
 		Annotations: map[string]string{
 			voyager.Domain + "/envResourcePrefix": postgresEnvResourcePrefix,
+			smith.DeletionDelayAnnotation:         deletionDelay.String(),
 		},
 	}, nil
 }

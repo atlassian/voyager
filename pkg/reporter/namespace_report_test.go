@@ -281,20 +281,22 @@ var (
 				ResourceStatuses: []smith_v1.ResourceStatus{
 					smith_v1.ResourceStatus{
 						Name: smith_v1.ResourceName("events--instance"),
-						Conditions: []cond_v1.Condition{
-							{
-								Type:   smith_v1.ResourceInProgress,
-								Status: cond_v1.ConditionFalse,
-							},
-							{
-								Type:               smith_v1.ResourceReady,
-								Status:             cond_v1.ConditionTrue,
-								Message:            "success",
-								LastTransitionTime: testTimeReady,
-							},
-							{
-								Type:   smith_v1.ResourceError,
-								Status: cond_v1.ConditionFalse,
+						ResourceStatusData: smith_v1.ResourceStatusData{
+							Conditions: []cond_v1.Condition{
+								{
+									Type:   smith_v1.ResourceInProgress,
+									Status: cond_v1.ConditionFalse,
+								},
+								{
+									Type:               smith_v1.ResourceReady,
+									Status:             cond_v1.ConditionTrue,
+									Message:            "success",
+									LastTransitionTime: testTimeReady,
+								},
+								{
+									Type:   smith_v1.ResourceError,
+									Status: cond_v1.ConditionFalse,
+								},
 							},
 						},
 					},
