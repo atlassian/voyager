@@ -43,12 +43,11 @@ func New() *WiringPlugin {
 			ObjectMeta:                    getObjectMeta,
 			References:                    getReferences,
 			ResourceType:                  ResourceType,
-			OptionalShapes:                svccatentangler.NoOptionalShapes,
 		},
 	}
 }
 
-// can only depend on one kubeIngress
+// getIngressDependency can only depend on one kubeIngress
 func getIngressDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
 	if len(dependencies) == 1 {
 		if dependencies[0].Type == kubeIngressResourceType {

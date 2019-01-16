@@ -18,7 +18,7 @@ type WiringPlugin interface {
 	// WireUp wires up the resource.
 	// Error may be retriable if its an RPC error (like network error). Most errors are not retriable because
 	// this method should be pure/deterministic so if it fails, it fails.
-	WireUp(resource *orch_v1.StateResource, context *WiringContext) (*WiringResult, bool /*retriable*/, error)
+	WireUp(resource *orch_v1.StateResource, context *WiringContext) (result *WiringResult, retriable bool, err error)
 }
 
 // WiringContext contains context information that is passed to an autowiring function to perform autowiring
