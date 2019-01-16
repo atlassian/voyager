@@ -41,6 +41,13 @@ func (in *BindableEnvironmentVariables) DeepCopyShape() wiringplugin.Shape {
 func (in *BindableEnvironmentVariablesData) DeepCopyInto(out *BindableEnvironmentVariablesData) {
 	*out = *in
 	in.BindableShapeStruct.DeepCopyInto(&out.BindableShapeStruct)
+	if in.Vars != nil {
+		in, out := &in.Vars, &out.Vars
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

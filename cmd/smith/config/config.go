@@ -6,6 +6,7 @@ import (
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar/kubecompute"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar/microscompute"
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretparameter"
+	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 )
 
 func Plugins() []smith_plugin.NewFunc {
@@ -14,5 +15,6 @@ func Plugins() []smith_plugin.NewFunc {
 		microscompute.New,
 		kubecompute.New,
 		secretparameter.New,
+		secretplugin.New,
 	}
 }

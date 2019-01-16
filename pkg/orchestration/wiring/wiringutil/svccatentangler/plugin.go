@@ -117,7 +117,7 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 
 func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
 	supportedShapes := []wiringplugin.Shape{
-		knownshapes.NewBindableEnvironmentVariables(smithResource.Name),
+		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, "", nil),
 	}
 	optionalShapes, err := e.OptionalShapes(resource, smithResource, context)
 	if err != nil {
