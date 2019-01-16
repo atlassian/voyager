@@ -1,6 +1,7 @@
 package secretplugin
 
 import (
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/pkg/errors"
 	core_v1 "k8s.io/api/core/v1"
@@ -9,7 +10,7 @@ import (
 )
 
 const (
-	PluginName = "secret"
+	PluginName smith_v1.PluginName = "secret"
 )
 
 type Plugin struct{}

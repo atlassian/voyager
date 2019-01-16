@@ -67,7 +67,7 @@ type StateComputeSpec struct {
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	objectName := wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix)
+	objectName := wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix)
 
 	// if this is for pods then we just have data
 	envVarJSONString, err := json.Marshal(map[string]map[string]string{
@@ -87,12 +87,12 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       smith_v1.ResourceName(objectName),
+		Name:       objectName,
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       secretplugin.PluginName,
-				ObjectName: objectName,
+				ObjectName: string(objectName),
 				Spec:       secretPluginSpec,
 			},
 		},
@@ -219,21 +219,21 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 
 	if len(bindingResult) > 0 {
 		var secretResource smith_v1.Resource
-		var secretErr error
+		var err error
 		if shouldUseSecretPlugin {
 			secretRefs, envVars, err := compute.GenerateEnvVars(computeSpec.RenameEnvVar, bindingResult)
 			if err != nil {
 				return nil, false, err
 			}
 
-			secretResource, secretErr = generateSecretResource(stateResource.Name, envVars, secretRefs)
-			if secretErr != nil {
-				return nil, false, secretErr
+			secretResource, err = generateSecretResource(stateResource.Name, envVars, secretRefs)
+			if err != nil {
+				return nil, false, err
 			}
 		} else {
-			secretResource, secretErr = generateSecretEnvVarsResource(stateResource.Name, computeSpec.RenameEnvVar, dependencyReferences)
-			if secretErr != nil {
-				return nil, false, secretErr
+			secretResource, err = generateSecretEnvVarsResource(stateResource.Name, computeSpec.RenameEnvVar, dependencyReferences)
+			if err != nil {
+				return nil, false, err
 			}
 		}
 		secretRef := smith_v1.Reference{

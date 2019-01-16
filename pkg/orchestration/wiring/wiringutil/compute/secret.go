@@ -19,6 +19,10 @@ type BindingResult struct {
 	CreatedBindingFromShape smith_v1.Resource
 }
 
+var (
+	envVarReplacer = strings.NewReplacer("-", "_", ".", "_")
+)
+
 func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingResult) ([]smith_v1.Reference, map[string]string, error) {
 	originalEnvVars := map[string]string{}
 	dependencyReferences := []smith_v1.Reference{}
@@ -92,15 +96,14 @@ func renameEnvironmentVariables(renameMap map[string]string, environmentVariable
 		for k := range copiedRenameMap {
 			keys = append(keys, k)
 		}
-		return nil, errors.Errorf("environment varibles do not exist and cannot be renamed: %v", strings.Join(keys, ", "))
+		return nil, errors.Errorf("environment variables do not exist and cannot be renamed: %s", strings.Join(keys, ", "))
 	}
 
 	return newEnvVars, nil
 }
 
 func makeEnvVarName(elements ...string) string {
-	replacer := strings.NewReplacer("-", "_", ".", "_")
-	return strings.ToUpper(replacer.Replace(strings.Join(elements, "_")))
+	return strings.ToUpper(envVarReplacer.Replace(strings.Join(elements, "_")))
 }
 
 func makeRefPathSuffix(path string) string {
