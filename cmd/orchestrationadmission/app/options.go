@@ -14,10 +14,7 @@ type Options struct {
 }
 
 func (o *Options) DefaultAndValidate() []error {
-	var allErrors []error
-	allErrors = append(allErrors, o.ServerConfig.DefaultAndValidate()...)
-
-	return allErrors
+	return o.ServerConfig.DefaultAndValidate()
 }
 
 func readAndValidateOptions(configFile string) (*Options, error) {
