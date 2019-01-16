@@ -6,7 +6,6 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -179,32 +178,14 @@ func TestGenerateEnvVarsEmptyVars(t *testing.T) {
 	assert.Len(t, envVars, 0)
 }
 
-func constructBindingResult(consumerName string, dependencyName string, smithServiceInstanceName string, prefix string, vars map[string]string) BindingResult {
+func constructBindingResult(consumerName string, dependencyName voyager.ResourceName, serviceInstance smith_v1.ResourceName, prefix string, vars map[string]string) BindingResult {
 	return BindingResult{
 		// This binding result describes a dependency to a resource in the State
-		ResourceName: voyager.ResourceName(dependencyName),
+		ResourceName: dependencyName,
 
 		// The shape is the shape output by that particular resource
 		// In this case, it's always a BindableEnvVar shape.
-		BindableEnvVarShape: &knownshapes.BindableEnvironmentVariables{
-			ShapeMeta: wiringplugin.ShapeMeta{
-				ShapeName: knownshapes.BindableEnvironmentVariablesShape,
-			},
-			Data: knownshapes.BindableEnvironmentVariablesData{
-				// This describes the instance that we should bind to
-				BindableShapeStruct: wiringplugin.BindableShapeStruct{
-					ServiceInstanceName: wiringplugin.ProtoReference{
-						Resource: smith_v1.ResourceName(smithServiceInstanceName),
-						Path:     "metadata.name",
-						Modifier: smith_v1.ReferenceModifierBindSecret,
-					},
-				},
-
-				// Prefix and vars
-				Prefix: prefix,
-				Vars:   vars,
-			},
-		},
+		BindableEnvVarShape: *knownshapes.NewBindableEnvironmentVariables(serviceInstance, prefix, vars),
 
 		// This describes the binding to the serviceinstance described in the shape above
 		// As per convention, the naming is {consumer}--{producer}--binding - this is actually

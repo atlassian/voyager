@@ -15,7 +15,7 @@ import (
 
 type BindingResult struct {
 	ResourceName            voyager.ResourceName
-	BindableEnvVarShape     *knownshapes.BindableEnvironmentVariables
+	BindableEnvVarShape     knownshapes.BindableEnvironmentVariables
 	CreatedBindingFromShape smith_v1.Resource
 }
 
@@ -25,7 +25,7 @@ var (
 
 func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingResult) ([]smith_v1.Reference, map[string]string, error) {
 	originalEnvVars := map[string]string{}
-	dependencyReferences := []smith_v1.Reference{}
+	var dependencyReferences []smith_v1.Reference
 
 	for _, bindingResult := range bindingResults {
 		prefix := bindingResult.BindableEnvVarShape.Data.Prefix

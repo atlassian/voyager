@@ -23,7 +23,7 @@ type BindableEnvironmentVariablesData struct {
 	Vars                             map[string]string `json:"vars,omitempty"`
 }
 
-func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *BindableEnvironmentVariables {
+func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix string, vars map[string]string) *BindableEnvironmentVariables {
 	return &BindableEnvironmentVariables{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: BindableEnvironmentVariablesShape,
@@ -34,7 +34,10 @@ func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName) *Bindab
 					Resource: resourceName,
 					Path:     "metadata.name",
 					Example:  "aname",
-				}},
+				},
+			},
+			Prefix: prefix,
+			Vars:   vars,
 		},
 	}
 }

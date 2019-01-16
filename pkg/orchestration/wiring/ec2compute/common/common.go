@@ -67,8 +67,6 @@ type StateComputeSpec struct {
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	objectName := wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix)
-
 	// if this is for pods then we just have data
 	envVarJSONString, err := json.Marshal(map[string]map[string]string{
 		inputParameterEnvVarName: envVars,
@@ -87,12 +85,12 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       objectName,
+		Name:       wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix),
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       secretplugin.PluginName,
-				ObjectName: string(objectName),
+				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
 				Spec:       secretPluginSpec,
 			},
 		},
@@ -191,7 +189,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		bindingResources = append(bindingResources, bindingResource)
 		bindingResult = append(bindingResult, compute.BindingResult{
 			ResourceName:            dependency.Name,
-			BindableEnvVarShape:     bindableShape,
+			BindableEnvVarShape:     *bindableShape,
 			CreatedBindingFromShape: bindingResource,
 		})
 	}

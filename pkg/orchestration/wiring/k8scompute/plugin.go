@@ -150,7 +150,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		bindingResources = append(bindingResources, binding)
 		bindingResult = append(bindingResult, compute.BindingResult{
 			ResourceName:            dep.Name,
-			BindableEnvVarShape:     bindableShape,
+			BindableEnvVarShape:     *bindableShape,
 			CreatedBindingFromShape: binding,
 		})
 	}
@@ -351,8 +351,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	objectName := wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix)
-
 	secretData := make(map[string][]byte, len(envVars))
 	for key, val := range envVars {
 		secretData[key] = []byte(val)
@@ -366,12 +364,12 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       objectName,
+		Name:       wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix),
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       secretplugin.PluginName,
-				ObjectName: string(objectName),
+				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
 				Spec:       secretPluginSpec,
 			},
 		},
