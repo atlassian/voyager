@@ -172,7 +172,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	// Reference environment variables retrieved from ServiceBinding objects
 	if len(bindingResult) > 0 {
 		var secretResource smith_v1.Resource
-		var secretErr error
+		var err error
 
 		if shouldUseSecretPlugin {
 			secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
@@ -180,15 +180,15 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 				return nil, false, err
 			}
 
-			secretResource, secretErr = generateSecretResource(resource.Name, envVars, secretRefs)
-			if secretErr != nil {
-				return nil, false, secretErr
+			secretResource, err = generateSecretResource(resource.Name, envVars, secretRefs)
+			if err != nil {
+				return nil, false, err
 			}
 
 		} else {
-			secretResource, secretErr = generateSecretEnvVarsResource(resource.Name, spec.RenameEnvVar, bindingReferences)
-			if secretErr != nil {
-				return nil, false, secretErr
+			secretResource, err = generateSecretEnvVarsResource(resource.Name, spec.RenameEnvVar, bindingReferences)
+			if err != nil {
+				return nil, false, err
 			}
 		}
 

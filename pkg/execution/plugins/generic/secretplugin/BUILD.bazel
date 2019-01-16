@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin",
     visibility = ["//visibility:public"],
     deps = [
+        "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/k8s.io/api/core/v1:go_default_library",
