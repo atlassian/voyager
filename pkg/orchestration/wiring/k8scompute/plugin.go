@@ -129,7 +129,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, err
 		}
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dep.Name, dep.Type, knownshapes.BindableEnvironmentVariablesShape)
+			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
 		resourceReference := bindableShape.Data.ServiceInstanceName
