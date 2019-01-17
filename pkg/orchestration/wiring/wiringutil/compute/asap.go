@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ValidateASAPDependencies will loop through WiringContext.Dependencies ensuring only one ASAPKey shape is found
 func ValidateASAPDependencies(context *wiringplugin.WiringContext) error {
 	asapDependencyCount := 0
 	for _, dep := range context.Dependencies {
