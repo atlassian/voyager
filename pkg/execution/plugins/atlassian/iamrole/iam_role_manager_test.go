@@ -10,6 +10,7 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/ghodss/yaml"
@@ -89,9 +90,21 @@ func TestGenerateRoleInstance(t *testing.T) {
 		ServiceName:     "test-svc-app",
 		OAPResourceName: "app-iamrole",
 		ServiceEnvironment: oap.ServiceEnvironment{
-			NotificationEmail:            "an_owner@example.com",
-			LowPriorityPagerdutyEndpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123",
-			PagerdutyEndpoint:            "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456",
+			NotificationEmail: "an_owner@example.com",
+			AlarmEndpoints: []rds.MicrosAlarmSpec{
+				{
+					Type:     "CloudWatch",
+					Priority: "high",
+					Endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123",
+					Consumer: "pagerduty",
+				},
+				{
+					Type:     "CloudWatch",
+					Priority: "low",
+					Endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456",
+					Consumer: "pagerduty",
+				},
+			},
 			Tags: map[voyager.Tag]string{
 				"business_unit":    "some_unit",
 				"environment":      "ddev",

@@ -27,8 +27,15 @@ spec:
           clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               tags:
                 business_unit: some_unit
                 environment: microstestenv

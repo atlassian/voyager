@@ -6,6 +6,7 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -126,9 +127,10 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 			Alarms:     alarms,
 		},
 		Environment: oap.ServiceEnvironment{
-			LowPriorityPagerdutyEndpoint: serviceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
-			PagerdutyEndpoint:            serviceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
-			Tags:                         context.StateContext.Tags,
+			AlarmEndpoints: aws.PagerdutyAlarmEndpoints(
+				serviceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
+				serviceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch),
+			Tags: context.StateContext.Tags,
 		},
 	}
 	serviceInstanceSpecBytes, err := json.Marshal(&serviceInstanceSpec)

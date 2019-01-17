@@ -28,9 +28,16 @@ spec:
           externalID: abcd-123456789
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               notificationEmail: an_owner@example.com
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               primaryVpcEnvironment:
                 appSubnets:
                 - subnet-1
