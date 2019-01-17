@@ -53,7 +53,7 @@ func New() *WiringPlugin {
 // optionalShapes returns a list of Shapes that the ASAPKey wiring plugin could output
 func optionalShapes(_ *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
 	return []wiringplugin.Shape{
-		knownshapes.NewASAPKey(smithResource.Name),
+		knownshapes.NewASAPKey(),
 	}, nil
 }
 

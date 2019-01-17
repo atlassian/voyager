@@ -1,7 +1,6 @@
 package knownshapes
 
 import (
-	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 )
 
@@ -16,7 +15,7 @@ type ASAPKey struct {
 }
 
 // NewASAPKey creates a new ASAPKey
-func NewASAPKey(_ smith_v1.ResourceName) *ASAPKey {
+func NewASAPKey() *ASAPKey {
 	return &ASAPKey{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: ASAPKeyShapeName,
