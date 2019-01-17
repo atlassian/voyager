@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ASAPKeyShapeName wiringplugin.ShapeName = "voyager.atl-paas.net/ASAPKeyShape"
+	ASAPKeyShapeName wiringplugin.ShapeName = "voyager.atl-paas.net/ASAPKey"
 )
 
 // +k8s:deepcopy-gen=true
@@ -16,7 +16,7 @@ type ASAPKey struct {
 }
 
 // NewASAPKey creates a new ASAPKey
-func NewASAPKey(resourceName smith_v1.ResourceName) *ASAPKey {
+func NewASAPKey(_ smith_v1.ResourceName) *ASAPKey {
 	return &ASAPKey{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: ASAPKeyShapeName,

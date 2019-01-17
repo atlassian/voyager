@@ -312,14 +312,14 @@ func validateASAPDependencies(context *wiringplugin.WiringContext) error {
 	for _, dep := range context.Dependencies {
 		_, found, err := knownshapes.FindASAPKeyShapes(dep.Contract.Shapes)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unable to validate ASAP dependencies")
 		}
 
 		if found {
 			// Only allow one asap key dependency per compute
 			// so we can use same micros1 env var names and facilitate migration
 			if asapDependencyCount++; asapDependencyCount > 1 {
-				return errors.Errorf("cannot depend on more than one asap key resource")
+				return errors.Errorf("cannot depend on more than one asap key resource, found %s", asapDependencyCount)
 			}
 		}
 	}
