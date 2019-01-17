@@ -27,8 +27,6 @@ const (
 	// tags in the configmap because it's at the same level as legacyConfig
 	// (i.e. want to make it obvious they should be removed at the same time).
 	legacyEnvironmentTagName = "environment"
-
-	wiringResourcesDirectlyIsDeprecatedMsg = "wiring dependencies as SmithResources is deprecated, use ResourceContracts instead"
 )
 
 // EntanglerContext contains information that is required by autowiring.
@@ -240,9 +238,7 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		Type:         resource.Type,
 		WiringResult: *result,
 	}
-	for _, wiredResource := range result.Resources {
-		w.allWiredResourcesList = append(w.allWiredResourcesList, wiredResource)
-	}
+	w.allWiredResourcesList = append(w.allWiredResourcesList, result.Resources...)
 	return false, nil
 }
 
