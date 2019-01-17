@@ -319,7 +319,7 @@ func validateASAPDependencies(context *wiringplugin.WiringContext) error {
 			// Only allow one asap key dependency per compute
 			// so we can use same micros1 env var names and facilitate migration
 			if asapDependencyCount++; asapDependencyCount > 1 {
-				return errors.Errorf("cannot depend on more than one asap key resource, found %s", asapDependencyCount)
+				return errors.New("cannot depend on more than one asap key resource")
 			}
 		}
 	}
