@@ -1,7 +1,6 @@
 package oap
 
 import (
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 )
 
@@ -12,7 +11,7 @@ func MakeServiceEnvironmentFromContext(context *wiringplugin.WiringContext) *Ser
 
 	return &ServiceEnvironment{
 		NotificationEmail: serviceProperties.Notifications.Email,
-		AlarmEndpoints: []rds.MicrosAlarmSpec{
+		AlarmEndpoints: []MicrosAlarmSpec{
 			{
 				Type:     "CloudWatch",
 				Priority: "high",

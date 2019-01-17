@@ -10,7 +10,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/ghodss/yaml"
@@ -91,7 +90,7 @@ func TestGenerateRoleInstance(t *testing.T) {
 		OAPResourceName: "app-iamrole",
 		ServiceEnvironment: oap.ServiceEnvironment{
 			NotificationEmail: "an_owner@example.com",
-			AlarmEndpoints: []rds.MicrosAlarmSpec{
+			AlarmEndpoints: []oap.MicrosAlarmSpec{
 				{
 					Type:     "CloudWatch",
 					Priority: "high",

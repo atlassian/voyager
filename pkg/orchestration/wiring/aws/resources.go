@@ -4,7 +4,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
@@ -53,8 +52,8 @@ var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	Cfn:      Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, CfnPrefix, snsSubscribableForSnsV1Template),
 }
 
-func PagerdutyAlarmEndpoints(highPriorityPagerdutyEndpoint string, lowPriorityPagerdutyEndpoint string) []rds.MicrosAlarmSpec {
-	microsAlarmEndpoints := []rds.MicrosAlarmSpec{
+func PagerdutyAlarmEndpoints(highPriorityPagerdutyEndpoint string, lowPriorityPagerdutyEndpoint string) []oap.MicrosAlarmSpec {
+	microsAlarmEndpoints := []oap.MicrosAlarmSpec{
 		{
 			Type:     "CloudWatch",
 			Priority: "high",

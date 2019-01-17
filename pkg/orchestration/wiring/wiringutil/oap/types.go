@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 )
 
 type EnvVarPrefix string
@@ -19,7 +18,7 @@ type ServiceInstanceSpec struct {
 
 type ServiceEnvironment struct {
 	NotificationEmail     string                 `json:"notificationEmail,omitempty"`
-	AlarmEndpoints        []rds.MicrosAlarmSpec  `json:"alarmEndpoints,omitempty"`
+	AlarmEndpoints        []MicrosAlarmSpec      `json:"alarmEndpoints,omitempty"`
 	Tags                  map[voyager.Tag]string `json:"tags,omitempty"`
 	ServiceSecurityGroup  string                 `json:"serviceSecurityGroup,omitempty"`
 	PrimaryVpcEnvironment *VPCEnvironment        `json:"primaryVpcEnvironment,omitempty"`
@@ -48,3 +47,11 @@ type RPSResource struct {
 	Attributes json.RawMessage `json:"attributes,omitempty"`
 	Alarms     json.RawMessage `json:"alarms,omitempty"`
 }
+
+type MicrosAlarmSpec struct {
+	Type     string `json:"type"`
+	Priority string `json:"priority"`
+	Endpoint string `json:"endpoint"`
+	Consumer string `json:"consumer"`
+}
+
