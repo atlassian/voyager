@@ -54,7 +54,7 @@ spec:
         name: secret
         objectName: compute--secret
         spec:
-          data:
+          jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
                 UPS_UPS_SPECIAL_KEY_1: '!{compute--ups--binding-b060c986d8a40dd8b22ad738b0fe6df917f5c994}'

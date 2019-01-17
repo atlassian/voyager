@@ -147,7 +147,7 @@ spec:
         name: secret
         objectName: compute--secret
         spec:
-          data:
+          jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
                 PG_DB_HOST: "!{compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}"

@@ -66,7 +66,7 @@ spec:
         name: secret
         objectName: compute--secret
         spec:
-          data:
+          jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
                 ASAP_PRIVATE_KEY: '!{compute--myasap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'

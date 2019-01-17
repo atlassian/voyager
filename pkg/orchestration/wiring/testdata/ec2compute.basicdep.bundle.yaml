@@ -88,7 +88,7 @@ spec:
         name: secret
         objectName: compute--secret
         spec:
-          data:
+          jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
                 SQS_BASIC_QUEUE_REGION: '!{compute--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'

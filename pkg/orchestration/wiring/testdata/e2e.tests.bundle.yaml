@@ -657,7 +657,7 @@ spec:
         name: secret
         objectName: ec2--secret
         spec:
-          data:
+          jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
                 ASAP_PRIVATE_KEY: '!{ec2--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'

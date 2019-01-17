@@ -214,7 +214,7 @@ spec:
         name: secret
         objectName: compute--secret
         spec:
-          data:
+          jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
                 CF_FANOUTTOPIC_TOPICARN: '!{compute--fanouttopic--binding-0b314438ad04598d648cb767cb11470a2191d506}'

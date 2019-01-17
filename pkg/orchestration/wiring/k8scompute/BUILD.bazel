@@ -11,7 +11,6 @@ go_library(
     deps = [
         "//:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
-        "//pkg/execution/plugins/atlassian/secretenvvar:go_default_library",
         "//pkg/execution/plugins/generic/secretplugin:go_default_library",
         "//pkg/k8s:go_default_library",
         "//pkg/orchestration/wiring/asapkey:go_default_library",
