@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: CF
           name: fanouttopic
         spec:
           clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
@@ -92,8 +90,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: queue1
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
@@ -153,8 +149,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: queue2
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
@@ -201,17 +195,31 @@ spec:
           instanceRef:
             name: '!{fanouttopic--instance-metadata-name}'
           secretName: compute--fanouttopic
-  - name: compute--secretenvvar
+  - name: compute--secret
     references:
-    - resource: compute--fanouttopic--binding
+      - modifier: bindsecret
+        name: compute--fanouttopic--binding-0b314438ad04598d648cb767cb11470a2191d506
+        path: data.TopicArn
+        resource: compute--fanouttopic--binding
+      - modifier: bindsecret
+        name: compute--fanouttopic--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a
+        path: data.TopicRegion
+        resource: compute--fanouttopic--binding
+      - modifier: bindsecret
+        name: compute--fanouttopic--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772
+        path: data.TopicName
+        resource: compute--fanouttopic--binding
     spec:
       plugin:
-        name: secretenvvar
-        objectName: compute--secretenvvar
+        name: secret
+        objectName: compute--secret
         spec:
-          ignoreKeyRegex: (?i)IamPolicySnippet$
-          outputJsonKey: secretEnvVars
-          outputSecretKey: ec2ComputeEnvVars
+          data:
+            ec2ComputeEnvVars:
+              secretEnvVars:
+                CF_FANOUTTOPIC_TOPICARN: '!{compute--fanouttopic--binding-0b314438ad04598d648cb767cb11470a2191d506}'
+                CF_FANOUTTOPIC_TOPICREGION: '!{compute--fanouttopic--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
+                CF_FANOUTTOPIC_TOPICNAME: '!{compute--fanouttopic--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
   - name: compute---iamrole
     references:
     - resource: compute--fanouttopic--binding
@@ -278,9 +286,9 @@ spec:
           secretName: compute---iamrole
   - name: compute--instance
     references:
-    - name: compute--secretenvvar-metadata-name
+    - name: compute--secret-metadata-name
       path: metadata.name
-      resource: compute--secretenvvar
+      resource: compute--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: compute---iamrole-binding-IAMRoleARN
@@ -341,5 +349,5 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: '!{compute--secretenvvar-metadata-name}'
+              name: '!{compute--secret-metadata-name}'
 status: {}

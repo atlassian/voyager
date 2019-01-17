@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: DYNAMO
           name: atable
         spec:
           clusterServiceClassExternalID: 0dae543c-216b-4a08-87bd-aea7522c0cfd

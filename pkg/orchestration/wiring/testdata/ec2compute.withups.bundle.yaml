@@ -13,46 +13,55 @@ metadata:
     uid: ""
 spec:
   resources:
-  - name: basic--instance
+  - name: ups--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: basic
+          name: ups
         spec:
           clusterServiceClassExternalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
           clusterServicePlanExternalID: 86064792-7ea2-467b-af93-ac9694d96d52
-  - name: compute--basic--binding
+  - name: compute--ups--binding
     references:
     - example: aname
-      name: basic--instance-metadata-name
+      name: ups--instance-metadata-name
       path: metadata.name
-      resource: basic--instance
+      resource: ups--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceBinding
         metadata:
-          name: compute--basic
+          name: compute--ups
         spec:
           instanceRef:
-            name: '!{basic--instance-metadata-name}'
-          secretName: compute--basic
-  - name: compute--secretenvvar
+            name: '!{ups--instance-metadata-name}'
+          secretName: compute--ups
+  - name: compute--secret
     references:
-    - resource: compute--basic--binding
+    - name: compute--ups--binding-9ef60b9337b69a1033a0912d66168890c6c4831a
+      path: data.special-key-2
+      resource: compute--ups--binding
+      modifier: bindsecret
+    - modifier: bindsecret
+      name: compute--ups--binding-b060c986d8a40dd8b22ad738b0fe6df917f5c994
+      path: data.special-key-1
+      resource: compute--ups--binding
     spec:
       plugin:
-        name: secretenvvar
-        objectName: compute--secretenvvar
+        name: secret
+        objectName: compute--secret
         spec:
-          ignoreKeyRegex: (?i)IamPolicySnippet$
-          outputJsonKey: secretEnvVars
-          outputSecretKey: ec2ComputeEnvVars
+          data:
+            ec2ComputeEnvVars:
+              secretEnvVars:
+                UPS_UPS_SPECIAL_KEY_1: '!{compute--ups--binding-b060c986d8a40dd8b22ad738b0fe6df917f5c994}'
+                UPS_UPS_SPECIAL_KEY_2: '!{compute--ups--binding-9ef60b9337b69a1033a0912d66168890c6c4831a}'
   - name: compute---iamrole
     references:
-    - resource: compute--basic--binding
+    - resource: compute--ups--binding
     spec:
       plugin:
         name: iamrole
@@ -116,9 +125,9 @@ spec:
           secretName: compute---iamrole
   - name: compute--instance
     references:
-    - name: compute--secretenvvar-metadata-name
+    - name: compute--secret-metadata-name
       path: metadata.name
-      resource: compute--secretenvvar
+      resource: compute--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: compute---iamrole-binding-IAMRoleARN
@@ -179,5 +188,5 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: '!{compute--secretenvvar-metadata-name}'
+              name: '!{compute--secret-metadata-name}'
 status: {}

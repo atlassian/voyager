@@ -7,6 +7,9 @@ spec:
   resources:
   - name: ups
     type: UPS
+    spec:
+      credentials:
+        my-thing: xxx
 
   - name: compute
     type: EC2Compute
