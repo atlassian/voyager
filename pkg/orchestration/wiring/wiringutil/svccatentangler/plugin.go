@@ -142,7 +142,7 @@ func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResou
 	if e.AdditionalShapes != nil {
 		additionalShapes, err := e.AdditionalShapes(resource, smithResource, context)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %q of type %q", resource.Name, resource.Type)
+			return nil, errors.Wrapf(err, "failed to compute additional shapes for resource %q of type %q", resource.Name, resource.Type)
 		}
 		supportedShapes = append(supportedShapes, additionalShapes...)
 	}
