@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	ResourceType voyager.ResourceType = "SQS"
+	ResourceType   voyager.ResourceType = "SQS"
+	ResourcePrefix                      = "SQS"
 
 	snsTopicArnReferenceNameSuffix = "TopicArn"
 
@@ -82,7 +83,15 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	result := &wiringplugin.WiringResult{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
-				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name, "", nil),
+				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name, ResourcePrefix, map[string]string{
+					"QUEUE_URL":       "data.queue-url",
+					"QUEUE_NAME":      "data.queue-name",
+					"QUEUE_ARN":       "data.queue-arn",
+					"QUEUE_REGION":    "data.queue-region",
+					"DEAD_QUEUE_URL":  "data.dead-queue-url",
+					"DEAD_QUEUE_NAME": "data.dead-queue-name",
+					"DEAD_QUEUE_ARN":  "data.dead-queue-arn",
+				}),
 			},
 		},
 		Resources: wiredResources,
@@ -149,9 +158,6 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: wiringutil.ServiceInstanceMetaName(resource.Name),
-					Annotations: map[string]string{
-						voyager.Domain + "/envResourcePrefix": clusterServiceClassExternalName,
-					},
 				},
 				Spec: sc_v1b1.ServiceInstanceSpec{
 					PlanReference: sc_v1b1.PlanReference{

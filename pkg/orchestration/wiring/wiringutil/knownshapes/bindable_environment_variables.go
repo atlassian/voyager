@@ -21,6 +21,7 @@ type BindableEnvironmentVariablesData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
 	Prefix                           string            `json:"prefix,omitempty"`
 	Vars                             map[string]string `json:"vars,omitempty"`
+	ExcludeResourceNameInKey         bool              `json:"exclude_resource_name_in_key,omitempty"`
 }
 
 func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix string, vars map[string]string) *BindableEnvironmentVariables {
