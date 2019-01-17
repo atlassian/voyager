@@ -18,14 +18,12 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util"
-	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
 	autoscaling_v2b1 "k8s.io/api/autoscaling/v2beta1"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -51,7 +49,6 @@ const (
 )
 
 var (
-	instanceGK          = schema.GroupKind{Group: sc_v1b1.GroupName, Kind: k8s.ServiceInstanceKind}
 	imageValidatorRegex = regexp.MustCompile(`^.+[:@].+$`)
 )
 
@@ -131,7 +128,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	// Prepare environment variables
 	var envFrom []core_v1.EnvFromSource
 	var smithResources []smith_v1.Resource
-	var bindingResources []smith_v1.Resource
 	var bindingResult []compute.BindingResult
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
@@ -147,7 +143,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		resourceReference := bindableShape.Data.ServiceInstanceName
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
-		bindingResources = append(bindingResources, binding)
 		bindingResult = append(bindingResult, compute.BindingResult{
 			ResourceName:            dep.Name,
 			BindableEnvVarShape:     *bindableShape,

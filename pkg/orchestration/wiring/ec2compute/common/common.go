@@ -44,11 +44,6 @@ const (
 
 	secretEnvVarPluginTypeName = "secretenvvar"
 
-	// special case ec2 -> ec2 dependency relationship
-	microsClusterServiceClassExternalName  = "micros"
-	microsClusterServicePlanExternalNameV1 = "default-plan"
-	microsClusterServicePlanExternalNameV2 = "v2"
-
 	MaximumServiceNameLength = 26
 
 	VoyagerTagValue = "voyager"
