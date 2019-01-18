@@ -19,7 +19,6 @@ const (
 	ResourceType                   voyager.ResourceType = "InternalDNS"
 	clusterServiceClassExternalID                       = "f77e1881-36f3-42ce-9848-7a811b421dd7"
 	clusterServicePlanExternalID                        = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
-	kubeIngressResourceType        voyager.ResourceType = "KubeIngress"
 	kubeIngressRefMetadata                              = "metadata"
 	kubeIngressRefMetadataEndpoint                      = "endpoint"
 )
@@ -45,16 +44,6 @@ func New() *WiringPlugin {
 			ResourceType:                  ResourceType,
 		},
 	}
-}
-
-// getIngressDependency can only depend on one kubeIngress
-func getIngressDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
-	if len(dependencies) == 1 {
-		if dependencies[0].Type == kubeIngressResourceType {
-			return dependencies[0], nil
-		}
-	}
-	return wiringplugin.WiredDependency{}, errors.Errorf("internaldns resources must depend on only one ingress resource")
 }
 
 func getInstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
@@ -96,7 +85,6 @@ func getInstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.Wiri
 	}
 
 	return json.Marshal(&finalSpec)
-
 }
 
 func mapEnvironmentType(envType voyager.EnvType) string {
@@ -109,21 +97,24 @@ func mapEnvironmentType(envType voyager.EnvType) string {
 	return string(envType)
 }
 
-// svccatentangler plugin expects reference function to return a slice of reference
-// in this internaldns case, it will always be only one reference, because it's limited by getIngressDependency method
-func getReferences(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
+// svccatentangler plugin expects reference function to return a slice of references, in the case of internaldns it will
+// always be a single reference.
+func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
 	var references []smith_v1.Reference
-	// there can be only one ingressDependency
-	ingressDependency, err := getIngressDependency(context.Dependencies)
-	if err != nil {
-		return nil, err
+
+	// Ensure we only depend on one resource, as we can only bind to a single ingress
+	if len(context.Dependencies) != 1 {
+		return nil, errors.Errorf("internaldns resources must depend on only one ingress resource")
 	}
-	ingressShape, found, err := knownshapes.FindIngressEndpointShape(ingressDependency.Contract.Shapes)
+	dependency := context.Dependencies[0]
+
+	ingressShape, found, err := knownshapes.FindIngressEndpointShape(dependency.Contract.Shapes)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Errorf("shape %q is required to create ServiceBinding for %q but was not found", knownshapes.IngressEndpointShape, ingressDependency.Name)
+		return nil, errors.Errorf("shape %q is required to create ServiceBinding for %q but was not found",
+			knownshapes.IngressEndpointShape, dependency.Name)
 	}
 	ingressEndpoint := ingressShape.Data.IngressEndpoint
 	referenceName := wiringutil.ReferenceName(ingressEndpoint.Resource, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
@@ -131,7 +122,7 @@ func getReferences(resource *orch_v1.StateResource, context *wiringplugin.Wiring
 	return references, nil
 }
 
-func getObjectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
+func getObjectMeta(_ *orch_v1.StateResource, _ *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
 	return meta_v1.ObjectMeta{
 		Annotations: map[string]string{
 			voyager.Domain + "/envResourcePrefix": string(ResourceType),
