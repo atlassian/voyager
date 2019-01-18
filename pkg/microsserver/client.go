@@ -60,7 +60,7 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, noUser),
 		restclient.Method(http.MethodGet),
-		restclient.JoinPath(fmt.Sprintf(getAliasEndpoint)),
+		restclient.JoinPath(getAliasEndpoint),
 		restclient.Query("domainName", domainName),
 		restclient.Context(ctx),
 		restclient.Header("Accept", "application/json"),
@@ -81,7 +81,7 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	}
 
 	if response.StatusCode == http.StatusNotFound {
-		return &AliasInfo{}, nil
+		return nil, nil
 	}
 
 	if response.StatusCode != http.StatusOK {

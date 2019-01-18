@@ -19,7 +19,7 @@ go_library(
         "//pkg/admission:go_default_library",
         "//pkg/execution/svccatadmission/rps:go_default_library",
         "//pkg/microsserver:go_default_library",
-        "//pkg/orchestration/wiring/internaldns:go_default_library",
+        "//pkg/orchestration/wiring/internaldns/api:go_default_library",
         "//pkg/servicecentral:go_default_library",
         "//pkg/util:go_default_library",
         "//pkg/util/auth:go_default_library",
@@ -37,7 +37,6 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    size = "small",
     srcs = [
         "asap_test.go",
         "external_id_test.go",

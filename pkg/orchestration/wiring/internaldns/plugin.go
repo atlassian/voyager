@@ -6,6 +6,7 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -16,7 +17,6 @@ import (
 )
 
 const (
-	ResourceType                   voyager.ResourceType = "InternalDNS"
 	clusterServiceClassExternalID                       = "f77e1881-36f3-42ce-9848-7a811b421dd7"
 	clusterServicePlanExternalID                        = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
 	kubeIngressResourceType        voyager.ResourceType = "KubeIngress"
@@ -42,7 +42,7 @@ func New() *WiringPlugin {
 			InstanceSpec:                  getInstanceSpec,
 			ObjectMeta:                    getObjectMeta,
 			References:                    getReferences,
-			ResourceType:                  ResourceType,
+			ResourceType:                  apiinternaldns.ResourceType,
 			OptionalShapes:                svccatentangler.NoOptionalShapes,
 		},
 	}
@@ -135,7 +135,7 @@ func getReferences(resource *orch_v1.StateResource, context *wiringplugin.Wiring
 func getObjectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
 	return meta_v1.ObjectMeta{
 		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": string(ResourceType),
+			voyager.Domain + "/envResourcePrefix": string(apiinternaldns.ResourceType),
 		},
 	}, nil
 }
