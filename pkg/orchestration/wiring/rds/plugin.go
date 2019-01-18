@@ -2,12 +2,12 @@ package rds
 
 import (
 	"encoding/json"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"reflect"
 
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,10 +31,10 @@ type MainParametersSpec struct {
 	MicrosInstanceSecurityGroup string                `json:"MicrosInstanceSecurityGroup"`
 	MicrosJumpboxSecurityGroup  string                `json:"MicrosJumpboxSecurityGroup"`
 	MicrosPagerdutyEndpoint     string                `json:"MicrosPagerdutyEndpoint,omitempty"`
-	MicrosPagerdutyEndpointHigh string              `json:"MicrosPagerdutyEndpointHigh,omitempty"`
-	MicrosPagerdutyEndpointLow  string              `json:"MicrosPagerdutyEndpointLow,omitempty"`
-	MicrosPrivateDNSZone        string              `json:"MicrosPrivateDnsZone"`
-	MicrosPrivatePaaSDNSZone    string              `json:"MicrosPrivatePaasDnsZone"`
+	MicrosPagerdutyEndpointHigh string                `json:"MicrosPagerdutyEndpointHigh,omitempty"`
+	MicrosPagerdutyEndpointLow  string                `json:"MicrosPagerdutyEndpointLow,omitempty"`
+	MicrosPrivateDNSZone        string                `json:"MicrosPrivateDnsZone"`
+	MicrosPrivatePaaSDNSZone    string                `json:"MicrosPrivatePaasDnsZone"`
 	MicrosResourceName          string                `json:"MicrosResourceName"`
 	MicrosServiceName           voyager.ServiceName   `json:"MicrosServiceName"`
 	MicrosVPCId                 string                `json:"MicrosVpcId"`

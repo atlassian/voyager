@@ -54,4 +54,3 @@ type MicrosAlarmSpec struct {
 	Endpoint string `json:"endpoint"`
 	Consumer string `json:"consumer"`
 }
-
