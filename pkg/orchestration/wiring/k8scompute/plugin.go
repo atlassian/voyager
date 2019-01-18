@@ -3,27 +3,29 @@ package k8scompute
 import (
 	"fmt"
 	"regexp"
+	"sort"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
+	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util"
-	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
 	autoscaling_v2b1 "k8s.io/api/autoscaling/v2beta1"
 	core_v1 "k8s.io/api/core/v1"
+	policy_v1 "k8s.io/api/policy/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -41,14 +43,17 @@ const (
 
 	serviceAccountPostFix         = "svcacc"
 	podSecretEnvVarNamePostfix    = "podsecretenvvar"
+	secretPluginNamePostfix       = "secretplugin"
+	pdbPostfix                    = "pdb"
 	hpaPostfix                    = "hpa"
 	podSecretEnvVarPluginTypeName = "podsecretenvvar"
 	bindingOutputRoleARNKey       = "IAMRoleARN"
 	envVarIgnoreRegex             = `^IamPolicySnippet$`
+
+	defaultPodDisruptionBudget = "30%"
 )
 
 var (
-	instanceGK          = schema.GroupKind{Group: sc_v1b1.GroupName, Kind: k8s.ServiceInstanceKind}
 	imageValidatorRegex = regexp.MustCompile(`^.+[:@].+$`)
 )
 
@@ -98,16 +103,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	// Validate ASAP dependencies
-	asapDependencyCount := 0
-	for _, dep := range context.Dependencies {
-		if dep.Type == asapkey.ResourceType {
-			// Only allow one asap key dependency per compute
-			// so we can use same micros1 env var names and facilitate migration
-			if asapDependencyCount++; asapDependencyCount > 1 {
-				return nil, false, errors.Errorf("cannot depend on more than one asap key resource")
-			}
-		}
+	if err := compute.ValidateASAPDependencies(context); err != nil {
+		return nil, false, err
 	}
 
 	// Parse spec and apply defaults
@@ -128,7 +125,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	// Prepare environment variables
 	var envFrom []core_v1.EnvFromSource
 	var smithResources []smith_v1.Resource
-	var bindingResources []smith_v1.Resource
+	var bindingResult []compute.BindingResult
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
@@ -137,47 +134,74 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, err
 		}
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dep.Name, dep.Type, knownshapes.BindableEnvironmentVariablesShape)
+			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
 		resourceReference := bindableShape.Data.ServiceInstanceName
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
-		bindingResources = append(bindingResources, binding)
+		bindingResult = append(bindingResult, compute.BindingResult{
+			ResourceName:            dep.Name,
+			BindableEnvVarShape:     *bindableShape,
+			CreatedBindingFromShape: binding,
+		})
 	}
 
 	var iamRoleRef *smith_v1.Reference
 
+	bindingReferences := make([]smith_v1.Reference, 0, len(bindingResult))
+	shouldUseSecretPlugin := true
+	for _, res := range bindingResult {
+		ref := smith_v1.Reference{
+			Resource: res.CreatedBindingFromShape.Name,
+		}
+		bindingReferences = append(bindingReferences, ref)
+		if res.BindableEnvVarShape.Data.Vars == nil {
+			shouldUseSecretPlugin = false
+		}
+	}
+
 	// Reference environment variables retrieved from ServiceBinding objects
-	if len(bindingResources) > 0 {
-		bindingReferences := make([]smith_v1.Reference, 0, len(bindingResources))
-		for _, res := range bindingResources {
-			bindingReferences = append(bindingReferences, smith_v1.Reference{
-				Resource: res.Name,
-			})
+	if len(bindingResult) > 0 {
+		var secretResource smith_v1.Resource
+		var err error
+
+		if shouldUseSecretPlugin {
+			secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
+			if err != nil {
+				return nil, false, err
+			}
+
+			secretResource, err = generateSecretResource(resource.Name, envVars, secretRefs)
+			if err != nil {
+				return nil, false, err
+			}
+
+		} else {
+			secretResource, err = generateSecretEnvVarsResource(resource.Name, spec.RenameEnvVar, bindingReferences)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 
-		secretEnvVarsResource, err := generateSecretEnvVarsResource(resource.Name, spec, bindingReferences)
-		if err != nil {
-			return nil, false, err
-		}
-		secretEnvVarRef := smith_v1.Reference{
-			Name:     wiringutil.ReferenceName(secretEnvVarsResource.Name, metadataElement, nameElement),
-			Resource: secretEnvVarsResource.Name,
+		secretRef := smith_v1.Reference{
+			Name:     wiringutil.ReferenceName(secretResource.Name, metadataElement, nameElement),
+			Resource: secretResource.Name,
 			Path:     metadataNamePath,
 		}
 		falseObj := false
 		envFromSource := core_v1.EnvFromSource{
 			SecretRef: &core_v1.SecretEnvSource{
 				LocalObjectReference: core_v1.LocalObjectReference{
-					Name: secretEnvVarRef.Ref(),
+					Name: secretRef.Ref(),
 				},
 				Optional: &falseObj,
 			},
 		}
+
 		envFrom = append(envFrom, envFromSource)
-		references = append(references, secretEnvVarRef)
-		smithResources = append(smithResources, secretEnvVarsResource)
+		references = append(references, secretRef)
+		smithResources = append(smithResources, secretResource)
 
 		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
 			context.StateContext.ServiceName, false, bindingReferences, context, []string{}, buildKube2iamRoles(context))
@@ -250,7 +274,28 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		resourceNameLabel: string(resource.Name),
 	}
 
-	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref())
+	affinity := buildAffinity(labelMap)
+
+	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
+
+	// Add pod disruption budget
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdb := smith_v1.Resource{
+		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
+		Spec: smith_v1.ResourceSpec{
+			Object: &policy_v1.PodDisruptionBudget{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.PodDisruptionBudgetKind,
+					APIVersion: policy_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaNameWithPostfix(resource.Name, pdbPostfix),
+				},
+				Spec: pdbSpec,
+			},
+		},
+	}
+	smithResources = append(smithResources, pdb)
 
 	// The kube deployment object spec
 	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
@@ -318,10 +363,38 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	return result, false, nil
 }
 
-func generateSecretEnvVarsResource(compute voyager.ResourceName, spec *Spec, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
+func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
+	secretData := make(map[string][]byte, len(envVars))
+	for key, val := range envVars {
+		secretData[key] = []byte(val)
+	}
+
+	secretPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretplugin.Spec{
+		Data: secretData,
+	})
+	if err != nil {
+		return smith_v1.Resource{}, errors.WithStack(err)
+	}
+
+	instanceResource := smith_v1.Resource{
+		Name:       wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix),
+		References: dependencyReferences,
+		Spec: smith_v1.ResourceSpec{
+			Plugin: &smith_v1.PluginSpec{
+				Name:       secretplugin.PluginName,
+				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
+				Spec:       secretPluginSpec,
+			},
+		},
+	}
+
+	return instanceResource, nil
+}
+
+func generateSecretEnvVarsResource(compute voyager.ResourceName, renameEnvVar map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
 	secretEnvVarPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretenvvar.PodSpec{
 		IgnoreKeyRegex: envVarIgnoreRegex,
-		RenameEnvVar:   spec.RenameEnvVar,
+		RenameEnvVar:   renameEnvVar,
 	})
 	if err != nil {
 		return smith_v1.Resource{}, err
@@ -344,11 +417,12 @@ func generateSecretEnvVarsResource(compute voyager.ResourceName, spec *Spec, dep
 	return instanceResource, nil
 }
 
-func buildPodSpec(containers []core_v1.Container, serviceAccountName string) core_v1.PodSpec {
+func buildPodSpec(containers []core_v1.Container, serviceAccountName string, affinity *core_v1.Affinity) core_v1.PodSpec {
 	var terminationGracePeriodSeconds int64 = 30
 	return core_v1.PodSpec{
 		Containers:         containers,
 		ServiceAccountName: serviceAccountName,
+		Affinity:           affinity,
 
 		// field with default values
 		DNSPolicy:                     "ClusterFirst",
@@ -418,6 +492,73 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	}
 
 	return containers
+}
+
+func buildAffinity(labelMap map[string]string) *core_v1.Affinity {
+	return &core_v1.Affinity{
+		PodAntiAffinity: buildAntiAffinity(labelMap),
+	}
+}
+
+func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
+	// Convert the labelMap into a a slice of LabelSelectorRequirements
+	matchExpressions := make([]meta_v1.LabelSelectorRequirement, 0, len(labelMap))
+
+	// Iterate over sorted keys because otherwise this becomes untestable
+	keys := make([]string, 0, len(labelMap))
+	for k := range labelMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		matchExpressions = append(matchExpressions,
+			meta_v1.LabelSelectorRequirement{
+				Key:      k,
+				Operator: meta_v1.LabelSelectorOpIn,
+				Values:   []string{labelMap[k]},
+			},
+		)
+	}
+
+	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
+	// the app to different zones, and then nodes (where possible)
+	podAffinityTerms := []core_v1.WeightedPodAffinityTerm{
+		core_v1.WeightedPodAffinityTerm{
+			Weight: 75,
+			PodAffinityTerm: core_v1.PodAffinityTerm{
+				LabelSelector: &meta_v1.LabelSelector{
+					MatchExpressions: matchExpressions,
+				},
+				TopologyKey: k8s.LabelZoneFailureDomain,
+			},
+		},
+		core_v1.WeightedPodAffinityTerm{
+			Weight: 50,
+			PodAffinityTerm: core_v1.PodAffinityTerm{
+				LabelSelector: &meta_v1.LabelSelector{
+					MatchExpressions: matchExpressions,
+				},
+				TopologyKey: k8s.LabelHostname,
+			},
+		},
+	}
+
+	return &core_v1.PodAntiAffinity{
+		PreferredDuringSchedulingIgnoredDuringExecution: podAffinityTerms,
+	}
+}
+
+func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
+	return policy_v1.PodDisruptionBudgetSpec{
+		MinAvailable: &intstr.IntOrString{
+			Type:   intstr.String,
+			StrVal: defaultPodDisruptionBudget,
+		},
+		Selector: &meta_v1.LabelSelector{
+			MatchLabels: labelMap,
+		},
+	}
 }
 
 func buildHorizontalPodAutoscalerSpec(spec *Spec, deploymentName string) autoscaling_v2b1.HorizontalPodAutoscalerSpec {

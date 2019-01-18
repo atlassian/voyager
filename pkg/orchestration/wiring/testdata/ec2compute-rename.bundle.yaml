@@ -129,7 +129,9 @@ spec:
           secretName: compute---iamrole
   - name: compute--instance
     references:
-    - resource: compute--secretenvvar
+    - name: compute--secretenvvar-metadata-name
+      resource: compute--secretenvvar
+      path: metadata.name
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: compute---iamrole-binding-IAMRoleARN
@@ -183,5 +185,5 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: compute--secretenvvar
+              name: '!{compute--secretenvvar-metadata-name}'
 status: {}

@@ -40,6 +40,7 @@ spec:
         metadata:
           annotations:
             voyager.atl-paas.net/envResourcePrefix: pg
+            smith.atlassian.com/deletionDelay: 168h0m0s
           name: db
         spec:
           clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8

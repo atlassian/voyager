@@ -18,17 +18,19 @@ var (
 	_ wiringplugin.Shape = &IngressEndpoint{}
 	_ wiringplugin.Shape = &SetOfPodsSelectableByLabels{}
 	_ wiringplugin.Shape = &SnsSubscribable{}
+	_ wiringplugin.Shape = &ASAPKey{}
 )
 
 func TestAllKnownShapes(t *testing.T) {
 	t.Parallel()
 
 	allKnownShapes := []wiringplugin.Shape{
-		NewBindableEnvironmentVariables(resourceName),
+		NewBindableEnvironmentVariables(resourceName, "abc", map[string]string{"a": "b"}),
 		NewBindableIamAccessible(resourceName, "somePath"),
 		NewIngressEndpoint(resourceName),
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
 		NewSnsSubscribable(resourceName),
+		NewASAPKey(),
 	}
 
 	for _, shape := range allKnownShapes {

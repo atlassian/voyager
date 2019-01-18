@@ -126,7 +126,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:66ab859642baf88a8eca757e5fd2e6052031ac7611ab86596992f160c1fd2bd2"
+  digest = "1:413f92649c2abef6e5c12a071bddc6341e8fc1e86368f3178f22caa48d016e43"
   name = "github.com/atlassian/smith"
   packages = [
     ".",
@@ -153,7 +153,7 @@
     "pkg/util/logz",
   ]
   pruneopts = "NT"
-  revision = "b8afac4bb73aed4af7b2a6a5ae287ae8cd9dca28"
+  revision = "174c523d175136d5a8bec125db7c320ebf718cd9"
 
 [[projects]]
   digest = "1:07918ac16957399fa68bf94b3ab26dccccc6992f1ccbcf589896734569a0a7e7"
@@ -1681,6 +1681,7 @@
     "k8s.io/api/autoscaling/v2beta1",
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
+    "k8s.io/api/policy/v1beta1",
     "k8s.io/api/rbac/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",

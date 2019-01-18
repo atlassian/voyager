@@ -3,19 +3,16 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "asap_key.go",
-        "bindable_environment_variables.go",
-        "bindable_iam_accessible.go",
-        "ingress_endpoint.go",
-        "set_of_pods_selectable_by_labels.go",
-        "sns_subscribable.go",
-        "util.go",
-        "zz_generated.deepcopy.go",
+        "asap.go",
+        "secret.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute",
     visibility = ["//visibility:public"],
     deps = [
+        "//:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
     ],
@@ -24,12 +21,14 @@ go_library(
 go_test(
     name = "go_default_test",
     size = "small",
-    srcs = ["standard_test.go"],
+    srcs = ["secret_test.go"],
     embed = [":go_default_library"],
     race = "on",
     deps = [
-        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
-        "//pkg/orchestration/wiring/wiringplugin/testing:go_default_library",
+        "//:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
     ],
 )

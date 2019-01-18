@@ -34,4 +34,8 @@ func TestShape(t *testing.T, shape wiringplugin.Shape) {
 		require.NoError(t, wiringplugin.CopyShape(shape, newShape))
 		assert.Equal(t, shape, newShape)
 	})
+
+	t.Run("deep copy", func(t *testing.T) {
+		assert.Equal(t, shape, shape.DeepCopyShape())
+	})
 }

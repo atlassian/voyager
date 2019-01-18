@@ -10,6 +10,7 @@ go_library(
         "//pkg/execution/plugins/atlassian/secretenvvar/kubecompute:go_default_library",
         "//pkg/execution/plugins/atlassian/secretenvvar/microscompute:go_default_library",
         "//pkg/execution/plugins/generic/secretparameter:go_default_library",
+        "//pkg/execution/plugins/generic/secretplugin:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/plugin:go_default_library",
     ],
 )
