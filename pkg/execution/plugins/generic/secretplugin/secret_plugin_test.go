@@ -9,7 +9,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 )
 
-func TestProcessJsonData(t *testing.T) {
+func TestProcessJSONData(t *testing.T) {
 	t.Parallel()
 
 	plugin, err := New()

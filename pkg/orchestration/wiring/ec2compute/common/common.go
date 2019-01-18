@@ -55,7 +55,7 @@ type StateComputeSpec struct {
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
 	secretPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretplugin.Spec{
-		JsonData: map[string]interface{}{
+		JSONData: map[string]interface{}{
 			envVarOutputSecretKey: map[string]map[string]string{
 				inputParameterEnvVarName: envVars,
 			},

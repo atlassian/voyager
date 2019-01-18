@@ -21,8 +21,6 @@ const (
 
 	clusterServiceClassExternalID = "d508783c-eef6-46fe-8245-d595ef2795e2"
 	clusterServicePlanExternalID  = "7e6d37bb-8aa4-4c63-87d2-d78ca91a0120"
-
-	rdsEnvResourcePrefix = "RDS"
 )
 
 // MICROS Provided RDS CFN Parameters

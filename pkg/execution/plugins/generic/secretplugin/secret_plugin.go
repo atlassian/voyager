@@ -56,7 +56,7 @@ func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.C
 
 	// Append to final output
 	converted := map[string][]byte{}
-	for k, v := range spec.JsonData {
+	for k, v := range spec.JSONData {
 		envVarJSONString, err := json.Marshal(v)
 		if err != nil {
 			return nil, errors.WithStack(err)
