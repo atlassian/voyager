@@ -13,7 +13,7 @@ metadata:
     uid: 411c0040-617e-11e7-9b57-427d691976d7
 spec:
   resources:
-  - name: kubecompute-probes--svcacc
+  - name: kubecompute-simple--svcacc
     spec:
       object:
         apiVersion: v1
@@ -21,25 +21,38 @@ spec:
         - name: kubecompute-docker-atl-paas
         kind: ServiceAccount
         metadata:
-          name: kubecompute-probes--svcacc
-  - name: kubecompute-probes
+          name: kubecompute-simple--svcacc
+  - name: kubecompute-simple--pdb
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: kubecompute-simple--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: kubecompute-simple
+              stateName: state1
+  - name: kubecompute-simple
     references:
-    - name: kubecompute-probes--svcacc-metadata-name
+    - name: kubecompute-simple--svcacc-metadata-name
       path: metadata.name
-      resource: kubecompute-probes--svcacc
+      resource: kubecompute-simple--svcacc
     spec:
       object:
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: kubecompute-probes
+          name: kubecompute-simple
         spec:
           progressDeadlineSeconds: 600
           replicas: 1
           revisionHistoryLimit: 0
           selector:
             matchLabels:
-              resourceName: kubecompute-probes
+              resourceName: kubecompute-simple
               stateName: state1
           strategy:
             rollingUpdate:
@@ -54,9 +67,38 @@ spec:
                 atlassian.com/resource_owner: an_owner
               creationTimestamp: null
               labels:
-                resourceName: kubecompute-probes
+                resourceName: kubecompute-simple
                 stateName: state1
             spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - kubecompute-simple
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                    weight: 75
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - kubecompute-simple
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
+                      topologyKey: kubernetes.io/hostname
+                    weight: 50
               containers:
               - env:
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
@@ -172,19 +214,19 @@ spec:
               restartPolicy: Always
               schedulerName: default-scheduler
               securityContext: {}
-              serviceAccountName: '!{kubecompute-probes--svcacc-metadata-name}'
+              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
-  - name: kubecompute-probes--hpa
+  - name: kubecompute-simple--hpa
     references:
-    - name: kubecompute-probes-metadata-name
+    - name: kubecompute-simple-metadata-name
       path: metadata.name
-      resource: kubecompute-probes
+      resource: kubecompute-simple
     spec:
       object:
         apiVersion: autoscaling/v2beta1
         kind: HorizontalPodAutoscaler
         metadata:
-          name: kubecompute-probes--hpa
+          name: kubecompute-simple--hpa
         spec:
           maxReplicas: 5
           metrics:
@@ -196,5 +238,5 @@ spec:
           scaleTargetRef:
             apiVersion: apps/v1
             kind: Deployment
-            name: '!{kubecompute-probes-metadata-name}'
+            name: '!{kubecompute-simple-metadata-name}'
 status: {}

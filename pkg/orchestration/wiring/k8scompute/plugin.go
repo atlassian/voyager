@@ -3,6 +3,7 @@ package k8scompute
 import (
 	"fmt"
 	"regexp"
+	"sort"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
@@ -22,6 +23,7 @@ import (
 	apps_v1 "k8s.io/api/apps/v1"
 	autoscaling_v2b1 "k8s.io/api/autoscaling/v2beta1"
 	core_v1 "k8s.io/api/core/v1"
+	policy_v1 "k8s.io/api/policy/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -42,10 +44,13 @@ const (
 	serviceAccountPostFix         = "svcacc"
 	podSecretEnvVarNamePostfix    = "podsecretenvvar"
 	secretPluginNamePostfix       = "secretplugin"
+	pdbPostfix                    = "pdb"
 	hpaPostfix                    = "hpa"
 	podSecretEnvVarPluginTypeName = "podsecretenvvar"
 	bindingOutputRoleARNKey       = "IAMRoleARN"
 	envVarIgnoreRegex             = `^IamPolicySnippet$`
+
+	defaultPodDisruptionBudget = "30%"
 )
 
 var (
@@ -277,7 +282,28 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		resourceNameLabel: string(resource.Name),
 	}
 
-	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref())
+	affinity := buildAffinity(labelMap)
+
+	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
+
+	// Add pod disruption budget
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdb := smith_v1.Resource{
+		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
+		Spec: smith_v1.ResourceSpec{
+			Object: &policy_v1.PodDisruptionBudget{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.PodDisruptionBudgetKind,
+					APIVersion: policy_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: wiringutil.MetaNameWithPostfix(resource.Name, pdbPostfix),
+				},
+				Spec: pdbSpec,
+			},
+		},
+	}
+	smithResources = append(smithResources, pdb)
 
 	// The kube deployment object spec
 	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
@@ -399,11 +425,12 @@ func generateSecretEnvVarsResource(compute voyager.ResourceName, renameEnvVar ma
 	return instanceResource, nil
 }
 
-func buildPodSpec(containers []core_v1.Container, serviceAccountName string) core_v1.PodSpec {
+func buildPodSpec(containers []core_v1.Container, serviceAccountName string, affinity *core_v1.Affinity) core_v1.PodSpec {
 	var terminationGracePeriodSeconds int64 = 30
 	return core_v1.PodSpec{
 		Containers:         containers,
 		ServiceAccountName: serviceAccountName,
+		Affinity:           affinity,
 
 		// field with default values
 		DNSPolicy:                     "ClusterFirst",
@@ -473,6 +500,73 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	}
 
 	return containers
+}
+
+func buildAffinity(labelMap map[string]string) *core_v1.Affinity {
+	return &core_v1.Affinity{
+		PodAntiAffinity: buildAntiAffinity(labelMap),
+	}
+}
+
+func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
+	// Convert the labelMap into a a slice of LabelSelectorRequirements
+	matchExpressions := make([]meta_v1.LabelSelectorRequirement, 0, len(labelMap))
+
+	// Iterate over sorted keys because otherwise this becomes untestable
+	keys := make([]string, 0, len(labelMap))
+	for k := range labelMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		matchExpressions = append(matchExpressions,
+			meta_v1.LabelSelectorRequirement{
+				Key:      k,
+				Operator: meta_v1.LabelSelectorOpIn,
+				Values:   []string{labelMap[k]},
+			},
+		)
+	}
+
+	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
+	// the app to different zones, and then nodes (where possible)
+	podAffinityTerms := []core_v1.WeightedPodAffinityTerm{
+		core_v1.WeightedPodAffinityTerm{
+			Weight: 75,
+			PodAffinityTerm: core_v1.PodAffinityTerm{
+				LabelSelector: &meta_v1.LabelSelector{
+					MatchExpressions: matchExpressions,
+				},
+				TopologyKey: k8s.LabelZoneFailureDomain,
+			},
+		},
+		core_v1.WeightedPodAffinityTerm{
+			Weight: 50,
+			PodAffinityTerm: core_v1.PodAffinityTerm{
+				LabelSelector: &meta_v1.LabelSelector{
+					MatchExpressions: matchExpressions,
+				},
+				TopologyKey: k8s.LabelHostname,
+			},
+		},
+	}
+
+	return &core_v1.PodAntiAffinity{
+		PreferredDuringSchedulingIgnoredDuringExecution: podAffinityTerms,
+	}
+}
+
+func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
+	return policy_v1.PodDisruptionBudgetSpec{
+		MinAvailable: &intstr.IntOrString{
+			Type:   intstr.String,
+			StrVal: defaultPodDisruptionBudget,
+		},
+		Selector: &meta_v1.LabelSelector{
+			MatchLabels: labelMap,
+		},
+	}
 }
 
 func buildHorizontalPodAutoscalerSpec(spec *Spec, deploymentName string) autoscaling_v2b1.HorizontalPodAutoscalerSpec {

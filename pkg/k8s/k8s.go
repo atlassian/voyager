@@ -15,6 +15,7 @@ const (
 	DeploymentKind              = "Deployment"
 	NamespaceKind               = "Namespace"
 	PodKind                     = "Pod"
+	PodDisruptionBudgetKind     = "PodDisruptionBudget"
 	ReplicaSetKind              = "ReplicaSet"
 	RoleKind                    = "Role"
 	RoleBindingKind             = "RoleBinding"
@@ -37,6 +38,18 @@ const (
 	WatchVerb            = "watch"
 
 	ServiceDescriptorClaimVerb = "claim"
+
+	// Beta labels, from:
+	// https://github.com/kubernetes/kubernetes/blob/v1.12.2/pkg/kubelet/apis/well_known_labels.go
+	LabelHostname           = "kubernetes.io/hostname"
+	LabelZoneFailureDomain  = "failure-domain.beta.kubernetes.io/zone"
+	LabelMultiZoneDelimiter = "__"
+	LabelZoneRegion         = "failure-domain.beta.kubernetes.io/region"
+
+	LabelInstanceType = "beta.kubernetes.io/instance-type"
+
+	LabelOS   = "beta.kubernetes.io/os"
+	LabelArch = "beta.kubernetes.io/arch"
 )
 
 var (
