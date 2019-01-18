@@ -9,7 +9,6 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
@@ -146,16 +145,8 @@ func constructComputeSpec(spec *runtime.RawExtension) (StateComputeSpec, error) 
 func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) (*wiringplugin.WiringResult, bool, error) {
 	dependencies := context.Dependencies
 
-	// Validate ASAP dependencies
-	asapDependencyCount := 0
-	for _, dep := range context.Dependencies {
-		if dep.Type == asapkey.ResourceType {
-			// Only allow one asap key dependency per compute
-			// so we can use same micros1 env var names and facilitate migration
-			if asapDependencyCount++; asapDependencyCount > 1 {
-				return nil, false, errors.Errorf("cannot depend on more than one asap key resource")
-			}
-		}
+	if err := validateASAPDependencies(context); err != nil {
+		return nil, false, err
 	}
 
 	// We shouldn't use ServiceName directly here, because we might deploy multiple ec2computes
@@ -309,4 +300,23 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 
 	return result, false, nil
 
+}
+
+func validateASAPDependencies(context *wiringplugin.WiringContext) error {
+	asapDependencyCount := 0
+	for _, dep := range context.Dependencies {
+		_, found, err := knownshapes.FindASAPKeyShapes(dep.Contract.Shapes)
+		if err != nil {
+			return errors.Wrap(err, "unable to validate ASAP dependencies")
+		}
+
+		if found {
+			// Only allow one asap key dependency per compute
+			// so we can use same micros1 env var names and facilitate migration
+			if asapDependencyCount++; asapDependencyCount > 1 {
+				return errors.New("cannot depend on more than one asap key resource")
+			}
+		}
+	}
+	return nil
 }
