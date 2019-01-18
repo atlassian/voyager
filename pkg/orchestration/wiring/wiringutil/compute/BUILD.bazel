@@ -2,11 +2,15 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = ["secret.go"],
+    srcs = [
+        "asap.go",
+        "secret.go",
+    ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute",
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",

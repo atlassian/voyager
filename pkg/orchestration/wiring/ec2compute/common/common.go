@@ -145,7 +145,7 @@ func constructComputeSpec(spec *runtime.RawExtension) (StateComputeSpec, error) 
 func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) (*wiringplugin.WiringResult, bool, error) {
 	dependencies := context.Dependencies
 
-	if err := validateASAPDependencies(context); err != nil {
+	if err := compute.ValidateASAPDependencies(context); err != nil {
 		return nil, false, err
 	}
 
@@ -300,23 +300,4 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 
 	return result, false, nil
 
-}
-
-func validateASAPDependencies(context *wiringplugin.WiringContext) error {
-	asapDependencyCount := 0
-	for _, dep := range context.Dependencies {
-		_, found, err := knownshapes.FindASAPKeyShapes(dep.Contract.Shapes)
-		if err != nil {
-			return errors.Wrap(err, "unable to validate ASAP dependencies")
-		}
-
-		if found {
-			// Only allow one asap key dependency per compute
-			// so we can use same micros1 env var names and facilitate migration
-			if asapDependencyCount++; asapDependencyCount > 1 {
-				return errors.New("cannot depend on more than one asap key resource")
-			}
-		}
-	}
-	return nil
 }

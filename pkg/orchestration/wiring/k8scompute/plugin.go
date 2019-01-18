@@ -103,16 +103,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
 
-	// Validate ASAP dependencies
-	asapDependencyCount := 0
-	for _, dep := range context.Dependencies {
-		if dep.Type == asapkey.ResourceType {
-			// Only allow one asap key dependency per compute
-			// so we can use same micros1 env var names and facilitate migration
-			if asapDependencyCount++; asapDependencyCount > 1 {
-				return nil, false, errors.Errorf("cannot depend on more than one asap key resource")
-			}
-		}
+	if err := compute.ValidateASAPDependencies(context); err != nil {
+		return nil, false, err
 	}
 
 	// Parse spec and apply defaults
@@ -142,7 +134,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, err
 		}
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dep.Name, dep.Type, knownshapes.BindableEnvironmentVariablesShape)
+			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
 		resourceReference := bindableShape.Data.ServiceInstanceName
