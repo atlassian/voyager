@@ -68,7 +68,6 @@ func New() *WiringPlugin {
 			ObjectMeta:                    objectMeta,
 			References:                    references,
 			ResourceType:                  ResourceType,
-			OptionalShapes:                svccatentangler.NoOptionalShapes,
 		},
 	}
 }

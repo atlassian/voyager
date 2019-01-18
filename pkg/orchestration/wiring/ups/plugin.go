@@ -25,7 +25,6 @@ func New() *WiringPlugin {
 			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
 			InstanceSpec:                  InstanceSpec,
 			ResourceType:                  ResourceType,
-			OptionalShapes:                svccatentangler.NoOptionalShapes,
 		},
 	}
 }

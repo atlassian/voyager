@@ -16,24 +16,43 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type OptionalShapeFunc func(*orch_v1.StateResource, *smith_v1.Resource, *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
+// AdditionalShapesFunc is used to return a list of shapes, it is used in the SvcCatEntangler as a way to return a list
+// of shapes for the resource to be used as input to the wiring functions of the dependants. These are additional shapes
+// that will be appended to the default shapes (see core function below).
+//
+// The `resource` is the orchestration level resource that was transformed into `smithResource`.
+type AdditionalShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
 
-func NoOptionalShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
-	return nil, nil
-}
-
+// SvcCatEntagler aims to abstract some of the work involved in writing a WiringPlugin functions. It assumes that every
+// WiringPlugin will provide a bundle spec through InstanceSpec(), the metadata for that spec through ObjectMeta() and a
+// list of smith references through References().
+//
+// This is for WiringPlugins that will create a ServiceInstance.
 type SvcCatEntangler struct {
+
+	// This identifies what resource types can be processed.
+	ResourceType voyager.ResourceType
+
+	// These are the OSB broker class and plan identifiers
 	ClusterServiceClassExternalID servicecatalog.ClassExternalID
 	ClusterServicePlanExternalID  servicecatalog.PlanExternalID
 
+	// InstanceSpec will return the JSON marshaled form of the bundle resource's spec. this
+	// service instance, service binding, deployment, ingress, or other resource.
 	InstanceSpec func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]byte, error)
-	ObjectMeta   func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error)
-	References   func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
 
-	ResourceType voyager.ResourceType
+	// ObjectMeta will return the ObjectMeta for the ServiceInstance.
+	// If nil, it's skipped.
+	ObjectMeta func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error)
 
-	// optional shapes by resource type
-	OptionalShapes OptionalShapeFunc
+	// References will return a list of Smith references used by the any part of the resulting Smith resource. A Smith
+	// reference looks something like "!{refname}" and require a smith reference entry with the same name to work.
+	// If nil, it's skipped.
+	References func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
+
+	// See documentation for AdditionalShapesFunc
+	// If nil, it's skipped.
+	AdditionalShapes AdditionalShapesFunc
 }
 
 type partialSpec struct {
@@ -119,11 +138,13 @@ func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResou
 	supportedShapes := []wiringplugin.Shape{
 		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, "", nil),
 	}
-	optionalShapes, err := e.OptionalShapes(resource, smithResource, context)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %q of type %q", resource.Name, resource.Type)
+	if e.AdditionalShapes != nil {
+		additionalShapes, err := e.AdditionalShapes(resource, smithResource, context)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to compute additional shapes for resource %q of type %q", resource.Name, resource.Type)
+		}
+		supportedShapes = append(supportedShapes, additionalShapes...)
 	}
-	supportedShapes = append(supportedShapes, optionalShapes...)
 	return &wiringplugin.ResourceContract{
 		Shapes: supportedShapes,
 	}, nil
