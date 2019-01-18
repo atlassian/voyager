@@ -128,6 +128,19 @@ spec:
         kind: ServiceAccount
         metadata:
           name: kubecompute-simple--svcacc
+  - name: kubecompute-simple--pdb
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: kubecompute-simple--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: kubecompute-simple
+              stateName: state1
   - name: kubecompute-simple
     references:
     - name: kubecompute-simple--podsecretenvvar-metadata-name
@@ -172,6 +185,35 @@ spec:
                 resourceName: kubecompute-simple
                 stateName: state1
             spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - kubecompute-simple
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                    weight: 75
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - kubecompute-simple
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
+                      topologyKey: kubernetes.io/hostname
+                    weight: 50
               containers:
               - env:
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
