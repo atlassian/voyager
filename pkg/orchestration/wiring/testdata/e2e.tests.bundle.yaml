@@ -880,6 +880,19 @@ spec:
         kind: ServiceAccount
         metadata:
           name: kc--svcacc
+  - name: kc--pdb
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: kc--pdb
+        spec:
+          minAvailable: 30%
+          selector:
+            matchLabels:
+              resourceName: kc
+              stateName: noderefapp
   - name: kc
     references:
     - name: kc--podsecretenvvar-metadata-name
@@ -924,6 +937,35 @@ spec:
                 resourceName: kc
                 stateName: noderefapp
             spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - kc
+                        - key: stateName
+                          operator: In
+                          values:
+                          - noderefapp
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                    weight: 75
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - kc
+                        - key: stateName
+                          operator: In
+                          values:
+                          - noderefapp
+                      topologyKey: kubernetes.io/hostname
+                    weight: 50
               containers:
               - env:
                 - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
