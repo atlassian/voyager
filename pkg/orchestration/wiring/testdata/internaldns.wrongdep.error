@@ -1,1 +1,1 @@
-failed to wire up resource "internaldns" of type "InternalDNS": error invoking plugin: internaldns resources must depend on only one ingress resource
+failed to wire up resource "internaldns" of type "InternalDNS": error invoking plugin: shape "voyager.atl-paas.net/IngressEndpointShape" is required to create ServiceBinding for "kubecompute-simple" but was not found
