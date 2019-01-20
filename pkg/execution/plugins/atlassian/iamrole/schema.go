@@ -39,19 +39,36 @@ const schema = `
     "serviceEnvironment": {
       "type": "object",
       "required": [
-        "lowPriorityPagerdutyEndpoint",
-        "pagerdutyEndpoint",
         "notificationEmail",
         "tags",
         "primaryVpcEnvironment"
       ],
       "additionalProperties": false,
       "properties": {
-        "lowPriorityPagerdutyEndpoint": {
-          "type": "string"
-        },
-        "pagerdutyEndpoint": {
-          "type": "string"
+        "alarmEndpoints": {
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "endpoint"
+            ],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "consumer": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string"
+              }
+            }
+          },
+          "minItems": 0,
+          "type": "array"
         },
         "tags": {
           "type": "object",

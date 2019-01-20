@@ -51,12 +51,29 @@ var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	Cfn:      Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, CfnPrefix, snsSubscribableForSnsV1Template),
 }
 
+func PagerdutyAlarmEndpoints(highPriorityPagerdutyEndpoint string, lowPriorityPagerdutyEndpoint string) []oap.MicrosAlarmSpec {
+	microsAlarmEndpoints := []oap.MicrosAlarmSpec{
+		{
+			Type:     "CloudWatch",
+			Priority: "high",
+			Endpoint: highPriorityPagerdutyEndpoint,
+			Consumer: "pagerduty",
+		},
+		{
+			Type:     "CloudWatch",
+			Priority: "low",
+			Endpoint: lowPriorityPagerdutyEndpoint,
+			Consumer: "pagerduty",
+		},
+	}
+	return microsAlarmEndpoints
+}
+
 func dynamoDbServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
 	return &oap.ServiceEnvironment{
-		NotificationEmail:            env.NotificationEmail,
-		LowPriorityPagerdutyEndpoint: env.LowPriorityPagerdutyEndpoint,
-		PagerdutyEndpoint:            env.PagerdutyEndpoint,
-		Tags:                         env.Tags,
+		NotificationEmail: env.NotificationEmail,
+		AlarmEndpoints:    env.AlarmEndpoints,
+		Tags:              env.Tags,
 		PrimaryVpcEnvironment: &oap.VPCEnvironment{
 			Region:     env.PrimaryVpcEnvironment.Region,
 			EMRSubnet:  env.PrimaryVpcEnvironment.EMRSubnet,
@@ -75,11 +92,10 @@ func s3ServiceEnvironment(_ *oap.ServiceEnvironment) *oap.ServiceEnvironment {
 // See https://stash.atlassian.com/projects/MDATA/repos/viceroy/browse/src/main/resources/schemas/cloudformation.json#28
 func CfnServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
 	return &oap.ServiceEnvironment{
-		LowPriorityPagerdutyEndpoint: env.LowPriorityPagerdutyEndpoint,
-		PagerdutyEndpoint:            env.PagerdutyEndpoint,
-		Tags:                         env.Tags,
-		ServiceSecurityGroup:         env.ServiceSecurityGroup,
-		NotificationEmail:            env.NotificationEmail,
+		AlarmEndpoints:       env.AlarmEndpoints,
+		Tags:                 env.Tags,
+		ServiceSecurityGroup: env.ServiceSecurityGroup,
+		NotificationEmail:    env.NotificationEmail,
 		PrimaryVpcEnvironment: &oap.VPCEnvironment{
 			AppSubnets:            env.PrimaryVpcEnvironment.AppSubnets,
 			VPCID:                 env.PrimaryVpcEnvironment.VPCID,

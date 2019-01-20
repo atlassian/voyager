@@ -7,6 +7,7 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,20 +24,20 @@ const (
 
 // MICROS Provided RDS CFN Parameters
 type MainParametersSpec struct {
-	MicrosAlarmEndpoints        []MicrosAlarmSpec   `json:"MicrosAlarmEndpoints"`
-	MicrosAppSubnets            []string            `json:"MicrosAppSubnets"`
-	MicrosEnv                   string              `json:"MicrosEnv"`
-	MicrosEnvironmentLabel      string              `json:"MicrosEnvironmentLabel,omitempty"`
-	MicrosInstanceSecurityGroup string              `json:"MicrosInstanceSecurityGroup"`
-	MicrosJumpboxSecurityGroup  string              `json:"MicrosJumpboxSecurityGroup"`
-	MicrosPagerdutyEndpoint     string              `json:"MicrosPagerdutyEndpoint,omitempty"`
-	MicrosPagerdutyEndpointHigh string              `json:"MicrosPagerdutyEndpointHigh,omitempty"`
-	MicrosPagerdutyEndpointLow  string              `json:"MicrosPagerdutyEndpointLow,omitempty"`
-	MicrosPrivateDNSZone        string              `json:"MicrosPrivateDnsZone"`
-	MicrosPrivatePaaSDNSZone    string              `json:"MicrosPrivatePaasDnsZone"`
-	MicrosResourceName          string              `json:"MicrosResourceName"`
-	MicrosServiceName           voyager.ServiceName `json:"MicrosServiceName"`
-	MicrosVPCId                 string              `json:"MicrosVpcId"`
+	MicrosAlarmEndpoints        []oap.MicrosAlarmSpec `json:"MicrosAlarmEndpoints"`
+	MicrosAppSubnets            []string              `json:"MicrosAppSubnets"`
+	MicrosEnv                   string                `json:"MicrosEnv"`
+	MicrosEnvironmentLabel      string                `json:"MicrosEnvironmentLabel,omitempty"`
+	MicrosInstanceSecurityGroup string                `json:"MicrosInstanceSecurityGroup"`
+	MicrosJumpboxSecurityGroup  string                `json:"MicrosJumpboxSecurityGroup"`
+	MicrosPagerdutyEndpoint     string                `json:"MicrosPagerdutyEndpoint,omitempty"`
+	MicrosPagerdutyEndpointHigh string                `json:"MicrosPagerdutyEndpointHigh,omitempty"`
+	MicrosPagerdutyEndpointLow  string                `json:"MicrosPagerdutyEndpointLow,omitempty"`
+	MicrosPrivateDNSZone        string                `json:"MicrosPrivateDnsZone"`
+	MicrosPrivatePaaSDNSZone    string                `json:"MicrosPrivatePaasDnsZone"`
+	MicrosResourceName          string                `json:"MicrosResourceName"`
+	MicrosServiceName           voyager.ServiceName   `json:"MicrosServiceName"`
+	MicrosVPCId                 string                `json:"MicrosVpcId"`
 }
 
 type MiscParametersSpec struct {
@@ -48,13 +49,6 @@ type MiscParametersSpec struct {
 
 type LocationSpec struct {
 	Environment string `json:"env"`
-}
-
-type MicrosAlarmSpec struct {
-	Type     string `json:"type"`
-	Priority string `json:"priority"`
-	Endpoint string `json:"endpoint"`
-	Consumer string `json:"consumer"`
 }
 
 type FinalSpec struct {
@@ -102,14 +96,14 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	// EMP-712: We are currently constructing the list of alarm endpoints manually.
 	// When the alarmEndpoints list is available in context.StateContext, we should
 	// just pass that down instead.
-	microsAlarmEndpoints := []MicrosAlarmSpec{
-		MicrosAlarmSpec{
+	microsAlarmEndpoints := []oap.MicrosAlarmSpec{
+		oap.MicrosAlarmSpec{
 			Type:     "CloudWatch",
 			Priority: "high",
 			Endpoint: context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
 			Consumer: "pagerduty",
 		},
-		MicrosAlarmSpec{
+		oap.MicrosAlarmSpec{
 			Type:     "CloudWatch",
 			Priority: "low",
 			Endpoint: context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,

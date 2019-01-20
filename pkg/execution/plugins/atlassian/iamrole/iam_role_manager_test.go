@@ -89,9 +89,21 @@ func TestGenerateRoleInstance(t *testing.T) {
 		ServiceName:     "test-svc-app",
 		OAPResourceName: "app-iamrole",
 		ServiceEnvironment: oap.ServiceEnvironment{
-			NotificationEmail:            "an_owner@example.com",
-			LowPriorityPagerdutyEndpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123",
-			PagerdutyEndpoint:            "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456",
+			NotificationEmail: "an_owner@example.com",
+			AlarmEndpoints: []oap.MicrosAlarmSpec{
+				{
+					Type:     "CloudWatch",
+					Priority: "high",
+					Endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123",
+					Consumer: "pagerduty",
+				},
+				{
+					Type:     "CloudWatch",
+					Priority: "low",
+					Endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456",
+					Consumer: "pagerduty",
+				},
+			},
 			Tags: map[voyager.Tag]string{
 				"business_unit":    "some_unit",
 				"environment":      "ddev",
