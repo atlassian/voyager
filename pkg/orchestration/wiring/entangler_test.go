@@ -76,36 +76,42 @@ func TestDependants(t *testing.T) {
 	}
 
 	// Build the parent func, which will need to be able to access the child spec
-	var parentFunc registry.WireUpFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
-		// ensure that the dependents slice is not empty
-		require.Len(t, context.Dependants, 1)
-		dependantResource := context.Dependants[0]
+	parentPlugin := delegatingPlugin{
+		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+			// ensure that the dependents slice is not empty
+			require.Len(t, context.Dependants, 1)
+			dependantResource := context.Dependants[0]
 
-		// ensure that the child is actually passed as the dependant resource to the parent
-		assert.Equal(t, childName, dependantResource.Name)
-		assert.Equal(t, attrs, dependantResource.Attributes)
+			// ensure that the child is actually passed as the dependant resource to the parent
+			assert.Equal(t, childName, dependantResource.Name)
+			assert.Equal(t, attrs, dependantResource.Attributes)
 
-		// unmarshal the spec
-		var spec map[string]string
-		err := json.Unmarshal(dependantResource.Resource.Spec.Raw, &spec)
-		require.NoError(t, err)
+			// unmarshal the spec
+			var spec map[string]string
+			err := json.Unmarshal(dependantResource.Resource.Spec.Raw, &spec)
+			require.NoError(t, err)
 
-		// ensure the parent can access the data in the spec
-		value, ok := spec[childFieldKey]
-		assert.True(t, ok)
-		assert.Equal(t, childFieldValue, value)
+			// ensure the parent can access the data in the spec
+			value, ok := spec[childFieldKey]
+			assert.True(t, ok)
+			assert.Equal(t, childFieldValue, value)
 
-		return &wiringplugin.WiringResult{}, false, nil
+			return &wiringplugin.WiringResult{}, false, nil
+		},
+		status: emptyStatus,
 	}
 
 	// Child spec, does nothing
-	var childFunc registry.WireUpFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
-		return &wiringplugin.WiringResult{}, false, nil
+	childPlugin := delegatingPlugin{
+		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+			return &wiringplugin.WiringResult{}, false, nil
+		},
+		status: emptyStatus,
 	}
 
 	wiringPlugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
-		parentType: parentFunc,
-		childType:  childFunc,
+		parentType: parentPlugin,
+		childType:  childPlugin,
 	}
 
 	// Build the child's spec which we will have access to in the parent
@@ -316,4 +322,21 @@ func writeBundleToTestData(t *testing.T, filename string, bundle *smith_v1.Bundl
 
 	err = ioutil.WriteFile(filepath.Join(testutil.FixturesDir, filename), data, 0644)
 	require.NoError(t, err)
+}
+
+type delegatingPlugin struct {
+	wireUp func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error)
+	status func(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error)
+}
+
+func (p delegatingPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+	return p.wireUp(resource, context)
+}
+
+func (p delegatingPlugin) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
+	return p.status(resource, context)
+}
+
+func emptyStatus(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
+	return &wiringplugin.StatusResult{}, false, nil
 }

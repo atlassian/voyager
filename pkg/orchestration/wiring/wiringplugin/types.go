@@ -19,6 +19,7 @@ type WiringPlugin interface {
 	// Error may be retriable if its an RPC error (like network error). Most errors are not retriable because
 	// this method should be pure/deterministic so if it fails, it fails.
 	WireUp(resource *orch_v1.StateResource, context *WiringContext) (result *WiringResult, retriable bool, err error)
+	Status(resource *orch_v1.StateResource, context *StatusContext) (result *StatusResult, retriable bool, err error)
 }
 
 // WiringContext contains context information that is passed to an autowiring function to perform autowiring
@@ -182,4 +183,23 @@ type ClusterConfig struct {
 	ClusterDomainName string
 	KittClusterEnv    string
 	Kube2iamAccount   string
+}
+
+type BundleResource struct {
+	// Resource is the Smith resource that has been produced as the result of processing an Orchestration StateResource.
+	Resource smith_v1.Resource `json:"resource"`
+	// Status is the status of that object as reported by Smith.
+	Status smith_v1.ResourceStatusData `json:"status"`
+}
+
+type StatusContext struct {
+	// BundleResources is a list of resources and their statuses in a Bundle.
+	// Only resources for a particular StateResource are in the list.
+	BundleResources []BundleResource `json:"bundleResources,omitempty"`
+	// PluginStatuses is a list of statuses for Smith plugins used in a Bundle.
+	PluginStatuses []smith_v1.PluginStatus `json:"pluginStatuses,omitempty"`
+}
+
+type StatusResult struct {
+	ResourceStatusData orch_v1.ResourceStatusData `json:"resourceStatusData"`
 }
