@@ -22,13 +22,10 @@ func ObjectCompareContext(t *testing.T, fileName FileName, paramActual, paramExp
 		return
 	}
 
-	resActual := paramActual.DeepCopyObject()
-	resExpected := paramExpected.DeepCopyObject()
-
-	resActualUnstr, err := smith_util.RuntimeToUnstructured(resActual)
+	resActualUnstr, err := smith_util.RuntimeToUnstructured(paramActual)
 	require.NoError(t, err)
 
-	resExpectedUnstr, err := smith_util.RuntimeToUnstructured(resExpected)
+	resExpectedUnstr, err := smith_util.RuntimeToUnstructured(paramExpected)
 	require.NoError(t, err)
 
 	YAMLCompareContext(t, fileName, resExpectedUnstr.Object, resActualUnstr.Object)
