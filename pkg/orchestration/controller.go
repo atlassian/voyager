@@ -47,7 +47,7 @@ func ByConfigMapNameIndexKey(namespace string, configMapName string) string {
 }
 
 type Entangler interface {
-	Entangle(*orch_v1.State, *wiring.EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error)
+	Entangle(*orch_v1.State, *wiring.EntangleContext) (*smith_v1.Bundle, bool /*retriable*/, error)
 	Status(*orch_v1.StateResource, *wiring.StatusContext) (orch_v1.ResourceStatusData, bool /*retriable*/, error)
 }
 
@@ -107,13 +107,13 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		return false, false, nil, errors.WithStack(err)
 	}
 	if !exists {
-		return false, false, nil, errors.Errorf("missing namespace %q in informer", state.Namespace)
+		return false, false, nil, errors.Errorf("missing Namespace %q in informer", state.Namespace)
 	}
 	namespace := namespaceObj.(*core_v1.Namespace)
 
 	// Grab the ConfigMap
 	if state.Spec.ConfigMapName == "" {
-		return false, false, nil, errors.Errorf("configMapName is not provided in state spec for %q", state.GetName())
+		return false, false, nil, errors.Errorf("configMapName is not provided in State spec for %q", state.GetName())
 	}
 	key := ByConfigMapNameIndexKey(state.Namespace, state.Spec.ConfigMapName)
 	configMapInterface, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(key)
@@ -133,13 +133,13 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		return false, false, nil, err
 	}
 
-	// Entangle the state, passing in the namespace and and configmap as context
-	entanglerContext := &wiring.EntanglerContext{
+	// Entangle the State
+	entangleContext := &wiring.EntangleContext{
 		ServiceName:       serviceName,
 		Label:             layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: *serviceProperties,
 	}
-	bundleSpec, retriable, err := c.Entangler.Entangle(state, entanglerContext)
+	bundleSpec, retriable, err := c.Entangler.Entangle(state, entangleContext)
 	if err != nil {
 		return false, retriable, nil, errors.Wrapf(err, "failed to wire up Bundle for State %q", state.Name)
 	}
@@ -149,7 +149,7 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		func(r runtime.Object) error {
 			meta := r.(meta_v1.Object)
 			if !meta_v1.IsControlledBy(meta, state) {
-				return errors.Errorf("bundle %q is not owned by state %q", meta.GetName(), state.GetName())
+				return errors.Errorf("Bundle %q is not owned by State %q", meta.GetName(), state.GetName())
 			}
 			return nil
 		},

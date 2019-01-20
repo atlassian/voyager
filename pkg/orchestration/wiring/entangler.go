@@ -29,9 +29,9 @@ const (
 	legacyEnvironmentTagName = "environment"
 )
 
-// EntanglerContext contains information that is required by autowiring.
+// EntangleContext contains information that is required by autowiring.
 // Everything in this context can only be obtained by reading Kubernetes objects.
-type EntanglerContext struct {
+type EntangleContext struct {
 	// ServiceName
 	ServiceName voyager.ServiceName
 
@@ -79,7 +79,7 @@ type wiredStateResource struct {
 	WiringResult wiringplugin.WiringResult
 }
 
-func (en *Entangler) Entangle(state *orch_v1.State, context *EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error) {
+func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) (*smith_v1.Bundle, bool /*retriable*/, error) {
 	g, sorted, err := sortStateResources(state.Spec.Resources)
 	if err != nil {
 		return nil, false, err

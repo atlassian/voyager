@@ -241,7 +241,7 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 	state.SetLabels(labels)
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
-	bundle, retriable, err := ent.Entangle(state, &EntanglerContext{
+	bundle, retriable, err := ent.Entangle(state, &EntangleContext{
 		ServiceName: serviceName,
 		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: orch_meta.ServiceProperties{
