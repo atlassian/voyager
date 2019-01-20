@@ -84,7 +84,7 @@ func testHandleProcessResult(t *testing.T, filePrefix string) {
 	ldExpected := &form_v1.LocationDescriptor{}
 	err = testutil.LoadIntoStructFromTestData(fileName, ldExpected)
 	require.NoError(t, err)
-	testutil.ObjectCompareContext(t, testutil.FileName(fileName), ldExpected, ld)
+	testutil.ObjectCompareContext(t, testutil.FileName(fileName), ld, ldExpected)
 }
 
 func TestFormationWithTestData(t *testing.T) {

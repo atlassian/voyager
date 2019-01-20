@@ -110,7 +110,7 @@ func testHandleProcessResult(t *testing.T, filePrefix string) {
 			outputSd, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())
 			require.True(t, ok)
 
-			testutil.ObjectCompareContext(t, testutil.FileName(fileName), sdExpected, outputSd)
+			testutil.ObjectCompareContext(t, testutil.FileName(fileName), outputSd, sdExpected)
 		},
 	}
 
