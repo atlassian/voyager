@@ -72,48 +72,33 @@ func New() *WiringPlugin {
 	}
 }
 
-// getRDSDependency returns a single RDS dependency if found in a given list, returning an error if multiple are found
-func getRDSDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
-	rdsDependency := []wiringplugin.WiredDependency{}
-
-	// Collect all RDS dependencies
-	for _, d := range dependencies {
-		_, found, err := knownshapes.FindRDSShapes(d.Contract.Shapes)
-		if err != nil {
-			return wiringplugin.WiredDependency{}, errors.Wrap(err, "unable to get RDS dependency")
-		}
-		if found {
-			rdsDependency = append(rdsDependency, d)
-		}
-	}
-
-	// Did not find a RDS dependency
-	if len(rdsDependency) == 0 {
-		return wiringplugin.WiredDependency{}, nil
-	}
-
-	// Ensure postgres does not depend on more than one RDS resource
-	if len(rdsDependency) > 1 {
-		return wiringplugin.WiredDependency{}, errors.Errorf("postgres resources can only depend on one RDS resource type")
-	}
-
-	return rdsDependency[0], nil
-}
-
 func references(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
 	references := []smith_v1.Reference{}
-	rdsDependency, err := getRDSDependency(context.Dependencies)
+	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
 		return references, err
 	}
-	if rdsDependency.Name == "" {
+	// No dependencies
+	if !found {
 		return references, nil
 	}
-	instanceName := wiringutil.ServiceInstanceResourceName(rdsDependency.Name)
+
+	// Check if dependency has a RDS shape
+	_, found, err = knownshapes.FindRDSShapes(dep.Contract.Shapes)
+	if err != nil {
+		return references, err
+	}
+
+	// Found dependency but it was not a RDS resource
+	if !found {
+		return references, nil
+	}
+
+	instanceName := wiringutil.ServiceInstanceResourceName(dep.Name)
 	referenceName := wiringutil.ReferenceName(instanceName, "metadata-name")
 	references = append(references, smith_v1.Reference{
 		Name:     referenceName,
-		Resource: wiringutil.ServiceInstanceResourceName(rdsDependency.Name),
+		Resource: wiringutil.ServiceInstanceResourceName(dep.Name),
 		Path:     "metadata.name",
 		Example:  "myownrds",
 	})
@@ -174,13 +159,26 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	// if this postgres depends on Dedicated RDS, it means it should be created there instead on the Default RDS
 	// there should be only one RDS dependency
-	rdsDependency, err := getRDSDependency(context.Dependencies)
+	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "postgres resources can only depend on one RDS resource type")
 	}
-	if rdsDependency.Name != "" {
+
+	// Did not find any dependencies
+	if !found {
+		return json.Marshal(finalSpec)
+	}
+
+	// Check if dependency has a RDS shape
+	_, found, err = knownshapes.FindRDSShapes(dep.Contract.Shapes)
+	if err != nil {
+		return json.Marshal(finalSpec)
+	}
+
+	// Found RDS dependency
+	if found {
 		referenceName := wiringutil.ReferenceName(
-			wiringutil.ServiceInstanceResourceName(rdsDependency.Name),
+			wiringutil.ServiceInstanceResourceName(dep.Name),
 			"metadata-name",
 		)
 		shareddb := &SharedDbSpec{
