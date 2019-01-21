@@ -424,7 +424,6 @@ generate-deepcopy:
 	find pkg -name zz_generated.deepcopy.go -delete
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/deepcopy-gen
 	./bazel-bin/vendor/k8s.io/code-generator/cmd/deepcopy-gen/$(BINARY_PREFIX_DIRECTORY)/deepcopy-gen $(VERIFY_CODE) \
-	--v 1 --logtostderr \
 	--input-dirs "$(ALL_DIRS),$(SHAPES_API_DIRS)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
 	--output-file-base zz_generated.deepcopy
@@ -436,7 +435,6 @@ generate-sets:
 	rm -rf pkg/util/sets
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/gengo/examples/set-gen
 	./bazel-bin/vendor/k8s.io/gengo/examples/set-gen/$(BINARY_PREFIX_DIRECTORY)/set-gen $(VERIFY_CODE) \
-	--v 1 --logtostderr \
 	--input-dirs "$(MAIN_PACKAGE_DIR),$(ALL_DIRS)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
 	--output-package '$(MAIN_PACKAGE_DIR)/pkg/util/sets'
