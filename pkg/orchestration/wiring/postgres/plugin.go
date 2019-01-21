@@ -72,7 +72,7 @@ func New() *WiringPlugin {
 	}
 }
 
-// getRDSDependency returns a single RDS dependency if found in a given list, and will return an error if multiple are found
+// getRDSDependency returns a single RDS dependency if found in a given list, returning an error if multiple are found
 func getRDSDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
 	rdsDependency := []wiringplugin.WiredDependency{}
 

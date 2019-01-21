@@ -83,7 +83,7 @@ func New() *WiringPlugin {
 	}
 }
 
-// additionalShapes returns a list of Shapes that the Postgres wiring plugin could output
+// additionalShapes returns a list of Shapes that this wiring plugin could output
 func additionalShapes(_ *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
 	return []wiringplugin.Shape{
 		knownshapes.NewRDS(),
