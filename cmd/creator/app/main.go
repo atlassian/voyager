@@ -9,10 +9,10 @@ import (
 	"github.com/atlassian/voyager/pkg/creator/server/options"
 	"github.com/atlassian/voyager/pkg/util/apiserver"
 	"github.com/atlassian/voyager/pkg/util/crash"
-	"github.com/golang/glog"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/apiserver/pkg/util/logs"
+	"k8s.io/klog"
 )
 
 const (
@@ -28,13 +28,13 @@ func Main() {
 
 	namespace, err := apiserver.GetInClusterNamespace(apiserver.DefaultNamespace)
 	if err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
 	stopCh := genericapiserver.SetupSignalHandler()
 	opts := options.NewCreatorServerOptions(genericserveroptions.NewProcessInfo(serviceName, namespace))
 	cmd := server.NewServerCommand(opts, stopCh)
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 	if err := cmd.Execute(); err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
 }
