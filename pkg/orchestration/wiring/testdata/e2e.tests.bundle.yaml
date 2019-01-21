@@ -529,6 +529,14 @@ spec:
       path: data.dead-queue-name
       resource: ec2--basic--binding
     - modifier: bindsecret
+      name: ec2--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: ec2--basic--binding
+    - modifier: bindsecret
       name: ec2--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
       path: data.dead-queue-url
       resource: ec2--basic--binding
@@ -625,6 +633,14 @@ spec:
       path: data.dead-queue-name
       resource: ec2--notification-sqs--binding
     - modifier: bindsecret
+      name: ec2--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
       name: ec2--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
       path: data.dead-queue-url
       resource: ec2--notification-sqs--binding
@@ -666,9 +682,11 @@ spec:
                 ASAP_AUDIENCE: '!{ec2--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
                 SQS_BASIC_DEAD_QUEUE_NAME: '!{ec2--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
                 SQS_BASIC_DEAD_QUEUE_URL: '!{ec2--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+                SQS_BASIC_DEAD_QUEUE_ARN: '!{ec2--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
                 SQS_BASIC_QUEUE_NAME: '!{ec2--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
                 SQS_BASIC_QUEUE_URL: '!{ec2--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
                 SQS_BASIC_QUEUE_REGION: '!{ec2--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                SQS_BASIC_QUEUE_ARN: '!{ec2--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
                 PG_DATASTORE_ROLE: '!{ec2--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
                 PG_DATASTORE_PORT: '!{ec2--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
                 PG_DATASTORE_READROLE: '!{ec2--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
@@ -690,9 +708,11 @@ spec:
                 CF_NOTIFICATION_SNS_TOPICNAME: '!{ec2--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
                 SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{ec2--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
                 SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{ec2--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{ec2--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
                 LIFECYCLE_SQS_QUEUE_NAME: '!{ec2--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
                 LIFECYCLE_SQS_QUEUE_URL: '!{ec2--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
                 LIFECYCLE_SQS_QUEUE_REGION: '!{ec2--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{ec2--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
                 CF_STREAM_STREAMREGION: '!{ec2--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
                 CF_STREAM_STREAMARN: '!{ec2--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
                 CF_STREAM_STREAMNAME: '!{ec2--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
@@ -1000,6 +1020,14 @@ spec:
       path: data.dead-queue-name
       resource: kc--basic--binding
     - modifier: bindsecret
+      name: kc--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: kc--basic--binding
+    - modifier: bindsecret
       name: kc--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
       path: data.dead-queue-url
       resource: kc--basic--binding
@@ -1096,6 +1124,14 @@ spec:
       path: data.dead-queue-name
       resource: kc--notification-sqs--binding
     - modifier: bindsecret
+      name: kc--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
       name: kc--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
       path: data.dead-queue-url
       resource: kc--notification-sqs--binding
@@ -1135,9 +1171,11 @@ spec:
             ASAP_AUDIENCE: '!{kc--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
             SQS_BASIC_DEAD_QUEUE_NAME: '!{kc--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
             SQS_BASIC_DEAD_QUEUE_URL: '!{kc--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+            SQS_BASIC_DEAD_QUEUE_ARN: '!{kc--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
             SQS_BASIC_QUEUE_NAME: '!{kc--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
             SQS_BASIC_QUEUE_URL: '!{kc--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
             SQS_BASIC_QUEUE_REGION: '!{kc--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            SQS_BASIC_QUEUE_ARN: '!{kc--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
             PG_DATASTORE_ROLE: '!{kc--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
             PG_DATASTORE_PORT: '!{kc--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
             PG_DATASTORE_READROLE: '!{kc--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
@@ -1157,11 +1195,13 @@ spec:
             LIFECYCLE_SNS_TOPICNAME: '!{kc--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506}'
             CF_NOTIFICATION_SNS_TOPICREGION: '!{kc--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
             CF_NOTIFICATION_SNS_TOPICNAME: '!{kc--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
+            SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{kc--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
             SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{kc--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
             SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{kc--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
             LIFECYCLE_SQS_QUEUE_NAME: '!{kc--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
             LIFECYCLE_SQS_QUEUE_URL: '!{kc--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
             LIFECYCLE_SQS_QUEUE_REGION: '!{kc--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{kc--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
             CF_STREAM_STREAMREGION: '!{kc--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
             CF_STREAM_STREAMARN: '!{kc--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
             CF_STREAM_STREAMNAME: '!{kc--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'

@@ -116,7 +116,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 		//  - run either podsecretenvvar or secretenvvar also passing through a
 		//    renameMap and ignoreKeyRegex, and just dump everything into the
 		//    environment variables that don't match ignoreKeyRegex.
-		return nil, errors.Errorf("cfn template %q is not supported", templateName)
+		return nil, errors.Errorf("cloudformation template %q is not supported", templateName)
 	}
 	return nil, nil
 }

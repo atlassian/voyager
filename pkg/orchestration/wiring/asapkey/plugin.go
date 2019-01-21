@@ -52,13 +52,12 @@ func New() *WiringPlugin {
 }
 
 func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
-	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, map[string]string{
+	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
 		"PRIVATE_KEY": "data.private_key",
 		"ISSUER":      "data.issuer",
 		"KEY_ID":      "data.key_id",
 		"AUDIENCE":    "data.audience",
-	})
-	bindableEnvVarShape.Data.ExcludeResourceNameInKey = true
+	}, true)
 	return []wiringplugin.Shape{
 		bindableEnvVarShape,
 		knownshapes.NewASAPKey(),

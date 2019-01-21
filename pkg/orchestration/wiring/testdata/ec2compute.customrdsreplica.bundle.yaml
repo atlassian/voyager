@@ -187,9 +187,16 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
           serviceEnvironment:
-            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             notificationEmail: an_owner@example.com
-            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            alarmEndpoints:
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "high"
+              type: "CloudWatch"
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "low"
+              type: "CloudWatch"
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
