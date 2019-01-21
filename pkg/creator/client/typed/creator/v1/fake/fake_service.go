@@ -99,7 +99,7 @@ func (c *FakeServices) DeleteCollection(options *v1.DeleteOptions, listOptions v
 // Patch applies the patch and returns the patched service.
 func (c *FakeServices) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *creatorv1.Service, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(servicesResource, name, data, subresources...), &creatorv1.Service{})
+		Invokes(testing.NewRootPatchSubresourceAction(servicesResource, name, pt, data, subresources...), &creatorv1.Service{})
 	if obj == nil {
 		return nil, err
 	}

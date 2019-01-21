@@ -6,6 +6,8 @@
 package v1
 
 import (
+	"time"
+
 	v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	scheme "github.com/atlassian/voyager/pkg/composition/client/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,10 +61,15 @@ func (c *serviceDescriptors) Get(name string, options metav1.GetOptions) (result
 
 // List takes label and field selectors, and returns the list of ServiceDescriptors that match those selectors.
 func (c *serviceDescriptors) List(opts metav1.ListOptions) (result *v1.ServiceDescriptorList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.ServiceDescriptorList{}
 	err = c.client.Get().
 		Resource("servicedescriptors").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -70,10 +77,15 @@ func (c *serviceDescriptors) List(opts metav1.ListOptions) (result *v1.ServiceDe
 
 // Watch returns a watch.Interface that watches the requested serviceDescriptors.
 func (c *serviceDescriptors) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Resource("servicedescriptors").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -112,9 +124,14 @@ func (c *serviceDescriptors) Delete(name string, options *metav1.DeleteOptions) 
 
 // DeleteCollection deletes a collection of objects.
 func (c *serviceDescriptors) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Resource("servicedescriptors").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

@@ -200,7 +200,7 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 		Dependencies: dependencies,
 	}
 
-	processResult, err := iamRolePlugin.Process(rawSpec, &context)
+	processResult := iamRolePlugin.Process(rawSpec, &context)
 
 	resultFilePostFix := ".iam_template_ec2_compute.json"
 	if computeType == KubeComputeType {
@@ -210,16 +210,17 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 	filename := resultFilePrefix + resultFilePostFix
 	data, errSuccess := ioutil.ReadFile(filename)
 	if errSuccess == nil {
-		require.NoError(t, err)
+		require.Equal(t, smith_plugin.ProcessResultSuccessType, processResult.StatusType())
 
 		// turn the processResult into a serviceInstance
-		serviceInstance := processResult.Object.(*sc_v1b1.ServiceInstance)
+		serviceInstance := processResult.(*smith_plugin.ProcessResultSuccess).Object.(*sc_v1b1.ServiceInstance)
 		validateServiceInstance(t, serviceInstance, data, filename)
 	}
 
 	data, errFailure := ioutil.ReadFile(resultFilePrefix + ".error")
 	if errFailure == nil {
-		require.EqualError(t, err, strings.TrimSpace(string(data)))
+		require.Equal(t, smith_plugin.ProcessResultFailureType, processResult.StatusType())
+		require.EqualError(t, processResult.(*smith_plugin.ProcessResultFailure).Error, strings.TrimSpace(string(data)))
 	}
 
 	if errFailure != nil && errSuccess != nil {
