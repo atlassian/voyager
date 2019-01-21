@@ -12,5 +12,6 @@ go_library(
         "//vendor/google.golang.org/grpc:go_default_library",
         "//vendor/google.golang.org/grpc/codes:go_default_library",
         "//vendor/google.golang.org/grpc/reflection/grpc_reflection_v1alpha:go_default_library",
+        "//vendor/google.golang.org/grpc/status:go_default_library",
     ],
 )

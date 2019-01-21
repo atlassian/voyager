@@ -18,5 +18,8 @@ go_library(
     importmap = "github.com/atlassian/voyager/vendor/gopkg.in/go-playground/validator.v9",
     importpath = "gopkg.in/go-playground/validator.v9",
     visibility = ["//visibility:public"],
-    deps = ["//vendor/github.com/go-playground/universal-translator:go_default_library"],
+    deps = [
+        "//vendor/github.com/go-playground/universal-translator:go_default_library",
+        "//vendor/github.com/leodido/go-urn:go_default_library",
+    ],
 )

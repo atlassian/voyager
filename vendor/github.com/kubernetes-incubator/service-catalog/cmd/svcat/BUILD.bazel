@@ -7,13 +7,12 @@ go_library(
     importpath = "github.com/kubernetes-incubator/service-catalog/cmd/svcat",
     visibility = ["//visibility:private"],
     deps = [
-        "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/browsing:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/class:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/command:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/completion:go_default_library",
-        "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/extra:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin:go_default_library",
@@ -27,6 +26,7 @@ go_library(
         "//vendor/k8s.io/client-go/kubernetes:go_default_library",
         "//vendor/k8s.io/client-go/rest:go_default_library",
         "//vendor/k8s.io/client-go/tools/clientcmd:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
         "//vendor/k8s.io/kubectl/pkg/pluginutils:go_default_library",
     ],
 )

@@ -14,6 +14,7 @@ go_library(
         "//vendor/google.golang.org/grpc/grpclog:go_default_library",
         "//vendor/google.golang.org/grpc/interop:go_default_library",
         "//vendor/google.golang.org/grpc/interop/grpc_testing:go_default_library",
+        "//vendor/google.golang.org/grpc/status:go_default_library",
         "//vendor/google.golang.org/grpc/stress/grpc_testing:go_default_library",
         "//vendor/google.golang.org/grpc/testdata:go_default_library",
     ],
