@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"reflect"
 
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
@@ -76,8 +78,16 @@ func New() *WiringPlugin {
 			InstanceSpec:                  instanceSpec,
 			ObjectMeta:                    objectMeta,
 			ResourceType:                  ResourceType,
+			AdditionalShapes:              additionalShapes,
 		},
 	}
+}
+
+// additionalShapes returns a list of Shapes that the Postgres wiring plugin could output
+func additionalShapes(_ *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	return []wiringplugin.Shape{
+		knownshapes.NewRDS(),
+	}, nil
 }
 
 func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {

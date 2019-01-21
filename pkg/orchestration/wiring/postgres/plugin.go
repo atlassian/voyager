@@ -9,9 +9,9 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,22 +72,32 @@ func New() *WiringPlugin {
 	}
 }
 
+// getRDSDependency returns a single RDS dependency if found in a given list, and will return an error if multiple are found
 func getRDSDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
 	rdsDependency := []wiringplugin.WiredDependency{}
-	if len(dependencies) > 0 {
-		for _, d := range dependencies {
-			if d.Type == rds.ResourceType {
-				rdsDependency = append(rdsDependency, d)
-			}
+
+	// Collect all RDS dependencies
+	for _, d := range dependencies {
+		_, found, err := knownshapes.FindRDSShapes(d.Contract.Shapes)
+		if err != nil {
+			return wiringplugin.WiredDependency{}, errors.Wrap(err, "unable to get RDS dependency")
 		}
-		if len(rdsDependency) > 1 {
-			return wiringplugin.WiredDependency{}, errors.Errorf("Postgres resources can only depend on one RDS resource type")
-		}
-		if len(rdsDependency) == 1 {
-			return rdsDependency[0], nil
+		if found {
+			rdsDependency = append(rdsDependency, d)
 		}
 	}
-	return wiringplugin.WiredDependency{}, nil
+
+	// Did not find a RDS dependency
+	if len(rdsDependency) == 0 {
+		return wiringplugin.WiredDependency{}, nil
+	}
+
+	// Ensure postgres does not depend on more than one RDS resource
+	if len(rdsDependency) > 1 {
+		return wiringplugin.WiredDependency{}, errors.Errorf("postgres resources can only depend on one RDS resource type")
+	}
+
+	return rdsDependency[0], nil
 }
 
 func references(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {

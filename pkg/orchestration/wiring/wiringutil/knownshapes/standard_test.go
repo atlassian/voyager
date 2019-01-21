@@ -31,6 +31,7 @@ func TestAllKnownShapes(t *testing.T) {
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
 		NewSnsSubscribable(resourceName),
 		NewASAPKey(),
+		NewRDS(),
 	}
 
 	for _, shape := range allKnownShapes {
