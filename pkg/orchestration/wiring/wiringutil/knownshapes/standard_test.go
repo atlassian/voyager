@@ -31,7 +31,6 @@ func TestAllKnownShapes(t *testing.T) {
 		NewIngressEndpoint(resourceName),
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
 		NewSnsSubscribable(resourceName),
-		NewRDS(),
 	}
 
 	for _, shape := range allKnownShapes {

@@ -123,7 +123,7 @@ func references(resource *orch_v1.StateResource, context *wiringplugin.WiringCon
 	}
 
 	// Check if dependency has a RDS shape
-	_, found, err = knownshapes.FindRDSShapes(dep.Contract.Shapes)
+	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
 	if err != nil {
 		return references, err
 	}
@@ -209,7 +209,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	}
 
 	// Check if dependency has a RDS shape
-	_, found, err = knownshapes.FindRDSShapes(dep.Contract.Shapes)
+	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
 	if err != nil {
 		return json.Marshal(finalSpec)
 	}

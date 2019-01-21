@@ -7,7 +7,6 @@ go_library(
         "bindable_environment_variables.go",
         "bindable_iam_accessible.go",
         "ingress_endpoint.go",
-        "rds.go",
         "set_of_pods_selectable_by_labels.go",
         "shareddb.go",
         "sns_subscribable.go",
