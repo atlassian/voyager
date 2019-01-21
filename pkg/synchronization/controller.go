@@ -25,7 +25,6 @@ import (
 	"github.com/atlassian/voyager/pkg/util/auth"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/logz"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -38,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/yaml"
 )
 
 const (

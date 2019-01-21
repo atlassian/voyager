@@ -26,7 +26,6 @@ go_library(
         "//pkg/util/pkiutil:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",
         "//vendor/github.com/atlassian/ctrl/app:go_default_library",
-        "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1:go_default_library",
@@ -37,5 +36,6 @@ go_library(
         "//vendor/k8s.io/apiserver/pkg/server/options:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/logs:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )

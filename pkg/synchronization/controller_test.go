@@ -24,7 +24,6 @@ import (
 	"github.com/atlassian/voyager/pkg/ssam"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/auth"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	prom_dto "github.com/prometheus/client_model/go"
@@ -41,6 +40,7 @@ import (
 	k8s_fake "k8s.io/client-go/kubernetes/fake"
 	kube_testing "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/yaml"
 )
 
 const (
