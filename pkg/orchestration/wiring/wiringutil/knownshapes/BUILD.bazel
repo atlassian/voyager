@@ -9,6 +9,7 @@ go_library(
         "ingress_endpoint.go",
         "rds.go",
         "set_of_pods_selectable_by_labels.go",
+        "shareddb.go",
         "sns_subscribable.go",
         "util.go",
         "zz_generated.deepcopy.go",

@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: aqueue
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401

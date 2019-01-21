@@ -28,7 +28,6 @@ type WiringPlugin struct {
 
 	OAPResourceTypeName        oap.ResourceType
 	generateServiceEnvironment ServiceEnvironmentGenerator
-	envResourcePrefix          oap.EnvVarPrefix
 }
 
 func Resource(resourceType voyager.ResourceType,
@@ -36,19 +35,17 @@ func Resource(resourceType voyager.ResourceType,
 	clusterServiceClassExternalID servicecatalog.ClassExternalID,
 	clusterServicePlanExternalID servicecatalog.PlanExternalID,
 	generateServiceEnvironment ServiceEnvironmentGenerator,
-	envResourcePrefix oap.EnvVarPrefix,
-	additionalShapes svccatentangler.AdditionalShapesFunc,
+	shapes svccatentangler.ShapesFunc,
 ) *WiringPlugin {
 	wiringPlugin := &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
 			ClusterServiceClassExternalID: clusterServiceClassExternalID,
 			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
 			ResourceType:                  resourceType,
-			AdditionalShapes:              additionalShapes,
+			Shapes:                        shapes,
 		},
 		OAPResourceTypeName:        oapResourceTypeName,
 		generateServiceEnvironment: generateServiceEnvironment,
-		envResourcePrefix:          envResourcePrefix,
 	}
 	wiringPlugin.SvcCatEntangler.InstanceSpec = wiringPlugin.instanceSpec
 	wiringPlugin.SvcCatEntangler.ObjectMeta = wiringPlugin.objectMeta
@@ -94,7 +91,7 @@ func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *
 }
 
 func (awp *WiringPlugin) objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return objectMeta(awp.envResourcePrefix), nil
+	return objectMeta(), nil
 }
 
 func serviceName(userServiceName voyager.ServiceName, context *wiringplugin.WiringContext) voyager.ServiceName {
@@ -126,13 +123,6 @@ func instanceSpec(serviceName voyager.ServiceName, resourceName string, oapName 
 	return serviceInstanceSpecBytes, nil
 }
 
-func objectMeta(prefix oap.EnvVarPrefix) meta_v1.ObjectMeta {
-	annotations := make(map[string]string)
-	if prefix != "" {
-		// This is needed for compatibility with former Micros RPS resource types
-		// that generate environment variables with custom prefix
-		// e.g. DYNAMO_* instead of DYNAMO_DB_* for dynamo-db
-		annotations[voyager.Domain+"/envResourcePrefix"] = string(prefix)
-	}
-	return meta_v1.ObjectMeta{Annotations: annotations}
+func objectMeta() meta_v1.ObjectMeta {
+	return meta_v1.ObjectMeta{}
 }

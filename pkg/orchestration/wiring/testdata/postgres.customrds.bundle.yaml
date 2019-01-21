@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: RDS
           name: rds
         spec:
           clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
@@ -77,7 +75,6 @@ spec:
         kind: ServiceInstance
         metadata:
           annotations:
-            voyager.atl-paas.net/envResourcePrefix: pg
             smith.atlassian.com/deletionDelay: 168h0m0s
           name: db
         spec:

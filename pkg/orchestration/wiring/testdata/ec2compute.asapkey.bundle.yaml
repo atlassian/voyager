@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: ASAPKey
           name: myasap
         spec:
           clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
@@ -45,17 +43,36 @@ spec:
           instanceRef:
             name: '!{myasap--instance-metadata-name}'
           secretName: compute--myasap
-  - name: compute--secretenvvar
+  - name: compute--secret
     references:
-    - resource: compute--myasap--binding
+      - modifier: bindsecret
+        name: compute--myasap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70
+        path: data.private_key
+        resource: compute--myasap--binding
+      - modifier: bindsecret
+        name: compute--myasap--binding-926da7248fdf789de0d2598fa71f897e24b5553e
+        path: data.key_id
+        resource: compute--myasap--binding
+      - modifier: bindsecret
+        name: compute--myasap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc
+        path: data.issuer
+        resource: compute--myasap--binding
+      - modifier: bindsecret
+        name: compute--myasap--binding-9d7fecc046fad26fb9a275793832408c361faaf1
+        path: data.audience
+        resource: compute--myasap--binding
     spec:
       plugin:
-        name: secretenvvar
-        objectName: compute--secretenvvar
+        name: secret
+        objectName: compute--secret
         spec:
-          ignoreKeyRegex: (?i)IamPolicySnippet$
-          outputJsonKey: secretEnvVars
-          outputSecretKey: ec2ComputeEnvVars
+          jsondata:
+            ec2ComputeEnvVars:
+              secretEnvVars:
+                ASAP_PRIVATE_KEY: '!{compute--myasap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
+                ASAP_ISSUER: '!{compute--myasap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+                ASAP_KEY_ID: '!{compute--myasap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+                ASAP_AUDIENCE: '!{compute--myasap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
   - name: compute---iamrole
     references:
     - resource: compute--myasap--binding
@@ -122,9 +139,9 @@ spec:
           secretName: compute---iamrole
   - name: compute--instance
     references:
-    - name: compute--secretenvvar-metadata-name
+    - name: compute--secret-metadata-name
       path: metadata.name
-      resource: compute--secretenvvar
+      resource: compute--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: compute---iamrole-binding-IAMRoleARN
@@ -186,5 +203,5 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: '!{compute--secretenvvar-metadata-name}'
+              name: '!{compute--secret-metadata-name}'
 status: {}

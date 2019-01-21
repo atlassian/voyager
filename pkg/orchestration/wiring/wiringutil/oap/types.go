@@ -6,7 +6,6 @@ import (
 	"github.com/atlassian/voyager"
 )
 
-type EnvVarPrefix string
 type ResourceType string
 type CfnTemplate string
 

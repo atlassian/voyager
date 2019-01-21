@@ -21,9 +21,10 @@ type BindableEnvironmentVariablesData struct {
 	wiringplugin.BindableShapeStruct `json:",inline"`
 	Prefix                           string            `json:"prefix,omitempty"`
 	Vars                             map[string]string `json:"vars,omitempty"`
+	ExcludeResourceNameInKey         bool              `json:"excludeResourceNameInKey,omitempty"`
 }
 
-func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix string, vars map[string]string) *BindableEnvironmentVariables {
+func NewBindableEnvironmentVariablesWithExcludeResourceName(resourceName smith_v1.ResourceName, prefix string, vars map[string]string, excludeResourceNameInKey bool) *BindableEnvironmentVariables {
 	return &BindableEnvironmentVariables{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: BindableEnvironmentVariablesShape,
@@ -36,10 +37,15 @@ func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix 
 					Example:  "aname",
 				},
 			},
-			Prefix: prefix,
-			Vars:   vars,
+			Prefix:                   prefix,
+			Vars:                     vars,
+			ExcludeResourceNameInKey: excludeResourceNameInKey,
 		},
 	}
+}
+
+func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix string, vars map[string]string) *BindableEnvironmentVariables {
+	return NewBindableEnvironmentVariablesWithExcludeResourceName(resourceName, prefix, vars, false)
 }
 
 func (b *BindableEnvironmentVariables) Name() wiringplugin.ShapeName {
