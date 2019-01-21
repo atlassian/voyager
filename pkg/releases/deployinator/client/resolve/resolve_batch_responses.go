@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 
-	models "github.com/atlassian/voyager/pkg/releases/deployinator/models"
 	"github.com/go-openapi/runtime"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	models "github.com/atlassian/voyager/pkg/releases/deployinator/models"
 )
 
 // ResolveBatchReader is a Reader for the ResolveBatch structure.

@@ -6,10 +6,12 @@ package client
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/atlassian/voyager/pkg/releases/deployinator/client/resolve"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	"github.com/atlassian/voyager/pkg/releases/deployinator/client/resolve"
 )
 
 // Default deployinator HTTP client.
