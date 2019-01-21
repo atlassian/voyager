@@ -8,7 +8,6 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -16,12 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AdditionalShapesFunc is used to return a list of shapes, it is used in the SvcCatEntangler as a way to return a list
-// of shapes for the resource to be used as input to the wiring functions of the dependants. These are additional shapes
-// that will be appended to the default shapes (see core function below).
+// ShapesFunc is used to return a list of shapes, it is used in the SvcCatEntangler as a way to return a list
+// of shapes for the resource to be used as input to the wiring functions of the dependants.
 //
 // The `resource` is the orchestration level resource that was transformed into `smithResource`.
-type AdditionalShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
+type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
 
 // SvcCatEntagler aims to abstract some of the work involved in writing a WiringPlugin functions. It assumes that every
 // WiringPlugin will provide a bundle spec through InstanceSpec(), the metadata for that spec through ObjectMeta() and a
@@ -50,9 +48,9 @@ type SvcCatEntangler struct {
 	// If nil, it's skipped.
 	References func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
 
-	// See documentation for AdditionalShapesFunc
+	// See documentation for ShapesFunc
 	// If nil, it's skipped.
-	AdditionalShapes AdditionalShapesFunc
+	Shapes ShapesFunc
 }
 
 type partialSpec struct {
@@ -135,15 +133,14 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 }
 
 func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
-	supportedShapes := []wiringplugin.Shape{
-		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, "", nil),
-	}
-	if e.AdditionalShapes != nil {
-		additionalShapes, err := e.AdditionalShapes(resource, smithResource, context)
+	supportedShapes := []wiringplugin.Shape{}
+
+	if e.Shapes != nil {
+		shapes, err := e.Shapes(resource, smithResource, context)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to compute additional shapes for resource %q of type %q", resource.Name, resource.Type)
+			return nil, errors.Wrapf(err, "failed to compute shapes for resource %q of type %q", resource.Name, resource.Type)
 		}
-		supportedShapes = append(supportedShapes, additionalShapes...)
+		supportedShapes = append(supportedShapes, shapes...)
 	}
 	return &wiringplugin.ResourceContract{
 		Shapes: supportedShapes,

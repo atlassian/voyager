@@ -2,30 +2,45 @@ apiVersion: smith.atlassian.com/v1
 kind: Bundle
 metadata:
   creationTimestamp: null
-  name: ptl-percolator
-  namespace: ptl-percolator
+  name: state1
+  namespace: default123
   ownerReferences:
   - apiVersion: orchestration.voyager.atl-paas.net/v1
     blockOwnerDeletion: true
     controller: true
     kind: State
-    name: ptl-percolator
+    name: state1
     uid: ""
 spec:
   resources:
-  - name: basic--instance
+  - name: rds--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: basic
+          name: rds
         spec:
-          clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
-          clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
+          clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
+          clusterServicePlanExternalID: 7e6d37bb-8aa4-4c63-87d2-d78ca91a0120
           parameters:
-            environment:
-              alarmEndpoints:
+            location:
+              env: microstestenv
+            misc:
+              lessee: test-servicename
+              rds_type: dedicated
+              resource_name: rds
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            parameters:
+              RDSType: postgres961
+            primary_parameters:
+              MicrosAlarmEndpoints:
               - consumer: pagerduty
                 endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
                 priority: high
@@ -34,63 +49,99 @@ spec:
                 endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
                 priority: low
                 type: CloudWatch
-              tags:
-                business_unit: some_unit
-                environment: microstestenv
-                environment_type: testenv
-                platform: voyager
-                resource_owner: an_owner
-                service_name: test-servicename
-            resource:
-              name: basic
-              type: sqs
-            serviceName: test-servicename
-  - name: compute--basic--binding
+              MicrosAppSubnets:
+              - subnet-1
+              - subnet-2
+              MicrosEnv: microstestenv
+              MicrosInstanceSecurityGroup: sg-2
+              MicrosJumpboxSecurityGroup: sg-1
+              MicrosPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointHigh: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointLow: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPrivateDnsZone: testregion.atl-inf.io
+              MicrosPrivatePaasDnsZone: testregion.dev.paas-inf.net
+              MicrosResourceName: rds
+              MicrosServiceName: test-servicename
+              MicrosVpcId: vpc-1
+  - name: db--instance
+    references:
+    - example: myownrds
+      name: rds--instance-metadata-name
+      path: metadata.name
+      resource: rds--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: db
+          annotations:
+            smith.atlassian.com/deletionDelay: 168h0m0s
+        spec:
+          clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8
+          clusterServicePlanExternalID: 10aa2cb5-897d-43f6-b0df-ac4f8a2a758e
+          parameters:
+            lessee: test-servicename
+            location:
+              env: microstestenv
+            resource_name: db
+            shareddb:
+              resource: '!{rds--instance-metadata-name}'
+              service: test-servicename
+  - name: compute--db--binding
     references:
     - example: aname
-      name: basic--instance-metadata-name
+      name: db--instance-metadata-name
       path: metadata.name
-      resource: basic--instance
+      resource: db--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceBinding
         metadata:
-          name: compute--basic
+          name: compute--db
         spec:
           instanceRef:
-            name: '!{basic--instance-metadata-name}'
-          secretName: compute--basic
+            name: '!{db--instance-metadata-name}'
+          secretName: compute--db
   - name: compute--secret
     references:
-    - name: compute--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
-      resource: compute--basic--binding
-      path: data.dead-queue-name
-      modifier: bindsecret
     - modifier: bindsecret
-      name: compute--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
-      path: data.dead-queue-arn
-      resource: compute--basic--binding
+      name: compute--db--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d
+      path: data.role
+      resource: compute--db--binding
     - modifier: bindsecret
-      name: compute--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
-      path: data.queue-arn
-      resource: compute--basic--binding
-    - name: compute--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
-      resource: compute--basic--binding
-      path: data.dead-queue-url
-      modifier: bindsecret
-    - name: compute--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
-      resource: compute--basic--binding
-      path: data.queue-name
-      modifier: bindsecret
-    - name: compute--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
-      resource: compute--basic--binding
-      path: data.queue-url
-      modifier: bindsecret
-    - name: compute--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
-      resource: compute--basic--binding
-      path: data.queue-region
-      modifier: bindsecret
+      name: compute--db--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91
+      path: data.port
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-610aca4465918ad4a3ef9b7037cb31156edc494a
+      path: data.readrole
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc
+      path: data.readpassword
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716
+      path: data.url
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe
+      path: data.password
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57
+      path: data.schema
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-e930af844b37ad97808978a6444baa240e919b44
+      path: data.readurl
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951
+      path: data.host
+      resource: compute--db--binding
     spec:
       plugin:
         name: secret
@@ -99,16 +150,18 @@ spec:
           jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
-                SQS_BASIC_QUEUE_REGION: '!{compute--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
-                SQS_BASIC_QUEUE_URL: '!{compute--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-                SQS_BASIC_DEAD_QUEUE_ARN: '!{compute--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
-                SQS_BASIC_DEAD_QUEUE_NAME: "!{compute--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}"
-                SQS_BASIC_DEAD_QUEUE_URL: "!{compute--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}"
-                SQS_BASIC_QUEUE_NAME: "!{compute--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}"
-                SQS_BASIC_QUEUE_ARN: '!{compute--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+                PG_DB_HOST: "!{compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}"
+                PG_DB_PASSWORD: "!{compute--db--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}"
+                PG_DB_PORT: "!{compute--db--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}"
+                PG_DB_READPASSWORD: "!{compute--db--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}"
+                PG_DB_READROLE: "!{compute--db--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}"
+                PG_DB_READURL: "!{compute--db--binding-e930af844b37ad97808978a6444baa240e919b44}"
+                PG_DB_ROLE: "!{compute--db--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}"
+                PG_DB_SCHEMA: "!{compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57}"
+                PG_DB_URL: "!{compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716}"
   - name: compute---iamrole
     references:
-    - resource: compute--basic--binding
+    - resource: compute--db--binding
     spec:
       plugin:
         name: iamrole
@@ -123,16 +176,16 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
           serviceEnvironment:
-            alarmEndpoints:
-            - consumer: pagerduty
-              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              priority: high
-              type: CloudWatch
-            - consumer: pagerduty
-              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              priority: low
-              type: CloudWatch
             notificationEmail: an_owner@example.com
+            alarmEndpoints:
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "high"
+              type: "CloudWatch"
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "low"
+              type: "CloudWatch"
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1

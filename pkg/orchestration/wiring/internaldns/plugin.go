@@ -123,9 +123,5 @@ func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext
 }
 
 func getObjectMeta(_ *orch_v1.StateResource, _ *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{
-		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": string(ResourceType),
-		},
-	}, nil
+	return meta_v1.ObjectMeta{}, nil
 }

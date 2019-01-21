@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: basic
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
@@ -63,20 +61,51 @@ spec:
           instanceRef:
             name: '!{basic--instance-metadata-name}'
           secretName: compute--basic
-  - name: compute--secretenvvar
+  - name: compute--secret
     references:
-    - resource: compute--basic--binding
+    - name: compute--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
+      resource: compute--basic--binding
+      path: data.dead-queue-name
+      modifier: bindsecret
+    - modifier: bindsecret
+      name: compute--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: compute--basic--binding
+    - modifier: bindsecret
+      name: compute--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: compute--basic--binding
+    - name: compute--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
+      resource: compute--basic--binding
+      path: data.dead-queue-url
+      modifier: bindsecret
+    - name: compute--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
+      resource: compute--basic--binding
+      path: data.queue-name
+      modifier: bindsecret
+    - name: compute--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
+      resource: compute--basic--binding
+      path: data.queue-url
+      modifier: bindsecret
+    - name: compute--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
+      resource: compute--basic--binding
+      path: data.queue-region
+      modifier: bindsecret
     spec:
       plugin:
-        name: secretenvvar
-        objectName: compute--secretenvvar
+        name: secret
+        objectName: compute--secret
         spec:
-          ignoreKeyRegex: (?i)IamPolicySnippet$
-          outputJsonKey: secretEnvVars
-          outputSecretKey: ec2ComputeEnvVars
-          rename:
-            SQS_BASIC_QUEUE_REGION: MY_QUEUE_REGION
-            SQS_BASIC_QUEUE_URL: MY_QUEUE_URL
+          jsondata:
+            ec2ComputeEnvVars:
+              secretEnvVars:
+                MY_QUEUE_REGION: '!{compute--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                MY_QUEUE_URL: '!{compute--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+                SQS_BASIC_DEAD_QUEUE_ARN: '!{compute--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+                SQS_BASIC_DEAD_QUEUE_NAME: "!{compute--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}"
+                SQS_BASIC_DEAD_QUEUE_URL: "!{compute--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}"
+                SQS_BASIC_QUEUE_NAME: "!{compute--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}"
+                SQS_BASIC_QUEUE_ARN: '!{compute--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
   - name: compute---iamrole
     references:
     - resource: compute--basic--binding
@@ -143,8 +172,8 @@ spec:
           secretName: compute---iamrole
   - name: compute--instance
     references:
-    - name: compute--secretenvvar-metadata-name
-      resource: compute--secretenvvar
+    - name: compute--secret-metadata-name
+      resource: compute--secret
       path: metadata.name
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
@@ -199,5 +228,5 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: '!{compute--secretenvvar-metadata-name}'
+              name: '!{compute--secret-metadata-name}'
 status: {}

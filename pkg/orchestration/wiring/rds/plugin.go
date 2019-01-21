@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"reflect"
 
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,8 +21,6 @@ const (
 
 	clusterServiceClassExternalID = "d508783c-eef6-46fe-8245-d595ef2795e2"
 	clusterServicePlanExternalID  = "7e6d37bb-8aa4-4c63-87d2-d78ca91a0120"
-
-	rdsEnvResourcePrefix = "RDS"
 )
 
 // MICROS Provided RDS CFN Parameters
@@ -68,6 +69,10 @@ type WiringPlugin struct {
 	svccatentangler.SvcCatEntangler
 }
 
+type ReadReplicaParam struct {
+	ReadReplica bool `json:"ReadReplica"`
+}
+
 func New() *WiringPlugin {
 	return &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
@@ -76,8 +81,28 @@ func New() *WiringPlugin {
 			InstanceSpec:                  instanceSpec,
 			ObjectMeta:                    objectMeta,
 			ResourceType:                  ResourceType,
+			Shapes:                        shapes,
 		},
 	}
+}
+
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
+	var finalSpec FinalSpec
+	err := json.Unmarshal(si.Spec.Parameters.Raw, &finalSpec)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	var readReplicaParam ReadReplicaParam
+	err = json.Unmarshal(finalSpec.Parameters, &readReplicaParam)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return []wiringplugin.Shape{
+		knownshapes.NewSharedDbShape(smithResource.Name, readReplicaParam.ReadReplica),
+	}, nil
 }
 
 func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
@@ -176,9 +201,5 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 }
 
 func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{
-		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": rdsEnvResourcePrefix,
-		},
-	}, nil
+	return meta_v1.ObjectMeta{}, nil
 }

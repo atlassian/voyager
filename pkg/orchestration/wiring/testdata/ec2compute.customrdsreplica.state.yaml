@@ -1,17 +1,23 @@
 apiVersion: orchestration.voyager.atl-paas.net/v1
 kind: State
 metadata:
-  name: ptl-percolator
-  namespace: ptl-percolator
+  name: state1
+  namespace: default123
 spec:
   resources:
-  - name: ups
-    type: UPS
-
+  - name: rds
+    type: RDS
+    spec:
+      RDSType: postgres961
+      ReadReplica: true
+  - name: db
+    type: Postgres
+    dependsOn:
+    - rds
   - name: compute
     type: EC2Compute
     dependsOn:
-    - ups
+    - db
     spec:
       meaninglesskey: used as an example
       notifications:

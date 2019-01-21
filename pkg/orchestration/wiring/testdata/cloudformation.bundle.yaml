@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: CF
           name: test-cfn-elasticsearch
         spec:
           clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b

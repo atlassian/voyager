@@ -23,6 +23,9 @@ spec:
         spec:
           clusterServiceClassExternalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
           clusterServicePlanExternalID: 86064792-7ea2-467b-af93-ac9694d96d52
+          parameters:
+            credentials:
+              my-thing: xxx
   - name: compute--ups--binding
     references:
     - example: aname
@@ -41,14 +44,10 @@ spec:
           secretName: compute--ups
   - name: compute--secret
     references:
-    - name: compute--ups--binding-9ef60b9337b69a1033a0912d66168890c6c4831a
-      path: data.special-key-2
+    - name: compute--ups--binding-ec77961a2a5d37c885fc880a40c624d07d8d3aa9
+      path: data.my-thing
       resource: compute--ups--binding
       modifier: bindsecret
-    - modifier: bindsecret
-      name: compute--ups--binding-b060c986d8a40dd8b22ad738b0fe6df917f5c994
-      path: data.special-key-1
-      resource: compute--ups--binding
     spec:
       plugin:
         name: secret
@@ -57,8 +56,7 @@ spec:
           jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
-                UPS_UPS_SPECIAL_KEY_1: '!{compute--ups--binding-b060c986d8a40dd8b22ad738b0fe6df917f5c994}'
-                UPS_UPS_SPECIAL_KEY_2: '!{compute--ups--binding-9ef60b9337b69a1033a0912d66168890c6c4831a}'
+                UPS_UPS_MY_THING: '!{compute--ups--binding-ec77961a2a5d37c885fc880a40c624d07d8d3aa9}'
   - name: compute---iamrole
     references:
     - resource: compute--ups--binding
@@ -76,16 +74,16 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
           serviceEnvironment:
-            alarmEndpoints:
-            - consumer: pagerduty
-              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              priority: high
-              type: CloudWatch
-            - consumer: pagerduty
-              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              priority: low
-              type: CloudWatch
             notificationEmail: an_owner@example.com
+            alarmEndpoints:
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "high"
+              type: "CloudWatch"
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "low"
+              type: "CloudWatch"
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1

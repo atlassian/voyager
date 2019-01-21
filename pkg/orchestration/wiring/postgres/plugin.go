@@ -12,6 +12,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +26,7 @@ const (
 	clusterServicePlanExternalID  = "10aa2cb5-897d-43f6-b0df-ac4f8a2a758e"
 	deletionDelay                 = 7 * 24 * time.Hour
 
-	postgresEnvResourcePrefix = "pg"
+	postgresEnvResourcePrefix = "PG"
 )
 
 // When the Postgres database should be created in a Dedicated RDS instance,
@@ -68,8 +69,47 @@ func New() *WiringPlugin {
 			ObjectMeta:                    objectMeta,
 			References:                    references,
 			ResourceType:                  ResourceType,
+			Shapes:                        shapes,
 		},
 	}
+}
+
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	envVars := map[string]string{
+		"HOST":         "data.host",
+		"PORT":         "data.port",
+		"SCHEMA":       "data.schema",
+		"ROLE":         "data.role",
+		"PASSWORD":     "data.password",
+		"URL":          "data.url",
+		"READROLE":     "data.readrole",
+		"READPASSWORD": "data.readpassword",
+		"READURL":      "data.readurl",
+	}
+
+	// If the postgres has an RDS dependency with read replica enabled, it
+	// produces some additional environment variables for the read replica
+	var foundSharedDb []*knownshapes.SharedDb
+	for _, dep := range context.Dependencies {
+		sharedDb, found, err := knownshapes.FindSharedDbShape(dep.Contract.Shapes)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			foundSharedDb = append(foundSharedDb, sharedDb)
+		}
+	}
+	if len(foundSharedDb) > 1 {
+		return nil, errors.Errorf("found more than one postgres dependency for %q", resource.Name)
+	}
+	if len(foundSharedDb) == 1 && foundSharedDb[0].Data.HasSameRegionReadReplica {
+		envVars["READONLY_REPLICA"] = "data.readonly_replica"
+		envVars["READONLY_REPLICA_URL"] = "data.readonly_replica_url"
+	}
+
+	return []wiringplugin.Shape{
+		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, postgresEnvResourcePrefix, envVars),
+	}, nil
 }
 
 func getRDSDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
@@ -186,8 +226,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
 	return meta_v1.ObjectMeta{
 		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": postgresEnvResourcePrefix,
-			smith.DeletionDelayAnnotation:         deletionDelay.String(),
+			smith.DeletionDelayAnnotation: deletionDelay.String(),
 		},
 	}, nil
 }

@@ -7,7 +7,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
@@ -29,20 +28,14 @@ const (
 	ec2ComputeServiceName = "micros"
 
 	// How we name our Smith resources based on the State resource name
-	secretEnvVarNamePostfix = "secretenvvar"
-	secretPluginNamePostfix = "secretplugin"
+	secretPluginNamePostfix = "secret"
 
 	envVarOutputSecretKey = "ec2ComputeEnvVars" // nolint: gosec
-
-	// This regex is applied to renamed reformatted keys which will have a prefix and be uppercase
-	envVarIgnoreRegex = `(?i)IamPolicySnippet$`
 
 	// Autowired secret (parametersFrom) input to compute
 	bindingOutputRoleARNKey            = "IAMRoleARN"
 	bindingOutputInstanceProfileARNKey = "InstanceProfileARN"
 	inputParameterEnvVarName           = "secretEnvVars"
-
-	secretEnvVarPluginTypeName = "secretenvvar"
 
 	MaximumServiceNameLength = 26
 
@@ -61,17 +54,11 @@ type StateComputeSpec struct {
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	// if this is for pods then we just have data
-	envVarJSONString, err := json.Marshal(map[string]map[string]string{
-		inputParameterEnvVarName: envVars,
-	})
-	if err != nil {
-		return smith_v1.Resource{}, errors.WithStack(err)
-	}
-
 	secretPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretplugin.Spec{
-		Data: map[string][]byte{
-			envVarOutputSecretKey: envVarJSONString,
+		JSONData: map[string]interface{}{
+			envVarOutputSecretKey: map[string]map[string]string{
+				inputParameterEnvVarName: envVars,
+			},
 		},
 	})
 	if err != nil {
@@ -86,36 +73,6 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 				Name:       secretplugin.PluginName,
 				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
 				Spec:       secretPluginSpec,
-			},
-		},
-	}
-
-	return instanceResource, nil
-}
-
-func generateSecretEnvVarsResource(compute voyager.ResourceName, renameEnvVar map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	// We use objectName for both the smith resource name and the kubernetes metadata name,
-	// since there's only one of these per state resource (no possibility of clash).
-	objectName := wiringutil.MetaNameWithPostfix(compute, secretEnvVarNamePostfix)
-
-	secretEnvVarPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretenvvar.Spec{
-		OutputSecretKey: envVarOutputSecretKey,
-		OutputJSONKey:   inputParameterEnvVarName,
-		RenameEnvVar:    renameEnvVar,
-		IgnoreKeyRegex:  envVarIgnoreRegex,
-	})
-	if err != nil {
-		return smith_v1.Resource{}, err
-	}
-
-	instanceResource := smith_v1.Resource{
-		Name:       smith_v1.ResourceName(objectName),
-		References: dependencyReferences,
-		Spec: smith_v1.ResourceSpec{
-			Plugin: &smith_v1.PluginSpec{
-				Name:       secretEnvVarPluginTypeName,
-				ObjectName: objectName,
-				Spec:       secretEnvVarPluginSpec,
 			},
 		},
 	}
@@ -182,15 +139,10 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 
 	// filter out the list of dependencyReferences - this will be used
 	dependencyReferences := make([]smith_v1.Reference, 0, len(bindingResult))
-	shouldUseSecretPlugin := true
 	for _, res := range bindingResult {
-		ref := smith_v1.Reference{
+		dependencyReferences = append(dependencyReferences, smith_v1.Reference{
 			Resource: res.CreatedBindingFromShape.Name,
-		}
-		dependencyReferences = append(dependencyReferences, ref)
-		if res.BindableEnvVarShape.Data.Vars == nil {
-			shouldUseSecretPlugin = false
-		}
+		})
 	}
 
 	// We use the SecretEnvVar plugin if any of our inputs don't provide vars
@@ -202,24 +154,16 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	}
 
 	if len(bindingResult) > 0 {
-		var secretResource smith_v1.Resource
-		var err error
-		if shouldUseSecretPlugin {
-			secretRefs, envVars, err := compute.GenerateEnvVars(computeSpec.RenameEnvVar, bindingResult)
-			if err != nil {
-				return nil, false, err
-			}
-
-			secretResource, err = generateSecretResource(stateResource.Name, envVars, secretRefs)
-			if err != nil {
-				return nil, false, err
-			}
-		} else {
-			secretResource, err = generateSecretEnvVarsResource(stateResource.Name, computeSpec.RenameEnvVar, dependencyReferences)
-			if err != nil {
-				return nil, false, err
-			}
+		secretRefs, envVars, err := compute.GenerateEnvVars(computeSpec.RenameEnvVar, bindingResult)
+		if err != nil {
+			return nil, false, err
 		}
+
+		secretResource, err := generateSecretResource(stateResource.Name, envVars, secretRefs)
+		if err != nil {
+			return nil, false, err
+		}
+
 		secretRef := smith_v1.Reference{
 			Name:     wiringutil.ReferenceName(secretResource.Name, metadataElement, nameElement),
 			Resource: secretResource.Name,

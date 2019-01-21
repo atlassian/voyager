@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: RDS
           name: myownrds
         spec:
           clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
