@@ -307,7 +307,9 @@ run-smith: validate-cluster
 generate: \
 	generate-clients \
 	generate-deepcopy \
-	generate-sets
+	generate-sets \
+	generate-bazel \
+	goimports
 
 #===============================================================================
 
