@@ -6,6 +6,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	ec2compute_v2 "github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/v2"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/edge"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
@@ -36,4 +37,5 @@ var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	sqs.ResourceType:           WireUpFunc(sqs.WireUp),
 	asapkey.ResourceType:       asapkey.New(),
 	internaldns.ResourceType:   internaldns.New(),
+	edge.ResourceType:          edge.New(),
 }

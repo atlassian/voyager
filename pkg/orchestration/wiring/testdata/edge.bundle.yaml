@@ -1,0 +1,7 @@
+resources:
+  - name: blah
+    type: globaledge
+    attributes:
+      upstream_address:
+        - address: fqdn
+          region: region
