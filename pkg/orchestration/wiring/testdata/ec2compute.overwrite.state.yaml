@@ -20,9 +20,6 @@ spec:
         maxSize: 2
       notifications:
         email: abc@email.com
-        pagerduty:
-          generic: custom-generic
-          cloudwatch: custom-cloudwatch
       tags:
         business_unit: custom-business-unit
         key: a-tag
