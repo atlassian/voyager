@@ -209,7 +209,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
 	if err != nil {
-		return json.Marshal(finalSpec)
+		return nil, errors.Wrapf(err, "unable to determine if shape %s db was a dependency", knownshapes.SharedDbShape)
 	}
 
 	if !found {
