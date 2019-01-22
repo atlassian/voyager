@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: aqueue
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
@@ -28,8 +26,15 @@ spec:
           externalID: abcd-123456789
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               tags:
                 business_unit: some_unit
                 environment: microstestenv

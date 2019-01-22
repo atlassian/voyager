@@ -8,6 +8,7 @@ go_library(
         "bindable_iam_accessible.go",
         "ingress_endpoint.go",
         "set_of_pods_selectable_by_labels.go",
+        "shareddb.go",
         "sns_subscribable.go",
         "util.go",
         "zz_generated.deepcopy.go",

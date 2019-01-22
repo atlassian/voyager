@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: CF
           name: test-cfn-elasticsearch
         spec:
           clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
@@ -28,9 +26,16 @@ spec:
           externalID: abcd-123456789
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               notificationEmail: an_owner@example.com
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               primaryVpcEnvironment:
                 appSubnets:
                 - subnet-1

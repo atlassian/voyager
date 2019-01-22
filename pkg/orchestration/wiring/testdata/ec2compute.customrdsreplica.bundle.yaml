@@ -1,0 +1,308 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: state1
+  namespace: default123
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: state1
+    uid: ""
+spec:
+  resources:
+  - name: rds--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: rds
+        spec:
+          clusterServiceClassExternalID: d508783c-eef6-46fe-8245-d595ef2795e2
+          clusterServicePlanExternalID: 7e6d37bb-8aa4-4c63-87d2-d78ca91a0120
+          parameters:
+            location:
+              env: microstestenv
+            misc:
+              lessee: test-servicename
+              rds_type: dedicated
+              resource_name: rds
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            parameters:
+              RDSType: postgres961
+              ReadReplica: true
+            primary_parameters:
+              MicrosAlarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
+              MicrosAppSubnets:
+              - subnet-1
+              - subnet-2
+              MicrosEnv: microstestenv
+              MicrosInstanceSecurityGroup: sg-2
+              MicrosJumpboxSecurityGroup: sg-1
+              MicrosPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointHigh: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPagerdutyEndpointLow: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              MicrosPrivateDnsZone: testregion.atl-inf.io
+              MicrosPrivatePaasDnsZone: testregion.dev.paas-inf.net
+              MicrosResourceName: rds
+              MicrosServiceName: test-servicename
+              MicrosVpcId: vpc-1
+  - name: db--instance
+    references:
+    - example: myownrds
+      name: rds--instance-metadata-name
+      path: metadata.name
+      resource: rds--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: db
+          annotations:
+            smith.atlassian.com/deletionDelay: 168h0m0s
+        spec:
+          clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8
+          clusterServicePlanExternalID: 10aa2cb5-897d-43f6-b0df-ac4f8a2a758e
+          parameters:
+            lessee: test-servicename
+            location:
+              env: microstestenv
+            resource_name: db
+            shareddb:
+              resource: '!{rds--instance-metadata-name}'
+              service: test-servicename
+  - name: compute--db--binding
+    references:
+    - example: aname
+      name: db--instance-metadata-name
+      path: metadata.name
+      resource: db--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: compute--db
+        spec:
+          instanceRef:
+            name: '!{db--instance-metadata-name}'
+          secretName: compute--db
+  - name: compute--secret
+    references:
+    - modifier: bindsecret
+      name: compute--db--binding-25c710cb015e2d13a2662fcc7864be1cd9e1c6f8
+      path: data.readonly_replica
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d
+      path: data.role
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91
+      path: data.port
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-610aca4465918ad4a3ef9b7037cb31156edc494a
+      path: data.readrole
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc
+      path: data.readpassword
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716
+      path: data.url
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe
+      path: data.password
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57
+      path: data.schema
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-d83f524fb61d249180402b3be146dee14ac80b09
+      path: data.readonly_replica_url
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-e930af844b37ad97808978a6444baa240e919b44
+      path: data.readurl
+      resource: compute--db--binding
+    - modifier: bindsecret
+      name: compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951
+      path: data.host
+      resource: compute--db--binding
+    spec:
+      plugin:
+        name: secret
+        objectName: compute--secret
+        spec:
+          jsondata:
+            ec2ComputeEnvVars:
+              secretEnvVars:
+                PG_DB_HOST: "!{compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}"
+                PG_DB_PASSWORD: "!{compute--db--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}"
+                PG_DB_PORT: "!{compute--db--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}"
+                PG_DB_READONLY_REPLICA: "!{compute--db--binding-25c710cb015e2d13a2662fcc7864be1cd9e1c6f8}"
+                PG_DB_READONLY_REPLICA_URL: "!{compute--db--binding-d83f524fb61d249180402b3be146dee14ac80b09}"
+                PG_DB_READPASSWORD: "!{compute--db--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}"
+                PG_DB_READROLE: "!{compute--db--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}"
+                PG_DB_READURL: "!{compute--db--binding-e930af844b37ad97808978a6444baa240e919b44}"
+                PG_DB_ROLE: "!{compute--db--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}"
+                PG_DB_SCHEMA: "!{compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57}"
+                PG_DB_URL: "!{compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716}"
+  - name: compute---iamrole
+    references:
+    - resource: compute--db--binding
+    spec:
+      plugin:
+        name: iamrole
+        objectName: compute---iamrole
+        spec:
+          assumeRoles:
+          - arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC
+          computeType: ec2Compute
+          createInstanceProfile: true
+          managedPolicies:
+          - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
+          - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
+          oapResourceName: compute-iamrole
+          serviceEnvironment:
+            notificationEmail: an_owner@example.com
+            alarmEndpoints:
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "high"
+              type: "CloudWatch"
+            - consumer: "pagerduty"
+              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
+              priority: "low"
+              type: "CloudWatch"
+            primaryVpcEnvironment:
+              appSubnets:
+              - subnet-1
+              - subnet-2
+              instanceSecurityGroup: sg-2
+              jumpboxSecurityGroup: sg-1
+              privateDnsZone: testregion.atl-inf.io
+              privatePaasDnsZone: testregion.dev.paas-inf.net
+              region: testregion
+              sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+              vpcId: vpc-1
+              zones:
+              - testregiona
+              - testregionb
+            tags:
+              business_unit: some_unit
+              environment: microstestenv
+              environment_type: testenv
+              platform: voyager
+              resource_owner: an_owner
+              service_name: test-servicename
+          serviceId: test-servicename-compute
+  - name: compute---iamrole-binding
+    references:
+    - name: compute---iamrole-metadata-name
+      path: metadata.name
+      resource: compute---iamrole
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceBinding
+        metadata:
+          name: compute---iamrole
+        spec:
+          instanceRef:
+            name: '!{compute---iamrole-metadata-name}'
+          secretName: compute---iamrole
+  - name: compute--instance
+    references:
+    - name: compute--secret-metadata-name
+      path: metadata.name
+      resource: compute--secret
+    - example: arn:aws:iam::123456789012:role/path/role
+      modifier: bindsecret
+      name: compute---iamrole-binding-IAMRoleARN
+      path: data.IAMRoleARN
+      resource: compute---iamrole-binding
+    - example: arn:aws:iam::123456789012:instance-profile/path/Webserver
+      modifier: bindsecret
+      name: compute---iamrole-binding-InstanceProfileARN
+      path: data.InstanceProfileARN
+      resource: compute---iamrole-binding
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: compute
+        spec:
+          clusterServiceClassExternalName: micros
+          clusterServicePlanExternalName: v2
+          parameters:
+            autoScalingGroup:
+              maxSize: 2
+              minSize: 1
+            docker:
+              compose:
+                backendapp:
+                  image: docker.example.com/my-app
+                  ports:
+                  - 8080:8080
+                  tag: "1.0"
+              envVars:
+                ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                ASAP_PUBLIC_KEY_REPOSITORY_URL: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                key: value
+            ec2:
+              iamInstanceProfileArn: '!{compute---iamrole-binding-InstanceProfileARN}'
+              iamRoleArn: '!{compute---iamrole-binding-IAMRoleARN}'
+              instanceType: t2.small
+            location:
+              account: testaccount
+              envType: testenv
+              region: testregion
+            meaninglesskey: used as an example
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
+            notifications:
+              email: notification@email.com
+            service:
+              id: test-servicename-compute
+              loggingId: logging-id-from-configmap
+              ssamAccessLevel: access-level-from-configmap
+            tags:
+              business_unit: some_unit
+              platform: voyager
+              resource_owner: an_owner
+          parametersFrom:
+          - secretKeyRef:
+              key: ec2ComputeEnvVars
+              name: '!{compute--secret-metadata-name}'
+status: {}

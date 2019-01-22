@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: ASAPKey
           name: asap
         spec:
           clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
@@ -35,16 +33,21 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: basic
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
           clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               tags:
                 business_unit: some_unit
                 environment: microstestenv
@@ -65,17 +68,22 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: CF
           name: notification-sns
         spec:
           clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
           clusterServicePlanExternalID: 8933f0a5-b232-4319-9861-baaccece62fd
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               notificationEmail: an_owner@example.com
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               primaryVpcEnvironment:
                 appSubnets:
                 - subnet-1
@@ -131,16 +139,21 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: notification-sqs
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
           clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               tags:
                 business_unit: some_unit
                 environment: microstestenv
@@ -165,8 +178,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: S3
           name: files
         spec:
           clusterServiceClassExternalID: a6bf1e70-9bbb-4826-9793-75871cb540f1
@@ -184,17 +195,22 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: CF
           name: stream
         spec:
           clusterServiceClassExternalID: 312ebba6-e3df-443f-a151-669a04f0619b
           clusterServicePlanExternalID: 8933f0a5-b232-4319-9861-baaccece62fd
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               notificationEmail: an_owner@example.com
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               primaryVpcEnvironment:
                 appSubnets:
                 - subnet-1
@@ -230,17 +246,22 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: DYNAMO
           name: dynamo-basic
         spec:
           clusterServiceClassExternalID: 0dae543c-216b-4a08-87bd-aea7522c0cfd
           clusterServicePlanExternalID: 9b59fb3e-56eb-487d-863e-bf831ca4fa3f
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               notificationEmail: an_owner@example.com
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               primaryVpcEnvironment:
                 appSubnets:
                 - subnet-1
@@ -270,17 +291,22 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: DYNAMO
           name: dynamo-complex
         spec:
           clusterServiceClassExternalID: 0dae543c-216b-4a08-87bd-aea7522c0cfd
           clusterServicePlanExternalID: 9b59fb3e-56eb-487d-863e-bf831ca4fa3f
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               notificationEmail: an_owner@example.com
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               primaryVpcEnvironment:
                 appSubnets:
                 - subnet-1
@@ -326,7 +352,6 @@ spec:
         kind: ServiceInstance
         metadata:
           annotations:
-            voyager.atl-paas.net/envResourcePrefix: pg
             smith.atlassian.com/deletionDelay: 168h0m0s
           name: datastore
         spec:
@@ -481,34 +506,216 @@ spec:
           instanceRef:
             name: '!{notification-sqs--instance-metadata-name}'
           secretName: ec2--notification-sqs
-  - name: ec2--secretenvvar
+  - name: ec2--secret
     references:
-    - resource: ec2--asap--binding
-    - resource: ec2--basic--binding
-    - resource: ec2--files--binding
-    - resource: ec2--stream--binding
-    - resource: ec2--dynamo-basic--binding
-    - resource: ec2--dynamo-complex--binding
-    - resource: ec2--datastore--binding
-    - resource: ec2--notification-sns--binding
-    - resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70
+      path: data.private_key
+      resource: ec2--asap--binding
+    - modifier: bindsecret
+      name: ec2--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e
+      path: data.key_id
+      resource: ec2--asap--binding
+    - modifier: bindsecret
+      name: ec2--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc
+      path: data.issuer
+      resource: ec2--asap--binding
+    - modifier: bindsecret
+      name: ec2--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1
+      path: data.audience
+      resource: ec2--asap--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
+      path: data.dead-queue-name
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
+      path: data.dead-queue-url
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
+      path: data.queue-name
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
+      path: data.queue-url
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
+      path: data.queue-region
+      resource: ec2--basic--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d
+      path: data.role
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91
+      path: data.port
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a
+      path: data.readrole
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc
+      path: data.readpassword
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716
+      path: data.url
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe
+      path: data.password
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57
+      path: data.schema
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-e930af844b37ad97808978a6444baa240e919b44
+      path: data.readurl
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951
+      path: data.host
+      resource: ec2--datastore--binding
+    - modifier: bindsecret
+      name: ec2--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22
+      path: data.table-region
+      resource: ec2--dynamo-basic--binding
+    - modifier: bindsecret
+      name: ec2--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037
+      path: data.table-name
+      resource: ec2--dynamo-basic--binding
+    - modifier: bindsecret
+      name: ec2--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22
+      path: data.table-region
+      resource: ec2--dynamo-complex--binding
+    - modifier: bindsecret
+      name: ec2--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037
+      path: data.table-name
+      resource: ec2--dynamo-complex--binding
+    - modifier: bindsecret
+      name: ec2--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac
+      path: data.bucket-name
+      resource: ec2--files--binding
+    - modifier: bindsecret
+      name: ec2--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939
+      path: data.bucket-region
+      resource: ec2--files--binding
+    - modifier: bindsecret
+      name: ec2--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158
+      path: data.bucket-path
+      resource: ec2--files--binding
+    - modifier: bindsecret
+      name: ec2--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506
+      path: data.TopicArn
+      resource: ec2--notification-sns--binding
+    - modifier: bindsecret
+      name: ec2--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a
+      path: data.TopicRegion
+      resource: ec2--notification-sns--binding
+    - modifier: bindsecret
+      name: ec2--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772
+      path: data.TopicName
+      resource: ec2--notification-sns--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
+      path: data.dead-queue-name
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
+      path: data.dead-queue-url
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
+      path: data.queue-name
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
+      path: data.queue-url
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6
+      path: data.queue-region
+      resource: ec2--notification-sqs--binding
+    - modifier: bindsecret
+      name: ec2--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7
+      path: data.StreamRegion
+      resource: ec2--stream--binding
+    - modifier: bindsecret
+      name: ec2--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124
+      path: data.StreamArn
+      resource: ec2--stream--binding
+    - modifier: bindsecret
+      name: ec2--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c
+      path: data.StreamName
+      resource: ec2--stream--binding
     spec:
       plugin:
-        name: secretenvvar
-        objectName: ec2--secretenvvar
+        name: secret
+        objectName: ec2--secret
         spec:
-          ignoreKeyRegex: (?i)IamPolicySnippet$
-          outputJsonKey: secretEnvVars
-          outputSecretKey: ec2ComputeEnvVars
-          rename:
-            CF_NOTIFICATION_SNS_TOPICARN: LIFECYCLE_SNS_TOPICNAME
-            DYNAMO_DYNAMO_BASIC_TABLE_NAME: DYNAMO_BASIC_TABLE_NAME
-            DYNAMO_DYNAMO_BASIC_TABLE_REGION: DYNAMO_BASIC_TABLE_REGION
-            DYNAMO_DYNAMO_COMPLEX_TABLE_NAME: DYNAMO_COMPLEX_TABLE_NAME
-            DYNAMO_DYNAMO_COMPLEX_TABLE_REGION: DYNAMO_COMPLEX_TABLE_REGION
-            SQS_NOTIFICATION_SQS_QUEUE_NAME: LIFECYCLE_SQS_QUEUE_NAME
-            SQS_NOTIFICATION_SQS_QUEUE_REGION: LIFECYCLE_SQS_QUEUE_REGION
-            SQS_NOTIFICATION_SQS_QUEUE_URL: LIFECYCLE_SQS_QUEUE_URL
+          jsondata:
+            ec2ComputeEnvVars:
+              secretEnvVars:
+                ASAP_PRIVATE_KEY: '!{ec2--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
+                ASAP_KEY_ID: '!{ec2--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+                ASAP_ISSUER: '!{ec2--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+                ASAP_AUDIENCE: '!{ec2--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
+                SQS_BASIC_DEAD_QUEUE_NAME: '!{ec2--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+                SQS_BASIC_DEAD_QUEUE_URL: '!{ec2--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+                SQS_BASIC_DEAD_QUEUE_ARN: '!{ec2--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+                SQS_BASIC_QUEUE_NAME: '!{ec2--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+                SQS_BASIC_QUEUE_URL: '!{ec2--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+                SQS_BASIC_QUEUE_REGION: '!{ec2--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                SQS_BASIC_QUEUE_ARN: '!{ec2--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+                PG_DATASTORE_ROLE: '!{ec2--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
+                PG_DATASTORE_PORT: '!{ec2--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
+                PG_DATASTORE_READROLE: '!{ec2--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
+                PG_DATASTORE_READPASSWORD: '!{ec2--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
+                PG_DATASTORE_URL: '!{ec2--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
+                PG_DATASTORE_PASSWORD: '!{ec2--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
+                PG_DATASTORE_SCHEMA: '!{ec2--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57}'
+                PG_DATASTORE_READURL: '!{ec2--datastore--binding-e930af844b37ad97808978a6444baa240e919b44}'
+                PG_DATASTORE_HOST: '!{ec2--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
+                DYNAMO_BASIC_TABLE_NAME: '!{ec2--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
+                DYNAMO_BASIC_TABLE_REGION: '!{ec2--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
+                DYNAMO_COMPLEX_TABLE_REGION: '!{ec2--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
+                DYNAMO_COMPLEX_TABLE_NAME: '!{ec2--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
+                S3_FILES_BUCKET_NAME: '!{ec2--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac}'
+                S3_FILES_BUCKET_REGION: '!{ec2--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939}'
+                S3_FILES_BUCKET_PATH: '!{ec2--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158}'
+                LIFECYCLE_SNS_TOPICNAME: '!{ec2--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506}'
+                CF_NOTIFICATION_SNS_TOPICREGION: '!{ec2--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
+                CF_NOTIFICATION_SNS_TOPICNAME: '!{ec2--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{ec2--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{ec2--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{ec2--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+                LIFECYCLE_SQS_QUEUE_NAME: '!{ec2--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+                LIFECYCLE_SQS_QUEUE_URL: '!{ec2--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+                LIFECYCLE_SQS_QUEUE_REGION: '!{ec2--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{ec2--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+                CF_STREAM_STREAMREGION: '!{ec2--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
+                CF_STREAM_STREAMARN: '!{ec2--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
+                CF_STREAM_STREAMNAME: '!{ec2--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
   - name: ec2---iamrole
     references:
     - resource: ec2--asap--binding
@@ -534,9 +741,16 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: ec2-iamrole
           serviceEnvironment:
-            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             notificationEmail: an_owner@example.com
-            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
@@ -576,9 +790,9 @@ spec:
           secretName: ec2---iamrole
   - name: ec2--instance
     references:
-    - name: ec2--secretenvvar-metadata-name
+    - name: ec2--secret-metadata-name
       path: metadata.name
-      resource: ec2--secretenvvar
+      resource: ec2--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: ec2---iamrole-binding-IAMRoleARN
@@ -621,12 +835,17 @@ spec:
               account: testaccount
               envType: testenv
               region: testregion
+            alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
             notifications:
               email: micros@atlassian.com
-              pagerduty:
-                cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                generic: "123123123123123"
-                lowPriority: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             service:
               id: test-servicename-ec2
               loggingId: logging-id-from-configmap
@@ -638,7 +857,7 @@ spec:
           parametersFrom:
           - secretKeyRef:
               key: ec2ComputeEnvVars
-              name: '!{ec2--secretenvvar-metadata-name}'
+              name: '!{ec2--secret-metadata-name}'
   - name: kc--asap--binding
     references:
     - example: aname
@@ -783,32 +1002,214 @@ spec:
           instanceRef:
             name: '!{notification-sqs--instance-metadata-name}'
           secretName: kc--notification-sqs
-  - name: kc--podsecretenvvar
+  - name: kc--secret
     references:
-    - resource: kc--asap--binding
-    - resource: kc--basic--binding
-    - resource: kc--files--binding
-    - resource: kc--stream--binding
-    - resource: kc--dynamo-basic--binding
-    - resource: kc--dynamo-complex--binding
-    - resource: kc--datastore--binding
-    - resource: kc--notification-sns--binding
-    - resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70
+      path: data.private_key
+      resource: kc--asap--binding
+    - modifier: bindsecret
+      name: kc--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e
+      path: data.key_id
+      resource: kc--asap--binding
+    - modifier: bindsecret
+      name: kc--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc
+      path: data.issuer
+      resource: kc--asap--binding
+    - modifier: bindsecret
+      name: kc--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1
+      path: data.audience
+      resource: kc--asap--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
+      path: data.dead-queue-name
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
+      path: data.dead-queue-url
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
+      path: data.queue-name
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
+      path: data.queue-url
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
+      path: data.queue-region
+      resource: kc--basic--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d
+      path: data.role
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91
+      path: data.port
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a
+      path: data.readrole
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc
+      path: data.readpassword
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716
+      path: data.url
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe
+      path: data.password
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57
+      path: data.schema
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-e930af844b37ad97808978a6444baa240e919b44
+      path: data.readurl
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951
+      path: data.host
+      resource: kc--datastore--binding
+    - modifier: bindsecret
+      name: kc--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22
+      path: data.table-region
+      resource: kc--dynamo-basic--binding
+    - modifier: bindsecret
+      name: kc--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037
+      path: data.table-name
+      resource: kc--dynamo-basic--binding
+    - modifier: bindsecret
+      name: kc--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22
+      path: data.table-region
+      resource: kc--dynamo-complex--binding
+    - modifier: bindsecret
+      name: kc--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037
+      path: data.table-name
+      resource: kc--dynamo-complex--binding
+    - modifier: bindsecret
+      name: kc--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac
+      path: data.bucket-name
+      resource: kc--files--binding
+    - modifier: bindsecret
+      name: kc--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939
+      path: data.bucket-region
+      resource: kc--files--binding
+    - modifier: bindsecret
+      name: kc--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158
+      path: data.bucket-path
+      resource: kc--files--binding
+    - modifier: bindsecret
+      name: kc--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506
+      path: data.TopicArn
+      resource: kc--notification-sns--binding
+    - modifier: bindsecret
+      name: kc--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a
+      path: data.TopicRegion
+      resource: kc--notification-sns--binding
+    - modifier: bindsecret
+      name: kc--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772
+      path: data.TopicName
+      resource: kc--notification-sns--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
+      path: data.dead-queue-name
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
+      path: data.dead-queue-url
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
+      path: data.queue-name
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
+      path: data.queue-url
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6
+      path: data.queue-region
+      resource: kc--notification-sqs--binding
+    - modifier: bindsecret
+      name: kc--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7
+      path: data.StreamRegion
+      resource: kc--stream--binding
+    - modifier: bindsecret
+      name: kc--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124
+      path: data.StreamArn
+      resource: kc--stream--binding
+    - modifier: bindsecret
+      name: kc--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c
+      path: data.StreamName
+      resource: kc--stream--binding
     spec:
       plugin:
-        name: podsecretenvvar
-        objectName: kc--podsecretenvvar
+        name: secret
+        objectName: kc--secret
         spec:
-          ignoreKeyRegex: ^IamPolicySnippet$
-          rename:
-            CF_NOTIFICATION_SNS_TOPICARN: LIFECYCLE_SNS_TOPICNAME
-            DYNAMO_DYNAMO_BASIC_TABLE_NAME: DYNAMO_BASIC_TABLE_NAME
-            DYNAMO_DYNAMO_BASIC_TABLE_REGION: DYNAMO_BASIC_TABLE_REGION
-            DYNAMO_DYNAMO_COMPLEX_TABLE_NAME: DYNAMO_COMPLEX_TABLE_NAME
-            DYNAMO_DYNAMO_COMPLEX_TABLE_REGION: DYNAMO_COMPLEX_TABLE_REGION
-            SQS_NOTIFICATION_SQS_QUEUE_NAME: LIFECYCLE_SQS_QUEUE_NAME
-            SQS_NOTIFICATION_SQS_QUEUE_REGION: LIFECYCLE_SQS_QUEUE_REGION
-            SQS_NOTIFICATION_SQS_QUEUE_URL: LIFECYCLE_SQS_QUEUE_URL
+          data:
+            ASAP_PRIVATE_KEY: '!{kc--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
+            ASAP_KEY_ID: '!{kc--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+            ASAP_ISSUER: '!{kc--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+            ASAP_AUDIENCE: '!{kc--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
+            SQS_BASIC_DEAD_QUEUE_NAME: '!{kc--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+            SQS_BASIC_DEAD_QUEUE_URL: '!{kc--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+            SQS_BASIC_DEAD_QUEUE_ARN: '!{kc--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+            SQS_BASIC_QUEUE_NAME: '!{kc--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+            SQS_BASIC_QUEUE_URL: '!{kc--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+            SQS_BASIC_QUEUE_REGION: '!{kc--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            SQS_BASIC_QUEUE_ARN: '!{kc--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+            PG_DATASTORE_ROLE: '!{kc--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
+            PG_DATASTORE_PORT: '!{kc--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
+            PG_DATASTORE_READROLE: '!{kc--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
+            PG_DATASTORE_READPASSWORD: '!{kc--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
+            PG_DATASTORE_URL: '!{kc--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
+            PG_DATASTORE_PASSWORD: '!{kc--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
+            PG_DATASTORE_SCHEMA: '!{kc--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57}'
+            PG_DATASTORE_READURL: '!{kc--datastore--binding-e930af844b37ad97808978a6444baa240e919b44}'
+            PG_DATASTORE_HOST: '!{kc--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
+            DYNAMO_BASIC_TABLE_NAME: '!{kc--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
+            DYNAMO_BASIC_TABLE_REGION: '!{kc--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
+            DYNAMO_COMPLEX_TABLE_REGION: '!{kc--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
+            DYNAMO_COMPLEX_TABLE_NAME: '!{kc--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
+            S3_FILES_BUCKET_NAME: '!{kc--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac}'
+            S3_FILES_BUCKET_REGION: '!{kc--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939}'
+            S3_FILES_BUCKET_PATH: '!{kc--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158}'
+            LIFECYCLE_SNS_TOPICNAME: '!{kc--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506}'
+            CF_NOTIFICATION_SNS_TOPICREGION: '!{kc--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
+            CF_NOTIFICATION_SNS_TOPICNAME: '!{kc--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
+            SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{kc--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+            SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{kc--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+            SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{kc--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+            LIFECYCLE_SQS_QUEUE_NAME: '!{kc--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+            LIFECYCLE_SQS_QUEUE_URL: '!{kc--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+            LIFECYCLE_SQS_QUEUE_REGION: '!{kc--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{kc--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+            CF_STREAM_STREAMREGION: '!{kc--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
+            CF_STREAM_STREAMARN: '!{kc--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
+            CF_STREAM_STREAMNAME: '!{kc--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
   - name: kc---iamrole
     references:
     - resource: kc--asap--binding
@@ -831,9 +1232,16 @@ spec:
           computeType: kubeCompute
           oapResourceName: kc-iamrole
           serviceEnvironment:
-            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             notificationEmail: an_owner@example.com
-            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
@@ -895,9 +1303,9 @@ spec:
               stateName: noderefapp
   - name: kc
     references:
-    - name: kc--podsecretenvvar-metadata-name
+    - name: kc--secret-metadata-name
       path: metadata.name
-      resource: kc--podsecretenvvar
+      resource: kc--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: kc---iamrole-binding-IAMRoleARN
@@ -974,7 +1382,7 @@ spec:
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
                 - secretRef:
-                    name: '!{kc--podsecretenvvar-metadata-name}'
+                    name: '!{kc--secret-metadata-name}'
                     optional: false
                 - secretRef:
                     name: common-secrets

@@ -19,16 +19,21 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: sqs
           name: basic
         spec:
           clusterServiceClassExternalID: 06068066-7f66-4297-8683-a1ba0a2b7401
           clusterServicePlanExternalID: 56393d2c-d936-4634-a178-19f491a3551a
           parameters:
             environment:
-              lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-              pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
               tags:
                 business_unit: some_unit
                 environment: microstestenv
@@ -56,18 +61,49 @@ spec:
           instanceRef:
             name: '!{basic--instance-metadata-name}'
           secretName: kubecompute-simple--basic
-  - name: kubecompute-simple--podsecretenvvar
+  - name: kubecompute-simple--secret
     references:
-    - resource: kubecompute-simple--basic--binding
+    - name: kubecompute-simple--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
+      resource: kubecompute-simple--basic--binding
+      path: data.dead-queue-name
+      modifier: bindsecret
+    - modifier: bindsecret
+      name: kubecompute-simple--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
+      path: data.dead-queue-arn
+      resource: kubecompute-simple--basic--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
+      path: data.queue-arn
+      resource: kubecompute-simple--basic--binding
+    - name: kubecompute-simple--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
+      resource: kubecompute-simple--basic--binding
+      path: data.dead-queue-url
+      modifier: bindsecret
+    - name: kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
+      resource: kubecompute-simple--basic--binding
+      path: data.queue-name
+      modifier: bindsecret
+    - name: kubecompute-simple--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
+      resource: kubecompute-simple--basic--binding
+      path: data.queue-url
+      modifier: bindsecret
+    - name: kubecompute-simple--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
+      resource: kubecompute-simple--basic--binding
+      path: data.queue-region
+      modifier: bindsecret
     spec:
       plugin:
-        name: podsecretenvvar
-        objectName: kubecompute-simple--podsecretenvvar
+        name: secret
+        objectName: kubecompute-simple--secret
         spec:
-          ignoreKeyRegex: ^IamPolicySnippet$
-          rename:
-            SQS_BASIC_QUEUE_REGION: MY_QUEUE_REGION
-            SQS_BASIC_QUEUE_URL: MY_QUEUE_URL
+          data:
+            MY_QUEUE_REGION: '!{kubecompute-simple--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            MY_QUEUE_URL: '!{kubecompute-simple--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+            SQS_BASIC_DEAD_QUEUE_ARN: '!{kubecompute-simple--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+            SQS_BASIC_DEAD_QUEUE_NAME: "!{kubecompute-simple--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}"
+            SQS_BASIC_DEAD_QUEUE_URL: "!{kubecompute-simple--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}"
+            SQS_BASIC_QUEUE_NAME: "!{kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}"
+            SQS_BASIC_QUEUE_ARN: '!{kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
   - name: kubecompute-simple---iamrole
     references:
     - resource: kubecompute-simple--basic--binding
@@ -82,9 +118,16 @@ spec:
           computeType: kubeCompute
           oapResourceName: kubecompute-simple-iamrole
           serviceEnvironment:
-            lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             notificationEmail: an_owner@example.com
-            pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
@@ -146,9 +189,9 @@ spec:
               stateName: state1
   - name: kubecompute-simple
     references:
-    - name: kubecompute-simple--podsecretenvvar-metadata-name
+    - name: kubecompute-simple--secret-metadata-name
       path: metadata.name
-      resource: kubecompute-simple--podsecretenvvar
+      resource: kubecompute-simple--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: kubecompute-simple---iamrole-binding-IAMRoleARN
@@ -225,7 +268,7 @@ spec:
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
                 - secretRef:
-                    name: '!{kubecompute-simple--podsecretenvvar-metadata-name}'
+                    name: '!{kubecompute-simple--secret-metadata-name}'
                     optional: false
                 - secretRef:
                     name: common-secrets

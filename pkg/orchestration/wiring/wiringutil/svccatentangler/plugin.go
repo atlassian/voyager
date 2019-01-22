@@ -8,7 +8,6 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -16,24 +15,42 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type OptionalShapeFunc func(*orch_v1.StateResource, *smith_v1.Resource, *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
+// ShapesFunc is used to return a list of shapes, it is used in the SvcCatEntangler as a way to return a list
+// of shapes for the resource to be used as input to the wiring functions of the dependants.
+//
+// The `resource` is the orchestration level resource that was transformed into `smithResource`.
+type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
 
-func NoOptionalShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
-	return nil, nil
-}
-
+// SvcCatEntagler aims to abstract some of the work involved in writing a WiringPlugin functions. It assumes that every
+// WiringPlugin will provide a bundle spec through InstanceSpec(), the metadata for that spec through ObjectMeta() and a
+// list of smith references through References().
+//
+// This is for WiringPlugins that will create a ServiceInstance.
 type SvcCatEntangler struct {
+
+	// This identifies what resource types can be processed.
+	ResourceType voyager.ResourceType
+
+	// These are the OSB broker class and plan identifiers
 	ClusterServiceClassExternalID servicecatalog.ClassExternalID
 	ClusterServicePlanExternalID  servicecatalog.PlanExternalID
 
+	// InstanceSpec will return the JSON marshaled form of the bundle resource's spec. this
+	// service instance, service binding, deployment, ingress, or other resource.
 	InstanceSpec func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]byte, error)
-	ObjectMeta   func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error)
-	References   func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
 
-	ResourceType voyager.ResourceType
+	// ObjectMeta will return the ObjectMeta for the ServiceInstance.
+	// If nil, it's skipped.
+	ObjectMeta func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error)
 
-	// optional shapes by resource type
-	OptionalShapes OptionalShapeFunc
+	// References will return a list of Smith references used by the any part of the resulting Smith resource. A Smith
+	// reference looks something like "!{refname}" and require a smith reference entry with the same name to work.
+	// If nil, it's skipped.
+	References func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
+
+	// See documentation for ShapesFunc
+	// If nil, it's skipped.
+	Shapes ShapesFunc
 }
 
 type partialSpec struct {
@@ -116,14 +133,15 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 }
 
 func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
-	supportedShapes := []wiringplugin.Shape{
-		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, "", nil),
+	supportedShapes := []wiringplugin.Shape{}
+
+	if e.Shapes != nil {
+		shapes, err := e.Shapes(resource, smithResource, context)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to compute shapes for resource %q of type %q", resource.Name, resource.Type)
+		}
+		supportedShapes = append(supportedShapes, shapes...)
 	}
-	optionalShapes, err := e.OptionalShapes(resource, smithResource, context)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to compute optional shapes for resource %q of type %q", resource.Name, resource.Type)
-	}
-	supportedShapes = append(supportedShapes, optionalShapes...)
 	return &wiringplugin.ResourceContract{
 		Shapes: supportedShapes,
 	}, nil

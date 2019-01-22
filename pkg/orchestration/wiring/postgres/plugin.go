@@ -9,9 +9,9 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +25,7 @@ const (
 	clusterServicePlanExternalID  = "10aa2cb5-897d-43f6-b0df-ac4f8a2a758e"
 	deletionDelay                 = 7 * 24 * time.Hour
 
-	postgresEnvResourcePrefix = "pg"
+	postgresEnvResourcePrefix = "PG"
 )
 
 // When the Postgres database should be created in a Dedicated RDS instance,
@@ -68,47 +68,79 @@ func New() *WiringPlugin {
 			ObjectMeta:                    objectMeta,
 			References:                    references,
 			ResourceType:                  ResourceType,
-			OptionalShapes:                svccatentangler.NoOptionalShapes,
+			Shapes:                        shapes,
 		},
 	}
 }
 
-func getRDSDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
-	rdsDependency := []wiringplugin.WiredDependency{}
-	if len(dependencies) > 0 {
-		for _, d := range dependencies {
-			if d.Type == rds.ResourceType {
-				rdsDependency = append(rdsDependency, d)
-			}
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	envVars := map[string]string{
+		"HOST":         "data.host",
+		"PORT":         "data.port",
+		"SCHEMA":       "data.schema",
+		"ROLE":         "data.role",
+		"PASSWORD":     "data.password",
+		"URL":          "data.url",
+		"READROLE":     "data.readrole",
+		"READPASSWORD": "data.readpassword",
+		"READURL":      "data.readurl",
+	}
+
+	// If the postgres has an RDS dependency with read replica enabled, it
+	// produces some additional environment variables for the read replica
+	var foundSharedDb []*knownshapes.SharedDb
+	for _, dep := range context.Dependencies {
+		sharedDb, found, err := knownshapes.FindSharedDbShape(dep.Contract.Shapes)
+		if err != nil {
+			return nil, err
 		}
-		if len(rdsDependency) > 1 {
-			return wiringplugin.WiredDependency{}, errors.Errorf("Postgres resources can only depend on one RDS resource type")
-		}
-		if len(rdsDependency) == 1 {
-			return rdsDependency[0], nil
+		if found {
+			foundSharedDb = append(foundSharedDb, sharedDb)
 		}
 	}
-	return wiringplugin.WiredDependency{}, nil
+	if len(foundSharedDb) > 1 {
+		return nil, errors.Errorf("found more than one postgres dependency for %q", resource.Name)
+	}
+	if len(foundSharedDb) == 1 && foundSharedDb[0].Data.HasSameRegionReadReplica {
+		envVars["READONLY_REPLICA"] = "data.readonly_replica"
+		envVars["READONLY_REPLICA_URL"] = "data.readonly_replica_url"
+	}
+
+	return []wiringplugin.Shape{
+		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, postgresEnvResourcePrefix, envVars),
+	}, nil
 }
 
 func references(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
-	references := []smith_v1.Reference{}
-	rdsDependency, err := getRDSDependency(context.Dependencies)
+	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
-		return references, err
+		return nil, err
 	}
-	if rdsDependency.Name == "" {
-		return references, nil
+	// No dependencies
+	if !found {
+		return nil, nil
 	}
-	instanceName := wiringutil.ServiceInstanceResourceName(rdsDependency.Name)
+
+	// Check if dependency has a RDS shape
+	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Found dependency but it was not a RDS resource
+	if !found {
+		return nil, nil
+	}
+
+	instanceName := wiringutil.ServiceInstanceResourceName(dep.Name)
 	referenceName := wiringutil.ReferenceName(instanceName, "metadata-name")
-	references = append(references, smith_v1.Reference{
+
+	return []smith_v1.Reference{{
 		Name:     referenceName,
-		Resource: wiringutil.ServiceInstanceResourceName(rdsDependency.Name),
+		Resource: wiringutil.ServiceInstanceResourceName(dep.Name),
 		Path:     "metadata.name",
 		Example:  "myownrds",
-	})
-	return references, nil
+	}}, nil
 }
 
 func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
@@ -165,21 +197,34 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	// if this postgres depends on Dedicated RDS, it means it should be created there instead on the Default RDS
 	// there should be only one RDS dependency
-	rdsDependency, err := getRDSDependency(context.Dependencies)
+	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
 		return nil, err
 	}
-	if rdsDependency.Name != "" {
-		referenceName := wiringutil.ReferenceName(
-			wiringutil.ServiceInstanceResourceName(rdsDependency.Name),
-			"metadata-name",
-		)
-		shareddb := &SharedDbSpec{
-			ResourceName: fmt.Sprintf("!{%s}", referenceName),
-			ServiceName:  context.StateContext.ServiceName,
-		}
-		finalSpec["shareddb"] = shareddb
+
+	// Did not find any dependencies
+	if !found {
+		return json.Marshal(finalSpec)
 	}
+
+	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to determine if shape %s db was a dependency", knownshapes.SharedDbShape)
+	}
+
+	if !found {
+		return nil, errors.Errorf("expected to find shape %s in %q", knownshapes.SharedDbShape, dep.Name)
+	}
+
+	referenceName := wiringutil.ReferenceName(
+		wiringutil.ServiceInstanceResourceName(dep.Name),
+		"metadata-name",
+	)
+	shareddb := &SharedDbSpec{
+		ResourceName: fmt.Sprintf("!{%s}", referenceName),
+		ServiceName:  context.StateContext.ServiceName,
+	}
+	finalSpec["shareddb"] = shareddb
 
 	return json.Marshal(finalSpec)
 }
@@ -187,8 +232,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
 	return meta_v1.ObjectMeta{
 		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": postgresEnvResourcePrefix,
-			smith.DeletionDelayAnnotation:         deletionDelay.String(),
+			smith.DeletionDelayAnnotation: deletionDelay.String(),
 		},
 	}, nil
 }

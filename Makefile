@@ -139,6 +139,13 @@ test: goimports generate-bazel
 		-- //... -//vendor/... -//build/...
 	$(bazel-build-manual)
 
+.PHONY: test-autowiring
+test-autowiring: goimports generate-bazel
+	bazel test $(BAZEL_OPTIONS) \
+		--test_env=KUBE_PATCH_CONVERSION_DETECTOR=true \
+		--test_env=KUBE_CACHE_MUTATION_DETECTOR=true \
+		-- //pkg/orchestration/wiring/...
+
 .PHONY: test-all
 test-all: goimports generate-bazel-all
 	$(bazel-test-all)
@@ -300,7 +307,9 @@ run-smith: validate-cluster
 generate: \
 	generate-clients \
 	generate-deepcopy \
-	generate-sets
+	generate-sets \
+	generate-bazel \
+	goimports
 
 #===============================================================================
 

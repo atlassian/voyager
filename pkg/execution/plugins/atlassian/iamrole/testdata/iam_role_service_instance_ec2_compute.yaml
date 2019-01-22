@@ -12,9 +12,16 @@ spec:
   externalID: ""
   parameters:
     environment:
-      lowPriorityPagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123
+      alarmEndpoints:
+      - consumer: pagerduty
+        endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/123
+        priority: high
+        type: CloudWatch
+      - consumer: pagerduty
+        endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456
+        priority: low
+        type: CloudWatch
       notificationEmail: an_owner@example.com
-      pagerdutyEndpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/456
       primaryVpcEnvironment:
         appSubnets:
         - subnet-93baa4e7

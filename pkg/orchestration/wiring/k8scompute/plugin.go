@@ -8,7 +8,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/execution/plugins/atlassian/secretenvvar"
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
@@ -41,14 +40,11 @@ const (
 	resourceOwnerAnnotation    = "atlassian.com/resource_owner"
 	kube2iamAnnotation         = "iam.amazonaws.com/role"
 
-	serviceAccountPostFix         = "svcacc"
-	podSecretEnvVarNamePostfix    = "podsecretenvvar"
-	secretPluginNamePostfix       = "secretplugin"
-	pdbPostfix                    = "pdb"
-	hpaPostfix                    = "hpa"
-	podSecretEnvVarPluginTypeName = "podsecretenvvar"
-	bindingOutputRoleARNKey       = "IAMRoleARN"
-	envVarIgnoreRegex             = `^IamPolicySnippet$`
+	serviceAccountPostFix   = "svcacc"
+	secretPluginNamePostfix = "secret"
+	pdbPostfix              = "pdb"
+	hpaPostfix              = "hpa"
+	bindingOutputRoleARNKey = "IAMRoleARN"
 
 	defaultPodDisruptionBudget = "30%"
 )
@@ -150,38 +146,22 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	var iamRoleRef *smith_v1.Reference
 
 	bindingReferences := make([]smith_v1.Reference, 0, len(bindingResult))
-	shouldUseSecretPlugin := true
 	for _, res := range bindingResult {
-		ref := smith_v1.Reference{
+		bindingReferences = append(bindingReferences, smith_v1.Reference{
 			Resource: res.CreatedBindingFromShape.Name,
-		}
-		bindingReferences = append(bindingReferences, ref)
-		if res.BindableEnvVarShape.Data.Vars == nil {
-			shouldUseSecretPlugin = false
-		}
+		})
 	}
 
 	// Reference environment variables retrieved from ServiceBinding objects
 	if len(bindingResult) > 0 {
-		var secretResource smith_v1.Resource
-		var err error
+		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
+		if err != nil {
+			return nil, false, err
+		}
 
-		if shouldUseSecretPlugin {
-			secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
-			if err != nil {
-				return nil, false, err
-			}
-
-			secretResource, err = generateSecretResource(resource.Name, envVars, secretRefs)
-			if err != nil {
-				return nil, false, err
-			}
-
-		} else {
-			secretResource, err = generateSecretEnvVarsResource(resource.Name, spec.RenameEnvVar, bindingReferences)
-			if err != nil {
-				return nil, false, err
-			}
+		secretResource, err := generateSecretResource(resource.Name, envVars, secretRefs)
+		if err != nil {
+			return nil, false, err
 		}
 
 		secretRef := smith_v1.Reference{
@@ -364,13 +344,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	secretData := make(map[string][]byte, len(envVars))
-	for key, val := range envVars {
-		secretData[key] = []byte(val)
-	}
-
 	secretPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretplugin.Spec{
-		Data: secretData,
+		Data: envVars,
 	})
 	if err != nil {
 		return smith_v1.Resource{}, errors.WithStack(err)
@@ -384,32 +359,6 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 				Name:       secretplugin.PluginName,
 				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
 				Spec:       secretPluginSpec,
-			},
-		},
-	}
-
-	return instanceResource, nil
-}
-
-func generateSecretEnvVarsResource(compute voyager.ResourceName, renameEnvVar map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
-	secretEnvVarPluginSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secretenvvar.PodSpec{
-		IgnoreKeyRegex: envVarIgnoreRegex,
-		RenameEnvVar:   renameEnvVar,
-	})
-	if err != nil {
-		return smith_v1.Resource{}, err
-	}
-
-	// We use objectName for both the smith resource name and the kubernetes metadata name,
-	// since there's only one of these per state resource (no possibility of clash).
-	instanceResource := smith_v1.Resource{
-		Name:       wiringutil.ResourceNameWithPostfix(compute, podSecretEnvVarNamePostfix),
-		References: dependencyReferences,
-		Spec: smith_v1.ResourceSpec{
-			Plugin: &smith_v1.PluginSpec{
-				Name:       podSecretEnvVarPluginTypeName,
-				ObjectName: wiringutil.MetaNameWithPostfix(compute, podSecretEnvVarNamePostfix),
-				Spec:       secretEnvVarPluginSpec,
 			},
 		},
 	}

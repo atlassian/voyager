@@ -23,6 +23,7 @@ const (
 	RepositoryStg                                      = "https://asap-distribution.us-west-1.staging.paas-inf.net/"
 	RepositoryFallbackStg                              = "https://asap-distribution.us-east-1.staging.paas-inf.net/"
 	ResourceType                  voyager.ResourceType = "ASAPKey"
+	ResourcePrefix                                     = "ASAP"
 )
 
 type autowiringOnlySpec struct {
@@ -45,14 +46,20 @@ func New() *WiringPlugin {
 			InstanceSpec:                  instanceSpec,
 			ObjectMeta:                    objectMeta,
 			ResourceType:                  ResourceType,
-			OptionalShapes:                optionalShapes,
+			Shapes:                        shapes,
 		},
 	}
 }
 
-// optionalShapes returns a list of Shapes that the ASAPKey wiring plugin could output
-func optionalShapes(_ *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
+		"PRIVATE_KEY": "data.private_key",
+		"ISSUER":      "data.issuer",
+		"KEY_ID":      "data.key_id",
+		"AUDIENCE":    "data.audience",
+	}, true)
 	return []wiringplugin.Shape{
+		bindableEnvVarShape,
 		knownshapes.NewASAPKey(),
 	}, nil
 }
@@ -78,9 +85,5 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 }
 
 func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{
-		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": string(ResourceType),
-		},
-	}, nil
+	return meta_v1.ObjectMeta{}, nil
 }

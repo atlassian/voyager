@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"reflect"
 
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,26 +21,24 @@ const (
 
 	clusterServiceClassExternalID = "d508783c-eef6-46fe-8245-d595ef2795e2"
 	clusterServicePlanExternalID  = "7e6d37bb-8aa4-4c63-87d2-d78ca91a0120"
-
-	rdsEnvResourcePrefix = "RDS"
 )
 
 // MICROS Provided RDS CFN Parameters
 type MainParametersSpec struct {
-	MicrosAlarmEndpoints        []MicrosAlarmSpec   `json:"MicrosAlarmEndpoints"`
-	MicrosAppSubnets            []string            `json:"MicrosAppSubnets"`
-	MicrosEnv                   string              `json:"MicrosEnv"`
-	MicrosEnvironmentLabel      string              `json:"MicrosEnvironmentLabel,omitempty"`
-	MicrosInstanceSecurityGroup string              `json:"MicrosInstanceSecurityGroup"`
-	MicrosJumpboxSecurityGroup  string              `json:"MicrosJumpboxSecurityGroup"`
-	MicrosPagerdutyEndpoint     string              `json:"MicrosPagerdutyEndpoint,omitempty"`
-	MicrosPagerdutyEndpointHigh string              `json:"MicrosPagerdutyEndpointHigh,omitempty"`
-	MicrosPagerdutyEndpointLow  string              `json:"MicrosPagerdutyEndpointLow,omitempty"`
-	MicrosPrivateDNSZone        string              `json:"MicrosPrivateDnsZone"`
-	MicrosPrivatePaaSDNSZone    string              `json:"MicrosPrivatePaasDnsZone"`
-	MicrosResourceName          string              `json:"MicrosResourceName"`
-	MicrosServiceName           voyager.ServiceName `json:"MicrosServiceName"`
-	MicrosVPCId                 string              `json:"MicrosVpcId"`
+	MicrosAlarmEndpoints        []oap.MicrosAlarmSpec `json:"MicrosAlarmEndpoints"`
+	MicrosAppSubnets            []string              `json:"MicrosAppSubnets"`
+	MicrosEnv                   string                `json:"MicrosEnv"`
+	MicrosEnvironmentLabel      string                `json:"MicrosEnvironmentLabel,omitempty"`
+	MicrosInstanceSecurityGroup string                `json:"MicrosInstanceSecurityGroup"`
+	MicrosJumpboxSecurityGroup  string                `json:"MicrosJumpboxSecurityGroup"`
+	MicrosPagerdutyEndpoint     string                `json:"MicrosPagerdutyEndpoint,omitempty"`
+	MicrosPagerdutyEndpointHigh string                `json:"MicrosPagerdutyEndpointHigh,omitempty"`
+	MicrosPagerdutyEndpointLow  string                `json:"MicrosPagerdutyEndpointLow,omitempty"`
+	MicrosPrivateDNSZone        string                `json:"MicrosPrivateDnsZone"`
+	MicrosPrivatePaaSDNSZone    string                `json:"MicrosPrivatePaasDnsZone"`
+	MicrosResourceName          string                `json:"MicrosResourceName"`
+	MicrosServiceName           voyager.ServiceName   `json:"MicrosServiceName"`
+	MicrosVPCId                 string                `json:"MicrosVpcId"`
 }
 
 type MiscParametersSpec struct {
@@ -48,13 +50,6 @@ type MiscParametersSpec struct {
 
 type LocationSpec struct {
 	Environment string `json:"env"`
-}
-
-type MicrosAlarmSpec struct {
-	Type     string `json:"type"`
-	Priority string `json:"priority"`
-	Endpoint string `json:"endpoint"`
-	Consumer string `json:"consumer"`
 }
 
 type FinalSpec struct {
@@ -74,6 +69,10 @@ type WiringPlugin struct {
 	svccatentangler.SvcCatEntangler
 }
 
+type ReadReplicaParam struct {
+	ReadReplica bool `json:"ReadReplica"`
+}
+
 func New() *WiringPlugin {
 	return &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
@@ -82,9 +81,28 @@ func New() *WiringPlugin {
 			InstanceSpec:                  instanceSpec,
 			ObjectMeta:                    objectMeta,
 			ResourceType:                  ResourceType,
-			OptionalShapes:                svccatentangler.NoOptionalShapes,
+			Shapes:                        shapes,
 		},
 	}
+}
+
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
+	var finalSpec FinalSpec
+	err := json.Unmarshal(si.Spec.Parameters.Raw, &finalSpec)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	var readReplicaParam ReadReplicaParam
+	err = json.Unmarshal(finalSpec.Parameters, &readReplicaParam)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return []wiringplugin.Shape{
+		knownshapes.NewSharedDbShape(smithResource.Name, readReplicaParam.ReadReplica),
+	}, nil
 }
 
 func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
@@ -103,20 +121,9 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	// EMP-712: We are currently constructing the list of alarm endpoints manually.
 	// When the alarmEndpoints list is available in context.StateContext, we should
 	// just pass that down instead.
-	microsAlarmEndpoints := []MicrosAlarmSpec{
-		MicrosAlarmSpec{
-			Type:     "CloudWatch",
-			Priority: "high",
-			Endpoint: context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
-			Consumer: "pagerduty",
-		},
-		MicrosAlarmSpec{
-			Type:     "CloudWatch",
-			Priority: "low",
-			Endpoint: context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
-			Consumer: "pagerduty",
-		},
-	}
+	microsAlarmEndpoints := oap.PagerdutyAlarmEndpoints(
+		context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
+		context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch)
 
 	primaryParameters := MainParametersSpec{
 		MicrosAlarmEndpoints:        microsAlarmEndpoints,
@@ -183,9 +190,5 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 }
 
 func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{
-		Annotations: map[string]string{
-			voyager.Domain + "/envResourcePrefix": rdsEnvResourcePrefix,
-		},
-	}, nil
+	return meta_v1.ObjectMeta{}, nil
 }
