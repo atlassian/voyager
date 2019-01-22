@@ -143,24 +143,6 @@ func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource,
 	}, nil
 }
 
-func PagerdutyAlarmEndpoints(highPriorityPagerdutyEndpoint string, lowPriorityPagerdutyEndpoint string) []oap.MicrosAlarmSpec {
-	microsAlarmEndpoints := []oap.MicrosAlarmSpec{
-		{
-			Type:     "CloudWatch",
-			Priority: "high",
-			Endpoint: highPriorityPagerdutyEndpoint,
-			Consumer: "pagerduty",
-		},
-		{
-			Type:     "CloudWatch",
-			Priority: "low",
-			Endpoint: lowPriorityPagerdutyEndpoint,
-			Consumer: "pagerduty",
-		},
-	}
-	return microsAlarmEndpoints
-}
-
 func dynamoDbServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
 	return &oap.ServiceEnvironment{
 		NotificationEmail: env.NotificationEmail,
