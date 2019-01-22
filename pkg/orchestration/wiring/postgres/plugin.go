@@ -9,7 +9,6 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -112,42 +111,36 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, c
 	}, nil
 }
 
-func getRDSDependency(dependencies []wiringplugin.WiredDependency) (wiringplugin.WiredDependency, error) {
-	rdsDependency := []wiringplugin.WiredDependency{}
-	if len(dependencies) > 0 {
-		for _, d := range dependencies {
-			if d.Type == rds.ResourceType {
-				rdsDependency = append(rdsDependency, d)
-			}
-		}
-		if len(rdsDependency) > 1 {
-			return wiringplugin.WiredDependency{}, errors.Errorf("Postgres resources can only depend on one RDS resource type")
-		}
-		if len(rdsDependency) == 1 {
-			return rdsDependency[0], nil
-		}
-	}
-	return wiringplugin.WiredDependency{}, nil
-}
-
 func references(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
-	references := []smith_v1.Reference{}
-	rdsDependency, err := getRDSDependency(context.Dependencies)
+	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
-		return references, err
+		return nil, err
 	}
-	if rdsDependency.Name == "" {
-		return references, nil
+	// No dependencies
+	if !found {
+		return nil, nil
 	}
-	instanceName := wiringutil.ServiceInstanceResourceName(rdsDependency.Name)
+
+	// Check if dependency has a RDS shape
+	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Found dependency but it was not a RDS resource
+	if !found {
+		return nil, nil
+	}
+
+	instanceName := wiringutil.ServiceInstanceResourceName(dep.Name)
 	referenceName := wiringutil.ReferenceName(instanceName, "metadata-name")
-	references = append(references, smith_v1.Reference{
+
+	return []smith_v1.Reference{{
 		Name:     referenceName,
-		Resource: wiringutil.ServiceInstanceResourceName(rdsDependency.Name),
+		Resource: wiringutil.ServiceInstanceResourceName(dep.Name),
 		Path:     "metadata.name",
 		Example:  "myownrds",
-	})
-	return references, nil
+	}}, nil
 }
 
 func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
@@ -204,21 +197,34 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	// if this postgres depends on Dedicated RDS, it means it should be created there instead on the Default RDS
 	// there should be only one RDS dependency
-	rdsDependency, err := getRDSDependency(context.Dependencies)
+	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
 		return nil, err
 	}
-	if rdsDependency.Name != "" {
-		referenceName := wiringutil.ReferenceName(
-			wiringutil.ServiceInstanceResourceName(rdsDependency.Name),
-			"metadata-name",
-		)
-		shareddb := &SharedDbSpec{
-			ResourceName: fmt.Sprintf("!{%s}", referenceName),
-			ServiceName:  context.StateContext.ServiceName,
-		}
-		finalSpec["shareddb"] = shareddb
+
+	// Did not find any dependencies
+	if !found {
+		return json.Marshal(finalSpec)
 	}
+
+	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to determine if shape %s db was a dependency", knownshapes.SharedDbShape)
+	}
+
+	if !found {
+		return nil, errors.Errorf("expected to find shape %s in %q", knownshapes.SharedDbShape, dep.Name)
+	}
+
+	referenceName := wiringutil.ReferenceName(
+		wiringutil.ServiceInstanceResourceName(dep.Name),
+		"metadata-name",
+	)
+	shareddb := &SharedDbSpec{
+		ResourceName: fmt.Sprintf("!{%s}", referenceName),
+		ServiceName:  context.StateContext.ServiceName,
+	}
+	finalSpec["shareddb"] = shareddb
 
 	return json.Marshal(finalSpec)
 }
