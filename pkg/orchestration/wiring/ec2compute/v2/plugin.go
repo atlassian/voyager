@@ -10,6 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/common"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,13 +42,14 @@ type Docker struct {
 
 // fields that the auto wiring function manipulates
 type partialSpec struct {
-	Service       service           `json:"service"`
-	Location      voyager.Location  `json:"location"`
-	EC2           ec2Iam            `json:"ec2"`
-	Tags          map[string]string `json:"tags"`
-	Notifications notifications     `json:"notifications"`
-	SecretEnvVars map[string]string `json:"secretEnvVars,omitempty"`
-	Docker        Docker            `json:"docker"`
+	Service        service               `json:"service"`
+	Location       voyager.Location      `json:"location"`
+	EC2            ec2Iam                `json:"ec2"`
+	Tags           map[string]string     `json:"tags"`
+	Notifications  notifications         `json:"notifications"`
+	SecretEnvVars  map[string]string     `json:"secretEnvVars,omitempty"`
+	Docker         Docker                `json:"docker"`
+	AlarmEndpoints []oap.MicrosAlarmSpec `json:"alarmEndpoints"`
 }
 
 type service struct {
@@ -62,16 +64,7 @@ type ec2Iam struct {
 }
 
 type notifications struct {
-	Email     string    `json:"email"`
-	Pagerduty pagerduty `json:"pagerduty"`
-}
-
-type pagerduty struct {
-	Generic     string `json:"generic"`
-	Cloudwatch  string `json:"cloudwatch"`
-	LowPriority string `json:"lowPriority"`
-
-	// Pingdom is ignored
+	Email string `json:"email"`
 }
 
 // restrictedParameters contains the parts of the output compute spec users cannot set
@@ -126,12 +119,9 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 	notificationProp := stateContext.ServiceProperties.Notifications
 	partialSpecData.Notifications = notifications{
 		Email: notificationProp.Email,
-		Pagerduty: pagerduty{
-			Cloudwatch:  notificationProp.PagerdutyEndpoint.CloudWatch,
-			LowPriority: notificationProp.LowPriorityPagerdutyEndpoint.CloudWatch,
-			Generic:     notificationProp.PagerdutyEndpoint.Generic,
-		},
 	}
+	partialSpecData.AlarmEndpoints = oap.PagerdutyAlarmEndpoints(
+		notificationProp.PagerdutyEndpoint.CloudWatch, notificationProp.LowPriorityPagerdutyEndpoint.CloudWatch)
 
 	// --- default ASAP public key repo env vars
 	asapKeyPublicRepositoryEnvVars := asapkey.GetPublicKeyRepoEnvVars(stateContext.Location)

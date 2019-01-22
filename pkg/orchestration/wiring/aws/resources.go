@@ -51,24 +51,6 @@ var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	Cfn:      Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, CfnPrefix, snsSubscribableForSnsV1Template),
 }
 
-func PagerdutyAlarmEndpoints(highPriorityPagerdutyEndpoint string, lowPriorityPagerdutyEndpoint string) []oap.MicrosAlarmSpec {
-	microsAlarmEndpoints := []oap.MicrosAlarmSpec{
-		{
-			Type:     "CloudWatch",
-			Priority: "high",
-			Endpoint: highPriorityPagerdutyEndpoint,
-			Consumer: "pagerduty",
-		},
-		{
-			Type:     "CloudWatch",
-			Priority: "low",
-			Endpoint: lowPriorityPagerdutyEndpoint,
-			Consumer: "pagerduty",
-		},
-	}
-	return microsAlarmEndpoints
-}
-
 func dynamoDbServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
 	return &oap.ServiceEnvironment{
 		NotificationEmail: env.NotificationEmail,

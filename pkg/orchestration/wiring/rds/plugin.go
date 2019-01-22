@@ -96,20 +96,9 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	// EMP-712: We are currently constructing the list of alarm endpoints manually.
 	// When the alarmEndpoints list is available in context.StateContext, we should
 	// just pass that down instead.
-	microsAlarmEndpoints := []oap.MicrosAlarmSpec{
-		oap.MicrosAlarmSpec{
-			Type:     "CloudWatch",
-			Priority: "high",
-			Endpoint: context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
-			Consumer: "pagerduty",
-		},
-		oap.MicrosAlarmSpec{
-			Type:     "CloudWatch",
-			Priority: "low",
-			Endpoint: context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
-			Consumer: "pagerduty",
-		},
-	}
+	microsAlarmEndpoints := oap.PagerdutyAlarmEndpoints(
+		context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
+		context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch)
 
 	primaryParameters := MainParametersSpec{
 		MicrosAlarmEndpoints:        microsAlarmEndpoints,
