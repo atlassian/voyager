@@ -84,7 +84,6 @@ var (
 			Scope: "Namespaced",
 			Validation: &v1beta1.CustomResourceValidation{
 				OpenAPIV3Schema: &v1beta1.JSONSchemaProps{
-					Type: "object",
 					Properties: map[string]v1beta1.JSONSchemaProps{
 						"apiVersion": {
 							Type: "string",
@@ -135,12 +134,8 @@ var (
 									Type: "object",
 									Properties: map[string]v1beta1.JSONSchemaProps{
 										"caBundle": {
-											Type: "array",
-											Items: &v1beta1.JSONSchemaPropsOrArray{
-												Schema: &v1beta1.JSONSchemaProps{
-													Type: "byte",
-												},
-											},
+											Type:   "string",
+											Format: "byte",
 										},
 										"serverEndpoints": {
 											Type: "array",
@@ -192,7 +187,10 @@ var (
 													Type: "string",
 												},
 											},
-										},
+											Required: []string{
+												"type",
+												"status",
+											}},
 									},
 								},
 							},

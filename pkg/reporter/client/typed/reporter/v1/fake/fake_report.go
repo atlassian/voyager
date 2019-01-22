@@ -106,7 +106,7 @@ func (c *FakeReports) DeleteCollection(options *v1.DeleteOptions, listOptions v1
 // Patch applies the patch and returns the patched report.
 func (c *FakeReports) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *reporterv1.Report, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(reportsResource, c.ns, name, data, subresources...), &reporterv1.Report{})
+		Invokes(testing.NewPatchSubresourceAction(reportsResource, c.ns, name, pt, data, subresources...), &reporterv1.Report{})
 
 	if obj == nil {
 		return nil, err

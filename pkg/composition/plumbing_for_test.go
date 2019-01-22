@@ -6,9 +6,9 @@ import (
 	"github.com/atlassian/voyager"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	"github.com/atlassian/voyager/pkg/util/testutil"
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 )
 
 func loadTestServiceDescriptor(t *testing.T, filename string) *comp_v1.ServiceDescriptor {

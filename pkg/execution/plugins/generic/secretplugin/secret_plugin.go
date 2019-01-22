@@ -47,11 +47,13 @@ func (p *Plugin) Describe() *smith_plugin.Description {
 	}
 }
 
-func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.Context) (*smith_plugin.ProcessResult, error) {
+func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.Context) smith_plugin.ProcessResult {
 	spec := Spec{}
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(rawSpec, &spec)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert into typed spec")
+		return &smith_plugin.ProcessResultFailure{
+			Error: errors.Wrap(err, "failed to convert into typed spec"),
+		}
 	}
 
 	// Append to final output
@@ -59,7 +61,9 @@ func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.C
 	for k, v := range spec.JSONData {
 		envVarJSONString, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return &smith_plugin.ProcessResultFailure{
+				Error: errors.WithStack(err),
+			}
 		}
 		converted[k] = envVarJSONString
 	}
@@ -67,7 +71,7 @@ func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.C
 		converted[k] = []byte(v)
 	}
 
-	return &smith_plugin.ProcessResult{
+	return &smith_plugin.ProcessResultSuccess{
 		Object: &core_v1.Secret{
 			TypeMeta: meta_v1.TypeMeta{
 				APIVersion: core_v1.SchemeGroupVersion.String(),
@@ -75,5 +79,5 @@ func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.C
 			},
 			Data: converted,
 		},
-	}, nil
+	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/crash"
 	"github.com/atlassian/voyager/pkg/util/logz"
+	"k8s.io/klog"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(func(ctx context.Context) error {
 		crash.InstallAPIMachineryLoggers()
 		server, err := NewServerFromFlags(flag.CommandLine, os.Args[1:])

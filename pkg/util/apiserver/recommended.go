@@ -4,14 +4,12 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/admission"
-	"k8s.io/apiserver/pkg/authentication/request/anonymous"
-	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
 	"k8s.io/apiserver/pkg/server"
 	kubeoptions "k8s.io/apiserver/pkg/server/options"
 )
 
 // NOTE: This file is mostly a copy-paste of the
-// https://github.com/kubernetes/kubernetes/blob/release-1.12/staging/src/k8s.io/apiserver/pkg/server/options/recommended.go
+// https://github.com/kubernetes/kubernetes/blob/release-1.13/staging/src/k8s.io/apiserver/pkg/server/options/recommended.go
 // file, just with Etcd options removed
 
 /*
@@ -45,11 +43,12 @@ type RecommendedOptions struct {
 	// admission plugin initializers to Admission.ApplyTo.
 	ExtraAdmissionInitializers func(c *server.RecommendedConfig) ([]admission.PluginInitializer, error)
 	Admission                  *kubeoptions.AdmissionOptions
-
-	Local bool
+	// ProcessInfo is used to identify events created by the server.
+	ProcessInfo *kubeoptions.ProcessInfo
+	Webhook     *kubeoptions.WebhookOptions
 }
 
-func NewRecommendedOptions() *RecommendedOptions {
+func NewRecommendedOptions(processInfo *kubeoptions.ProcessInfo) *RecommendedOptions {
 	sso := kubeoptions.NewSecureServingOptions()
 
 	// We are composing recommended options for an aggregated api-server,
@@ -67,6 +66,8 @@ func NewRecommendedOptions() *RecommendedOptions {
 		CoreAPI:                    kubeoptions.NewCoreAPIOptions(),
 		ExtraAdmissionInitializers: func(c *server.RecommendedConfig) ([]admission.PluginInitializer, error) { return nil, nil },
 		Admission:                  kubeoptions.NewAdmissionOptions(),
+		ProcessInfo:                processInfo,
+		Webhook:                    kubeoptions.NewWebhookOptions(),
 	}
 }
 
@@ -78,23 +79,12 @@ func (o *RecommendedOptions) AddFlags(fs *pflag.FlagSet) {
 	o.Features.AddFlags(fs)
 	o.CoreAPI.AddFlags(fs)
 	o.Admission.AddFlags(fs)
-
-	fs.BoolVar(&o.Local, "local", false, "The server is running on a local machine not in a k8s cluster")
 }
 
 // ApplyTo adds RecommendedOptions to the server configuration.
-func (o *RecommendedOptions) ApplyTo(config *server.RecommendedConfig, scheme *runtime.Scheme) error {
-	if o.Local {
-		return o.LocalApplyTo(config, scheme)
-	}
-
-	return o.ClusterApplyTo(config, scheme)
-}
-
-// ClusterApplyTo adds RecommendedOptions to the server configuration for running in a cluster.
 // scheme is the scheme of the apiserver types that are sent to the admission chain.
 // pluginInitializers can be empty, it is only need for additional initializers.
-func (o *RecommendedOptions) ClusterApplyTo(config *server.RecommendedConfig, scheme *runtime.Scheme) error {
+func (o *RecommendedOptions) ApplyTo(config *server.RecommendedConfig, scheme *runtime.Scheme) error {
 	if err := o.SecureServing.ApplyTo(&config.Config.SecureServing, &config.Config.LoopbackClientConfig); err != nil {
 		return err
 	}
@@ -104,36 +94,8 @@ func (o *RecommendedOptions) ClusterApplyTo(config *server.RecommendedConfig, sc
 	if err := o.Authorization.ApplyTo(&config.Config.Authorization); err != nil {
 		return err
 	}
-	if err := o.Audit.ApplyTo(&config.Config); err != nil {
+	if err := o.Audit.ApplyTo(&config.Config, config.ClientConfig, config.SharedInformerFactory, o.ProcessInfo, o.Webhook); err != nil {
 		return err
-	}
-	if err := o.Features.ApplyTo(&config.Config); err != nil {
-		return err
-	}
-	if err := o.CoreAPI.ApplyTo(config); err != nil {
-		return err
-	}
-	if initializers, err := o.ExtraAdmissionInitializers(config); err != nil {
-		return err
-	} else if err := o.Admission.ApplyTo(&config.Config, config.SharedInformerFactory, config.ClientConfig, scheme, initializers...); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// LocalApplyTo adds RecommendedOptions to the server configuration for running locally.
-// This differs from the cluster apply to by not enforcing certs/authz and just having anonymous auth
-// This allows users to run on their dev machine and hit with `curl -k`
-func (o *RecommendedOptions) LocalApplyTo(config *server.RecommendedConfig, scheme *runtime.Scheme) error {
-	if err := o.SecureServing.ApplyTo(&config.Config.SecureServing, &config.Config.LoopbackClientConfig); err != nil {
-		return err
-	}
-	config.Config.Authentication = server.AuthenticationInfo{
-		Authenticator: anonymous.NewAuthenticator(),
-	}
-	config.Config.Authorization = server.AuthorizationInfo{
-		Authorizer: authorizerfactory.NewAlwaysAllowAuthorizer(),
 	}
 	if err := o.Features.ApplyTo(&config.Config); err != nil {
 		return err

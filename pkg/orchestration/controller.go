@@ -18,7 +18,6 @@ import (
 	orch_v1client "github.com/atlassian/voyager/pkg/orchestration/client/typed/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring"
 	"github.com/atlassian/voyager/pkg/util/layers"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -28,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/yaml"
 )
 
 const (

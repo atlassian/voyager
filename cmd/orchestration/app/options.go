@@ -5,9 +5,9 @@ import (
 
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/options"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/yaml"
 )
 
 // TagNames tell us what tag to store each of these properties under.

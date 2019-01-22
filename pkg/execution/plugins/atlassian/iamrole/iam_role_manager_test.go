@@ -12,12 +12,12 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/testutil"
-	"github.com/ghodss/yaml"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 const fixturesDir = "testdata"
@@ -200,7 +200,7 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 		Dependencies: dependencies,
 	}
 
-	processResult, err := iamRolePlugin.Process(rawSpec, &context)
+	processResult := iamRolePlugin.Process(rawSpec, &context)
 
 	resultFilePostFix := ".iam_template_ec2_compute.json"
 	if computeType == KubeComputeType {
@@ -210,16 +210,17 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 	filename := resultFilePrefix + resultFilePostFix
 	data, errSuccess := ioutil.ReadFile(filename)
 	if errSuccess == nil {
-		require.NoError(t, err)
+		require.Equal(t, smith_plugin.ProcessResultSuccessType, processResult.StatusType())
 
 		// turn the processResult into a serviceInstance
-		serviceInstance := processResult.Object.(*sc_v1b1.ServiceInstance)
+		serviceInstance := processResult.(*smith_plugin.ProcessResultSuccess).Object.(*sc_v1b1.ServiceInstance)
 		validateServiceInstance(t, serviceInstance, data, filename)
 	}
 
 	data, errFailure := ioutil.ReadFile(resultFilePrefix + ".error")
 	if errFailure == nil {
-		require.EqualError(t, err, strings.TrimSpace(string(data)))
+		require.Equal(t, smith_plugin.ProcessResultFailureType, processResult.StatusType())
+		require.EqualError(t, processResult.(*smith_plugin.ProcessResultFailure).Error, strings.TrimSpace(string(data)))
 	}
 
 	if errFailure != nil && errSuccess != nil {

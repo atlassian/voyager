@@ -26,11 +26,9 @@ func TestProcessJSONData(t *testing.T) {
 
 	context := smith_plugin.Context{}
 
-	processResult, err := plugin.Process(rawSpec, &context)
-	require.NoError(t, err)
-
-	require.IsType(t, &core_v1.Secret{}, processResult.Object)
-	secret := processResult.Object.(*core_v1.Secret)
+	result := plugin.Process(rawSpec, &context)
+	require.Equal(t, smith_plugin.ProcessResultSuccessType, result.StatusType())
+	secret := result.(*smith_plugin.ProcessResultSuccess).Object.(*core_v1.Secret)
 
 	assert.Equal(t, "\"data\"", string(secret.Data["k1"]))
 	assert.Equal(t, "{\"other\":\"data\"}", string(secret.Data["k2"]))
@@ -50,11 +48,9 @@ func TestProcessData(t *testing.T) {
 
 	context := smith_plugin.Context{}
 
-	processResult, err := plugin.Process(rawSpec, &context)
-	require.NoError(t, err)
-
-	require.IsType(t, &core_v1.Secret{}, processResult.Object)
-	secret := processResult.Object.(*core_v1.Secret)
+	result := plugin.Process(rawSpec, &context)
+	require.Equal(t, smith_plugin.ProcessResultSuccessType, result.StatusType())
+	secret := result.(*smith_plugin.ProcessResultSuccess).Object.(*core_v1.Secret)
 
 	assert.Equal(t, "data", string(secret.Data["k1"]))
 }

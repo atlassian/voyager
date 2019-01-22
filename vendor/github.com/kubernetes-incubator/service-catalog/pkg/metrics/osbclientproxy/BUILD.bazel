@@ -7,8 +7,8 @@ go_library(
     importpath = "github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/metrics:go_default_library",
         "//vendor/github.com/pmorie/go-open-service-broker-client/v2:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
     ],
 )

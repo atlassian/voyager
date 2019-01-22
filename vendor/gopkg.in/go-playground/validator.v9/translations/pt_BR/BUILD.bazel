@@ -9,6 +9,6 @@ go_library(
     deps = [
         "//vendor/github.com/go-playground/locales:go_default_library",
         "//vendor/github.com/go-playground/universal-translator:go_default_library",
-        "//vendor/github.com/go-playground/validator:go_default_library",
+        "//vendor/gopkg.in/go-playground/validator.v9:go_default_library",
     ],
 )

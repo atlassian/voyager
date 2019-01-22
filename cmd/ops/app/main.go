@@ -11,6 +11,7 @@ import (
 	ctrlApp "github.com/atlassian/ctrl/app"
 	"github.com/atlassian/voyager/cmd"
 	"github.com/atlassian/voyager/pkg/util/crash"
+	"k8s.io/apiserver/pkg/util/logs"
 )
 
 const (
@@ -24,6 +25,8 @@ func Main() {
 
 func runWithContext(ctx context.Context) error {
 	crash.InstallAPIMachineryLoggers()
+	logs.InitLogs()
+	defer logs.FlushLogs()
 	controllers := []ctrl.Constructor{
 		&ControllerConstructor{},
 	}

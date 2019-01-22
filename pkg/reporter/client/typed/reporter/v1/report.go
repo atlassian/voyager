@@ -6,6 +6,8 @@
 package v1
 
 import (
+	"time"
+
 	v1 "github.com/atlassian/voyager/pkg/apis/reporter/v1"
 	scheme "github.com/atlassian/voyager/pkg/reporter/client/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,11 +64,16 @@ func (c *reports) Get(name string, options metav1.GetOptions) (result *v1.Report
 
 // List takes label and field selectors, and returns the list of Reports that match those selectors.
 func (c *reports) List(opts metav1.ListOptions) (result *v1.ReportList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.ReportList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("reports").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -74,11 +81,16 @@ func (c *reports) List(opts metav1.ListOptions) (result *v1.ReportList, err erro
 
 // Watch returns a watch.Interface that watches the requested reports.
 func (c *reports) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("reports").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -120,10 +132,15 @@ func (c *reports) Delete(name string, options *metav1.DeleteOptions) error {
 
 // DeleteCollection deletes a collection of objects.
 func (c *reports) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("reports").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

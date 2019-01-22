@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	urn "github.com/leodido/go-urn"
 	"net"
 	"net/url"
 	"os"
@@ -83,6 +84,8 @@ var (
 		"gtfield":          isGtField,
 		"ltefield":         isLteField,
 		"ltfield":          isLtField,
+		"fieldcontains":    fieldContains,
+		"fieldexcludes":    fieldExcludes,
 		"alpha":            isAlpha,
 		"alphanum":         isAlphanum,
 		"alphaunicode":     isAlphaUnicode,
@@ -98,6 +101,7 @@ var (
 		"email":            isEmail,
 		"url":              isURL,
 		"uri":              isURI,
+		"urn_rfc2141":      isUrnRFC2141, // RFC 2141
 		"file":             isFile,
 		"base64":           isBase64,
 		"base64url":        isBase64URL,
@@ -582,6 +586,31 @@ func containsAny(fl FieldLevel) bool {
 // Contains is the validation function for validating that the field's value contains the text specified within the param.
 func contains(fl FieldLevel) bool {
 	return strings.Contains(fl.Field().String(), fl.Param())
+}
+
+// FieldContains is the validation function for validating if the current field's value contains the field specified by the param's value.
+func fieldContains(fl FieldLevel) bool {
+	field := fl.Field()
+
+	currentField, _, ok := fl.GetStructFieldOK()
+
+	if !ok {
+		return false
+	}
+
+	return strings.Contains(field.String(), currentField.String())
+}
+
+// FieldExcludes is the validation function for validating if the current field's value excludes the field specified by the param's value.
+func fieldExcludes(fl FieldLevel) bool {
+	field := fl.Field()
+
+	currentField, _, ok := fl.GetStructFieldOK()
+	if !ok {
+		return true
+	}
+
+	return !strings.Contains(field.String(), currentField.String())
 }
 
 // IsNeField is the validation function for validating if the current field's value is not equal to the field specified by the param's value.
@@ -1072,6 +1101,24 @@ func isURL(fl FieldLevel) bool {
 		}
 
 		return err == nil
+	}
+
+	panic(fmt.Sprintf("Bad field type %T", field.Interface()))
+}
+
+// isUrnRFC2141 is the validation function for validating if the current field's value is a valid URN as per RFC 2141.
+func isUrnRFC2141(fl FieldLevel) bool {
+	field := fl.Field()
+
+	switch field.Kind() {
+
+	case reflect.String:
+
+		str := field.String()
+
+		_, match := urn.Parse([]byte(str))
+
+		return match
 	}
 
 	panic(fmt.Sprintf("Bad field type %T", field.Interface()))

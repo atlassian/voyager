@@ -62,6 +62,7 @@ go_library(
         "zsys_darwin_386.go",
         "zsys_darwin_amd64.go",
         "zsys_darwin_arm.go",
+        "zsys_darwin_arm64.go",
         "zsys_dragonfly_amd64.go",
         "zsys_freebsd_386.go",
         "zsys_freebsd_amd64.go",

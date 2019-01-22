@@ -10,7 +10,6 @@ go_library(
     importpath = "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/api:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/api/meta:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog:go_default_library",
@@ -33,5 +32,6 @@ go_library(
         "//vendor/k8s.io/apiserver/pkg/storage:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/storage/names:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/feature:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
     ],
 )

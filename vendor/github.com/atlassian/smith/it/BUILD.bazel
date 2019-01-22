@@ -17,6 +17,7 @@ go_library(
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/client/clientset_generated/clientset:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/client/smart:go_default_library",
+        "//vendor/github.com/atlassian/smith/pkg/crd:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/resources:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/util:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/util/testing:go_default_library",
