@@ -199,7 +199,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	// there should be only one RDS dependency
 	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
-		return nil, errors.Wrap(err, "postgres resources can only depend on one RDS resource type")
+		return nil, err
 	}
 
 	// Did not find any dependencies
