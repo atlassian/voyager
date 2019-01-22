@@ -207,24 +207,24 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		return json.Marshal(finalSpec)
 	}
 
-	// Check if dependency has a RDS shape
 	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
 	if err != nil {
 		return json.Marshal(finalSpec)
 	}
 
-	// Found RDS dependency
-	if found {
-		referenceName := wiringutil.ReferenceName(
-			wiringutil.ServiceInstanceResourceName(dep.Name),
-			"metadata-name",
-		)
-		shareddb := &SharedDbSpec{
-			ResourceName: fmt.Sprintf("!{%s}", referenceName),
-			ServiceName:  context.StateContext.ServiceName,
-		}
-		finalSpec["shareddb"] = shareddb
+	if !found {
+		return nil, errors.Errorf("expected to find shape %s in %q", knownshapes.SharedDbShape, dep.Name)
 	}
+
+	referenceName := wiringutil.ReferenceName(
+		wiringutil.ServiceInstanceResourceName(dep.Name),
+		"metadata-name",
+	)
+	shareddb := &SharedDbSpec{
+		ResourceName: fmt.Sprintf("!{%s}", referenceName),
+		ServiceName:  context.StateContext.ServiceName,
+	}
+	finalSpec["shareddb"] = shareddb
 
 	return json.Marshal(finalSpec)
 }
