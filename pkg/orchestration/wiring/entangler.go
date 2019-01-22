@@ -215,7 +215,6 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		}
 		deps = append(deps, wiringplugin.WiredDependency{
 			Name:       res.Name,
-			Type:       res.Type,
 			Contract:   res.WiringResult.Contract,
 			Attributes: dep.Attributes,
 		})
