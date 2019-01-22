@@ -57,7 +57,6 @@ func (c *WiringContext) FindTheOnlyDependency() (*WiredDependency, bool /* found
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.
 type WiredDependency struct {
 	Name     voyager.ResourceName
-	Type     voyager.ResourceType
 	Contract ResourceContract
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}

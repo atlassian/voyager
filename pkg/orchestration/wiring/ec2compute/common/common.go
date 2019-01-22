@@ -124,7 +124,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 			return nil, false, err
 		}
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q of type %q, only dependencies providing shape %q are supported", dependency.Name, dependency.Type, knownshapes.BindableEnvironmentVariablesShape)
+			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dependency.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
 		resourceReference := bindableShape.Data.ServiceInstanceName
