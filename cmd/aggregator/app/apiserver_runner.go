@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
-	"k8s.io/apiserver/pkg/util/logs"
 )
 
 var _ ctrl.Server = &APIServerRunner{}
@@ -22,8 +21,6 @@ type APIServerRunner struct {
 }
 
 func (s *APIServerRunner) Run(context.Context) error {
-	logs.InitLogs()
-	defer logs.FlushLogs()
 	namespace, err := apiserver.GetInClusterNamespace(apiserver.DefaultNamespace)
 	if err != nil {
 		return errors.WithStack(err)

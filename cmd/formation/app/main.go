@@ -11,6 +11,7 @@ import (
 	ctrlApp "github.com/atlassian/ctrl/app"
 	"github.com/atlassian/voyager/cmd"
 	"github.com/atlassian/voyager/pkg/util/crash"
+	"k8s.io/klog"
 )
 
 const (
@@ -19,6 +20,7 @@ const (
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(runWithContext)
 }
 

@@ -15,6 +15,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/util/crash"
+	"k8s.io/klog"
 )
 
 const (
@@ -25,8 +26,9 @@ func Main() {
 	CustomMain(emptyLegacyConfigFunc, registry.KnownWiringPlugins)
 }
 
-func CustomMain(getLegacyConfigFunc func(location voyager.Location) *legacy.Config, plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
+func CustomMain(getLegacyConfigFunc func(voyager.Location) *legacy.Config, plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(func(ctx context.Context) error {
 		crash.InstallAPIMachineryLoggers()
 		controllers := []ctrl.Constructor{
