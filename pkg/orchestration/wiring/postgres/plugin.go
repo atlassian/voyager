@@ -12,9 +12,8 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	"github.com/pkg/errors"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -56,21 +55,60 @@ type LocationSpec struct {
 }
 
 type WiringPlugin struct {
-	svccatentangler.SvcCatEntangler
 }
 
 func New() *WiringPlugin {
-	return &WiringPlugin{
-		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: clusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
-			InstanceSpec:                  instanceSpec,
-			ObjectMeta:                    objectMeta,
-			References:                    references,
-			ResourceType:                  ResourceType,
-			Shapes:                        shapes,
+	return &WiringPlugin{}
+}
+
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+	if resource.Type != ResourceType {
+		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
+	}
+
+	serviceInstance, err := osb.ConstructServiceInstance(resource, clusterServiceClassExternalID, clusterServicePlanExternalID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	serviceInstance.ObjectMeta.Annotations = map[string]string{
+		smith.DeletionDelayAnnotation: deletionDelay.String(),
+	}
+
+	instanceParameters, err := instanceParameters(resource, context)
+	if err != nil {
+		return nil, false, err
+	}
+	serviceInstance.Spec.Parameters = &runtime.RawExtension{
+		Raw: instanceParameters,
+	}
+
+	references, err := references(context)
+	if err != nil {
+		return nil, false, err
+	}
+
+	serviceInstanceResource := smith_v1.Resource{
+		Name:       wiringutil.ServiceInstanceResourceName(resource.Name),
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: serviceInstance,
 		},
 	}
+
+	shapes, err := shapes(resource, &serviceInstanceResource, context)
+	if err != nil {
+		return nil, false, err
+	}
+
+	result := &wiringplugin.WiringResult{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: shapes,
+		},
+		Resources: []smith_v1.Resource{serviceInstanceResource},
+	}
+
+	return result, false, nil
 }
 
 func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
@@ -111,7 +149,7 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, c
 	}, nil
 }
 
-func references(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
+func references(context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
 	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
 		return nil, err
@@ -143,7 +181,7 @@ func references(resource *orch_v1.StateResource, context *wiringplugin.WiringCon
 	}}, nil
 }
 
-func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
+func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
 		var ourSpec autowiredOnlySpec
@@ -227,12 +265,4 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	finalSpec["shareddb"] = shareddb
 
 	return json.Marshal(finalSpec)
-}
-
-func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{
-		Annotations: map[string]string{
-			smith.DeletionDelayAnnotation: deletionDelay.String(),
-		},
-	}, nil
 }
