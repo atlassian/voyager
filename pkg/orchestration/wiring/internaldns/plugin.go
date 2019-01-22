@@ -17,8 +17,6 @@ import (
 )
 
 const (
-	clusterServiceClassExternalID                       = "f77e1881-36f3-42ce-9848-7a811b421dd7"
-	clusterServicePlanExternalID                        = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
 	kubeIngressResourceType        voyager.ResourceType = "KubeIngress"
 	kubeIngressRefMetadata                              = "metadata"
 	kubeIngressRefMetadataEndpoint                      = "endpoint"
@@ -37,8 +35,8 @@ type WiringPlugin struct {
 func New() *WiringPlugin {
 	return &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: clusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
+			ClusterServiceClassExternalID: apiinternaldns.ClusterServiceClassExternalID,
+			ClusterServicePlanExternalID:  apiinternaldns.ClusterServicePlanExternalID,
 			InstanceSpec:                  getInstanceSpec,
 			ObjectMeta:                    getObjectMeta,
 			References:                    getReferences,

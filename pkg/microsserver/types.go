@@ -1,10 +1,10 @@
 package microsserver
 
 type AliasInfo struct {
-	Service service `json:"service"`
+	Service Service `json:"Service"`
 }
 
-type service struct {
+type Service struct {
 	Name  string `json:"name"`
 	Owner string `json:"owner"`
 }

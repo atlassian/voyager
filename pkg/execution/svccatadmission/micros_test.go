@@ -2,16 +2,11 @@ package svccatadmission
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"reflect"
 	"testing"
 
-	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -103,25 +98,4 @@ func buildOtherServiceInstance(t *testing.T, serviceName string) []byte {
 	return buildServiceInstance(
 		t, microsClusterServiceClassName, "foo",
 		Parameters{Service{serviceName}})
-}
-
-func buildServiceInstance(t *testing.T, serviceClass, servicePlan string, parameters interface{}) []byte {
-	rawParameters, err := json.Marshal(parameters)
-	require.NoError(t, err)
-	rawServiceInstance, err := json.Marshal(sc_v1b1.ServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceInstanceName,
-		},
-		Spec: sc_v1b1.ServiceInstanceSpec{
-			PlanReference: sc_v1b1.PlanReference{
-				ClusterServiceClassName: serviceClass,
-				ClusterServicePlanName:  servicePlan,
-			},
-			Parameters: &runtime.RawExtension{
-				Raw: rawParameters,
-			},
-		},
-	})
-	require.NoError(t, err)
-	return rawServiceInstance
 }

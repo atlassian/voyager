@@ -85,7 +85,7 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	}
 
 	if response.StatusCode != http.StatusOK {
-		message := fmt.Sprintf("failed to fetch service for %q. Response: %s", domainName, respBody)
+		message := fmt.Sprintf("failed to fetch Service for %q. Response: %s", domainName, respBody)
 		return nil, clientError(response.StatusCode, message)
 	}
 
