@@ -30,8 +30,8 @@ type WiringContext struct {
 	Dependants   []DependantResource
 }
 
-// GetTheOnlyDependency will return a single dependency, returning an error if there is more or less than one
-func (c *WiringContext) GetTheOnlyDependency() (*WiredDependency, error) {
+// TheOnlyDependency will return a single dependency, returning an error if there is more or less than one
+func (c *WiringContext) TheOnlyDependency() (*WiredDependency, error) {
 	switch len(c.Dependencies) {
 	case 0:
 		return nil, errors.New("must depend on a single resource, but none was found")

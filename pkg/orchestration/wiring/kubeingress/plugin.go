@@ -255,7 +255,7 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 
 func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, map[string]string, error) {
 	// Require exactly one KubeCompute dependency
-	kubeComputeDependency, err := context.GetTheOnlyDependency()
+	kubeComputeDependency, err := context.TheOnlyDependency()
 	if err != nil {
 		return "", nil, err
 	}

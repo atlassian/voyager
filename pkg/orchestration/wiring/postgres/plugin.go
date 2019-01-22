@@ -112,36 +112,35 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, c
 }
 
 func references(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
-	references := []smith_v1.Reference{}
 	dep, found, err := context.FindTheOnlyDependency()
 	if err != nil {
-		return references, err
+		return nil, err
 	}
 	// No dependencies
 	if !found {
-		return references, nil
+		return nil, nil
 	}
 
 	// Check if dependency has a RDS shape
 	_, found, err = knownshapes.FindSharedDbShape(dep.Contract.Shapes)
 	if err != nil {
-		return references, err
+		return nil, err
 	}
 
 	// Found dependency but it was not a RDS resource
 	if !found {
-		return references, nil
+		return nil, nil
 	}
 
 	instanceName := wiringutil.ServiceInstanceResourceName(dep.Name)
 	referenceName := wiringutil.ReferenceName(instanceName, "metadata-name")
-	references = append(references, smith_v1.Reference{
+
+	return []smith_v1.Reference{{
 		Name:     referenceName,
 		Resource: wiringutil.ServiceInstanceResourceName(dep.Name),
 		Path:     "metadata.name",
 		Example:  "myownrds",
-	})
-	return references, nil
+	}}, nil
 }
 
 func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
