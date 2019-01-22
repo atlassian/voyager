@@ -1,18 +1,18 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"math/rand"
 	"time"
 
+	"github.com/atlassian/voyager/cmd"
 	"github.com/atlassian/voyager/pkg/creator/server"
 	"github.com/atlassian/voyager/pkg/creator/server/options"
 	"github.com/atlassian/voyager/pkg/util/apiserver"
 	"github.com/atlassian/voyager/pkg/util/crash"
-	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/apiserver/pkg/util/logs"
-	"k8s.io/klog"
 )
 
 const (
@@ -21,6 +21,10 @@ const (
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	cmd.RunInterruptably(runWithContext)
+}
+
+func runWithContext(ctx context.Context) error {
 	crash.InstallAPIMachineryLoggers()
 
 	logs.InitLogs()
@@ -28,13 +32,10 @@ func Main() {
 
 	namespace, err := apiserver.GetInClusterNamespace(apiserver.DefaultNamespace)
 	if err != nil {
-		klog.Fatal(err)
+		return err
 	}
-	stopCh := genericapiserver.SetupSignalHandler()
 	opts := options.NewCreatorServerOptions(genericserveroptions.NewProcessInfo(serviceName, namespace))
-	cmd := server.NewServerCommand(opts, stopCh)
+	cmd := server.NewServerCommand(opts, ctx.Done())
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
-	if err := cmd.Execute(); err != nil {
-		klog.Fatal(err)
-	}
+	return cmd.Execute()
 }
