@@ -256,6 +256,12 @@ spec:
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                - name: MICROS_AWS_REGION
+                  value: testregion
+                - name: MICROS_ENVTYPE
+                  value: testenv
+                - name: MICROS_SERVICE
+                  value: kubecompute-simple
                 envFrom:
                 - secretRef:
                     name: '!{kubecompute-simple--secret-metadata-name}'
@@ -290,6 +296,12 @@ spec:
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                - name: MICROS_AWS_REGION
+                  value: testregion
+                - name: MICROS_ENVTYPE
+                  value: testenv
+                - name: MICROS_SERVICE
+                  value: kubecompute-simple
                 envFrom:
                 - secretRef:
                     name: '!{kubecompute-simple--secret-metadata-name}'

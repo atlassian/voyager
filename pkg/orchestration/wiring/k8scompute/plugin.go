@@ -10,7 +10,7 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
+	compute_common "github.com/atlassian/voyager/pkg/orchestration/wiring/compute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
@@ -119,6 +119,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, err
 	}
 	// Prepare environment variables
+	var envDefault []core_v1.EnvVar
 	var envFrom []core_v1.EnvFromSource
 	var smithResources []smith_v1.Resource
 	var resourceWithEnvVarBindings []compute.ResourceWithEnvVarBinding
@@ -243,13 +244,14 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 	references = append(references, serviceAccountNameRef)
 
-	// default env vars for containers
-	var envDefault []core_v1.EnvVar
+	// Shared default env vars
+	// - Including ASAP public key servers, as all containers
+	//   should know where to get the public keys
+	//   regardless if they're using ASAP or not
+	envDefault = append(envDefault, compute_common.GetSharedDefaultEnvVars(context.StateContext.Location)...)
 
-	// ASAP public key servers
-	// we want every container to know where to get the public keys
-	// regardless if they're using ASAP or not
-	envDefault = append(envDefault, asapkey.GetPublicKeyRepoEnvVars(context.StateContext.Location)...)
+	// Add Micros provided defaults
+	envDefault = append(envDefault, buildDefaultEnvVars(resource.Name, context.StateContext.Location)...)
 
 	// always bind to the common secret, it's OK if it doesn't exist
 	trueVar := true
@@ -458,6 +460,23 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	}
 
 	return containers
+}
+
+func buildDefaultEnvVars(name voyager.ResourceName, location voyager.Location) []core_v1.EnvVar {
+	return []core_v1.EnvVar{
+		{
+			Name:  "MICROS_AWS_REGION",
+			Value: string(location.Region),
+		},
+		{
+			Name:  "MICROS_ENVTYPE",
+			Value: string(location.EnvType),
+		},
+		{
+			Name:  "MICROS_SERVICE",
+			Value: string(name),
+		},
+	}
 }
 
 func buildAffinity(labelMap map[string]string) *core_v1.Affinity {
