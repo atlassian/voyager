@@ -28,6 +28,7 @@ func TestAllKnownShapes(t *testing.T) {
 		NewASAPKey(),
 		NewBindableEnvironmentVariables(resourceName, "abc", map[string]string{"a": "b"}),
 		NewBindableIamAccessible(resourceName, "somePath"),
+		NewEnvironmentVariables(resourceName, map[string][]byte{"TEST": []byte("test-value")}),
 		NewIngressEndpoint(resourceName),
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
 		NewSnsSubscribable(resourceName),

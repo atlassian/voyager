@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "asap.go",
+        "environment_variables.go",
         "secret.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute",

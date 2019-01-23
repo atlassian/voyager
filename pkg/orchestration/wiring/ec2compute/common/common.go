@@ -47,7 +47,7 @@ const (
 type ConstructComputeParametersFunction func(
 	origSpec *runtime.RawExtension,
 	iamRoleRef, iamInstProfRef smith_v1.Reference,
-	microsServiceName string, stateContext wiringplugin.StateContext) (*runtime.RawExtension, error)
+	microsServiceName string, stateContext wiringplugin.StateContext, defaultEnvVars map[string]string) (*runtime.RawExtension, error)
 
 type StateComputeSpec struct {
 	RenameEnvVar map[string]string `json:"rename,omitempty"`
@@ -114,11 +114,25 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		return nil, false, err
 	}
 
+	defaultEnvVars := make(map[string]string)
 	var bindingResources []smith_v1.Resource
 	var bindingResult []compute.BindingResult
 	var references []smith_v1.Reference
 
 	for _, dependency := range dependencies {
+		// Non-bindable environment variables from known shapes
+		envVarsShape, found, err := knownshapes.FindEnvironmentVariablesShape(dependency.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
+		if !found {
+			continue
+		}
+		for k, v := range envVarsShape.Data.EnvVars {
+			defaultEnvVars[k] = string(v)
+		}
+
+		// Bindable environment variables
 		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dependency.Contract.Shapes)
 		if err != nil {
 			return nil, false, err
@@ -207,7 +221,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	}
 	references = append(references, iamRoleRef, iamInstProfRef)
 
-	serviceInstanceSpec, err := constructComputeParameters(stateResource.Spec, iamRoleRef, iamInstProfRef, microsServiceName, context.StateContext)
+	serviceInstanceSpec, err := constructComputeParameters(stateResource.Spec, iamRoleRef, iamInstProfRef, microsServiceName, context.StateContext, defaultEnvVars)
 	if err != nil {
 		return nil, false, err
 	}

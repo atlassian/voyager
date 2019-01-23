@@ -276,8 +276,8 @@ func (metric *Metric) ToKubeMetric() autoscaling_v2b1.MetricSpec {
 func (container *Container) ToKubeContainer(envDefault []core_v1.EnvVar, envFrom []core_v1.EnvFromSource) core_v1.Container {
 	// Container.Env
 	env := make([]core_v1.EnvVar, 0, len(container.Env))
-	for _, enVar := range container.Env {
-		env = append(env, enVar.toKubeEnvVar())
+	for _, envVar := range container.Env {
+		env = append(env, envVar.toKubeEnvVar())
 	}
 	// envDefault
 	env = append(env, envDefault...)

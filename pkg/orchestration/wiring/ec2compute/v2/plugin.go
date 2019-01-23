@@ -77,7 +77,7 @@ type restrictedParameters struct {
 	EC2           ec2Iam             `json:"ec2"`
 }
 
-func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamInstProfRef smith_v1.Reference, microsServiceName string, stateContext wiringplugin.StateContext) (*runtime.RawExtension, error) {
+func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamInstProfRef smith_v1.Reference, microsServiceName string, stateContext wiringplugin.StateContext, defaultEnvVars map[string]string) (*runtime.RawExtension, error) {
 	// The user shouldn't be setting anything in our 'restrictedParameters', since
 	// _we_ control it. So let's make sure they're not and fail ASAP.
 	var parametersCheck restrictedParameters
@@ -125,7 +125,10 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 
 	// --- default ASAP public key repo env vars
 	asapKeyPublicRepositoryEnvVars := asapkey.GetPublicKeyRepoEnvVars(stateContext.Location)
-	partialSpecData.Docker.EnvVars = make(map[string]string, len(asapKeyPublicRepositoryEnvVars))
+	partialSpecData.Docker.EnvVars = make(map[string]string, len(asapKeyPublicRepositoryEnvVars)+len(defaultEnvVars))
+	for k, v := range defaultEnvVars {
+		partialSpecData.Docker.EnvVars[k] = v
+	}
 	for _, v := range asapKeyPublicRepositoryEnvVars {
 		partialSpecData.Docker.EnvVars[v.Name] = v.Value
 	}

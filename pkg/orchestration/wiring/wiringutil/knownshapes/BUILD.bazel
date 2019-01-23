@@ -6,6 +6,7 @@ go_library(
         "asap_key.go",
         "bindable_environment_variables.go",
         "bindable_iam_accessible.go",
+        "environment_variables.go",
         "ingress_endpoint.go",
         "set_of_pods_selectable_by_labels.go",
         "shareddb.go",

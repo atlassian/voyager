@@ -126,6 +126,23 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
+		// Non-bindable environment variables from known shapes
+		envVarsShape, found, err := knownshapes.FindEnvironmentVariablesShape(dep.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
+		if !found {
+			continue
+		}
+		// TODO: put these into a ConfigMap instead
+		for k, v := range envVarsShape.Data.EnvVars {
+			envDefault = append(envDefault, core_v1.EnvVar{
+				Name:  k,
+				Value: string(v),
+			})
+		}
+
+		// Bindable environment variables
 		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
 		if err != nil {
 			return nil, false, err
@@ -228,8 +245,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	references = append(references, serviceAccountNameRef)
 
 	// ASAP public key servers
-	// - All containers should know where to get the public keys
-	//   regardless if they're using ASAP or not
+	// we want every container to know where to get the public keys
+	// regardless if they're using ASAP or not
 	envDefault = append(envDefault, asapkey.GetPublicKeyRepoEnvVars(context.StateContext.Location)...)
 
 	// Add Micros provided defaults
