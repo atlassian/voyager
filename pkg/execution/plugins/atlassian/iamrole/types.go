@@ -22,6 +22,7 @@ type Spec struct {
 	ManagedPolicies       []string               `json:"managedPolicies,omitempty"`
 	ServiceEnvironment    oap.ServiceEnvironment `json:"serviceEnvironment"`
 	ComputeType           ComputeType            `json:"computeType"`
+	PolicySnippets        map[string]string      `json:"policySnippets"`
 }
 
 type ComputeType string

@@ -32,7 +32,7 @@ func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.C
 	}
 
 	// Do the processing
-	roleInstance, err := generateRoleInstance(&spec, context.Dependencies)
+	roleInstance, err := generateRoleInstance(&spec)
 	if err != nil {
 		return &smith_plugin.ProcessResultFailure{
 			Error: err,
