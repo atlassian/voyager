@@ -61,6 +61,8 @@ func TestEntangler(t *testing.T) {
 }
 
 func TestEntanglerWithBadWiringFunction(t *testing.T) {
+	t.Parallel()
+
 	wireup := registry.WireUpFunc(func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
 		return &wiringplugin.WiringResult{
 			Contract: wiringplugin.ResourceContract{
