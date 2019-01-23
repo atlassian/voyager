@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
+
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
@@ -57,6 +59,48 @@ func TestEntangler(t *testing.T) {
 			testFixture(t, resultFilePrefix)
 		})
 	}
+}
+
+func TestEntanglerWithBadWiringFunction(t *testing.T) {
+	wireup := registry.WireUpFunc(func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+		return &wiringplugin.WiringResult{
+			Contract: wiringplugin.ResourceContract{
+				Shapes: []wiringplugin.Shape{
+					knownshapes.NewASAPKey(),
+					knownshapes.NewASAPKey(),
+				},
+			},
+			Resources: nil,
+		}, false, nil
+	})
+
+	plugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
+		"DoubleASAP": wireup,
+	}
+
+	state := &orch_v1.State{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       "State",
+			APIVersion: "orchestration.voyager.atl-paas.net/v1",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "state1",
+			Namespace: "namespace1",
+		},
+		Spec: orch_v1.StateSpec{
+			Resources: []orch_v1.StateResource{
+				{
+					Name: "resource1",
+					Type: "DoubleASAP",
+				},
+			},
+		},
+	}
+
+	_, _, err := entangleTestState(t, state, plugins)
+
+	require.Error(t, err)
+
 }
 
 func TestDependants(t *testing.T) {
