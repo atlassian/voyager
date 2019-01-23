@@ -100,6 +100,7 @@ func TestEntanglerWithBadWiringFunction(t *testing.T) {
 	_, _, err := entangleTestState(t, state, plugins)
 
 	require.Error(t, err)
+	assert.Equal(t, err.Error(), `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
 
 }
 
