@@ -55,6 +55,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"TOPICARN":    "data.TopicArn",
 				"TOPICREGION": "data.TopicRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "kinesis-v1":
 		return []wiringplugin.Shape{
@@ -63,6 +64,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"STREAMARN":    "data.StreamArn",
 				"STREAMREGION": "data.StreamRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "elasticsearch-v5":
 		fallthrough
@@ -75,6 +77,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"DOMAINENDPOINT": "data.DomainEndpoint",
 				"DOMAINREGION":   "data.DomainRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "firehose-v1":
 		return []wiringplugin.Shape{
@@ -84,6 +87,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"S3BUCKETARN":           "data.S3BucketArn",
 				"STREAMARN":             "data.StreamArn",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "simple-workflow-service-v1":
 		return []wiringplugin.Shape{
@@ -91,6 +95,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"DOMAINPREFIX": "data.DomainPrefix",
 				"DOMAINREGION": "data.DomainRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	default:
 		// There's only a small set of supported Voyager resources in the
@@ -129,6 +134,7 @@ func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Res
 			"TABLE_NAME":   "data.table-name",
 			"TABLE_REGION": "data.table-region",
 		}),
+		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 	}, nil
 }
 
@@ -140,6 +146,7 @@ func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource,
 			"BUCKET_PATH":   "data.bucket-path",
 			"BUCKET_REGION": "data.bucket-region",
 		}),
+		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 	}, nil
 }
 

@@ -91,6 +91,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 					"DEAD_QUEUE_NAME": "data.dead-queue-name",
 					"DEAD_QUEUE_ARN":  "data.dead-queue-arn",
 				}),
+				knownshapes.NewBindableIamAccessible(serviceInstance.Name, "data.IamPolicySnippet"),
 			},
 		},
 		Resources: wiredResources,

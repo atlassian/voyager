@@ -7,6 +7,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -28,31 +29,53 @@ const (
 	// See how meta names would clash if Resource Y was named "iamrole" if there was no extra `-`?
 	// See iam_test for the test.
 	namePostfix = "-iamrole"
+
+	// This is just the local reference name
+	dependencyNamePostfix = "iamrole"
 )
 
-func PluginServiceInstance(computeType iam_plugin.ComputeType, resourceName voyager.ResourceName, serviceName voyager.ServiceName, createInstanceProfile bool, dependencyReferences []smith_v1.Reference,
+type ResourceWithIamAccessibleBinding struct {
+	ResourceName               voyager.ResourceName
+	BindableIamAccessibleShape knownshapes.BindableIamAccessible
+	CreatedBindingFromShape    smith_v1.Resource
+}
+
+func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName voyager.ResourceName,
+	serviceName voyager.ServiceName, createInstanceProfile bool, iamShapedResources []ResourceWithIamAccessibleBinding,
 	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (smith_v1.Resource, error) {
 
+	dependencyReferences := []smith_v1.Reference{}
+	iamPolicyDocumentRefs := map[string]string{}
+	for _, iamShapedResource := range iamShapedResources {
+		ref := iamShapedResource.BindableIamAccessibleShape.Data.IAMPolicySnippet.ToReference(
+			wiringutil.ReferenceName(iamShapedResource.CreatedBindingFromShape.Name, dependencyNamePostfix),
+			iamShapedResource.CreatedBindingFromShape.Name,
+		)
+		dependencyReferences = append(dependencyReferences, ref)
+		iamPolicyDocumentRefs[string(iamShapedResource.ResourceName)] = ref.Ref()
+	}
+
 	iamRoleSpecJSONMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&iam_plugin.Spec{
-		OAPResourceName:       string(resourceName) + namePostfix,
+		OAPResourceName:       string(stateResourceName) + namePostfix,
 		ServiceName:           serviceName,
 		CreateInstanceProfile: createInstanceProfile,
 		ManagedPolicies:       managedPolicies,
 		AssumeRoles:           assumeRoles,
 		ServiceEnvironment:    *aws.CfnServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context)),
 		ComputeType:           computeType,
+		PolicySnippets:        iamPolicyDocumentRefs,
 	})
 	if err != nil {
 		return smith_v1.Resource{}, err
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       wiringutil.ResourceNameWithPostfix(resourceName, namePostfix),
+		Name:       wiringutil.ResourceNameWithPostfix(stateResourceName, namePostfix),
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       iamPluginTypeName,
-				ObjectName: wiringutil.MetaNameWithPostfix(resourceName, namePostfix),
+				ObjectName: wiringutil.MetaNameWithPostfix(stateResourceName, namePostfix),
 				Spec:       iamRoleSpecJSONMap,
 			},
 		},

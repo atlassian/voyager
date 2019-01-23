@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type BindingResult struct {
+type ResourceWithEnvVarBinding struct {
 	ResourceName            voyager.ResourceName
 	ResourceType            voyager.ResourceType
 	BindableEnvVarShape     knownshapes.BindableEnvironmentVariables
@@ -25,7 +25,7 @@ var (
 	envVarReplacer = strings.NewReplacer("-", "_", ".", "_")
 )
 
-func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingResult) ([]smith_v1.Reference, map[string]string, error) {
+func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []ResourceWithEnvVarBinding) ([]smith_v1.Reference, map[string]string, error) {
 	originalEnvVars := map[string]string{}
 	var dependencyReferences []smith_v1.Reference
 
