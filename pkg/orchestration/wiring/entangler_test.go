@@ -71,7 +71,6 @@ func TestEntanglerWithBadWiringFunction(t *testing.T) {
 					knownshapes.NewASAPKey(),
 				},
 			},
-			Resources: nil,
 		}, false, nil
 	})
 
