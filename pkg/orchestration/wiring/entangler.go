@@ -1,6 +1,8 @@
 package wiring
 
 import (
+	"strings"
+
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/smith/pkg/util"
 	"github.com/atlassian/smith/pkg/util/graph"
@@ -232,6 +234,12 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 	if w.allWiredResources[resource.Name] != nil {
 		return false, errors.New("internal error in wiring plugin - duplicate resource name received from plugin")
 	}
+
+	if shapes := findDuplicateShapes(result.Contract.Shapes); shapes != nil {
+		return false, errors.Errorf("internal error in wiring plugin - duplicate shapes received from plugin: %s",
+			strings.Join(shapes, ", "))
+	}
+
 	w.allWiredResources[resource.Name] = &wiredStateResource{
 		Name:         resource.Name,
 		Type:         resource.Type,
@@ -291,4 +299,17 @@ func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.
 		}
 	}
 	return dependantResources
+}
+
+func findDuplicateShapes(shapes []wiringplugin.Shape) []string {
+	set := make(map[wiringplugin.ShapeName]bool)
+	duplicates := make([]string, 0, len(shapes))
+	for _, shape := range shapes {
+		if set[shape.Name()] {
+			duplicates = append(duplicates, string(shape.Name()))
+		} else {
+			set[shape.Name()] = true
+		}
+	}
+	return duplicates
 }
