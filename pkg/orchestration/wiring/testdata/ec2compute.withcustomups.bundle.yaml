@@ -58,8 +58,6 @@ spec:
               secretEnvVars:
                 UPS_UPS_MY_THING: '!{compute--ups--binding-ec77961a2a5d37c885fc880a40c624d07d8d3aa9}'
   - name: compute---iamrole
-    references:
-    - resource: compute--ups--binding
     spec:
       plugin:
         name: iamrole
@@ -106,6 +104,7 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
+          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name

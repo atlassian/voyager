@@ -160,8 +160,6 @@ spec:
                 PG_DB_SCHEMA: "!{compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57}"
                 PG_DB_URL: "!{compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716}"
   - name: compute---iamrole
-    references:
-    - resource: compute--db--binding
     spec:
       plugin:
         name: iamrole
@@ -208,6 +206,7 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
+          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name

@@ -223,6 +223,9 @@ spec:
   - name: compute---iamrole
     references:
     - resource: compute--fanouttopic--binding
+      name: compute--fanouttopic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     spec:
       plugin:
         name: iamrole
@@ -269,6 +272,8 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
+          policySnippets:
+            fanouttopic: '!{compute--fanouttopic--binding-iamrole}'
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name

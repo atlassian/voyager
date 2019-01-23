@@ -107,6 +107,9 @@ spec:
   - name: kubecompute-simple---iamrole
     references:
     - resource: kubecompute-simple--basic--binding
+      name: kubecompute-simple--basic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     spec:
       plugin:
         name: iamrole
@@ -150,6 +153,8 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
+          policySnippets:
+            basic: '!{kubecompute-simple--basic--binding-iamrole}'
   - name: kubecompute-simple---iamrole-binding
     references:
     - name: kubecompute-simple---iamrole-metadata-name
