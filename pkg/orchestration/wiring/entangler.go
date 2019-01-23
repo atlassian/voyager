@@ -303,7 +303,7 @@ func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.
 
 func findDuplicateShapes(shapes []wiringplugin.Shape) []string {
 	set := make(map[wiringplugin.ShapeName]bool)
-	duplicates := make([]string, 0, len(shapes))
+	var duplicates []string
 	for _, shape := range shapes {
 		if set[shape.Name()] {
 			duplicates = append(duplicates, string(shape.Name()))
