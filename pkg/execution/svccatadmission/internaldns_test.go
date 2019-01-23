@@ -24,7 +24,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 	}{
 		{
 			"internaldns new.domain",
-			buildAdmissionReview(dougComputeService, serviceInstance, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -39,7 +39,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns multiple new.domain",
-			buildAdmissionReview(dougComputeService, serviceInstance, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -74,7 +74,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns registered domain same user",
-			buildAdmissionReview(dougComputeService, serviceInstance, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -89,7 +89,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns multiple with one registered domain same user",
-			buildAdmissionReview(dougComputeService, serviceInstance, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -124,7 +124,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns registered domain different user",
-			buildAdmissionReview(dougComputeService, serviceInstance, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -139,7 +139,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns multiple with one registered domain different user",
-			buildAdmissionReview(dougComputeService, serviceInstance, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -174,13 +174,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"ingress new.domain",
-			buildAdmissionReview(dougComputeService, ingress, admissionv1beta1.Create, buildIngress(t, []string{"new.domain"})),
+			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{"new.domain"})),
 			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
 			"ingress multiple new.domain",
-			buildAdmissionReview(dougComputeService, ingress, admissionv1beta1.Create, buildIngress(t, []string{
+			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{
 				"new1.domain",
 				"new2.domain",
 				"new3.domain",
@@ -193,13 +193,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"ingress registered domain same user",
-			buildAdmissionReview(dougComputeService, ingress, admissionv1beta1.Create, buildIngress(t, []string{"doug.domain"})),
+			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{"doug.domain"})),
 			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
 			"ingress multiple with one registered domain same user",
-			buildAdmissionReview(dougComputeService, ingress, admissionv1beta1.Create, buildIngress(t, []string{
+			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{
 				"doug.domain",
 				"new2.domain",
 				"new3.domain",
@@ -212,13 +212,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"ingress registered domain different user",
-			buildAdmissionReview(dougComputeService, ingress, admissionv1beta1.Create, buildIngress(t, []string{"elsie.domain"})),
+			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{"elsie.domain"})),
 			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and can not be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
 			"ingress multiple with one registered domain different user",
-			buildAdmissionReview(dougComputeService, ingress, admissionv1beta1.Create, buildIngress(t, []string{
+			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{
 				"elsie.domain",
 				"new2.domain",
 				"new3.domain",

@@ -34,32 +34,32 @@ func TestAsapKeyAdmitFunc(t *testing.T) {
 	}{
 		{
 			"serviceName matching namespace",
-			buildAdmissionReview("foo", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo")),
+			buildAdmissionReview("foo", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo")),
 			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"serviceName prefixed by namespace",
-			buildAdmissionReview("foo", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo/bar")),
+			buildAdmissionReview("foo", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo/bar")),
 			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"namespace with label",
-			buildAdmissionReview("foo--dev", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo")),
+			buildAdmissionReview("foo--dev", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo")),
 			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"namespace with label and serviceName with ASAPKey resource name",
-			buildAdmissionReview("foo--dev", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo/bar")),
+			buildAdmissionReview("foo--dev", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo/bar")),
 			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"namespace with label and serviceName with ASAPKey resource name mismatch",
-			buildAdmissionReview("foo--dev", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "bar/foo")),
+			buildAdmissionReview("foo--dev", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "bar/foo")),
 			buildAdmissionResponse(false, http.StatusForbidden, nil, `serviceName was set to "bar/foo", which is not prefixed by namespace "foo--dev"`),
 		},
 		{
 			"serviceName not prefixed by namespace",
-			buildAdmissionReview("foo", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "bar/foo")),
+			buildAdmissionReview("foo", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "bar/foo")),
 			buildAdmissionResponse(false, http.StatusForbidden, nil, `serviceName was set to "bar/foo", which is not prefixed by namespace "foo"`),
 		},
 	}
@@ -71,7 +71,7 @@ func TestAsapKeyAdmitFunc(t *testing.T) {
 	}{
 		{
 			"with no namespace",
-			buildAdmissionReview("", serviceInstance, admissionv1beta1.Create, genASAPKeyRawSpec(t, "whatever")),
+			buildAdmissionReview("", serviceInstanceResource, admissionv1beta1.Create, genASAPKeyRawSpec(t, "whatever")),
 			"no namespace in AdmissionReview request",
 		},
 	}

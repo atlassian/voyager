@@ -2,6 +2,7 @@ package svccatadmission
 
 import (
 	"context"
+	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 
 	"github.com/atlassian/voyager/pkg/microsserver"
 	"github.com/atlassian/voyager/pkg/servicecentral"
@@ -27,9 +28,9 @@ var (
 		Version:  sc_v1b1.SchemeGroupVersion.Version,
 		Resource: serviceBinding,
 	}
-	ingressResourceType = metav1.GroupVersionResource{
-		Group:    sc_v1b1.SchemeGroupVersion.Group,
-		Version:  sc_v1b1.SchemeGroupVersion.Version,
+	ingressResource = metav1.GroupVersionResource{
+		Group:    ext_v1b1.SchemeGroupVersion.Group,
+		Version:  ext_v1b1.SchemeGroupVersion.Version,
 		Resource: ingress,
 	}
 )

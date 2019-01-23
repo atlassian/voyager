@@ -177,16 +177,12 @@ func buildIngress(t *testing.T, hosts []string) []byte {
 	return rawIngress
 }
 
-func buildAdmissionReview(namespace string, resource string, operation admissionv1beta1.Operation, rawSpec []byte) admissionv1beta1.AdmissionReview {
+func buildAdmissionReview(namespace string, gvr metav1.GroupVersionResource, operation admissionv1beta1.Operation, rawSpec []byte) admissionv1beta1.AdmissionReview {
 	return admissionv1beta1.AdmissionReview{
 		Request: &admissionv1beta1.AdmissionRequest{
 			Namespace: namespace,
 			Operation: operation,
-			Resource: metav1.GroupVersionResource{
-				Group:    sc_v1b1.SchemeGroupVersion.Group,
-				Version:  sc_v1b1.SchemeGroupVersion.Version,
-				Resource: resource,
-			},
+			Resource: gvr,
 			Object: runtime.RawExtension{
 				Raw: rawSpec,
 			},

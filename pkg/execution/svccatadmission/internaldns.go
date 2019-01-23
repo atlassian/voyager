@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang/glog"
 	"net/http"
 	"sync"
 
@@ -12,20 +13,22 @@ import (
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	ext_v1beta1 "k8s.io/api/extensions/v1beta1"
+	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // InternalDNSAdmitFunc checks existing DNS alias ownership via micros server API, for both InternalDNS Services and Ingress Resources
 func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerClient, scClient serviceCentralClient, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
 
+	glog.Infof("Received request for %v", admissionReview.Request)
+
 	admissionRequest := admissionReview.Request
 
 	// populating a chanel of domains to check owner
 	var domainsToCheck chan string
 	switch admissionRequest.Resource {
-	case ingressResourceType:
-		ingress := ext_v1beta1.Ingress{}
+	case ingressResource:
+		ingress := ext_v1b1.Ingress{}
 		if err := json.Unmarshal(admissionRequest.Object.Raw, &ingress); err != nil {
 			return nil, errors.Errorf("error parsing Ingress resource")
 		}

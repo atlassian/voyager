@@ -27,37 +27,37 @@ func TestMicrosAdmitFunc(t *testing.T) {
 	}{
 		{
 			"NotServiceInstance",
-			buildAdmissionReview(defaultNamespace, serviceBinding, admissionv1beta1.Create, []byte(`{}`)),
+			buildAdmissionReview(defaultNamespace, serviceBindingResource, admissionv1beta1.Create, []byte(`{}`)),
 			nil,
 			true,
 		},
 		{
 			"ServiceInstanceNotMicros",
-			buildAdmissionReview(dougMicros2Service, serviceInstance, admissionv1beta1.Create, buildServiceInstance(t, "serviceid", "planid", nil)),
+			buildAdmissionReview(dougMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(t, "serviceid", "planid", nil)),
 			buildAdmissionResponse(true, 0, nil, `ServiceInstance "foo" is not a micros compute instance`),
 			false,
 		},
 		{
 			"ErrorIfNoNamespace",
-			buildAdmissionReview("", serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
+			buildAdmissionReview("", serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
 			nil,
 			true,
 		},
 		{
 			"ServiceMissingIsOk",
-			buildAdmissionReview(dougMicros2Service, serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
+			buildAdmissionReview(dougMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
 			buildAdmissionResponse(true, 0, nil, "compute service \"missing-service\" doesn't exist in Service Central"),
 			false,
 		},
 		{
 			"ServiceHasSameOwner",
-			buildAdmissionReview(elsieMicros2Service, serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, elsieComputeService)),
+			buildAdmissionReview(elsieMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, elsieComputeService)),
 			buildAdmissionResponse(true, 0, nil, `service central owner of service "elsie-compute-service" (elsie) is same as micros2 service "elsie-micros2-service" (elsie)`),
 			false,
 		},
 		{
 			"ServiceHasDifferentOwnerForbidden",
-			buildAdmissionReview(elsieMicros2Service, serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, dougComputeService)),
+			buildAdmissionReview(elsieMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, dougComputeService)),
 			buildAdmissionResponse(false, http.StatusUnauthorized, nil, `service central owner of service "doug-compute-service" (doug) is different to micros2 service "elsie-micros2-service" (elsie)`),
 			false,
 		},
