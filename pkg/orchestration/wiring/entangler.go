@@ -235,9 +235,9 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		return false, errors.New("internal error in wiring plugin - duplicate resource name received from plugin")
 	}
 
-	if shapes := findDuplicateShapes(result.Contract.Shapes); shapes != nil {
+	if shapeNames := findDuplicateShapeNames(result.Contract.Shapes); len(shapeNames) != 0 {
 		return false, errors.Errorf("internal error in wiring plugin - duplicate shapes received from plugin: %s",
-			strings.Join(shapes, ", "))
+			strings.Join(shapeNames, ", "))
 	}
 
 	w.allWiredResources[resource.Name] = &wiredStateResource{
@@ -301,9 +301,9 @@ func getDependants(resourceName voyager.ResourceName, dependantVertices []graph.
 	return dependantResources
 }
 
-func findDuplicateShapes(shapes []wiringplugin.Shape) []string {
+func findDuplicateShapeNames(shapes []wiringplugin.Shape) []string {
 	set := make(map[wiringplugin.ShapeName]bool)
-	var duplicates []string
+	duplicates := make([]string, 0, len(shapes))
 	for _, shape := range shapes {
 		if set[shape.Name()] {
 			duplicates = append(duplicates, string(shape.Name()))
