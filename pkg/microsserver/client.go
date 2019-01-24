@@ -86,7 +86,6 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	}
 
 	if response.StatusCode == http.StatusNotFound {
-		logger.Infof("alias information for %q not found on micros server", domainName)
 		return nil, nil
 	}
 
@@ -96,7 +95,6 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	}
 
 	var parsedBody AliasInfo
-	logger.Info("returning alias information for %q: %q", domainName, respBody)
 	err = json.Unmarshal(respBody, &parsedBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal response body")
