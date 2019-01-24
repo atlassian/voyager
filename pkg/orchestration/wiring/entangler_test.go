@@ -60,10 +60,17 @@ func TestEntangler(t *testing.T) {
 	}
 }
 
+// TODO: replace with Mikhail's awesome delegating thing in PR67
+type wireUpFunc func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error)
+
+func (f wireUpFunc) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
+	return f(resource, context)
+}
+
 func TestEntanglerWithBadWiringFunction(t *testing.T) {
 	t.Parallel()
 
-	wireup := registry.WireUpFunc(func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+	wireup := wireUpFunc(func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
 		return &wiringplugin.WiringResult{
 			Contract: wiringplugin.ResourceContract{
 				Shapes: []wiringplugin.Shape{
