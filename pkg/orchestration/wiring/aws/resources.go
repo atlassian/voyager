@@ -34,9 +34,9 @@ const (
 // All osb-aws-provider resources are 'almost' the same, differing only in the service/plan names,
 // what they need passed in the ServiceEnvironment.
 var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	DynamoDB: Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes),
-	S3:       Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes),
-	Cfn:      Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes),
+	DynamoDB: wiringplugin.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes).WireUp),
+	S3:       wiringplugin.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes).WireUp),
+	Cfn:      wiringplugin.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
 }
 
 func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
@@ -123,7 +123,6 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 		//    environment variables that don't match ignoreKeyRegex.
 		return nil, errors.Errorf("cloudformation template %q is not supported", templateName)
 	}
-	return nil, nil
 }
 
 func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
