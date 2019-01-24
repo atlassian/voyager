@@ -84,12 +84,6 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 			defer wg.Done()
 			for domain := range domainsToCheck {
 				aliasInfo, err := microsServerClient.GetAlias(ctx, domain)
-				if aliasInfo != nil {
-					logger.Infof("got micros server response %v for domain %v", aliasInfo, domain)
-				}
-				if err != nil {
-					logger.Errorf("got micros server error %v for domain %v", err, domain)
-				}
 				// concurrent safe append
 				func() {
 					mutex.Lock()
