@@ -6,13 +6,16 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
+	"github.com/atlassian/voyager/pkg/util/logz"
+	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 )
 
 func TestInternalDNSAdmitFunc(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := logz.CreateContextWithLogger(context.Background(), zap.NewNop())
 	microsServerMock := setupMicrosServerMock()
 	serviceCentralMock := setupSCMock()
 
@@ -24,7 +27,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 	}{
 		{
 			"internaldns new.domain",
-			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -39,7 +42,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns multiple new.domain",
-			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -74,7 +77,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns registered domain same user",
-			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -89,7 +92,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns multiple with one registered domain same user",
-			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -124,7 +127,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"internaldns registered domain different user",
-			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -134,12 +137,12 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and can not be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
 			"internaldns multiple with one registered domain different user",
-			buildAdmissionReview(dougComputeService, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(
+			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
 					Aliases: []apiinternaldns.Alias{
 						{
@@ -169,18 +172,18 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and can not be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
 			"ingress new.domain",
-			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{"new.domain"})),
+			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"new.domain"})),
 			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
 			"ingress multiple new.domain",
-			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{
+			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{
 				"new1.domain",
 				"new2.domain",
 				"new3.domain",
@@ -193,13 +196,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"ingress registered domain same user",
-			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{"doug.domain"})),
+			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"doug.domain"})),
 			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
 			"ingress multiple with one registered domain same user",
-			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{
+			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{
 				"doug.domain",
 				"new2.domain",
 				"new3.domain",
@@ -212,13 +215,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		},
 		{
 			"ingress registered domain different user",
-			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{"elsie.domain"})),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and can not be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"elsie.domain"})),
+			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
 			"ingress multiple with one registered domain different user",
-			buildAdmissionReview(dougComputeService, ingressResource, admissionv1beta1.Create, buildIngress(t, []string{
+			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{
 				"elsie.domain",
 				"new2.domain",
 				"new3.domain",
@@ -226,7 +229,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 				"new5.domain",
 				"new6.domain",
 			})),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and can not be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 	}
@@ -235,11 +238,10 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := InternalDNSAdmitFunc(ctx, microsServerMock, serviceCentralMock, tc.admissionReview)
 			if (err != nil) != tc.wantErr {
-				t.Errorf("InternalDNSAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
-				return
+				t.Fatalf("InternalDNSAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("InternalDNSAdmitFunc() = %v, want %v", got, tc.want)
+				t.Fatalf("InternalDNSAdmitFunc() = %v, want %v", got, tc.want)
 			}
 		})
 	}

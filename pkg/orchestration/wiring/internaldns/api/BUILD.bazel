@@ -5,5 +5,8 @@ go_library(
     srcs = ["types.go"],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api",
     visibility = ["//visibility:public"],
-    deps = ["//:go_default_library"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/servicecatalog:go_default_library",
+    ],
 )

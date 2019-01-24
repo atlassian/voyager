@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/atlassian/voyager/pkg/k8s"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 )
 
@@ -27,37 +28,37 @@ func TestMicrosAdmitFunc(t *testing.T) {
 	}{
 		{
 			"NotServiceInstance",
-			buildAdmissionReview(defaultNamespace, serviceBindingResource, admissionv1beta1.Create, []byte(`{}`)),
+			buildAdmissionReview(defaultNamespace, k8s.ServiceBindingGVR, admissionv1beta1.Create, []byte(`{}`)),
 			nil,
 			true,
 		},
 		{
 			"ServiceInstanceNotMicros",
-			buildAdmissionReview(dougMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildServiceInstance(t, "serviceid", "planid", nil)),
+			buildAdmissionReview(dougMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(t, "serviceid", "planid", nil)),
 			buildAdmissionResponse(true, 0, nil, `ServiceInstance "foo" is not a micros compute instance`),
 			false,
 		},
 		{
 			"ErrorIfNoNamespace",
-			buildAdmissionReview("", serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
 			nil,
 			true,
 		},
 		{
 			"ServiceMissingIsOk",
-			buildAdmissionReview(dougMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
+			buildAdmissionReview(dougMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
 			buildAdmissionResponse(true, 0, nil, "compute service \"missing-service\" doesn't exist in Service Central"),
 			false,
 		},
 		{
 			"ServiceHasSameOwner",
-			buildAdmissionReview(elsieMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, elsieComputeService)),
+			buildAdmissionReview(elsieMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, elsieComputeService)),
 			buildAdmissionResponse(true, 0, nil, `service central owner of service "elsie-compute-service" (elsie) is same as micros2 service "elsie-micros2-service" (elsie)`),
 			false,
 		},
 		{
 			"ServiceHasDifferentOwnerForbidden",
-			buildAdmissionReview(elsieMicros2Service, serviceInstanceResource, admissionv1beta1.Create, buildV1ServiceInstance(t, dougComputeService)),
+			buildAdmissionReview(elsieMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, dougComputeService)),
 			buildAdmissionResponse(false, http.StatusUnauthorized, nil, `service central owner of service "doug-compute-service" (doug) is different to micros2 service "elsie-micros2-service" (elsie)`),
 			false,
 		},

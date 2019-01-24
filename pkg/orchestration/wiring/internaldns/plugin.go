@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	ResourceType                   voyager.ResourceType = "InternalDNS"
-	kubeIngressRefMetadata                              = "metadata"
-	kubeIngressRefMetadataEndpoint                      = "endpoint"
+	kubeIngressRefMetadata         = "metadata"
+	kubeIngressRefMetadataEndpoint = "endpoint"
 )
 
 type autowiringOnlySpec struct {
@@ -40,7 +39,7 @@ func New() *WiringPlugin {
 			InstanceSpec:                  getInstanceSpec,
 			ObjectMeta:                    getObjectMeta,
 			References:                    getReferences,
-			ResourceType:                  ResourceType,
+			ResourceType:                  apiinternaldns.ResourceType,
 		},
 	}
 }

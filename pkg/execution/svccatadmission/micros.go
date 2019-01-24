@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/k8s"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -26,7 +27,7 @@ const (
 func MicrosAdmitFunc(ctx context.Context, scClient serviceCentralClient, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
 	admissionRequest := admissionReview.Request
 
-	if admissionRequest.Resource != serviceInstanceResource {
+	if admissionRequest.Resource != k8s.ServiceInstanceGVR {
 		return nil, errors.Errorf("unsupported resource, got %v", admissionRequest.Resource)
 	}
 

@@ -11,6 +11,7 @@ import (
 	"bitbucket.org/atlassianlabs/restclient"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/httputil"
+	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -56,6 +57,10 @@ func clientError(statusCode int, message string) error {
 }
 
 func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, error) {
+
+	logger := logz.RetrieveLoggerFromContext(ctx).Sugar()
+	logger.Infof("fetching alias informtion from micros server for %q", domainName)
+
 	getAliasEndpoint := "/api/v1/aliases"
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, noUser),
@@ -81,6 +86,7 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	}
 
 	if response.StatusCode == http.StatusNotFound {
+		logger.Infof("alias information for %q not found on micros server", domainName)
 		return nil, nil
 	}
 
@@ -90,6 +96,7 @@ func (c *Client) GetAlias(ctx context.Context, domainName string) (*AliasInfo, e
 	}
 
 	var parsedBody AliasInfo
+	logger.Info("returning alias information for %q: %q", domainName, respBody)
 	err = json.Unmarshal(respBody, &parsedBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal response body")

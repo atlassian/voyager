@@ -25,7 +25,7 @@ func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceN
 	listData, err := scClient.ListServices(ctx, auth.NoUser(), search)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error looking up service %q", serviceName)
+		return nil, errors.Wrapf(err, "error looking up service %q", serviceName)
 	}
 
 	for _, serviceData := range listData {

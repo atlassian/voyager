@@ -8,6 +8,7 @@ import (
 
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/microsserver"
+	"github.com/atlassian/voyager/pkg/servicecatalog"
 	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -122,7 +123,7 @@ func setupMicrosServerMock() *microsServerClientMock {
 	return microsServerMock
 }
 
-func buildServiceInstance(t *testing.T, serviceClass, servicePlan string, parameters interface{}) []byte {
+func buildServiceInstance(t *testing.T, serviceClass servicecatalog.ClassExternalID, servicePlan servicecatalog.PlanExternalID, parameters interface{}) []byte {
 	rawParameters, err := json.Marshal(parameters)
 	require.NoError(t, err)
 	rawServiceInstance, err := json.Marshal(sc_v1b1.ServiceInstance{
@@ -131,8 +132,8 @@ func buildServiceInstance(t *testing.T, serviceClass, servicePlan string, parame
 		},
 		Spec: sc_v1b1.ServiceInstanceSpec{
 			PlanReference: sc_v1b1.PlanReference{
-				ClusterServiceClassName: serviceClass,
-				ClusterServicePlanName:  servicePlan,
+				ClusterServiceClassName: string(serviceClass),
+				ClusterServicePlanName:  string(servicePlan),
 			},
 			Parameters: &runtime.RawExtension{
 				Raw: rawParameters,
@@ -182,7 +183,7 @@ func buildAdmissionReview(namespace string, gvr metav1.GroupVersionResource, ope
 		Request: &admissionv1beta1.AdmissionRequest{
 			Namespace: namespace,
 			Operation: operation,
-			Resource: gvr,
+			Resource:  gvr,
 			Object: runtime.RawExtension{
 				Raw: rawSpec,
 			},

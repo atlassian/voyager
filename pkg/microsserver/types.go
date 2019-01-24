@@ -1,7 +1,12 @@
 package microsserver
 
 type AliasInfo struct {
-	Service Service `json:"Service"`
+	Alias   Alias   `json:"alias"`
+	Service Service `json:"service"`
+}
+
+type Alias struct {
+	DomainName string `json:"domainName"`
 }
 
 type Service struct {
