@@ -7,6 +7,7 @@ go_library(
     importpath = "google.golang.org/grpc/benchmark/server",
     visibility = ["//visibility:private"],
     deps = [
+        "//vendor/golang.org/x/sys/unix:go_default_library",
         "//vendor/google.golang.org/grpc/benchmark:go_default_library",
         "//vendor/google.golang.org/grpc/grpclog:go_default_library",
     ],

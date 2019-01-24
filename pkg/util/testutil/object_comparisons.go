@@ -6,10 +6,10 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_util "github.com/atlassian/smith/pkg/util"
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 func ObjectCompare(t *testing.T, resActual, resExpected runtime.Object) {

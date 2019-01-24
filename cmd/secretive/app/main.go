@@ -10,10 +10,12 @@ import (
 
 	"github.com/atlassian/ctrl/options"
 	"github.com/atlassian/voyager/cmd"
+	"k8s.io/klog"
 )
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(runWithContext)
 }
 

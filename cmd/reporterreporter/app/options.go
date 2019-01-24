@@ -3,8 +3,8 @@ package app
 import (
 	"io/ioutil"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 type Options struct {

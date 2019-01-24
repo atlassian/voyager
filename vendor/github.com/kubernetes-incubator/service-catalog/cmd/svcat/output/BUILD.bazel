@@ -18,12 +18,12 @@ go_library(
     importpath = "github.com/kubernetes-incubator/service-catalog/cmd/svcat/output",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog:go_default_library",
         "//vendor/github.com/olekukonko/tablewriter:go_default_library",
         "//vendor/k8s.io/api/core/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )

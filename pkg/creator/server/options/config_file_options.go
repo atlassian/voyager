@@ -6,9 +6,9 @@ import (
 
 	"github.com/atlassian/ctrl"
 	"github.com/atlassian/voyager/pkg/creator"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/yaml"
 )
 
 type ConfigFileOptions struct {

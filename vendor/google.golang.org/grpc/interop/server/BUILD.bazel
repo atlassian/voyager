@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//vendor/google.golang.org/grpc:go_default_library",
         "//vendor/google.golang.org/grpc/credentials:go_default_library",
+        "//vendor/google.golang.org/grpc/credentials/alts:go_default_library",
         "//vendor/google.golang.org/grpc/grpclog:go_default_library",
         "//vendor/google.golang.org/grpc/interop:go_default_library",
         "//vendor/google.golang.org/grpc/interop/grpc_testing:go_default_library",

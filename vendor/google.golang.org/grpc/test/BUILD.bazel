@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "race.go",
+        "rawConnWrapper.go",
         "servertester.go",
     ],
     importmap = "github.com/atlassian/voyager/vendor/google.golang.org/grpc/test",

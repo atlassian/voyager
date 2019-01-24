@@ -3,10 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
-        "closenotify17.go",
-        "closenotify18.go",
         "compress.go",
-        "compress18.go",
         "content_charset.go",
         "content_type.go",
         "get_head.go",
@@ -25,8 +22,6 @@ go_library(
         "url_format.go",
         "value.go",
         "wrap_writer.go",
-        "wrap_writer17.go",
-        "wrap_writer18.go",
     ],
     importmap = "github.com/atlassian/voyager/vendor/github.com/go-chi/chi/middleware",
     importpath = "github.com/go-chi/chi/middleware",

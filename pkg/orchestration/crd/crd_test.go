@@ -5,10 +5,10 @@ import (
 
 	"github.com/atlassian/voyager/pkg/api/schema/schematest"
 	"github.com/atlassian/voyager/pkg/util/testutil"
-	"github.com/ghodss/yaml"
 	"github.com/go-openapi/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 )
 
 func runCRDTestCase(t *testing.T, schemaValidator *validate.SchemaValidator, filename string, errorMsg string) {
