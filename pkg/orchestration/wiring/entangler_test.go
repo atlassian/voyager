@@ -16,6 +16,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
@@ -57,6 +58,53 @@ func TestEntangler(t *testing.T) {
 			testFixture(t, resultFilePrefix)
 		})
 	}
+}
+
+func TestEntanglerWithBadWiringFunction(t *testing.T) {
+	t.Parallel()
+
+	// Given: this set of plugins
+	plugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
+		"DoubleASAP": &delegatingPlugin{
+			wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+				return &wiringplugin.WiringResult{
+					Contract: wiringplugin.ResourceContract{
+						Shapes: []wiringplugin.Shape{
+							knownshapes.NewASAPKey(),
+							knownshapes.NewASAPKey(),
+						},
+					},
+				}, false, nil
+			},
+			status: emptyStatus,
+		},
+	}
+
+	// Given: this state
+	state := &orch_v1.State{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       "State",
+			APIVersion: "orchestration.voyager.atl-paas.net/v1",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "state1",
+			Namespace: "namespace1",
+		},
+		Spec: orch_v1.StateSpec{
+			Resources: []orch_v1.StateResource{
+				{
+					Name: "resource1",
+					Type: "DoubleASAP",
+				},
+			},
+		},
+	}
+
+	// When: we build an entangler and run it with those plugins against this state
+	_, _, err := entangleTestState(t, state, plugins)
+
+	// Then: we expect an error as we can't have an auto-wiring function return >1 shape of the same type
+	assert.EqualError(t, err, `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
 }
 
 func TestDependants(t *testing.T) {
