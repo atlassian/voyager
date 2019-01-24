@@ -9,7 +9,7 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
+	internaldns_api "github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -142,8 +142,8 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 
 	// internalDNS rules
 	for _, dependency := range context.Dependants {
-		if dependency.Type == internaldns.ResourceType {
-			var internalDNSSpec internaldns.Spec
+		if dependency.Type == internaldns_api.ResourceType {
+			var internalDNSSpec internaldns_api.Spec
 			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
 				return smith_v1.Resource{}, err
 			}

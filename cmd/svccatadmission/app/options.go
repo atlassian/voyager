@@ -24,6 +24,7 @@ type Options struct {
 type Providers struct {
 	ServiceCentralURL *url.URL // we use custom json marshalling to read it
 	RPSURL            *url.URL
+	MicrosServerURL   *url.URL
 }
 
 // UnmarshalJSON unmarshals our untyped config file into a typed struct including URLs
@@ -31,6 +32,7 @@ func (p *Providers) UnmarshalJSON(data []byte) error {
 	var rawProviders struct {
 		ServiceCentral string `json:"serviceCentral"`
 		RPSURL         string `json:"rps"`
+		MicrosServer   string `json:"microsServer"`
 	}
 
 	if err := json.Unmarshal(data, &rawProviders); err != nil {
@@ -45,8 +47,13 @@ func (p *Providers) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
+	microsServerURL, err := url.Parse(rawProviders.MicrosServer)
+	if err != nil {
+		return err
+	}
 	p.ServiceCentralURL = scURL
 	p.RPSURL = rpsURL
+	p.MicrosServerURL = microsServerURL
 	return nil
 }
 
