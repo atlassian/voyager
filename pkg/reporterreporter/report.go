@@ -12,6 +12,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -48,23 +49,39 @@ func NewReport(slurperURI string, cluster string, reporterClient client.Interfac
 	}
 }
 
-func (r *Report) Run(ctx context.Context) error {
+func (r *Report) getNamespaces() (*v1.NamespaceList, error) {
 	namespaces, err := r.KubernetesClient.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to list namespaces")
+		return nil, errors.Wrap(err, "failed to list namespaces")
+	}
+	return namespaces, nil
+}
+
+func (r *Report) getReporterReports(namespace *v1.Namespace) (*reporter_v1.ReportList, error) {
+	list, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not list reports in namespace %q", namespace.Name)
+	}
+	return list, nil
+}
+
+func (r *Report) Run(ctx context.Context) error {
+	namespaces, err := r.getNamespaces()
+	if err != nil {
+		return err
 	}
 
 	for _, namespace := range namespaces.Items {
-		list, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
+		reports, err := r.getReporterReports(&namespace)
 		if err != nil {
-			return errors.Wrapf(err, "could not list reports in namespace %q", namespace.Name)
+			return err
 		}
-		if len(list.Items) == 0 {
+		if len(reports.Items) == 0 {
 			r.Logger.Info("Report for namespace is empty", zap.String("namespace", namespace.Name))
 			continue
 		}
 
-		for _, report := range list.Items {
+		for _, report := range reports.Items {
 			requestData := RequestData{
 				Cluster:   r.Cluster,
 				Service:   namespace.Name,

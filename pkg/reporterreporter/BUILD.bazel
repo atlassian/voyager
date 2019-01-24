@@ -8,7 +8,9 @@ go_library(
     deps = [
         "//pkg/apis/reporter/v1:go_default_library",
         "//pkg/reporter/client:go_default_library",
+        "//pkg/util:go_default_library",
         "//vendor/bitbucket.org/atlassianlabs/restclient:go_default_library",
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/go.uber.org/zap:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
