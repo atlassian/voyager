@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"bitbucket.org/atlassianlabs/restclient"
+	"github.com/atlassian/ctrl"
 	reporter_v1 "github.com/atlassian/voyager/pkg/apis/reporter/v1"
 	"github.com/atlassian/voyager/pkg/reporter/client"
+	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,12 +17,13 @@ import (
 )
 
 type Report struct {
-	RemoteURI        string
 	Cluster          string
 	HTTPClient       *http.Client
 	ReporterClient   client.Interface
 	KubernetesClient kubernetes.Interface
 	Logger           *zap.Logger
+
+	mutator *restclient.RequestMutator
 }
 
 type RequestData struct {
@@ -30,11 +33,27 @@ type RequestData struct {
 	Data      reporter_v1.NamespaceReport `json:"data"`
 }
 
+func NewReport(slurperURI string, cluster string, reporterClient client.Interface, kubeClient kubernetes.Interface, logger *zap.Logger) ctrl.Server {
+	return &Report{
+		Cluster:          cluster,
+		HTTPClient:       util.HTTPClient(),
+		ReporterClient:   reporterClient,
+		KubernetesClient: kubeClient,
+		Logger:           logger,
+
+		mutator: restclient.NewRequestMutator(
+			restclient.BaseURL(slurperURI),
+			restclient.JoinPath("/slurp"),
+			restclient.Method(http.MethodPost)),
+	}
+}
+
 func (r *Report) Run(ctx context.Context) error {
 	namespaces, err := r.KubernetesClient.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list namespaces")
 	}
+
 	for _, namespace := range namespaces.Items {
 		list, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
 		if err != nil {
@@ -53,17 +72,11 @@ func (r *Report) Run(ctx context.Context) error {
 				Data:      report.Report,
 			}
 
-			rm := restclient.NewRequestMutator(
-				restclient.BaseURL(r.RemoteURI),
-			)
-			req, err := rm.NewRequest(
-				restclient.JoinPath("/slurp"),
-				restclient.Method(http.MethodPost),
-				restclient.BodyFromJSON(requestData),
-			)
+			req, err := r.mutator.NewRequest(restclient.BodyFromJSON(requestData))
 			if err != nil {
 				return errors.Wrap(err, "could not craft request")
 			}
+
 			resp, err := r.HTTPClient.Do(req)
 			if err != nil {
 				return errors.Wrap(err, "failed to perform HTTP request to slurper")

@@ -5,7 +5,6 @@ import (
 	reporter_v1 "github.com/atlassian/voyager/pkg/apis/reporter/v1"
 	reporterClient "github.com/atlassian/voyager/pkg/reporter/client"
 	"github.com/atlassian/voyager/pkg/reporterreporter"
-	"github.com/atlassian/voyager/pkg/util"
 )
 
 type ControllerConstructor struct {
@@ -28,16 +27,13 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 	if err != nil {
 		return nil, err
 	}
-
 	return &ctrl.Constructed{
-		Server: &reporterreporter.Report{
-			RemoteURI:        cc.SplitterURI,
-			Cluster:          opts.Cluster,
-			HTTPClient:       util.HTTPClient(),
-			ReporterClient:   reporter,
-			KubernetesClient: config.MainClient,
-			Logger:           config.Logger,
-		},
+		Server: reporterreporter.NewReport(
+			cc.SplitterURI,
+			opts.Cluster,
+			reporter,
+			config.MainClient,
+			config.Logger),
 	}, nil
 }
 
