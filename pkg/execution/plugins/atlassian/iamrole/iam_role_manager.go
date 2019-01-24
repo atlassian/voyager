@@ -93,7 +93,7 @@ var defaultEC2ComputeAssumeRoleStatement = IamAssumeRoleStatement{
 	Action: "sts:AssumeRole",
 }
 
-func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
+func defaultJSON(serviceName voyager.ServiceName) IamPolicy {
 	var condition json.RawMessage = []byte(fmt.Sprintf(`
 					{
 						"StringEquals": {
@@ -101,9 +101,9 @@ func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
 						}
                   	}`, serviceName))
 
-	return &IamPolicy{
+	return IamPolicy{
 		PolicyName: "default.json",
-		PolicyDocument: &IamPolicyDocument{
+		PolicyDocument: IamPolicyDocument{
 			Version: "2012-10-17",
 			Statement: []IamPolicyStatement{
 				{
@@ -169,7 +169,7 @@ func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
 }
 
 func generateRoleInstance(spec *Spec) (*sc_v1b1.ServiceInstance, error) {
-	policyDocuments := make([]*IamPolicyDocument, 0, len(spec.PolicySnippets))
+	policyDocuments := make([]IamPolicyDocument, 0, len(spec.PolicySnippets))
 	for resourceName, policySnippet := range spec.PolicySnippets {
 		policy := IamPolicyDocument{}
 		if err := json.Unmarshal([]byte(policySnippet), &policy); err != nil {
@@ -180,7 +180,7 @@ func generateRoleInstance(spec *Spec) (*sc_v1b1.ServiceInstance, error) {
 			return nil, errors.Wrapf(err, "invalid policy emitted by %q", resourceName)
 		}
 
-		policyDocuments = append(policyDocuments, &policy)
+		policyDocuments = append(policyDocuments, policy)
 	}
 
 	policy, err := combineIamPolicies(policyDocuments)
@@ -220,16 +220,16 @@ func generateRoleInstance(spec *Spec) (*sc_v1b1.ServiceInstance, error) {
 	}, nil
 }
 
-func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy *IamPolicy, serviceID voyager.ServiceName, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
+func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy IamPolicy, serviceID voyager.ServiceName, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
 
-	iamPolicies := make([]*IamPolicy, 0, 2) // should not be nil to avoid serializing it as `null`
+	iamPolicies := make([]IamPolicy, 0, 2) // should not be nil to avoid serializing it as `null`
 
 	// only add default.json policy if compute type is EC2ComputeType
 	if computeType == EC2ComputeType && serviceID != "" {
 		iamPolicies = append(iamPolicies, defaultJSON(serviceID))
 	}
 
-	if policy != nil && policy.PolicyDocument != nil && len(policy.PolicyDocument.Statement) > 0 {
+	if len(policy.PolicyDocument.Statement) > 0 {
 		iamPolicies = append(iamPolicies, policy)
 	}
 
@@ -271,12 +271,12 @@ func constructCloudFormationPayload(computeType ComputeType, oapResourceName str
 	})
 }
 
-func combineIamPolicies(policies []*IamPolicyDocument) (*IamPolicy, error) {
+func combineIamPolicies(policies []IamPolicyDocument) (IamPolicy, error) {
 	rolePolicy, err := mergePolicies(policies)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmergeable policy")
+		return IamPolicy{}, errors.Wrap(err, "unmergeable policy")
 	}
-	return &IamPolicy{
+	return IamPolicy{
 		PolicyName:     "voyager-merge",
 		PolicyDocument: rolePolicy,
 	}, nil
@@ -306,33 +306,30 @@ func makeStatementKey(statement *IamPolicyStatement) (string, error) {
 	return key.String(), nil
 }
 
-func mergePolicies(policies []*IamPolicyDocument) (*IamPolicyDocument, error) {
+func mergePolicies(policies []IamPolicyDocument) (IamPolicyDocument, error) {
 	// This not only puts all statements in one policy, it also merges
 	// statements that have the same actions/conditions.
-	statementsByKey := make(map[string]*IamPolicyStatement)
+	statementsByKey := make(map[string]IamPolicyStatement)
 	for _, policy := range policies {
 		for _, statement := range policy.Statement {
 			statementKey, err := makeStatementKey(&statement)
 			if err != nil {
-				return nil, err
+				return IamPolicyDocument{}, err
 			}
 			for _, resource := range statement.Resource {
-				if _, present := statementsByKey[statementKey]; !present {
-					statementsByKey[statementKey] = &IamPolicyStatement{
+				statementByKey, present := statementsByKey[statementKey]
+				if !present {
+					statementByKey = IamPolicyStatement{
 						Effect:    "Allow",
 						Action:    statement.Action,
 						NotAction: statement.NotAction,
 						Condition: statement.Condition,
 					}
 				}
-				statementsByKey[statementKey].Resource = append(statementsByKey[statementKey].Resource, resource)
+				statementByKey.Resource = append(statementByKey.Resource, resource)
+				statementsByKey[statementKey] = statementByKey
 			}
 		}
-	}
-
-	finalPolicy := IamPolicyDocument{
-		Version:   "2012-10-17",
-		Statement: make([]IamPolicyStatement, 0, len(statementsByKey)),
 	}
 
 	// Now we need to sort things so we have a stable output
@@ -341,12 +338,17 @@ func mergePolicies(policies []*IamPolicyDocument) (*IamPolicyDocument, error) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	statements := make([]IamPolicyStatement, 0, len(statementsByKey))
 	for _, k := range keys {
-		sort.Strings(statementsByKey[k].Resource)
-		finalPolicy.Statement = append(finalPolicy.Statement, *statementsByKey[k])
+		statementByKey := statementsByKey[k]
+		sort.Strings(statementByKey.Resource)
+		statements = append(statements, statementByKey)
 	}
 
-	return &finalPolicy, nil
+	return IamPolicyDocument{
+		Version:   "2012-10-17",
+		Statement: statements,
+	}, nil
 }
 
 func validatePolicy(policy *IamPolicyDocument) error {

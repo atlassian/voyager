@@ -39,10 +39,10 @@ func TestFixtures(t *testing.T) {
 func TestGenerateTemplate(t *testing.T) {
 	t.Parallel()
 	var serviceNameHack voyager.ServiceName = "aNameLongerThan37CharactersNotTHEREYet"
-	policyBytes, err := json.MarshalIndent([]*IamPolicy{
+	policyBytes, err := json.MarshalIndent([]IamPolicy{
 		{
 			PolicyName: "voyager-merge",
-			PolicyDocument: &IamPolicyDocument{
+			PolicyDocument: IamPolicyDocument{
 				ID:        "wee",
 				Version:   "2",
 				Statement: nil,

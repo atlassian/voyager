@@ -9,9 +9,8 @@ import (
 )
 
 const (
-	IamPolicyFieldName             = "IamPolicySnippet"
-	EC2ComputeType     ComputeType = "ec2Compute"
-	KubeComputeType    ComputeType = "kubeCompute"
+	EC2ComputeType  ComputeType = "ec2Compute"
+	KubeComputeType ComputeType = "kubeCompute"
 )
 
 type Spec struct {
@@ -39,8 +38,8 @@ type IamPolicyDocument struct {
 }
 
 type IamPolicy struct {
-	PolicyName     string             `json:"PolicyName"`
-	PolicyDocument *IamPolicyDocument `json:"PolicyDocument"`
+	PolicyName     string            `json:"PolicyName"`
+	PolicyDocument IamPolicyDocument `json:"PolicyDocument"`
 }
 
 type IamAssumeRoleStatement struct {
