@@ -38,10 +38,10 @@ func (r *Report) Run(ctx context.Context) error {
 	for _, namespace := range namespaces.Items {
 		list, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
 		if err != nil {
-			return errors.Wrap(err, "could not list reports")
+			return errors.Wrapf(err, "could not list reports in namespace %q", namespace.Name)
 		}
 		if len(list.Items) == 0 {
-			r.Logger.Sugar().Infof("%q is empty", namespace.Name)
+			r.Logger.Info("Report for namespace is empty", zap.String("namespace", namespace.Name))
 			continue
 		}
 
@@ -62,14 +62,14 @@ func (r *Report) Run(ctx context.Context) error {
 				restclient.BodyFromJSON(requestData),
 			)
 			if err != nil {
-				return errors.Wrap(err, "invalid request")
+				return errors.Wrap(err, "could not craft request")
 			}
 			resp, err := r.HTTPClient.Do(req)
 			if err != nil {
-				return errors.Wrap(err, "failed to connect to backend")
+				return errors.Wrap(err, "failed to perform HTTP request to slurper")
 			}
 			if resp.StatusCode != http.StatusOK {
-				return errors.New("failed to POST the data")
+				return errors.New("failed to POST the data to the slurper")
 			}
 		}
 
