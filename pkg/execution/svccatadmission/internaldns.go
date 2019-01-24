@@ -72,13 +72,13 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		existingDomainAliasInfo *microsserver.AliasInfo
 		err                     error
 	}
-	domainsOwnership := make([]domainOwnership, cap(domainsToCheck))
+	domainsOwnership := make([]domainOwnership, 0, cap(domainsToCheck))
 
 	// worker groups to parallel fetch requestedDomain owners
 	numWorkers := 5
-	wg := sync.WaitGroup{}
+	var wg sync.WaitGroup
 	wg.Add(numWorkers)
-	var mutex = sync.Mutex{}
+	var mutex sync.Mutex
 	for i := 0; i < numWorkers; i++ {
 		go func() {
 			defer wg.Done()
@@ -102,7 +102,6 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 	// checking if domains are allowed to be migrated
 	for _, domainOwnership := range domainsOwnership {
 		if domainOwnership.err != nil {
-			logger.Errorf("error requesting alias info for %q from micros server", domainOwnership.requestedDomain)
 			return nil, errors.Wrapf(err, "error requesting alias info for %q from micros server", domainOwnership.requestedDomain)
 		}
 		if domainOwnership.existingDomainAliasInfo != nil {
