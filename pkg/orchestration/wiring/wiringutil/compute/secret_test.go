@@ -193,12 +193,6 @@ func constructResourceWithEnvBinding(consumerName string, dependencyName voyager
 		// the naming here so it's fine.
 		// - The consumer is usually something like an ec2compute (name of the ec2compute)
 		// - The producer is the dependency (the name of the SQS, SNS, etc)
-		CreatedBindingFromShape: smith_v1.Resource{
-			Name: smith_v1.ResourceName(fmt.Sprintf("%s--%s--binding", consumerName, dependencyName)),
-			// This usually contains references but we don't care about the spec here
-			References: []smith_v1.Reference{},
-			// Spec is ignored for tests - we only care about the generated references and envvars
-			Spec: smith_v1.ResourceSpec{},
-		},
+		BindingName: smith_v1.ResourceName(fmt.Sprintf("%s--%s--binding", consumerName, dependencyName)),
 	}
 }

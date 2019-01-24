@@ -138,9 +138,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
 		resourceWithEnvVarBindings = append(resourceWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
-			ResourceName:            dep.Name,
-			BindableEnvVarShape:     *bindableEnvVarShape,
-			CreatedBindingFromShape: binding,
+			ResourceName:        dep.Name,
+			BindableEnvVarShape: *bindableEnvVarShape,
+			BindingName:         binding.Name,
 		})
 
 		// We also depend on BindableIamAccessible shape
@@ -161,7 +161,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			}
 			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
 				ResourceName:               dep.Name,
-				CreatedBindingFromShape:    iamBindingResource,
+				BindingName:                iamBindingResource.Name,
 				BindableIamAccessibleShape: *bindableIamAccessibleShape,
 			})
 		}

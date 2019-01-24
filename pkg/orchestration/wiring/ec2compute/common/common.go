@@ -132,9 +132,9 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		bindingResource := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference)
 		bindingResources = append(bindingResources, bindingResource)
 		resourcesWithEnvVarBindings = append(resourcesWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
-			ResourceName:            dependency.Name,
-			BindableEnvVarShape:     *bindableEnvVarShape,
-			CreatedBindingFromShape: bindingResource,
+			ResourceName:        dependency.Name,
+			BindableEnvVarShape: *bindableEnvVarShape,
+			BindingName:         bindingResource.Name,
 		})
 
 		// We also depend on BindableIamAccessible shape
@@ -155,7 +155,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 			}
 			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
 				ResourceName:               dependency.Name,
-				CreatedBindingFromShape:    iamBindingResource,
+				BindingName:                iamBindingResource.Name,
 				BindableIamAccessibleShape: *bindableIamAccessibleShape,
 			})
 		}

@@ -15,10 +15,10 @@ import (
 )
 
 type ResourceWithEnvVarBinding struct {
-	ResourceName            voyager.ResourceName
-	ResourceType            voyager.ResourceType
-	BindableEnvVarShape     knownshapes.BindableEnvironmentVariables
-	CreatedBindingFromShape smith_v1.Resource
+	ResourceName        voyager.ResourceName
+	ResourceType        voyager.ResourceType
+	BindableEnvVarShape knownshapes.BindableEnvironmentVariables
+	BindingName         smith_v1.ResourceName
 }
 
 var (
@@ -31,7 +31,7 @@ func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []ResourceWi
 
 	for _, bindingResult := range bindingResults {
 		prefix := bindingResult.BindableEnvVarShape.Data.Prefix
-		bindingName := bindingResult.CreatedBindingFromShape.Name
+		bindingName := bindingResult.BindingName
 		resourceName := bindingResult.ResourceName
 
 		for envVarKey, path := range bindingResult.BindableEnvVarShape.Data.Vars {

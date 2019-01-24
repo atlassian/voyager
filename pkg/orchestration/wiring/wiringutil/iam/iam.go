@@ -37,19 +37,19 @@ const (
 type ResourceWithIamAccessibleBinding struct {
 	ResourceName               voyager.ResourceName
 	BindableIamAccessibleShape knownshapes.BindableIamAccessible
-	CreatedBindingFromShape    smith_v1.Resource
+	BindingName                smith_v1.ResourceName
 }
 
 func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName voyager.ResourceName,
 	serviceName voyager.ServiceName, createInstanceProfile bool, iamShapedResources []ResourceWithIamAccessibleBinding,
 	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (smith_v1.Resource, error) {
 
-	dependencyReferences := []smith_v1.Reference{}
-	iamPolicyDocumentRefs := map[string]string{}
+	dependencyReferences := make([]smith_v1.Reference, 0, len(iamShapedResources))
+	iamPolicyDocumentRefs := make(map[string]string, len(iamShapedResources))
 	for _, iamShapedResource := range iamShapedResources {
 		ref := iamShapedResource.BindableIamAccessibleShape.Data.IAMPolicySnippet.ToReference(
-			wiringutil.ReferenceName(iamShapedResource.CreatedBindingFromShape.Name, dependencyNamePostfix),
-			iamShapedResource.CreatedBindingFromShape.Name,
+			wiringutil.ReferenceName(iamShapedResource.BindingName, dependencyNamePostfix),
+			iamShapedResource.BindingName,
 		)
 		dependencyReferences = append(dependencyReferences, ref)
 		iamPolicyDocumentRefs[string(iamShapedResource.ResourceName)] = ref.Ref()

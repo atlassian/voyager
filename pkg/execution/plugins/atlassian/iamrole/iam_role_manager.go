@@ -169,18 +169,18 @@ func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
 }
 
 func generateRoleInstance(spec *Spec) (*sc_v1b1.ServiceInstance, error) {
-	policyDocuments := []*IamPolicyDocument{}
+	policyDocuments := make([]*IamPolicyDocument, 0, len(spec.PolicySnippets))
 	for resourceName, policySnippet := range spec.PolicySnippets {
-		policy, err := extractPolicy([]byte(policySnippet))
-		if err != nil {
+		policy := IamPolicyDocument{}
+		if err := json.Unmarshal([]byte(policySnippet), &policy); err != nil {
 			return nil, errors.Wrapf(err, "failed to extract IAM policy from the resource %q", resourceName)
 		}
 
-		if err := validatePolicy(policy); err != nil {
+		if err := validatePolicy(&policy); err != nil {
 			return nil, errors.Wrapf(err, "invalid policy emitted by %q", resourceName)
 		}
 
-		policyDocuments = append(policyDocuments, policy)
+		policyDocuments = append(policyDocuments, &policy)
 	}
 
 	policy, err := combineIamPolicies(policyDocuments)
@@ -347,15 +347,6 @@ func mergePolicies(policies []*IamPolicyDocument) (*IamPolicyDocument, error) {
 	}
 
 	return &finalPolicy, nil
-}
-
-func extractPolicy(data []byte) (*IamPolicyDocument, error) {
-	policy := IamPolicyDocument{}
-	if err := json.Unmarshal(data, &policy); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal IAM policy from JSON object")
-	}
-
-	return &policy, nil
 }
 
 func validatePolicy(policy *IamPolicyDocument) error {
