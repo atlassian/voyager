@@ -60,31 +60,27 @@ func TestEntangler(t *testing.T) {
 	}
 }
 
-// TODO: replace with Mikhail's awesome delegating thing in PR67
-type wireUpFunc func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error)
-
-func (f wireUpFunc) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
-	return f(resource, context)
-}
-
 func TestEntanglerWithBadWiringFunction(t *testing.T) {
 	t.Parallel()
 
-	wireup := wireUpFunc(func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
-		return &wiringplugin.WiringResult{
-			Contract: wiringplugin.ResourceContract{
-				Shapes: []wiringplugin.Shape{
-					knownshapes.NewASAPKey(),
-					knownshapes.NewASAPKey(),
-				},
-			},
-		}, false, nil
-	})
-
+	// Given: this set of plugins
 	plugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
-		"DoubleASAP": wireup,
+		"DoubleASAP": &delegatingPlugin{
+			wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+				return &wiringplugin.WiringResult{
+					Contract: wiringplugin.ResourceContract{
+						Shapes: []wiringplugin.Shape{
+							knownshapes.NewASAPKey(),
+							knownshapes.NewASAPKey(),
+						},
+					},
+				}, false, nil
+			},
+			status: emptyStatus,
+		},
 	}
 
+	// Given: this state
 	state := &orch_v1.State{
 		TypeMeta: meta_v1.TypeMeta{
 			Kind:       "State",
@@ -104,11 +100,11 @@ func TestEntanglerWithBadWiringFunction(t *testing.T) {
 		},
 	}
 
+	// When: we build an entangler and run it with those plugins against this state
 	_, _, err := entangleTestState(t, state, plugins)
 
-	require.Error(t, err)
-	assert.Equal(t, err.Error(), `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
-
+	// Then: we expect an error as we can't have an auto-wiring function return >1 shape of the same type
+	assert.EqualError(t, err, `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
 }
 
 func TestDependants(t *testing.T) {
