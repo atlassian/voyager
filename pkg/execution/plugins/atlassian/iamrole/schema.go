@@ -36,6 +36,12 @@ const schema = `
       "type": "string",
       "minLength": 1
     },
+	"policySnippets": {
+	  "type": "object",
+	  "additionalProperties": {
+	    "type": "string"
+	  }
+	},
     "serviceEnvironment": {
       "type": "object",
       "required": [
