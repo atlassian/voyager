@@ -125,7 +125,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cca963fd0ea3381d729af46e780cdbb1e258689c875a2aac977ffde483d18a42"
+  digest = "1:d2d9ae622dc913acd115fca01443c21d1c8159cdec891ccbcaef144f81b49d44"
   name = "github.com/atlassian/smith"
   packages = [
     ".",
@@ -152,7 +152,7 @@
     "pkg/util/logz",
   ]
   pruneopts = "NT"
-  revision = "16e4e1dbdbc3c0ab83807bd078dc636e9ba427a3"
+  revision = "fd5931a57769bd3e38b390db449d054584e3401f"
 
 [[projects]]
   digest = "1:07918ac16957399fa68bf94b3ab26dccccc6992f1ccbcf589896734569a0a7e7"
@@ -586,7 +586,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c643da1fbe46f9bf715bbc04643e1101f1aa3964478b385c9c90f914c5cefcad"
+  digest = "1:6b8676ab2a4ed3679c275d6643b71a0940756420a488638215dfb760f9cb4b74"
   name = "github.com/kubernetes-incubator/service-catalog"
   packages = [
     "pkg/apis/servicecatalog",
@@ -606,7 +606,7 @@
     "pkg/filter",
   ]
   pruneopts = "NT"
-  revision = "9ef0eed8e55b96b7dd681cd270040e2eec0bd96e"
+  revision = "22232bd0a46e7c3e2762956defffda58efec6a4d"
 
 [[projects]]
   digest = "1:c41a98ec16b8b053f921ad36d510f552321d6c86d2cd46d15b0ef3b85e67dd5f"
