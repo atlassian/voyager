@@ -1,10 +1,13 @@
 package k8s
 
 import (
+	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apps_v1 "k8s.io/api/apps/v1"
 	autoscaling_v2b1 "k8s.io/api/autoscaling/v2beta1"
 	core_v1 "k8s.io/api/core/v1"
+	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	rbac_v1 "k8s.io/api/rbac/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -27,6 +30,9 @@ const (
 	ServiceInstanceKind         = "ServiceInstance"
 	ServiceAccountKind          = "ServiceAccount"
 	EventKind                   = "Event"
+	ServiceInstanceResource     = "serviceinstances"
+	ServiceBindingResource      = "servicebindings"
+	IngressResource             = "ingresses"
 
 	CreateVerb           = "create"
 	GetVerb              = "get"
@@ -60,4 +66,20 @@ var (
 	ConfigMapGVK               = core_v1.SchemeGroupVersion.WithKind(ConfigMapKind)
 	NamespaceGVK               = core_v1.SchemeGroupVersion.WithKind(NamespaceKind)
 	RoleBindingGVK             = rbac_v1.SchemeGroupVersion.WithKind(RoleBindingKind)
+
+	ServiceInstanceGVR = meta_v1.GroupVersionResource{
+		Group:    sc_v1b1.SchemeGroupVersion.Group,
+		Version:  sc_v1b1.SchemeGroupVersion.Version,
+		Resource: ServiceInstanceResource,
+	}
+	ServiceBindingGVR = meta_v1.GroupVersionResource{
+		Group:    sc_v1b1.SchemeGroupVersion.Group,
+		Version:  sc_v1b1.SchemeGroupVersion.Version,
+		Resource: ServiceBindingResource,
+	}
+	IngressGVR = meta_v1.GroupVersionResource{
+		Group:    ext_v1b1.SchemeGroupVersion.Group,
+		Version:  ext_v1b1.SchemeGroupVersion.Version,
+		Resource: IngressResource,
+	}
 )

@@ -2,16 +2,12 @@ package svccatadmission
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"reflect"
 	"testing"
 
-	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/stretchr/testify/require"
+	"github.com/atlassian/voyager/pkg/k8s"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -32,37 +28,37 @@ func TestMicrosAdmitFunc(t *testing.T) {
 	}{
 		{
 			"NotServiceInstance",
-			buildAdmissionReview(defaultNamespace, serviceBinding, admissionv1beta1.Create, []byte(`{}`)),
+			buildAdmissionReview(defaultNamespace, k8s.ServiceBindingGVR, admissionv1beta1.Create, []byte(`{}`)),
 			nil,
 			true,
 		},
 		{
 			"ServiceInstanceNotMicros",
-			buildAdmissionReview(dougMicros2Service, serviceInstance, admissionv1beta1.Create, buildServiceInstance(t, "serviceid", "planid", nil)),
+			buildAdmissionReview(dougMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(t, "serviceid", "planid", nil)),
 			buildAdmissionResponse(true, 0, nil, `ServiceInstance "foo" is not a micros compute instance`),
 			false,
 		},
 		{
 			"ErrorIfNoNamespace",
-			buildAdmissionReview("", serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
 			nil,
 			true,
 		},
 		{
 			"ServiceMissingIsOk",
-			buildAdmissionReview(dougMicros2Service, serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
+			buildAdmissionReview(dougMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, missingService)),
 			buildAdmissionResponse(true, 0, nil, "compute service \"missing-service\" doesn't exist in Service Central"),
 			false,
 		},
 		{
 			"ServiceHasSameOwner",
-			buildAdmissionReview(elsieMicros2Service, serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, elsieComputeService)),
+			buildAdmissionReview(elsieMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, elsieComputeService)),
 			buildAdmissionResponse(true, 0, nil, `service central owner of service "elsie-compute-service" (elsie) is same as micros2 service "elsie-micros2-service" (elsie)`),
 			false,
 		},
 		{
 			"ServiceHasDifferentOwnerForbidden",
-			buildAdmissionReview(elsieMicros2Service, serviceInstance, admissionv1beta1.Create, buildV1ServiceInstance(t, dougComputeService)),
+			buildAdmissionReview(elsieMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildV1ServiceInstance(t, dougComputeService)),
 			buildAdmissionResponse(false, http.StatusUnauthorized, nil, `service central owner of service "doug-compute-service" (doug) is different to micros2 service "elsie-micros2-service" (elsie)`),
 			false,
 		},
@@ -103,25 +99,4 @@ func buildOtherServiceInstance(t *testing.T, serviceName string) []byte {
 	return buildServiceInstance(
 		t, microsClusterServiceClassName, "foo",
 		Parameters{Service{serviceName}})
-}
-
-func buildServiceInstance(t *testing.T, serviceClass, servicePlan string, parameters interface{}) []byte {
-	rawParameters, err := json.Marshal(parameters)
-	require.NoError(t, err)
-	rawServiceInstance, err := json.Marshal(sc_v1b1.ServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceInstanceName,
-		},
-		Spec: sc_v1b1.ServiceInstanceSpec{
-			PlanReference: sc_v1b1.PlanReference{
-				ClusterServiceClassName: serviceClass,
-				ClusterServicePlanName:  servicePlan,
-			},
-			Parameters: &runtime.RawExtension{
-				Raw: rawParameters,
-			},
-		},
-	})
-	require.NoError(t, err)
-	return rawServiceInstance
 }
