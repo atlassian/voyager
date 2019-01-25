@@ -47,6 +47,11 @@ const (
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
 	defaultPodDisruptionBudget = "30%"
+
+	// Default environment variable names
+	awsRegionKey   = "MICROS_AWS_REGION"
+	envTypeKey     = "MICROS_ENVTYPE"
+	serviceNameKey = "MICROS_SERVICE"
 )
 
 var (
@@ -465,15 +470,15 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 func buildDefaultEnvVars(name voyager.ResourceName, location voyager.Location) []core_v1.EnvVar {
 	return []core_v1.EnvVar{
 		{
-			Name:  "MICROS_AWS_REGION",
+			Name:  awsRegionKey,
 			Value: string(location.Region),
 		},
 		{
-			Name:  "MICROS_ENVTYPE",
+			Name:  envTypeKey,
 			Value: string(location.EnvType),
 		},
 		{
-			Name:  "MICROS_SERVICE",
+			Name:  serviceNameKey,
 			Value: string(name),
 		},
 	}
