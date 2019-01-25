@@ -12,9 +12,13 @@ import (
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	retryAttemptsPerReport = 5
+	retryDelay             = time.Second * 1
 )
 
 type Report struct {
@@ -49,33 +53,54 @@ func NewReport(slurperURI string, cluster string, reporterClient client.Interfac
 	}
 }
 
-func (r *Report) getNamespaces() (*v1.NamespaceList, error) {
-	namespaces, err := r.KubernetesClient.CoreV1().Namespaces().List(meta_v1.ListOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list namespaces")
+func IsTransientError(statusCode int) bool {
+	_, ok := map[int]bool{
+		http.StatusRequestTimeout:  true,
+		http.StatusTooManyRequests: true,
+	}[statusCode]
+
+	if ok {
+		return true
 	}
-	return namespaces, nil
+
+	return statusCode >= 500 && statusCode <= 599
 }
 
-func (r *Report) getReporterReports(namespace *v1.Namespace) (*reporter_v1.ReportList, error) {
-	list, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
+func (r *Report) sendData(requestData RequestData) (retriable bool, err error) {
+	req, err := r.mutator.NewRequest(restclient.BodyFromJSON(requestData))
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not list reports in namespace %q", namespace.Name)
+		return false, errors.Wrap(err, "could not craft a HTTP request")
 	}
-	return list, nil
+
+	resp, err := r.HTTPClient.Do(req)
+	if err != nil {
+		return true, errors.Wrap(err, "failed to perform HTTP request to slurper")
+	}
+
+	if resp.StatusCode == http.StatusOK {
+		return false, nil
+	}
+
+	if IsTransientError(resp.StatusCode) {
+		return true, errors.Errorf("POSTing data to slurper failed with retriable status code %d", resp.StatusCode)
+	}
+
+	return false, errors.Errorf("POSTing data to slurper failed with status code %d", resp.StatusCode)
 }
 
 func (r *Report) Run(ctx context.Context) error {
-	namespaces, err := r.getNamespaces()
+	namespaces, err := r.KubernetesClient.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to list namespaces")
 	}
 
 	for _, namespace := range namespaces.Items {
-		reports, err := r.getReporterReports(&namespace)
+		reports, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
 		if err != nil {
-			return err
+			r.Logger.Error("Could not list reports in namespace", zap.String("namespace", namespace.Name))
+			continue
 		}
+
 		if len(reports.Items) == 0 {
 			r.Logger.Info("Report for namespace is empty", zap.String("namespace", namespace.Name))
 			continue
@@ -89,20 +114,22 @@ func (r *Report) Run(ctx context.Context) error {
 				Data:      report.Report,
 			}
 
-			req, err := r.mutator.NewRequest(restclient.BodyFromJSON(requestData))
-			if err != nil {
-				return errors.Wrap(err, "could not craft request")
-			}
-
-			resp, err := r.HTTPClient.Do(req)
-			if err != nil {
-				return errors.Wrap(err, "failed to perform HTTP request to slurper")
-			}
-			if resp.StatusCode != http.StatusOK {
-				return errors.New("failed to POST the data to the slurper")
+			for i := 1; i <= retryAttemptsPerReport; i++ {
+				if retriable, err := r.sendData(requestData); err != nil {
+					if !retriable {
+						// If the request is not retriable, then we shouldn't try the other requests either
+						return err
+					} else {
+						r.Logger.Warn("Failed to send request data to slurper",
+							zap.Int("attempt", i),
+							zap.Int("max_attempts", retryAttemptsPerReport),
+							zap.Error(err))
+						time.Sleep(retryDelay)
+					}
+				}
 			}
 		}
-
 	}
+
 	return nil
 }
