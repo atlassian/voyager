@@ -13,12 +13,13 @@ const (
 )
 
 var (
+	_ wiringplugin.Shape = &ASAPKey{}
 	_ wiringplugin.Shape = &BindableEnvironmentVariables{}
 	_ wiringplugin.Shape = &BindableIamAccessible{}
 	_ wiringplugin.Shape = &IngressEndpoint{}
 	_ wiringplugin.Shape = &SetOfPodsSelectableByLabels{}
+	_ wiringplugin.Shape = &SharedDb{}
 	_ wiringplugin.Shape = &SnsSubscribable{}
-	_ wiringplugin.Shape = &ASAPKey{}
 )
 
 func TestAllKnownShapes(t *testing.T) {
@@ -30,6 +31,7 @@ func TestAllKnownShapes(t *testing.T) {
 		NewBindableIamAccessible(resourceName, "somePath"),
 		NewIngressEndpoint(resourceName),
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
+		NewSharedDbShape(resourceName, true),
 		NewSnsSubscribable(resourceName),
 	}
 

@@ -5,6 +5,7 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -24,8 +25,8 @@ type SnsSubscribable struct {
 
 // +k8s:deepcopy-gen=true
 type SnsSubscribableData struct {
-	wiringplugin.BindableShapeStruct `json:",inline"`
-	TopicARN                         wiringplugin.BindingSecretProtoReference `json:"topicArn"`
+	libshapes.BindableShapeStruct `json:",inline"`
+	TopicARN                      libshapes.BindingSecretProtoReference `json:"topicArn"`
 }
 
 func NewSnsSubscribable(smithResourceName smith_v1.ResourceName) *SnsSubscribable {
@@ -34,13 +35,13 @@ func NewSnsSubscribable(smithResourceName smith_v1.ResourceName) *SnsSubscribabl
 			ShapeName: SnsSubscribableShape,
 		},
 		Data: SnsSubscribableData{
-			BindableShapeStruct: wiringplugin.BindableShapeStruct{
-				ServiceInstanceName: wiringplugin.ProtoReference{
+			BindableShapeStruct: libshapes.BindableShapeStruct{
+				ServiceInstanceName: libshapes.ProtoReference{
 					Resource: smithResourceName,
 					Path:     "metadata.name",
 					Example:  "aname",
 				}},
-			TopicARN: wiringplugin.BindingSecretProtoReference{
+			TopicARN: libshapes.BindingSecretProtoReference{
 				Path:    fmt.Sprintf("data.%s", snsTopicArnOutputNameKey),
 				Example: `"arn:aws:sns:us-east-1:123456789012:example"`,
 			},
@@ -54,7 +55,7 @@ func (b *SnsSubscribable) Name() wiringplugin.ShapeName {
 
 func FindSnsSubscribableShape(shapes []wiringplugin.Shape) (*SnsSubscribable, bool /*found*/, error) {
 	typed := &SnsSubscribable{}
-	found, err := FindAndCopyShapeByName(shapes, SnsSubscribableShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, SnsSubscribableShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

@@ -3,6 +3,7 @@ package knownshapes
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -19,10 +20,10 @@ type BindableIamAccessible struct {
 
 // +k8s:deepcopy-gen=true
 type BindableIamAccessibleData struct {
-	wiringplugin.BindableShapeStruct `json:",inline"`
+	libshapes.BindableShapeStruct `json:",inline"`
 	//IAMRoleARN    BindingProtoReference
 	//IAMProfileARN BindingProtoReference
-	IAMPolicySnippet wiringplugin.BindingSecretProtoReference
+	IAMPolicySnippet libshapes.BindingSecretProtoReference
 }
 
 func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnippetPath string) *BindableIamAccessible {
@@ -31,13 +32,13 @@ func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnipp
 			ShapeName: BindableIamAccessibleShape,
 		},
 		Data: BindableIamAccessibleData{
-			BindableShapeStruct: wiringplugin.BindableShapeStruct{
-				ServiceInstanceName: wiringplugin.ProtoReference{
+			BindableShapeStruct: libshapes.BindableShapeStruct{
+				ServiceInstanceName: libshapes.ProtoReference{
 					Resource: resourceName,
 					Path:     "metadata.name",
 					Example:  "aname",
 				}},
-			IAMPolicySnippet: wiringplugin.BindingSecretProtoReference{
+			IAMPolicySnippet: libshapes.BindingSecretProtoReference{
 				Path: IAMPolicySnippetPath,
 			},
 		},
@@ -50,7 +51,7 @@ func (s *BindableIamAccessible) Name() wiringplugin.ShapeName {
 
 func FindBindableIamAccessibleShape(shapes []wiringplugin.Shape) (*BindableIamAccessible, bool /*found*/, error) {
 	typed := &BindableIamAccessible{}
-	found, err := FindAndCopyShapeByName(shapes, BindableIamAccessibleShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, BindableIamAccessibleShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

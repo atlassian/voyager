@@ -3,6 +3,7 @@ package knownshapes
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -18,8 +19,8 @@ type SharedDb struct {
 
 // +k8s:deepcopy-gen=true
 type SharedDbData struct {
-	SharedDbResourceName     wiringplugin.ProtoReference `json:"sharedDbResourceName"`
-	HasSameRegionReadReplica bool                        `json:"hasSameRegionReadReplica"`
+	SharedDbResourceName     libshapes.ProtoReference `json:"sharedDbResourceName"`
+	HasSameRegionReadReplica bool                     `json:"hasSameRegionReadReplica"`
 }
 
 func NewSharedDbShape(resourceName smith_v1.ResourceName, hasSameRegionReadReplica bool) *SharedDb {
@@ -28,7 +29,7 @@ func NewSharedDbShape(resourceName smith_v1.ResourceName, hasSameRegionReadRepli
 			ShapeName: SharedDbShape,
 		},
 		Data: SharedDbData{
-			SharedDbResourceName: wiringplugin.ProtoReference{
+			SharedDbResourceName: libshapes.ProtoReference{
 				Resource: resourceName,
 				Path:     "metadata.name",
 				Example:  "myownrds",
@@ -44,7 +45,7 @@ func (b SharedDb) Name() wiringplugin.ShapeName {
 
 func FindSharedDbShape(shapes []wiringplugin.Shape) (*SharedDb, bool /*found*/, error) {
 	typed := &SharedDb{}
-	found, err := FindAndCopyShapeByName(shapes, SharedDbShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, SharedDbShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

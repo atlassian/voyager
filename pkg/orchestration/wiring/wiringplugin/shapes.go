@@ -36,17 +36,6 @@ type ShapeMeta struct {
 	ShapeName ShapeName `json:"name"`
 }
 
-// BindableShapeStruct represents a bit of information that is needed to create a Service Catalog ServiceBinding
-// object. To be embedded into other shapes' structs where a ServiceInstance needs to be bound to to get outputs
-// for that shape.
-// If an autowiring plugin exposes multiple shapes that have this struct embedded it may or may not be the case
-// that they all refer to the same ServiceInstance. It is responsibility of the consuming side to track if more than
-// one ServiceBinding needs to be created to consume values from those shapes.
-// +k8s:deepcopy-gen=true
-type BindableShapeStruct struct {
-	ServiceInstanceName ProtoReference `json:"serviceInstanceName"`
-}
-
 // CopyShape copies source shape into the target shape.
 // The main purpose of this function is to convert between typed and UnstructuredShape representations
 // of the same shape.
