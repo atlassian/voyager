@@ -3,4 +3,3 @@
 set -euo pipefail
 
 make lint-all-in-ci
-touch success
