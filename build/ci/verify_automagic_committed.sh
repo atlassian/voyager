@@ -3,4 +3,3 @@
 set -euo pipefail
 
 make check-all-automagic-changes-were-commited-before-ci
-touch success
