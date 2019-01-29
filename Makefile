@@ -82,6 +82,17 @@ verify-vendor:
 
 #===============================================================================
 
+.PHONY: update-smith
+update-smith:
+	dep ensure -v -update github.com/atlassian/smith
+
+.PHONY: bump-dependencies
+bump-dependencies: \
+	update-smith \
+	update-vendor
+
+#===============================================================================
+
 .PHONY: goimports
 goimports:
 	bazel run $(BAZEL_OPTIONS) //:goimports

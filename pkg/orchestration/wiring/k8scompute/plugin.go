@@ -121,11 +121,12 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	// Prepare environment variables
 	var envFrom []core_v1.EnvFromSource
 	var smithResources []smith_v1.Resource
-	var bindingResult []compute.BindingResult
+	var resourceWithEnvVarBindings []compute.ResourceWithEnvVarBinding
+	var resourcesWithIamAccessibleBindings []iam.ResourceWithIamAccessibleBinding
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
+		bindableEnvVarShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
 		if err != nil {
 			return nil, false, err
 		}
@@ -133,28 +134,44 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
-		resourceReference := bindableShape.Data.ServiceInstanceName
+		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
-		bindingResult = append(bindingResult, compute.BindingResult{
-			ResourceName:            dep.Name,
-			BindableEnvVarShape:     *bindableShape,
-			CreatedBindingFromShape: binding,
+		resourceWithEnvVarBindings = append(resourceWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
+			ResourceName:        dep.Name,
+			BindableEnvVarShape: *bindableEnvVarShape,
+			BindingName:         binding.Name,
 		})
+
+		// We also depend on BindableIamAccessible shape
+		bindableIamAccessibleShape, iamFound, err := knownshapes.FindBindableIamAccessibleShape(dep.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
+		if iamFound {
+			var iamBindingResource smith_v1.Resource
+			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName
+			// Reuse the binding if the service instance name is the same, otherwise
+			// we'll need to do another binding
+			if iamResourceReference == resourceReference {
+				iamBindingResource = binding
+			} else {
+				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, iamResourceReference)
+				smithResources = append(smithResources, iamBindingResource)
+			}
+			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
+				ResourceName:               dep.Name,
+				BindingName:                iamBindingResource.Name,
+				BindableIamAccessibleShape: *bindableIamAccessibleShape,
+			})
+		}
 	}
 
 	var iamRoleRef *smith_v1.Reference
 
-	bindingReferences := make([]smith_v1.Reference, 0, len(bindingResult))
-	for _, res := range bindingResult {
-		bindingReferences = append(bindingReferences, smith_v1.Reference{
-			Resource: res.CreatedBindingFromShape.Name,
-		})
-	}
-
 	// Reference environment variables retrieved from ServiceBinding objects
-	if len(bindingResult) > 0 {
-		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
+	if len(resourceWithEnvVarBindings) > 0 {
+		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, resourceWithEnvVarBindings)
 		if err != nil {
 			return nil, false, err
 		}
@@ -184,7 +201,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, secretResource)
 
 		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
-			context.StateContext.ServiceName, false, bindingReferences, context, []string{}, buildKube2iamRoles(context))
+			context.StateContext.ServiceName, false, resourcesWithIamAccessibleBindings, context, []string{}, buildKube2iamRoles(context))
 		if err != nil {
 			return nil, false, err
 		}

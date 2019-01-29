@@ -14,24 +14,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-type BindingResult struct {
-	ResourceName            voyager.ResourceName
-	ResourceType            voyager.ResourceType
-	BindableEnvVarShape     knownshapes.BindableEnvironmentVariables
-	CreatedBindingFromShape smith_v1.Resource
+type ResourceWithEnvVarBinding struct {
+	ResourceName        voyager.ResourceName
+	ResourceType        voyager.ResourceType
+	BindableEnvVarShape knownshapes.BindableEnvironmentVariables
+	BindingName         smith_v1.ResourceName
 }
 
 var (
 	envVarReplacer = strings.NewReplacer("-", "_", ".", "_")
 )
 
-func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingResult) ([]smith_v1.Reference, map[string]string, error) {
+func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []ResourceWithEnvVarBinding) ([]smith_v1.Reference, map[string]string, error) {
 	originalEnvVars := map[string]string{}
 	var dependencyReferences []smith_v1.Reference
 
 	for _, bindingResult := range bindingResults {
 		prefix := bindingResult.BindableEnvVarShape.Data.Prefix
-		bindingName := bindingResult.CreatedBindingFromShape.Name
+		bindingName := bindingResult.BindingName
 		resourceName := bindingResult.ResourceName
 
 		for envVarKey, path := range bindingResult.BindableEnvVarShape.Data.Vars {

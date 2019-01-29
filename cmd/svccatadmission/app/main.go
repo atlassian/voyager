@@ -62,6 +62,7 @@ func NewServerFromFlags(fs *flag.FlagSet, arguments []string) (*util.HTTPServer,
 	sca := &svccatadmission.SvcCatAdmission{
 		ServiceCentralURL: opts.Providers.ServiceCentralURL,
 		RPSURL:            opts.Providers.RPSURL,
+		MicrosServerURL:   opts.Providers.MicrosServerURL,
 		ASAPClientConfig:  opts.ASAPClientConfig,
 		Logger:            logger,
 		HTTPClient:        util.HTTPClient(),

@@ -7,11 +7,11 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",
-        "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/orchestration/wiring/asapkey:go_default_library",
         "//pkg/orchestration/wiring/aws:go_default_library",
         "//pkg/orchestration/wiring/ec2compute/v2:go_default_library",
         "//pkg/orchestration/wiring/internaldns:go_default_library",
+        "//pkg/orchestration/wiring/internaldns/api:go_default_library",
         "//pkg/orchestration/wiring/k8scompute:go_default_library",
         "//pkg/orchestration/wiring/k8scompute/api:go_default_library",
         "//pkg/orchestration/wiring/kubeingress:go_default_library",

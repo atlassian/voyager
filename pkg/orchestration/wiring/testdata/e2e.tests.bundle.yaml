@@ -718,15 +718,34 @@ spec:
                 CF_STREAM_STREAMNAME: '!{ec2--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
   - name: ec2---iamrole
     references:
-    - resource: ec2--asap--binding
     - resource: ec2--basic--binding
+      name: ec2--basic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: ec2--files--binding
+      name: ec2--files--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: ec2--stream--binding
+      name: ec2--stream--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: ec2--dynamo-basic--binding
+      name: ec2--dynamo-basic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: ec2--dynamo-complex--binding
-    - resource: ec2--datastore--binding
+      name: ec2--dynamo-complex--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: ec2--notification-sns--binding
+      name: ec2--notification-sns--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: ec2--notification-sqs--binding
+      name: ec2--notification-sqs--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     spec:
       plugin:
         name: iamrole
@@ -773,6 +792,14 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-ec2
+          policySnippets:
+            basic: '!{ec2--basic--binding-iamrole}'
+            files: '!{ec2--files--binding-iamrole}'
+            stream: '!{ec2--stream--binding-iamrole}'
+            dynamo-basic: '!{ec2--dynamo-basic--binding-iamrole}'
+            dynamo-complex: '!{ec2--dynamo-complex--binding-iamrole}'
+            notification-sqs: '!{ec2--notification-sqs--binding-iamrole}'
+            notification-sns: '!{ec2--notification-sns--binding-iamrole}'
   - name: ec2---iamrole-binding
     references:
     - name: ec2---iamrole-metadata-name
@@ -1212,15 +1239,34 @@ spec:
             CF_STREAM_STREAMNAME: '!{kc--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
   - name: kc---iamrole
     references:
-    - resource: kc--asap--binding
     - resource: kc--basic--binding
+      name: kc--basic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: kc--files--binding
+      name: kc--files--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: kc--stream--binding
+      name: kc--stream--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: kc--dynamo-basic--binding
+      name: kc--dynamo-basic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: kc--dynamo-complex--binding
-    - resource: kc--datastore--binding
+      name: kc--dynamo-complex--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: kc--notification-sns--binding
+      name: kc--notification-sns--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     - resource: kc--notification-sqs--binding
+      name: kc--notification-sqs--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     spec:
       plugin:
         name: iamrole
@@ -1264,6 +1310,14 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
+          policySnippets:
+            basic: '!{kc--basic--binding-iamrole}'
+            files: '!{kc--files--binding-iamrole}'
+            stream: '!{kc--stream--binding-iamrole}'
+            dynamo-basic: '!{kc--dynamo-basic--binding-iamrole}'
+            dynamo-complex: '!{kc--dynamo-complex--binding-iamrole}'
+            notification-sqs: '!{kc--notification-sqs--binding-iamrole}'
+            notification-sns: '!{kc--notification-sns--binding-iamrole}'
   - name: kc---iamrole-binding
     references:
     - name: kc---iamrole-metadata-name

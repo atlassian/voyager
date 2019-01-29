@@ -74,8 +74,6 @@ spec:
                 ASAP_KEY_ID: '!{compute--myasap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
                 ASAP_AUDIENCE: '!{compute--myasap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
   - name: compute---iamrole
-    references:
-    - resource: compute--myasap--binding
     spec:
       plugin:
         name: iamrole
@@ -122,6 +120,7 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
+          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name
