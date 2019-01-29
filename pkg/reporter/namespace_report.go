@@ -69,7 +69,7 @@ type NamespaceReportHandler struct {
 }
 
 type ProviderOpsResponse struct {
-	Result *ProviderResponse `json:"report,omitempty"`
+	Result *ProviderResponse `json:"result,omitempty"`
 }
 
 type ProviderResponse struct {
@@ -231,7 +231,9 @@ func (n *NamespaceReportHandler) getResourceFromProvider(ctx context.Context, pr
 
 	providerOpsResp := ProviderOpsResponse{}
 	err = json.Unmarshal(body, &providerOpsResp)
-	if err != nil || providerOpsResp.Result == nil {
+	if err != nil {
+		return handleProviderError(logger, obj, err, "unmarshal new reporter response json")
+	} else if providerOpsResp.Result == nil {
 		// Support migration from report model to ops api spec
 		logger.Warn("Provider using old report spec", zap.String("provider", provider.Name()), zap.Error(err))
 		providerOpsResp.Result = &ProviderResponse{}
