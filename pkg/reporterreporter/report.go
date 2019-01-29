@@ -53,7 +53,7 @@ func NewReport(slurperURI string, cluster string, reporterClient client.Interfac
 	}
 }
 
-func IsTransientError(statusCode int) bool {
+func isRetriableError(statusCode int) bool {
 	_, ok := map[int]bool{
 		http.StatusRequestTimeout:  true,
 		http.StatusTooManyRequests: true,
@@ -81,7 +81,7 @@ func (r *Report) sendData(requestData RequestData) (retriable bool, err error) {
 		return false, nil
 	}
 
-	if IsTransientError(resp.StatusCode) {
+	if isRetriableError(resp.StatusCode) {
 		return true, errors.Errorf("POSTing data to slurper failed with retriable status code %d", resp.StatusCode)
 	}
 
