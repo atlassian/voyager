@@ -109,6 +109,9 @@ spec:
   - name: compute---iamrole
     references:
     - resource: compute--basic--binding
+      name: compute--basic--binding-iamrole
+      path: data.IamPolicySnippet
+      modifier: bindsecret
     spec:
       plugin:
         name: iamrole
@@ -155,6 +158,8 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
+          policySnippets:
+            basic: '!{compute--basic--binding-iamrole}'
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name

@@ -2,15 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "go_default_library",
-    srcs = [
-        "plugin.go",
-        "types.go",
-    ],
+    srcs = ["plugin.go"],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns",
     visibility = ["//visibility:public"],
     deps = [
         "//:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/orchestration/wiring/internaldns/api:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",

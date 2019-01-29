@@ -6,6 +6,7 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -16,11 +17,8 @@ import (
 )
 
 const (
-	ResourceType                   voyager.ResourceType = "InternalDNS"
-	clusterServiceClassExternalID                       = "f77e1881-36f3-42ce-9848-7a811b421dd7"
-	clusterServicePlanExternalID                        = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
-	kubeIngressRefMetadata                              = "metadata"
-	kubeIngressRefMetadataEndpoint                      = "endpoint"
+	kubeIngressRefMetadata         = "metadata"
+	kubeIngressRefMetadataEndpoint = "endpoint"
 )
 
 type autowiringOnlySpec struct {
@@ -36,12 +34,12 @@ type WiringPlugin struct {
 func New() *WiringPlugin {
 	return &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: clusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
+			ClusterServiceClassExternalID: apiinternaldns.ClusterServiceClassExternalID,
+			ClusterServicePlanExternalID:  apiinternaldns.ClusterServicePlanExternalID,
 			InstanceSpec:                  getInstanceSpec,
 			ObjectMeta:                    getObjectMeta,
 			References:                    getReferences,
-			ResourceType:                  ResourceType,
+			ResourceType:                  apiinternaldns.ResourceType,
 		},
 	}
 }

@@ -115,46 +115,60 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	}
 
 	var bindingResources []smith_v1.Resource
-	var bindingResult []compute.BindingResult
+	var resourcesWithEnvVarBindings []compute.ResourceWithEnvVarBinding
+	var resourcesWithIamAccessibleBindings []iam.ResourceWithIamAccessibleBinding
 	var references []smith_v1.Reference
 
 	for _, dependency := range dependencies {
-		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dependency.Contract.Shapes)
+		bindableEnvVarShape, envVarFound, err := knownshapes.FindBindableEnvironmentVariablesShape(dependency.Contract.Shapes)
 		if err != nil {
 			return nil, false, err
 		}
-		if !found {
+		if !envVarFound {
 			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dependency.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
-		resourceReference := bindableShape.Data.ServiceInstanceName
+		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
 		bindingResource := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference)
 		bindingResources = append(bindingResources, bindingResource)
-		bindingResult = append(bindingResult, compute.BindingResult{
-			ResourceName:            dependency.Name,
-			BindableEnvVarShape:     *bindableShape,
-			CreatedBindingFromShape: bindingResource,
+		resourcesWithEnvVarBindings = append(resourcesWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
+			ResourceName:        dependency.Name,
+			BindableEnvVarShape: *bindableEnvVarShape,
+			BindingName:         bindingResource.Name,
 		})
+
+		// We also depend on BindableIamAccessible shape
+		bindableIamAccessibleShape, iamFound, err := knownshapes.FindBindableIamAccessibleShape(dependency.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
+		if iamFound {
+			var iamBindingResource smith_v1.Resource
+			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName
+			// Reuse the binding if the service instance name is the same, otherwise
+			// we'll need to do another binding
+			if iamResourceReference == resourceReference {
+				iamBindingResource = bindingResource
+			} else {
+				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, iamResourceReference)
+				bindingResources = append(bindingResources, iamBindingResource)
+			}
+			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
+				ResourceName:               dependency.Name,
+				BindingName:                iamBindingResource.Name,
+				BindableIamAccessibleShape: *bindableIamAccessibleShape,
+			})
+		}
 	}
 
-	// filter out the list of dependencyReferences - this will be used
-	dependencyReferences := make([]smith_v1.Reference, 0, len(bindingResult))
-	for _, res := range bindingResult {
-		dependencyReferences = append(dependencyReferences, smith_v1.Reference{
-			Resource: res.CreatedBindingFromShape.Name,
-		})
-	}
-
-	// We use the SecretEnvVar plugin if any of our inputs don't provide vars
-	// (deprecated method). Otherwise, we can safely use the secret plugin.
 	var parametersFrom []sc_v1b1.ParametersFromSource
 	computeSpec, err := constructComputeSpec(stateResource.Spec)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "resource spec could not be decoded as expected spec")
 	}
 
-	if len(bindingResult) > 0 {
-		secretRefs, envVars, err := compute.GenerateEnvVars(computeSpec.RenameEnvVar, bindingResult)
+	if len(resourcesWithEnvVarBindings) > 0 {
+		secretRefs, envVars, err := compute.GenerateEnvVars(computeSpec.RenameEnvVar, resourcesWithEnvVarBindings)
 		if err != nil {
 			return nil, false, err
 		}
@@ -182,9 +196,10 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 
 	assumeRoles := []string{context.StateContext.LegacyConfig.DeployerRole}
 	managedPolicies := context.StateContext.LegacyConfig.ManagedPolicies
-	// TODO we assumed everything generates iam snippets, might want to change this. https://trello.com/c/Tikbwksn/765-iam-plugin-improvements
+
+	// The only things that generate IamSnippets are the things that have the correct shape
 	iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.EC2ComputeType, stateResource.Name,
-		voyager.ServiceName(microsServiceName), true, dependencyReferences, context, managedPolicies, assumeRoles)
+		voyager.ServiceName(microsServiceName), true, resourcesWithIamAccessibleBindings, context, managedPolicies, assumeRoles)
 	if err != nil {
 		return nil, false, err
 	}

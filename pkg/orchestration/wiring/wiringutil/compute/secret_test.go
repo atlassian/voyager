@@ -86,13 +86,13 @@ func TestGenerateEnvVars(t *testing.T) {
 	renameMap := map[string]string{
 		"SQS_MY_QUEUE_A_B_C": "SQS_QUEUE1_A_B_C",
 	}
-	queueBinding := constructBindingResult("my-compute", "my-queue", "my-queue--instance", "SQS", map[string]string{
+	queueBinding := constructResourceWithEnvBinding("my-compute", "my-queue", "my-queue--instance", "SQS", map[string]string{
 		"A_B_C":        "data.abc[0]",
 		"A_B_C_2":      "data.abc[1]",
 		"ABC":          "data.abc[2]",
 		"MY_OTHER_VAR": "data.myOtherVar",
 	})
-	databaseBinding := constructBindingResult("my-compute", "my-db", "my-db--instance", "PG", map[string]string{
+	databaseBinding := constructResourceWithEnvBinding("my-compute", "my-db", "my-db--instance", "PG", map[string]string{
 		"USERNAME": "data.username",
 	})
 
@@ -140,7 +140,7 @@ func TestGenerateEnvVars(t *testing.T) {
 	}
 
 	// do
-	smithReferences, envVars, err := GenerateEnvVars(renameMap, []BindingResult{queueBinding, databaseBinding})
+	smithReferences, envVars, err := GenerateEnvVars(renameMap, []ResourceWithEnvVarBinding{queueBinding, databaseBinding})
 	require.NoError(t, err)
 
 	// results
@@ -157,7 +157,7 @@ func TestGenerateEnvVarsEmptyBindings(t *testing.T) {
 	t.Parallel()
 
 	// Does nothing if empty - this implies there were no dependencies, thus there are no environment variables
-	smithReferences, envVars, err := GenerateEnvVars(map[string]string{}, []BindingResult{})
+	smithReferences, envVars, err := GenerateEnvVars(map[string]string{}, []ResourceWithEnvVarBinding{})
 	require.NoError(t, err)
 	assert.Len(t, smithReferences, 0)
 	assert.Len(t, envVars, 0)
@@ -167,10 +167,10 @@ func TestGenerateEnvVarsEmptyVars(t *testing.T) {
 	t.Parallel()
 
 	// given
-	queueBinding := constructBindingResult("my-compute", "my-queue", "my-queue--instance", "SQS", map[string]string{})
+	queueBinding := constructResourceWithEnvBinding("my-compute", "my-queue", "my-queue--instance", "SQS", map[string]string{})
 
 	// do
-	smithReferences, envVars, err := GenerateEnvVars(map[string]string{}, []BindingResult{queueBinding})
+	smithReferences, envVars, err := GenerateEnvVars(map[string]string{}, []ResourceWithEnvVarBinding{queueBinding})
 	require.NoError(t, err)
 
 	// results
@@ -178,8 +178,8 @@ func TestGenerateEnvVarsEmptyVars(t *testing.T) {
 	assert.Len(t, envVars, 0)
 }
 
-func constructBindingResult(consumerName string, dependencyName voyager.ResourceName, serviceInstance smith_v1.ResourceName, prefix string, vars map[string]string) BindingResult {
-	return BindingResult{
+func constructResourceWithEnvBinding(consumerName string, dependencyName voyager.ResourceName, serviceInstance smith_v1.ResourceName, prefix string, vars map[string]string) ResourceWithEnvVarBinding {
+	return ResourceWithEnvVarBinding{
 		// This binding result describes a dependency to a resource in the State
 		ResourceName: dependencyName,
 
@@ -193,12 +193,6 @@ func constructBindingResult(consumerName string, dependencyName voyager.Resource
 		// the naming here so it's fine.
 		// - The consumer is usually something like an ec2compute (name of the ec2compute)
 		// - The producer is the dependency (the name of the SQS, SNS, etc)
-		CreatedBindingFromShape: smith_v1.Resource{
-			Name: smith_v1.ResourceName(fmt.Sprintf("%s--%s--binding", consumerName, dependencyName)),
-			// This usually contains references but we don't care about the spec here
-			References: []smith_v1.Reference{},
-			// Spec is ignored for tests - we only care about the generated references and envvars
-			Spec: smith_v1.ResourceSpec{},
-		},
+		BindingName: smith_v1.ResourceName(fmt.Sprintf("%s--%s--binding", consumerName, dependencyName)),
 	}
 }

@@ -140,9 +140,45 @@ func (ss *StateStatus) String() string {
 }
 
 // +k8s:deepcopy-gen=true
+type ResourceStatusData struct {
+	Conditions []cond_v1.Condition    `json:"conditions,omitempty"`
+	Data       map[string]interface{} `json:"data,omitempty"`
+}
+
+// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
+// since it doesn't know it's JSON).
+func (in *ResourceStatusData) DeepCopyInto(out *ResourceStatusData) {
+	*out = *in
+
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make([]cond_v1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	out.Data = runtime.DeepCopyJSON(in.Data)
+}
+
+// +k8s:deepcopy-gen=true
 type ResourceStatus struct {
-	Name       voyager.ResourceName `json:"name,omitempty"`
-	Conditions []cond_v1.Condition  `json:"conditions,omitempty"`
+	Name               voyager.ResourceName `json:"name,omitempty"`
+	ResourceStatusData `json:",inline"`
+}
+
+// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
+// since it doesn't know it's JSON).
+func (in *ResourceStatus) DeepCopyInto(out *ResourceStatus) {
+	*out = *in
+
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make([]cond_v1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	out.Data = runtime.DeepCopyJSON(in.Data)
 }
 
 func (s *State) GetCondition(conditionType cond_v1.ConditionType) (int, *cond_v1.Condition) {

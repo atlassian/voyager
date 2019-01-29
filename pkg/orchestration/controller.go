@@ -3,7 +3,6 @@ package orchestration
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/atlassian/ctrl"
@@ -31,7 +30,8 @@ import (
 )
 
 const (
-	ByConfigMapNameIndexName = "configMapNamespace"
+	ByConfigMapNameIndexName    = "configMapNamespace"
+	ReasonStatusRetrievalFailed = "StatusRetrievalFailed"
 )
 
 func ByConfigMapNameIndex(obj interface{}) ([]string, error) {
@@ -47,7 +47,8 @@ func ByConfigMapNameIndexKey(namespace string, configMapName string) string {
 }
 
 type Entangler interface {
-	Entangle(*orch_v1.State, *wiring.EntanglerContext) (*smith_v1.Bundle, bool /*retriable*/, error)
+	Entangle(*orch_v1.State, *wiring.EntangleContext) (*smith_v1.Bundle, bool /*retriable*/, error)
+	Status(*orch_v1.StateResource, *wiring.StatusContext) (orch_v1.ResourceStatusData, bool /*retriable*/, error)
 }
 
 type Controller struct {
@@ -97,6 +98,8 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 	return retriable, err
 }
 
+// process processes the given State object performing autowiring for it.
+// It tries to return a Bundle even if there was an error.
 func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflictRet, retriableRet bool, b *smith_v1.Bundle, e error) {
 	// Grab the namespace
 	namespaceObj, exists, err := c.NamespaceInformer.GetIndexer().GetByKey(state.Namespace)
@@ -104,13 +107,13 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		return false, false, nil, errors.WithStack(err)
 	}
 	if !exists {
-		return false, false, nil, errors.Errorf("missing namespace %q in informer", state.Namespace)
+		return false, false, nil, errors.Errorf("missing Namespace %q in informer", state.Namespace)
 	}
 	namespace := namespaceObj.(*core_v1.Namespace)
 
 	// Grab the ConfigMap
 	if state.Spec.ConfigMapName == "" {
-		return false, false, nil, errors.Errorf("configMapName is not provided in state spec for %q", state.GetName())
+		return false, false, nil, errors.Errorf("configMapName is not provided in State spec for %q", state.GetName())
 	}
 	key := ByConfigMapNameIndexKey(state.Namespace, state.Spec.ConfigMapName)
 	configMapInterface, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(key)
@@ -130,13 +133,13 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		return false, false, nil, err
 	}
 
-	// Entangle the state, passing in the namespace and and configmap as context
-	entanglerContext := &wiring.EntanglerContext{
+	// Entangle the State
+	entangleContext := &wiring.EntangleContext{
 		ServiceName:       serviceName,
 		Label:             layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: *serviceProperties,
 	}
-	bundleSpec, retriable, err := c.Entangler.Entangle(state, entanglerContext)
+	bundleSpec, retriable, err := c.Entangler.Entangle(state, entangleContext)
 	if err != nil {
 		return false, retriable, nil, errors.Wrapf(err, "failed to wire up Bundle for State %q", state.Name)
 	}
@@ -146,15 +149,20 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflict
 		func(r runtime.Object) error {
 			meta := r.(meta_v1.Object)
 			if !meta_v1.IsControlledBy(meta, state) {
-				return errors.Errorf("bundle %q is not owned by state %q", meta.GetName(), state.GetName())
+				return errors.Errorf("Bundle %q is not owned by State %q", meta.GetName(), state.GetName())
 			}
 			return nil
 		},
 		bundleSpec,
 	)
-	realBundle, _ := bundle.(*smith_v1.Bundle)
-
-	return conflict, retriable, realBundle, err
+	// Return the Bundle even if there was an error. The caller might use it to inspect the resource statuses.
+	var retBundle *smith_v1.Bundle
+	if err == nil {
+		retBundle = bundle.(*smith_v1.Bundle)
+	} else {
+		retBundle = bundleSpec
+	}
+	return conflict, retriable, retBundle, err
 }
 
 func parseConfigMap(configMap *core_v1.ConfigMap) (*orch_meta.ServiceProperties, error) {
@@ -230,6 +238,13 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 		} else {
 			errorCond.Reason = "TerminalError"
 		}
+		if bundle != nil { // bundle might be nil in case of an error
+			if len(bundle.Status.ResourceStatuses) > 0 {
+				// only update resource statuses in State if there is some useful
+				// information in Bundle's resource statuses
+				resourceStatuses = c.calculateResourceStatuses(state.Spec.Resources, bundle)
+			}
+		}
 	} else if len(bundle.Status.Conditions) == 0 {
 		// smith is not currently reporting any Conditions;
 		// presumably we've just created something.
@@ -246,7 +261,7 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 		// need to recalculate the state condition.
 		// However, there is still a need to set the status if the resource
 		// status changes (i.e. transition timestamp changes)
-		resourceStatuses = calculateResourceStatuses(state.Spec.Resources, bundle)
+		resourceStatuses = c.calculateResourceStatuses(state.Spec.Resources, bundle)
 	}
 
 	inProgressUpdated := c.updateCondition(state, inProgressCond)
@@ -272,172 +287,62 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 	return false, retriable, err
 }
 
-func calculateResourceStatuses(stateResources []orch_v1.StateResource, bundle *smith_v1.Bundle) []orch_v1.ResourceStatus {
+func (c *Controller) calculateResourceStatuses(stateResources []orch_v1.StateResource, bundle *smith_v1.Bundle) []orch_v1.ResourceStatus {
 	calculatedResourceStatuses := make([]orch_v1.ResourceStatus, 0, len(stateResources))
 	for _, stateRes := range stateResources {
-		resource2type2condition := newResourceConditionsFromResourceStatuses(stateRes.Name, bundle)
-
 		status := orch_v1.ResourceStatus{
 			Name: stateRes.Name,
-			Conditions: []cond_v1.Condition{
-				resource2type2condition.aggregateMessages(smith_v1.ResourceInProgress).calculateConditionAny(cond_v1.ConditionInProgress),
-				resource2type2condition.aggregateMessages(smith_v1.ResourceReady).calculateConditionAll(cond_v1.ConditionReady),
-				resource2type2condition.aggregateMessages(smith_v1.ResourceError).calculateConditionAny(cond_v1.ConditionError),
-			},
 		}
 
+		var err error
+		status.ResourceStatusData, _, err = c.Entangler.Status(&stateRes, prepareStatusContext(stateRes.Name, bundle))
+		if err != nil {
+			status.ResourceStatusData = orch_v1.ResourceStatusData{
+				Conditions: []cond_v1.Condition{
+					{
+						Type:   cond_v1.ConditionInProgress,
+						Status: cond_v1.ConditionFalse,
+					},
+					{
+						Type:   cond_v1.ConditionReady,
+						Status: cond_v1.ConditionFalse,
+					},
+					{
+						Type:    cond_v1.ConditionError,
+						Status:  cond_v1.ConditionTrue,
+						Reason:  ReasonStatusRetrievalFailed,
+						Message: fmt.Sprintf("Failed to get status of resource: %v", err),
+					},
+				},
+			}
+		}
 		calculatedResourceStatuses = append(calculatedResourceStatuses, status)
 	}
 	return calculatedResourceStatuses
 }
 
-type resourceConditions struct {
-	resource2type2condition map[*smith_v1.Resource]map[cond_v1.ConditionType]cond_v1.Condition
-	pluginStatuses          []smith_v1.PluginStatus
-}
+func prepareStatusContext(resourceName voyager.ResourceName, bundle *smith_v1.Bundle) *wiring.StatusContext {
+	var resources []wiring.BundleResource
 
-func newResourceConditionsFromResourceStatuses(stateResName voyager.ResourceName, bundle *smith_v1.Bundle) resourceConditions {
-	result := resourceConditions{
-		resource2type2condition: make(map[*smith_v1.Resource]map[cond_v1.ConditionType]cond_v1.Condition, len(bundle.Status.ResourceStatuses)),
-		pluginStatuses:          bundle.Status.PluginStatuses,
-	}
-
-	// Group the Smith resourceStatus conditions into the above map
-	for _, bundleResStatus := range bundle.Status.ResourceStatuses {
-		if stateResourceName(bundleResStatus.Name) != stateResName {
+	for _, res := range bundle.Spec.Resources {
+		if stateResourceName(res.Name) != resourceName {
 			continue
 		}
-		for _, bundleRes := range bundle.Spec.Resources { // Looking for the resource with that name
-			if bundleRes.Name != bundleResStatus.Name {
-				continue
+		var status smith_v1.ResourceStatusData
+		for _, resStatus := range bundle.Status.ResourceStatuses {
+			if resStatus.Name == res.Name {
+				status = resStatus.ResourceStatusData
+				break
 			}
-			// Bundle resource found, lets collect conditions for it
-			type2conditions := make(map[cond_v1.ConditionType]cond_v1.Condition, len(bundleResStatus.Conditions))
-			for _, condition := range bundleResStatus.Conditions {
-				type2conditions[condition.Type] = condition
-			}
-			result.resource2type2condition[&bundleRes] = type2conditions
-			break
 		}
+		resources = append(resources, wiring.BundleResource{
+			Resource: res,
+			Status:   status,
+		})
 	}
-	return result
-}
-
-// aggregateMessages aggregates conditions, grouping them by their status.
-// Returns formatted messages for each condition status value and boolean flags about those statues, non-exclusive of
-// each other (0 or more can be true, 0 or more can be non-empty slices).
-func (rc resourceConditions) aggregateMessages(conditionType cond_v1.ConditionType) aggregatedMessages {
-	var result aggregatedMessages
-	for smithResource, type2condition := range rc.resource2type2condition {
-		condition, ok := type2condition[conditionType]
-		if !ok {
-			continue
-		}
-		switch condition.Status {
-		case cond_v1.ConditionTrue:
-			result.isTrue = true
-			result.trueMsgs = rc.maybeAddMessage(result.trueMsgs, smithResource, condition.Reason, condition.Message)
-		case cond_v1.ConditionFalse:
-			result.isFalse = true
-			result.falseMsgs = rc.maybeAddMessage(result.falseMsgs, smithResource, condition.Reason, condition.Message)
-		case cond_v1.ConditionUnknown:
-			fallthrough
-		default:
-			// We don't understand the status - it is unknown to us
-			result.isUnknown = true
-			result.unknownMsgs = rc.maybeAddMessage(result.unknownMsgs, smithResource, condition.Reason, condition.Message)
-		}
-	}
-	return result
-}
-
-func (rc resourceConditions) maybeAddMessage(messages []string, smithResource *smith_v1.Resource, reason, message string) []string {
-	if reason == "" && message == "" {
-		return messages
-	}
-	var kind, name string
-	switch {
-	case smithResource.Spec.Object != nil:
-		kind = smithResource.Spec.Object.GetObjectKind().GroupVersionKind().Kind
-		name = smithResource.Spec.Object.(meta_v1.Object).GetName()
-	case smithResource.Spec.Plugin != nil:
-		found := false
-		for _, pluginStatus := range rc.pluginStatuses {
-			if smithResource.Spec.Plugin.Name != pluginStatus.Name {
-				continue
-			}
-			kind = pluginStatus.Kind
-			found = true
-			break
-		}
-		if !found {
-			return append(messages, fmt.Sprintf("plugin status not found for resource: %q", smithResource.Name))
-		}
-		name = smithResource.Spec.Plugin.ObjectName
-	default:
-		return append(messages, fmt.Sprintf("resource is neither an object nor a plugin: %q", smithResource.Name))
-	}
-	var msg string
-	if reason != "" {
-		msg = fmt.Sprintf("kind: %s, name: %s, message: %s, reason: %s", kind, name, message, reason)
-	} else {
-		msg = fmt.Sprintf("kind: %s, name: %s, message: %s", kind, name, message)
-	}
-	return append(messages, msg)
-}
-
-type aggregatedMessages struct {
-	trueMsgs, falseMsgs, unknownMsgs []string
-	isTrue, isFalse, isUnknown       bool
-}
-
-// If any of the statuses in resourceConditions are true, then this sets the appropriate condition
-func (am aggregatedMessages) calculateConditionAny(conditionType cond_v1.ConditionType) cond_v1.Condition {
-	var condMsgs []string
-	var status cond_v1.ConditionStatus
-	switch { // Order is important because flags are not exclusive
-	case am.isUnknown:
-		condMsgs = am.unknownMsgs
-		status = cond_v1.ConditionUnknown
-	case am.isTrue:
-		condMsgs = am.trueMsgs
-		status = cond_v1.ConditionTrue
-	default:
-		condMsgs = am.falseMsgs
-		status = cond_v1.ConditionFalse
-	}
-	return fmtCondition(condMsgs, conditionType, status)
-}
-
-// If ALL of the statuses in resourceConditions are true, then this sets the appropriate condition
-func (am aggregatedMessages) calculateConditionAll(conditionType cond_v1.ConditionType) cond_v1.Condition {
-	var condMsgs []string
-	var status cond_v1.ConditionStatus
-	switch { // Order is important because flags are not exclusive
-	case am.isUnknown:
-		condMsgs = am.unknownMsgs
-		status = cond_v1.ConditionUnknown
-	case am.isFalse:
-		condMsgs = am.falseMsgs
-		status = cond_v1.ConditionFalse
-	case am.isTrue:
-		condMsgs = am.trueMsgs
-		status = cond_v1.ConditionTrue
-	default:
-		// no conditions
-		status = cond_v1.ConditionUnknown
-	}
-	return fmtCondition(condMsgs, conditionType, status)
-}
-
-func fmtCondition(condMsgs []string, conditionType cond_v1.ConditionType, status cond_v1.ConditionStatus) cond_v1.Condition {
-	// resource2type2conditions is a map with non deterministic iteration order.
-	// we sort the messages to ensure the final message string is deterministic
-	sort.Strings(condMsgs)
-	return cond_v1.Condition{
-		Type:    conditionType,
-		Status:  status,
-		Message: strings.Join(condMsgs, "\n"),
+	return &wiring.StatusContext{
+		BundleResources: resources,
+		PluginStatuses:  bundle.Status.PluginStatuses,
 	}
 }
 
