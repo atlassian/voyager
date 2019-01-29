@@ -65,6 +65,7 @@ func handleExternalIDServiceBinding(uuidGenerator uuid.Generator, admissionReque
 			Result: &metav1.Status{
 				Message: reason,
 				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}
@@ -101,6 +102,7 @@ func allowedToMigrateFromRPS(ctx context.Context, scClient serviceCentralClient,
 			Result: &metav1.Status{
 				Message: reason,
 				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}
