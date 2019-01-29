@@ -110,7 +110,7 @@ spec:
                 - name: MICROS_ENVTYPE
                   value: testenv
                 - name: MICROS_SERVICE
-                  value: kubecompute-simple
+                  value: test-servicename
                 envFrom:
                 - secretRef:
                     name: common-secrets

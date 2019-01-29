@@ -1439,7 +1439,7 @@ spec:
                 - name: MICROS_ENVTYPE
                   value: testenv
                 - name: MICROS_SERVICE
-                  value: kc
+                  value: test-servicename
                 envFrom:
                 - secretRef:
                     name: '!{kc--secret-metadata-name}'

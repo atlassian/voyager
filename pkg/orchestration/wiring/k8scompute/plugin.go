@@ -11,7 +11,7 @@ import (
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/k8s"
 	compute_common "github.com/atlassian/voyager/pkg/orchestration/wiring/compute"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
+	apik8scompute "github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
@@ -256,7 +256,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	envDefault = append(envDefault, compute_common.GetSharedDefaultEnvVars(context.StateContext.Location)...)
 
 	// Add Micros provided defaults
-	envDefault = append(envDefault, buildDefaultEnvVars(resource.Name, context.StateContext.Location)...)
+	envDefault = append(envDefault, buildDefaultEnvVars(context.StateContext)...)
 
 	// always bind to the common secret, it's OK if it doesn't exist
 	trueVar := true
@@ -467,19 +467,19 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	return containers
 }
 
-func buildDefaultEnvVars(name voyager.ResourceName, location voyager.Location) []core_v1.EnvVar {
+func buildDefaultEnvVars(context wiringplugin.StateContext) []core_v1.EnvVar {
 	return []core_v1.EnvVar{
 		{
 			Name:  awsRegionKey,
-			Value: string(location.Region),
+			Value: string(context.Location.Region),
 		},
 		{
 			Name:  envTypeKey,
-			Value: string(location.EnvType),
+			Value: string(context.Location.EnvType),
 		},
 		{
 			Name:  serviceNameKey,
-			Value: string(name),
+			Value: string(context.ServiceName),
 		},
 	}
 }
