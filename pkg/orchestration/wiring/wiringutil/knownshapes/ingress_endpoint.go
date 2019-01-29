@@ -41,10 +41,6 @@ func NewIngressEndpoint(resourceName smith_v1.ResourceName) *IngressEndpoint {
 	}
 }
 
-func (s *IngressEndpoint) Name() wiringplugin.ShapeName {
-	return s.ShapeName
-}
-
 func FindIngressEndpointShape(shapes []wiringplugin.Shape) (*IngressEndpoint, bool /*found*/, error) {
 	typed := &IngressEndpoint{}
 	found, err := libshapes.FindAndCopyShapeByName(shapes, IngressEndpointShape, typed)

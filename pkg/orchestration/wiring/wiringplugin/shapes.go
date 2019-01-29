@@ -36,6 +36,10 @@ type ShapeMeta struct {
 	ShapeName ShapeName `json:"name"`
 }
 
+func (m *ShapeMeta) Name() ShapeName {
+	return m.ShapeName
+}
+
 // CopyShape copies source shape into the target shape.
 // The main purpose of this function is to convert between typed and UnstructuredShape representations
 // of the same shape.

@@ -49,10 +49,6 @@ func NewSnsSubscribable(smithResourceName smith_v1.ResourceName) *SnsSubscribabl
 	}
 }
 
-func (b *SnsSubscribable) Name() wiringplugin.ShapeName {
-	return b.ShapeMeta.ShapeName
-}
-
 func FindSnsSubscribableShape(shapes []wiringplugin.Shape) (*SnsSubscribable, bool /*found*/, error) {
 	typed := &SnsSubscribable{}
 	found, err := libshapes.FindAndCopyShapeByName(shapes, SnsSubscribableShape, typed)

@@ -24,11 +24,6 @@ func NewASAPKey() *ASAPKey {
 	}
 }
 
-// Name returns the ASAPKey ShapeName
-func (a *ASAPKey) Name() wiringplugin.ShapeName {
-	return a.ShapeName
-}
-
 // FindASAPKeyShapes returns the first instance of ASAPKey if found
 func FindASAPKeyShapes(shapes []wiringplugin.Shape) (*ASAPKey, bool /*found*/, error) {
 	typed := &ASAPKey{}

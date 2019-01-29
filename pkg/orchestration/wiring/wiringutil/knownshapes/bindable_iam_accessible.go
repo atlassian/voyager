@@ -45,10 +45,6 @@ func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnipp
 	}
 }
 
-func (s *BindableIamAccessible) Name() wiringplugin.ShapeName {
-	return BindableIamAccessibleShape
-}
-
 func FindBindableIamAccessibleShape(shapes []wiringplugin.Shape) (*BindableIamAccessible, bool /*found*/, error) {
 	typed := &BindableIamAccessible{}
 	found, err := libshapes.FindAndCopyShapeByName(shapes, BindableIamAccessibleShape, typed)

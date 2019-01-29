@@ -36,10 +36,6 @@ func NewSetOfPodsSelectableByLabels(resourceName smith_v1.ResourceName, labels m
 	}
 }
 
-func (s *SetOfPodsSelectableByLabels) Name() wiringplugin.ShapeName {
-	return s.ShapeName
-}
-
 func FindSetOfPodsSelectableByLabelsShape(shapes []wiringplugin.Shape) (*SetOfPodsSelectableByLabels, bool /*found*/, error) {
 	typed := &SetOfPodsSelectableByLabels{}
 	found, err := libshapes.FindAndCopyShapeByName(shapes, SetOfPodsSelectableByLabelsShape, typed)

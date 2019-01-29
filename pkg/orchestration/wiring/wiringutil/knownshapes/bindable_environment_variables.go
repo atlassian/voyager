@@ -49,10 +49,6 @@ func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix 
 	return NewBindableEnvironmentVariablesWithExcludeResourceName(resourceName, prefix, vars, false)
 }
 
-func (b *BindableEnvironmentVariables) Name() wiringplugin.ShapeName {
-	return b.ShapeMeta.ShapeName
-}
-
 func FindBindableEnvironmentVariablesShape(shapes []wiringplugin.Shape) (*BindableEnvironmentVariables, bool /*found*/, error) {
 	typed := &BindableEnvironmentVariables{}
 	found, err := libshapes.FindAndCopyShapeByName(shapes, BindableEnvironmentVariablesShape, typed)

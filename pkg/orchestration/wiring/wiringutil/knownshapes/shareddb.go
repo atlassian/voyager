@@ -39,10 +39,6 @@ func NewSharedDbShape(resourceName smith_v1.ResourceName, hasSameRegionReadRepli
 	}
 }
 
-func (b SharedDb) Name() wiringplugin.ShapeName {
-	return b.ShapeMeta.ShapeName
-}
-
 func FindSharedDbShape(shapes []wiringplugin.Shape) (*SharedDb, bool /*found*/, error) {
 	typed := &SharedDb{}
 	found, err := libshapes.FindAndCopyShapeByName(shapes, SharedDbShape, typed)
