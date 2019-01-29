@@ -33,6 +33,23 @@ func TestAllKnownShapes(t *testing.T) {
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
 		NewSharedDbShape(resourceName, true),
 		NewSnsSubscribable(resourceName),
+
+		&wiringplugin.UnstructuredShape{
+			ShapeMeta: wiringplugin.ShapeMeta{
+				ShapeName: "somename",
+			},
+			Data: map[string]interface{}{
+				"a": "b",
+				"b": int64(5),
+				"c": map[string]interface{}{
+					"x": "z",
+				},
+				"d": []interface{}{
+					"1",
+				},
+				"e": float64(1.1),
+			},
+		},
 	}
 
 	for _, shape := range allKnownShapes {
