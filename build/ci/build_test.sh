@@ -3,4 +3,3 @@
 set -euo pipefail
 
 make build-and-test-in-ci
-touch success
