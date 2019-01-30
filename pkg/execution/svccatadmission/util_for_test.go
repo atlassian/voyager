@@ -191,13 +191,14 @@ func buildAdmissionReview(namespace string, gvr metav1.GroupVersionResource, ope
 	}
 }
 
-func buildAdmissionResponse(allowed bool, code int32, patch []byte, message string) *admissionv1beta1.AdmissionResponse {
+func buildAdmissionResponse(allowed bool, code int32, reason metav1.StatusReason, patch []byte, message string) *admissionv1beta1.AdmissionResponse {
 	pt := admissionv1beta1.PatchTypeJSONPatch
 	admissionResponse := &admissionv1beta1.AdmissionResponse{
 		Allowed: allowed,
 		Result: &metav1.Status{
 			Message: message,
 			Code:    code,
+			Reason:  reason,
 		},
 	}
 	if patch != nil {

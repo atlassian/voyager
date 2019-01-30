@@ -78,6 +78,7 @@ func AsapKeyAdmitFunc(ctx context.Context, admissionReview admissionv1beta1.Admi
 			Result: &metav1.Status{
 				Message: reason,
 				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}

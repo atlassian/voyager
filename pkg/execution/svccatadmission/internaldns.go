@@ -123,7 +123,8 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 							serviceCentralData.ServiceName,
 							serviceCentralData.ServiceOwner.Username,
 						),
-						Code: http.StatusForbidden,
+						Code:   http.StatusForbidden,
+						Reason: metav1.StatusReasonForbidden,
 					},
 				}, nil
 			}

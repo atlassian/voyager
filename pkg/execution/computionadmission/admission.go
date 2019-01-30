@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/atlassian/voyager/pkg/admission"
@@ -292,6 +293,8 @@ func rejectWithReason(reason string) *admission_v1beta1.AdmissionResponse {
 		Allowed: false,
 		Result: &meta_v1.Status{
 			Message: reason,
+			Code:    http.StatusUnprocessableEntity,
+			Reason:  meta_v1.StatusReasonInvalid,
 		},
 	}
 }

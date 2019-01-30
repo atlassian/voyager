@@ -11,6 +11,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestInternalDNSAdmitFunc(t *testing.T) {
@@ -37,7 +38,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
@@ -72,7 +73,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
@@ -87,7 +88,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
@@ -122,7 +123,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
@@ -137,7 +138,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
@@ -172,13 +173,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 					},
 				}),
 			),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
 			"ingress new.domain",
 			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"new.domain"})),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
@@ -191,13 +192,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 				"new5.domain",
 				"new6.domain",
 			})),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
 			"ingress registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"doug.domain"})),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
@@ -210,13 +211,13 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 				"new5.domain",
 				"new6.domain",
 			})),
-			buildAdmissionResponse(true, 0, nil, `requested domain name(s) allowed for use`),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
 			"ingress registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"elsie.domain"})),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
@@ -229,7 +230,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 				"new5.domain",
 				"new6.domain",
 			})),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 	}
