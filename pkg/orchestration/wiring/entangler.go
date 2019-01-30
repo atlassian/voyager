@@ -16,6 +16,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -270,6 +271,22 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 	if err != nil {
 		return retriable, errors.Wrap(err, "error invoking plugin")
 	}
+
+	retriable, err = w.validateWireUp(resource, result)
+	if err != nil {
+		return retriable, err
+	}
+
+	w.allWiredResources[resource.Name] = &wiredStateResource{
+		Name:         resource.Name,
+		Type:         resource.Type,
+		WiringResult: *result,
+	}
+	w.allWiredResourcesList = append(w.allWiredResourcesList, result.Resources...)
+	return false, nil
+}
+
+func (w *worker) validateWireUp(resource *orch_v1.StateResource, result *wiringplugin.WiringResult) (bool, error) {
 	if w.allWiredResources[resource.Name] != nil {
 		return false, errors.New("internal error in wiring plugin - duplicate resource name received from plugin")
 	}
@@ -279,12 +296,11 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 			strings.Join(shapeNames, ", "))
 	}
 
-	w.allWiredResources[resource.Name] = &wiredStateResource{
-		Name:         resource.Name,
-		Type:         resource.Type,
-		WiringResult: *result,
+	err := validateResources(resource, result.Resources)
+	if err != nil {
+		return false, err
 	}
-	w.allWiredResourcesList = append(w.allWiredResourcesList, result.Resources...)
+
 	return false, nil
 }
 
@@ -351,4 +367,35 @@ func findDuplicateShapeNames(shapes []wiringplugin.Shape) []string {
 		}
 	}
 	return duplicates
+}
+
+func validateResources(stateResource *orch_v1.StateResource, resources []smith_v1.Resource) error {
+	resourceNames := sets.NewString()
+	stateResourceName := string(stateResource.Name)
+
+	for _, resource := range resources {
+		// check bundle resource name
+		smithResourceName := string(resource.Name)
+		if smithResourceName != stateResourceName && !strings.HasPrefix(smithResourceName, stateResourceName+"--") {
+			return errors.Errorf("resource %q does not have valid resource name", smithResourceName)
+		}
+		if resourceNames.Has(smithResourceName) {
+			return errors.Errorf("resource %q already declared by wiring function", smithResourceName)
+		}
+		resourceNames.Insert(smithResourceName)
+
+		// check object resource name
+		var metaName string
+		switch {
+		case resource.Spec.Object != nil:
+			metaName = resource.Spec.Object.(meta_v1.Object).GetName()
+		case resource.Spec.Plugin != nil:
+			metaName = resource.Spec.Plugin.ObjectName
+		}
+		if metaName != stateResourceName && !strings.HasPrefix(metaName, stateResourceName+"--") {
+			return errors.Errorf("object %q does not have valid object name", metaName)
+		}
+	}
+
+	return nil
 }
