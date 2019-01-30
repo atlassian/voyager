@@ -1,0 +1,9 @@
+{
+  "mocks": [
+    {
+      "consumerName": "voyager",
+      "location": "./generated/pacts/voyager-deployinator-trebuchet.json",
+      "providerName": "deployinator-trebuchet"
+    }
+  ]
+}

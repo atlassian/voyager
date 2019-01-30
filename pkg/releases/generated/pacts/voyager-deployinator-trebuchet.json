@@ -1,0 +1,65 @@
+{
+  "consumer": {
+    "name": "voyager"
+  },
+  "provider": {
+    "name": "deployinator-trebuchet"
+  },
+  "interactions": [
+    {
+      "description": "A request to get the release group",
+      "providerState": "There is a release group that matches the service and location given",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/resolve",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "service": "ServiceName"
+        }
+      }
+    },
+    {
+      "description": "A request to get all the release groups under location",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/resolve/batch",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "nextFrom": "from",
+          "nextTo": "to",
+          "pageDetails": {
+            "page": 1,
+            "pageCount": 1,
+            "total": 1
+          },
+          "results": [
+            {
+              "service": "ServiceName"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}
