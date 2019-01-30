@@ -70,7 +70,8 @@ func admitState(state *orch_v1.State) (*admissionv1beta1.AdmissionResponse, erro
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: strings.Join(errorlist, ", "),
-				Code:    http.StatusBadRequest,
+				Code:    http.StatusUnprocessableEntity,
+				Reason:  metav1.StatusReasonInvalid,
 			},
 		}, nil
 	}

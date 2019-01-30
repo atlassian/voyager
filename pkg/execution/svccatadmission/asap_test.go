@@ -10,6 +10,7 @@ import (
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -36,32 +37,32 @@ func TestAsapKeyAdmitFunc(t *testing.T) {
 		{
 			"serviceName matching namespace",
 			buildAdmissionReview("foo", k8s.ServiceInstanceGVR, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo")),
-			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"serviceName prefixed by namespace",
 			buildAdmissionReview("foo", k8s.ServiceInstanceGVR, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo/bar")),
-			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"namespace with label",
 			buildAdmissionReview("foo--dev", k8s.ServiceInstanceGVR, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo")),
-			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"namespace with label and serviceName with ASAPKey resource name",
 			buildAdmissionReview("foo--dev", k8s.ServiceInstanceGVR, admissionv1beta1.Create, genASAPKeyRawSpec(t, "foo/bar")),
-			buildAdmissionResponse(true, 0, nil, "serviceName is prefixed by namespace"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "serviceName is prefixed by namespace"),
 		},
 		{
 			"namespace with label and serviceName with ASAPKey resource name mismatch",
 			buildAdmissionReview("foo--dev", k8s.ServiceInstanceGVR, admissionv1beta1.Create, genASAPKeyRawSpec(t, "bar/foo")),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `serviceName was set to "bar/foo", which is not prefixed by namespace "foo--dev"`),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `serviceName was set to "bar/foo", which is not prefixed by namespace "foo--dev"`),
 		},
 		{
 			"serviceName not prefixed by namespace",
 			buildAdmissionReview("foo", k8s.ServiceInstanceGVR, admissionv1beta1.Create, genASAPKeyRawSpec(t, "bar/foo")),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `serviceName was set to "bar/foo", which is not prefixed by namespace "foo"`),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `serviceName was set to "bar/foo", which is not prefixed by namespace "foo"`),
 		},
 	}
 

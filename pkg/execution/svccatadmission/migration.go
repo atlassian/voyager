@@ -62,7 +62,8 @@ func allowedToMigrate(ctx context.Context, scClient serviceCentralClient, namesp
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: reason,
-				Code:    http.StatusUnauthorized,
+				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}
@@ -76,7 +77,8 @@ func allowedToMigrate(ctx context.Context, scClient serviceCentralClient, namesp
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: reason,
-				Code:    http.StatusUnauthorized,
+				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}

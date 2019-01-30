@@ -122,7 +122,8 @@ func validateMicrosCreate(ctx context.Context, scClient serviceCentralClient, na
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: reason,
-				Code:    http.StatusBadRequest,
+				Code:    http.StatusUnprocessableEntity,
+				Reason:  metav1.StatusReasonInvalid,
 			},
 		}, nil
 	}
@@ -168,7 +169,8 @@ func validateMicrosUpdate(oldServiceInstance, newServiceInstance sc_v1b1.Service
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: reason,
-				Code:    http.StatusBadRequest,
+				Code:    http.StatusUnprocessableEntity,
+				Reason:  metav1.StatusReasonInvalid,
 			},
 		}, nil
 	}

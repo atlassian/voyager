@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strconv"
 	"testing"
@@ -435,6 +436,8 @@ func TestConfigMapMissing(t *testing.T) {
 			Allowed: false,
 			Result: &apis_metav1.Status{
 				Message: reasonServiceMetaConfigMapMissing,
+				Code:    http.StatusUnprocessableEntity,
+				Reason:  meta_v1.StatusReasonInvalid,
 			},
 		},
 		wantErr:    nil,
@@ -484,6 +487,8 @@ func TestConfigMapFormatWrong(t *testing.T) {
 			Allowed: false,
 			Result: &apis_metav1.Status{
 				Message: reasonWrongFormatServiceMetaData,
+				Code:    http.StatusUnprocessableEntity,
+				Reason:  meta_v1.StatusReasonInvalid,
 			},
 		},
 		wantErr:    nil,

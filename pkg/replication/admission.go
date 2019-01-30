@@ -121,16 +121,16 @@ func (ac *AdmissionContext) servicedescriptorAuthzAdmitFunc(ctx context.Context,
 	// make sure our webhook is setup correctly (has valid operation/resource)
 	supportedOperations := []admissionv1beta1.Operation{admissionv1beta1.Create}
 	if err := checkRequest(admissionRequest, supportedOperations); err != nil {
-		return badRequest(admissionRequest.UID, err.Error()), nil
+		return rejected(admissionRequest.UID, RejectionMessage(err.Error())), nil
 	}
 
 	sdName, err := getServiceDescriptorName(admissionRequest.Object)
 	if err != nil {
-		return badRequest(admissionRequest.UID, err.Error()), nil
+		return rejected(admissionRequest.UID, RejectionMessage(err.Error())), nil
 	}
 	if sdName == "" {
 		message := "Service Descriptor is missing a name"
-		return badRequest(admissionRequest.UID, message), nil
+		return rejected(admissionRequest.UID, RejectionMessage(message)), nil
 	}
 
 	userInfo := admissionRequest.UserInfo
@@ -493,24 +493,25 @@ func generateSpecHash(sd *comp_v1.ServiceDescriptor) (string, error) {
 }
 
 func rejected(requestUID types.UID, message RejectionMessage) *admissionv1beta1.AdmissionResponse {
-	return rejectedResponse(requestUID, http.StatusBadRequest, string(message))
-}
-
-func badRequest(requestUID types.UID, message string) *admissionv1beta1.AdmissionResponse {
-	return rejectedResponse(requestUID, http.StatusBadRequest, message)
+	return &admissionv1beta1.AdmissionResponse{
+		UID:     requestUID,
+		Allowed: false,
+		Result: &metav1.Status{
+			Message: string(message),
+			Code:    http.StatusUnprocessableEntity,
+			Reason:  metav1.StatusReasonInvalid,
+		},
+	}
 }
 
 func forbidden(requestUID types.UID, message string) *admissionv1beta1.AdmissionResponse {
-	return rejectedResponse(requestUID, http.StatusForbidden, message)
-}
-
-func rejectedResponse(requestUID types.UID, code int32, message string) *admissionv1beta1.AdmissionResponse {
 	return &admissionv1beta1.AdmissionResponse{
 		UID:     requestUID,
 		Allowed: false,
 		Result: &metav1.Status{
 			Message: message,
-			Code:    code,
+			Code:    http.StatusForbidden,
+			Reason:  metav1.StatusReasonForbidden,
 		},
 	}
 }
