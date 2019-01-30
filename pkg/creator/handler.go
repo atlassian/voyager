@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtimeschema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
@@ -164,6 +165,18 @@ func (h *ServiceHandler) ServiceCreate(ctx context.Context, service *creator_v1.
 	err = defaultAndValidateService(service, authUser)
 	if err != nil {
 		return nil, apierrors.NewBadRequest(fmt.Sprintf("Failed to validate service: %v", err))
+	}
+
+	existingService, getErr := h.serviceCentral.GetService(
+		ctx, auth.MaybeNamed(authUser.Name()), servicecentral.ServiceName(service.Name))
+	if getErr != nil && !httputil.IsNotFound(getErr) {
+		return nil, apierrors.NewInternalError(
+			errors.Wrapf(getErr, "Failed to check if service already exists: %v", getErr))
+	} else if getErr == nil {
+		return nil, apierrors.NewForbidden(
+			runtimeschema.GroupResource{}, "",
+			errors.Errorf("A service called %q already exists and is owned by %q",
+				existingService.Name, existingService.Spec.ResourceOwner))
 	}
 
 	actualService, scErr := h.serviceCentral.FindOrCreateService(ctx, authUser, service)

@@ -169,6 +169,11 @@ func TestServiceCreate(t *testing.T) {
 
 	serviceCentralClient.On("FindOrCreateService", mock.Anything, testResourceOwner, testService(testServiceName)).Return(testService(testServiceName), nil)
 	serviceCentralClient.On("PatchService", mock.Anything, testResourceOwner, testServiceWithMetadata()).Return(nil)
+	serviceCentralClient.On(
+		"GetService",
+		mock.Anything,
+		mock.Anything,
+		servicecentral.ServiceName(testServiceName)).Return(nil, httputil.NewNotFound(""))
 	ssamClient.On("CreateService", mock.Anything, testSSAMServiceMetadata()).Return(testSSAMContainerName, nil)
 	pagerDutyClient.On("FindOrCreate", testServiceName, testResourceOwner, testEmail).Return(*testPagerDutyMetadata(), nil)
 	luigiClient.On("FindOrCreateService", mock.Anything, testLuigiServiceMetadata()).Return(testLuigiData(), nil)
@@ -192,6 +197,52 @@ func TestServiceCreate(t *testing.T) {
 	assert.Equal(t, expectedBytes, actualBytes)
 }
 
+func TestServiceCreateExistingService(t *testing.T) {
+	t.Parallel()
+	// given
+	serviceCentralClient := new(serviceCentralMock)
+	pagerDutyClient := new(pagerDutyMock)
+	luigiClient := new(luigiMock)
+	ssamClient := new(ssamMock)
+	handler := ServiceHandler{
+		serviceCentral: serviceCentralClient,
+		pagerDuty:      pagerDutyClient,
+		luigi:          luigiClient,
+		ssam:           ssamClient,
+	}
+	logger := zaptest.NewLogger(t)
+
+	serviceCentralClient.On(
+		"GetService",
+		mock.Anything,
+		mock.Anything,
+		servicecentral.ServiceName(testServiceName)).Return(&creator_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: "per-tenant-loop",
+		},
+		Spec: creator_v1.ServiceSpec{
+			ResourceOwner: "sgreenup",
+		},
+	}, nil)
+
+	// when
+	reqSrc, err := testutil.LoadFileFromTestData("service_create.json")
+	require.NoError(t, err)
+	service := creator_v1.Service{}
+	err = json.Unmarshal(reqSrc, &service)
+	require.NoError(t, err)
+	ctx := context.Background()
+	ctx = request.WithUser(ctx, userInfo(testResourceOwner.Name()))
+	ctx = logz.CreateContextWithLogger(ctx, logger)
+
+	newService, err := handler.ServiceCreate(ctx, &service)
+
+	// then
+	assert.Nil(t, newService)
+	assert.True(t, apierrors.IsForbidden(err), err)
+	assert.EqualError(t, err, `forbidden: A service called "per-tenant-loop" already exists and is owned by "sgreenup"`, err)
+}
+
 func TestServiceCreatePropagatesBadRequestError(t *testing.T) {
 	t.Parallel()
 	// given
@@ -207,7 +258,17 @@ func TestServiceCreatePropagatesBadRequestError(t *testing.T) {
 	}
 	logger := zaptest.NewLogger(t)
 
-	serviceCentralClient.On("FindOrCreateService", mock.Anything, testResourceOwner, testService(testServiceName)).Return(nil, httputil.NewBadRequest(""))
+	serviceCentralClient.On(
+		"FindOrCreateService",
+		mock.Anything,
+		testResourceOwner,
+		testService(testServiceName)).Return(nil, httputil.NewBadRequest(""))
+
+	serviceCentralClient.On(
+		"GetService",
+		mock.Anything,
+		mock.Anything,
+		servicecentral.ServiceName(testServiceName)).Return(nil, httputil.NewNotFound(""))
 
 	// when
 	reqSrc, err := testutil.LoadFileFromTestData("service_create.json")
@@ -224,7 +285,46 @@ func TestServiceCreatePropagatesBadRequestError(t *testing.T) {
 	// then
 	assert.Nil(t, newService)
 	assert.NotNil(t, err)
-	assert.True(t, apierrors.IsBadRequest(err))
+	assert.True(t, apierrors.IsBadRequest(err), err)
+}
+
+func TestServiceReturnsForbiddenOnExistingService(t *testing.T) {
+	t.Parallel()
+	// given
+	serviceCentralClient := new(serviceCentralMock)
+	pagerDutyClient := new(pagerDutyMock)
+	luigiClient := new(luigiMock)
+	ssamClient := new(ssamMock)
+	handler := ServiceHandler{
+		serviceCentral: serviceCentralClient,
+		pagerDuty:      pagerDutyClient,
+		luigi:          luigiClient,
+		ssam:           ssamClient,
+	}
+	logger := zaptest.NewLogger(t)
+
+	serviceCentralClient.On(
+		"GetService",
+		mock.Anything,
+		mock.Anything,
+		servicecentral.ServiceName(testServiceName)).Return(&creator_v1.Service{}, nil)
+
+	// when
+	reqSrc, err := testutil.LoadFileFromTestData("service_create.json")
+	require.NoError(t, err)
+	service := creator_v1.Service{}
+	err = json.Unmarshal(reqSrc, &service)
+	require.NoError(t, err)
+	ctx := context.Background()
+	ctx = request.WithUser(ctx, userInfo(testResourceOwner.Name()))
+	ctx = logz.CreateContextWithLogger(ctx, logger)
+
+	newService, err := handler.ServiceCreate(ctx, &service)
+
+	// then
+	assert.Nil(t, newService)
+	assert.NotNil(t, err)
+	assert.True(t, apierrors.IsForbidden(err), err)
 }
 
 func TestServiceCreateDoubleDashServiceName(t *testing.T) {
