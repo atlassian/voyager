@@ -24,6 +24,7 @@ var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	ups.ResourceType:            wiringplugin.StatusAdapter(ups.New().WireUp),
 	aws.Cfn:                     aws.ResourceTypes[aws.Cfn],
 	aws.DynamoDB:                aws.ResourceTypes[aws.DynamoDB],
+	aws.DaxCluster:              aws.ResourceTypes[aws.DaxCluster],
 	aws.S3:                      aws.ResourceTypes[aws.S3],
 	postgres.ResourceType:       wiringplugin.StatusAdapter(postgres.New().WireUp),
 	rds.ResourceType:            wiringplugin.StatusAdapter(rds.New().WireUp),

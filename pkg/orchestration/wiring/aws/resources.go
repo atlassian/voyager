@@ -18,6 +18,12 @@ const (
 	DynamoDBPlan  servicecatalog.PlanExternalID  = "9b59fb3e-56eb-487d-863e-bf831ca4fa3f"
 	DynamoPrefix  string                         = "DYNAMO"
 
+	DaxCluster       voyager.ResourceType           = "DaxCluster"
+	DaxClusterName   oap.ResourceType               = "dax-cluster"
+	DaxClusterClass  servicecatalog.ClassExternalID = "3a74b0d8-3b98-11e8-b467-0ed5f89f718b"
+	DaxClusterPlan   servicecatalog.PlanExternalID  = "d86e46e9-6275-4828-8cba-0e25cefae082"
+	DaxClusterPrefix string                         = "DAX"
+
 	S3       voyager.ResourceType           = "S3"
 	S3Name   oap.ResourceType               = "s3"
 	S3Class  servicecatalog.ClassExternalID = "a6bf1e70-9bbb-4826-9793-75871cb540f1"
@@ -34,9 +40,10 @@ const (
 // All osb-aws-provider resources are 'almost' the same, differing only in the service/plan names,
 // what they need passed in the ServiceEnvironment.
 var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	DynamoDB: wiringplugin.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes).WireUp),
-	S3:       wiringplugin.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes).WireUp),
-	Cfn:      wiringplugin.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
+	DynamoDB:   wiringplugin.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes).WireUp),
+	DaxCluster: wiringplugin.StatusAdapter(Resource(DaxCluster, DaxClusterName, DaxClusterClass, DaxClusterPlan, daxServiceEnvironment, daxClusterShapes).WireUp),
+	S3:         wiringplugin.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes).WireUp),
+	Cfn:        wiringplugin.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
 }
 
 func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
@@ -136,6 +143,18 @@ func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Res
 		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 	}, nil
 }
+func daxClusterShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+	// resource has iamPolicySnippet, creation-timestamp and "table-role",
+	// none of which we document or should expose to the user
+	return []wiringplugin.Shape{
+		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, DaxClusterPrefix, map[string]string{
+			"CLUSTER_ENDPOINT": "data.cluster-endpoint",
+			"CLUSTER_ARN":      "data.cluster-arn",
+			"CLUSTER_NAME":     "data.cluster-name",
+		}),
+		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+	}, nil
+}
 
 func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
 	// resource has creation-timestamp, iamPolicySnippet. These are not exposed.
@@ -160,6 +179,12 @@ func dynamoDbServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnviron
 			AppSubnets: env.PrimaryVpcEnvironment.AppSubnets,
 		},
 	}
+}
+
+func daxServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
+	serviceEnvironment := dynamoDbServiceEnvironment(env)
+	serviceEnvironment.ServiceSecurityGroup = "FIXME" // TODO
+	return serviceEnvironment
 }
 
 func s3ServiceEnvironment(_ *oap.ServiceEnvironment) *oap.ServiceEnvironment {
