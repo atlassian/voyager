@@ -1,0 +1,73 @@
+apiVersion: smith.atlassian.com/v1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: dax
+  namespace: migration
+  ownerReferences:
+  - apiVersion: orchestration.voyager.atl-paas.net/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: State
+    name: dax
+    uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: my-local-dex--instance
+    spec:
+      object:
+        apiVersion: servicecatalog.k8s.io/v1beta1
+        kind: ServiceInstance
+        metadata:
+          name: my-local-dex
+        spec:
+          clusterServiceClassExternalID: 3a74b0d8-3b98-11e8-b467-0ed5f89f718b
+          clusterServicePlanExternalID: d86e46e9-6275-4828-8cba-0e25cefae082
+          parameters:
+            environment:
+              alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
+              notificationEmail: an_owner@example.com
+              primaryVpcEnvironment:
+                appSubnets:
+                - subnet-1
+                - subnet-2
+                instanceSecurityGroup: sg-2
+                jumpboxSecurityGroup: sg-1
+                privateDnsZone: testregion.atl-inf.io
+                privatePaasDnsZone: testregion.dev.paas-inf.net
+                region: testregion
+                sslCertificateId: arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777
+                vpcId: vpc-1
+                zones:
+                - testregiona
+                - testregionb
+                role: "something"
+                roleArn: "something-else"
+              serviceSecurityGroup: FIXME
+              tags:
+                business_unit: some_unit
+                environment: microstestenv
+                environment_type: testenv
+                platform: voyager
+                resource_owner: an_owner
+                service_name: test-servicename
+            resource:
+              attributes:
+                clusterNodeType: dax.t2.small
+                config:
+                  QueryTTL: 300002
+                  RecordTTL: 300003
+                encrypted: true
+                numOfNodes: 1
+              name: my-local-dex
+              type: dax-cluster
+            serviceName: test-servicename
+status: {}

@@ -182,9 +182,30 @@ func dynamoDbServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnviron
 }
 
 func daxServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
-	serviceEnvironment := dynamoDbServiceEnvironment(env)
-	serviceEnvironment.ServiceSecurityGroup = "FIXME" // TODO
-	return serviceEnvironment
+	// Get the ddb shapes in the depends blocks
+
+	// Get the iam policy snippets from the ddb shapes
+
+	// Call the iam module to do something.....????
+
+	// Pass the iamRole and iamRoleArn into the service env
+	return &oap.ServiceEnvironment{
+		AlarmEndpoints:       env.AlarmEndpoints,
+		Tags:                 env.Tags,
+		ServiceSecurityGroup: "REMOVEME", // TODO: Remove this
+		NotificationEmail:    env.NotificationEmail,
+		Role:                 "ROLE",    // FIXME
+		RoleArn:              "RoleArn", // FIXME
+		PrimaryVpcEnvironment: &oap.VPCEnvironment{
+			AppSubnets:         env.PrimaryVpcEnvironment.AppSubnets,
+			VPCID:              env.PrimaryVpcEnvironment.VPCID,
+			PrivateDNSZone:     env.PrimaryVpcEnvironment.PrivateDNSZone,
+			PrivatePaasDNSZone: env.PrimaryVpcEnvironment.PrivatePaasDNSZone,
+			Label:              env.PrimaryVpcEnvironment.Label,
+			Region:             env.PrimaryVpcEnvironment.Region,
+			Zones:              env.PrimaryVpcEnvironment.Zones,
+		},
+	}
 }
 
 func s3ServiceEnvironment(_ *oap.ServiceEnvironment) *oap.ServiceEnvironment {

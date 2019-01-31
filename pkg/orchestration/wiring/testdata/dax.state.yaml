@@ -1,0 +1,17 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: dax
+  namespace: migration
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+    - name: my-local-dex
+      type: DaxCluster
+      spec:
+        clusterNodeType: 'dax.t2.small'
+        numOfNodes: 1
+        encrypted: true
+        config:
+          QueryTTL: 300002
+          RecordTTL: 300003

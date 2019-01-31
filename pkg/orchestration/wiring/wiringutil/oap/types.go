@@ -22,6 +22,8 @@ type ServiceEnvironment struct {
 	ServiceSecurityGroup  string                 `json:"serviceSecurityGroup,omitempty"`
 	PrimaryVpcEnvironment *VPCEnvironment        `json:"primaryVpcEnvironment,omitempty"`
 	Fallback              *bool                  `json:"fallback,omitempty"`
+	Role                  string                 `json:"role,omitempty"`
+	RoleArn               string                 `json:"roleArn,omitempty"`
 }
 
 type VPCEnvironment struct {
