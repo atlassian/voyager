@@ -39,14 +39,6 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
-  digest = "1:6d83aad9c98e13079ad8a4dbc740892edf5384bcd07f1d789bb66cd8ecfae2cd"
-  name = "github.com/DataDog/datadog-go"
-  packages = ["statsd"]
-  pruneopts = "NT"
-  revision = "e67964b4021ad3a334e748e8811eb3cd6becbc6e"
-  version = "2.1.0"
-
-[[projects]]
   digest = "1:98a80c23be101f8a1d51c4721cc6b85f882e07d57adf2133852c0034006f646e"
   name = "github.com/NYTimes/gziphandler"
   packages = ["."]
@@ -716,8 +708,6 @@
   digest = "1:337b883dbc27fec907fd6fd78999ce40cd9d7620bb56de61a8d072e1a3b792b6"
   name = "github.com/prometheus/client_golang"
   packages = [
-    "api",
-    "api/prometheus/v1",
     "prometheus",
     "prometheus/promhttp",
   ]
@@ -1600,7 +1590,6 @@
     "bitbucket.org/atlassian/go-asap",
     "bitbucket.org/atlassian/go-asap/keyprovider",
     "bitbucket.org/atlassianlabs/restclient",
-    "github.com/DataDog/datadog-go/statsd",
     "github.com/PagerDuty/go-pagerduty",
     "github.com/SermoDigital/jose/crypto",
     "github.com/SermoDigital/jose/jws",
@@ -1646,11 +1635,8 @@
     "github.com/pborman/uuid",
     "github.com/pkg/errors",
     "github.com/pmezard/go-difflib/difflib",
-    "github.com/prometheus/client_golang/api",
-    "github.com/prometheus/client_golang/api/prometheus/v1",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_model/go",
-    "github.com/prometheus/common/model",
     "github.com/satori/go.uuid",
     "github.com/schollz/closestmatch",
     "github.com/spf13/cobra",
