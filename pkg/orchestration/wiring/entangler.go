@@ -287,10 +287,6 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 }
 
 func (w *worker) validateWireUp(resource *orch_v1.StateResource, result *wiringplugin.WiringResult) (bool, error) {
-	if w.allWiredResources[resource.Name] != nil {
-		return false, errors.New("internal error in wiring plugin - duplicate resource name received from plugin")
-	}
-
 	if shapeNames := findDuplicateShapeNames(result.Contract.Shapes); len(shapeNames) != 0 {
 		return false, errors.Errorf("internal error in wiring plugin - duplicate shapes received from plugin: %s",
 			strings.Join(shapeNames, ", "))
