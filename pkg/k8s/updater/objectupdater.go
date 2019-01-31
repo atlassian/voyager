@@ -110,6 +110,9 @@ func (o *ObjectUpdater) Update(logger *zap.Logger, desired, existing runtime.Obj
 		if api_errors.IsConflict(err) {
 			return true, false, nil, err
 		}
+		if api_errors.IsInvalid(err) {
+			return false, true, nil, err
+		}
 		return false, true, nil, err
 	}
 	return false, false, result, nil
@@ -124,6 +127,9 @@ func (o *ObjectUpdater) Create(logger *zap.Logger, obj runtime.Object) (conflict
 	if err != nil {
 		if api_errors.IsAlreadyExists(err) {
 			return true, false, nil, err
+		}
+		if api_errors.IsInvalid(err) {
+			return false, true, nil, err
 		}
 		return false, true, nil, err
 	}
