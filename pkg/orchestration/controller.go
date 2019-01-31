@@ -361,6 +361,9 @@ func (c *Controller) setStatus(logger *zap.Logger, state *orch_v1.State) (confli
 		if api_errors.IsConflict(err) {
 			return true, false, nil
 		}
+		if api_errors.IsInvalid(err) {
+			return false, true, errors.Wrap(err, "request is invalid")
+		}
 		return false, true, errors.Wrap(err, "failed to set State status")
 	}
 	return false, false, nil
