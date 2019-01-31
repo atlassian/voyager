@@ -2,6 +2,7 @@ package servicecentral
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -244,6 +245,28 @@ func TestGetServiceDataFailsWhenServiceCentralInternalError(t *testing.T) {
 	_, err := serviceCentralClient.ListServices(context.Background(), user, "test-query")
 	// then
 	assert.True(t, httputil.IsUnknown(err))
+}
+
+func TestGetService(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	_, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	assert.NoError(t, err)
+	require.NoError(t, err)
+	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
 }
 
 func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress string, asap pkiutil.ASAP) *Client {
