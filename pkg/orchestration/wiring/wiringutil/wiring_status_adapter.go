@@ -1,4 +1,4 @@
-package wiringplugin
+package wiringutil
 
 import (
 	"fmt"
@@ -8,19 +8,20 @@ import (
 	cond_v1 "github.com/atlassian/ctrl/apis/condition/v1"
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // StatusAdapter provides legacy status behavior for autowiring plugins. This adapter is deprecated, implement the Status() function directly.
-type StatusAdapter func(resource *orch_v1.StateResource, context *WiringContext) (*WiringResult, bool /*retriable*/, error)
+type StatusAdapter func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error)
 
-func (f StatusAdapter) WireUp(resource *orch_v1.StateResource, context *WiringContext) (*WiringResult, bool /*retriable*/, error) {
+func (f StatusAdapter) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
 	return f(resource, context)
 }
 
-func (f StatusAdapter) Status(resource *orch_v1.StateResource, context *StatusContext) (*StatusResult, bool /*retriable*/, error) {
+func (f StatusAdapter) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
 	resource2type2condition := newResourceConditionsFromStatusContext(context)
-	result := &StatusResult{
+	result := &wiringplugin.StatusResult{
 		ResourceStatusData: orch_v1.ResourceStatusData{
 			Conditions: []cond_v1.Condition{
 				resource2type2condition.aggregateMessages(smith_v1.ResourceInProgress).calculateConditionAny(),
@@ -37,7 +38,7 @@ type resourceConditions struct {
 	pluginStatuses          []smith_v1.PluginStatus
 }
 
-func newResourceConditionsFromStatusContext(context *StatusContext) resourceConditions {
+func newResourceConditionsFromStatusContext(context *wiringplugin.StatusContext) resourceConditions {
 	resource2type2condition := make(map[*smith_v1.Resource]map[cond_v1.ConditionType]cond_v1.Condition, len(context.BundleResources))
 	// Group the Smith resourceStatus conditions into the above map
 	for i := range context.BundleResources {
