@@ -6,6 +6,7 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +23,7 @@ func TestNames(t *testing.T) {
 	iamBinding := ServiceBinding(computeName, iamInst.Name)
 
 	var someProducerName voyager.ResourceName = "iamrole"
-	protoReference := wiringplugin.ProtoReference{
+	protoReference := libshapes.ProtoReference{
 		Resource: "instance1",
 	}
 	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, protoReference)
