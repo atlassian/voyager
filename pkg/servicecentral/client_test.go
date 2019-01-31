@@ -264,7 +264,6 @@ func TestGetService(t *testing.T) {
 	_, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
 
 	// then
-	assert.NoError(t, err)
 	require.NoError(t, err)
 	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
