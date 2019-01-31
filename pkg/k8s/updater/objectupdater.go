@@ -11,6 +11,31 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+var (
+	NonRetriableErrors = [...]func(error) bool{
+		// Expired is typically only associated with Watches and this shouldn't
+		// happen at all
+		api_errors.IsResourceExpired,
+
+		// Shouldn't happen at all because the method should always be right
+		api_errors.IsMethodNotSupported,
+
+		// Shouldn't happen at all because the accept types should be right
+		api_errors.IsNotAcceptable,
+
+		// Shouldn't happen at all because the client sets Content-Type.
+		api_errors.IsUnsupportedMediaType,
+
+		// BadRequest is different from Invalid - this indicates the created
+		// request itself is wrong and doesn't make sense.
+		api_errors.IsBadRequest,
+
+		// Invalid indicates the object itself is wrong, and we should probably
+		// just make this a terminal error
+		api_errors.IsInvalid,
+	}
+)
+
 type ObjectUpdater struct {
 	ExistingObjectsIndexer cache.Indexer
 	Client                 Client
@@ -110,8 +135,10 @@ func (o *ObjectUpdater) Update(logger *zap.Logger, desired, existing runtime.Obj
 		if api_errors.IsConflict(err) {
 			return true, false, nil, err
 		}
-		if api_errors.IsInvalid(err) {
-			return false, true, nil, err
+		for _, isNonRetriable := range NonRetriableErrors {
+			if isNonRetriable(err) {
+				return false, false, nil, err
+			}
 		}
 		return false, true, nil, err
 	}
@@ -128,8 +155,10 @@ func (o *ObjectUpdater) Create(logger *zap.Logger, obj runtime.Object) (conflict
 		if api_errors.IsAlreadyExists(err) {
 			return true, false, nil, err
 		}
-		if api_errors.IsInvalid(err) {
-			return false, true, nil, err
+		for _, isNonRetriable := range NonRetriableErrors {
+			if isNonRetriable(err) {
+				return false, false, nil, err
+			}
 		}
 		return false, true, nil, err
 	}

@@ -299,9 +299,12 @@ func (c *Controller) setStatus(logger *zap.Logger, ld *form_v1.LocationDescripto
 		if api_errors.IsConflict(err) {
 			return true, false, nil
 		}
-		if api_errors.IsInvalid(err) {
-			return false, true, errors.Wrap(err, "request is invalid")
+		for _, isNonRetriable := range updater.NonRetriableErrors {
+			if isNonRetriable(err) {
+				return false, false, errors.WithStack(err)
+			}
 		}
+
 		return false, true, errors.Wrap(err, "failed to set LocationDescriptor status")
 	}
 	return false, false, nil
