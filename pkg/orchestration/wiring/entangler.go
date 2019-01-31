@@ -292,12 +292,7 @@ func (w *worker) validateWireUp(resource *orch_v1.StateResource, result *wiringp
 			strings.Join(shapeNames, ", "))
 	}
 
-	err := validateResources(resource, result.Resources)
-	if err != nil {
-		return false, err
-	}
-
-	return false, nil
+	return false, validateResources(resource, result.Resources)
 }
 
 func sortStateResourcesInternal(g *graph.Graph, stateResources []orch_v1.StateResource) ([]graph.V, error) {
