@@ -52,7 +52,7 @@ func TestCreateNewService(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	require.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestCreateServiceFailsIfItAlreadyExists(t *testing.T) {
@@ -104,7 +104,7 @@ func TestUpdateService(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	require.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestListServices(t *testing.T) {
@@ -148,7 +148,7 @@ func TestListModifiedServices(t *testing.T) {
 	serviceData, err := serviceCentralClient.ListModifiedServices(context.Background(), optionalUser, now)
 	// then
 	require.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 	assert.Equal(t, 1, len(serviceData))
 	expected := *newTestServiceData(true)
 	expected.Misc = nil // v2 api does not return misc data
@@ -188,7 +188,7 @@ func TestListServicesPaginates(t *testing.T) {
 	serviceData, err := serviceCentralClient.ListServices(context.Background(), optionalUser, "platform='micros2'")
 	// then
 	require.NoError(t, err)
-	require.Equal(t, 2, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 	require.Equal(t, 2, len(serviceData))
 	// cheating here with test data returning the same "service" twice
 	require.Equal(t, *newTestServiceData(true), serviceData[0])
@@ -209,7 +209,7 @@ func TestDeleteService(t *testing.T) {
 	err := serviceCentralClient.DeleteService(context.Background(), testUser, "some-uuid")
 	// then
 	require.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestDeleteServiceNotFound(t *testing.T) {
@@ -230,7 +230,7 @@ func TestDeleteServiceNotFound(t *testing.T) {
 	// then
 	require.Error(t, err)
 
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestGetServiceDataFailsWhenServiceCentralInternalError(t *testing.T) {
@@ -266,7 +266,7 @@ func TestGetService(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	require.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress string, asap pkiutil.ASAP) *Client {
