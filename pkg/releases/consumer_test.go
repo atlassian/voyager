@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/releases/deployinator/models"
@@ -49,20 +48,26 @@ func ResolveEndpointTest(pact *dsl.Pact) {
 
 	// Define request with dummy variables and headers set
 	var resolveTest = func() error {
-		u := fmt.Sprintf("http://localhost:%d/api/v1/resolve", pact.Server.Port)
-		req, err := http.NewRequest("GET", u,
-			strings.NewReader(
-				`{"service":"serviceName", "environment":"dev", "region":"us-east", "account": "1233"}`))
+		u := fmt.Sprintf("http://%s:%d/api/v1/resolve", pact.Host, pact.Server.Port)
+		req, err := http.NewRequest("GET", u, nil)
+		q := req.URL.Query()
+		q.Add("service", "serviceName")
+		q.Add("environment", "dev")
+		q.Add("region", "us-east-1")
+		q.Add("account", "1233")
+		req.URL.RawQuery = q.Encode()
 
-		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			return err
 		}
+
+		req.Header.Set("Accept", "application/json")
+
 		if _, err = http.DefaultClient.Do(req); err != nil {
 			return err
 		}
 
-		return err
+		return nil
 	}
 
 	// Define the expected response
@@ -73,10 +78,16 @@ func ResolveEndpointTest(pact *dsl.Pact) {
 		WithRequest(dsl.Request{
 			Method:  "GET",
 			Path:    dsl.String("/api/v1/resolve"),
-			Headers: dsl.MapMatcher{"Content-Type": dsl.String("application/json")},
+			Headers: dsl.MapMatcher{"Accept": dsl.String("application/json")},
+			Query: dsl.MapMatcher{
+				"service":     dsl.String("serviceName"),
+				"environment": dsl.String("dev"),
+				"region":      dsl.String("us-east-1"),
+				"account":     dsl.String("1233"),
+			},
 		}).
 		WillRespondWith(dsl.Response{
-			Status:  200,
+			Status:  http.StatusOK,
 			Headers: dsl.MapMatcher{"Content-Type": dsl.String("application/json")},
 			Body:    singleReleaseGroup,
 		})
@@ -96,19 +107,26 @@ func BatchResolveEndpointTest(pact *dsl.Pact) {
 	}
 
 	var batchResolveTest = func() error {
-		u := fmt.Sprintf("http://localhost:%d/api/v1/resolve/batch", pact.Server.Port)
-		req, err := http.NewRequest("GET", u,
-			strings.NewReader(`{"environment":"dev", "region":"us-east", "account": "1233"}`))
+		u := fmt.Sprintf("http://%s:%d/api/v1/resolve/batch", pact.Host, pact.Server.Port)
+		req, err := http.NewRequest("GET", u, nil)
 
-		req.Header.Set("Content-Type", "application/json")
+		q := req.URL.Query()
+		q.Add("environment", "dev")
+		q.Add("region", "us-east-1")
+		q.Add("account", "1233")
+		req.URL.RawQuery = q.Encode()
+
 		if err != nil {
 			return err
 		}
+
+		req.Header.Set("Accept", "application/json")
+
 		if _, err = http.DefaultClient.Do(req); err != nil {
 			return err
 		}
 
-		return err
+		return nil
 	}
 
 	pact.
@@ -118,10 +136,15 @@ func BatchResolveEndpointTest(pact *dsl.Pact) {
 		WithRequest(dsl.Request{
 			Method:  "GET",
 			Path:    dsl.String("/api/v1/resolve/batch"),
-			Headers: dsl.MapMatcher{"Content-Type": dsl.String("application/json")},
+			Headers: dsl.MapMatcher{"Accept": dsl.String("application/json")},
+			Query: dsl.MapMatcher{
+				"environment": dsl.String("dev"),
+				"region":      dsl.String("us-east-1"),
+				"account":     dsl.String("1233"),
+			},
 		}).
 		WillRespondWith(dsl.Response{
-			Status:  200,
+			Status:  http.StatusOK,
 			Headers: dsl.MapMatcher{"Content-Type": dsl.String("application/json")},
 			Body: models.BatchResolutionResponseType{
 				NextFrom:    "from",

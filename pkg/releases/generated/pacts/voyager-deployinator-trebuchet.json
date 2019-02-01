@@ -12,8 +12,9 @@
       "request": {
         "method": "GET",
         "path": "/api/v1/resolve",
+        "query": "account=1233&environment=dev&region=us-east-1&service=serviceName",
         "headers": {
-          "Content-Type": "application/json"
+          "Accept": "application/json"
         }
       },
       "response": {
@@ -31,8 +32,9 @@
       "request": {
         "method": "GET",
         "path": "/api/v1/resolve/batch",
+        "query": "account=1233&environment=dev&region=us-east-1",
         "headers": {
-          "Content-Type": "application/json"
+          "Accept": "application/json"
         }
       },
       "response": {
