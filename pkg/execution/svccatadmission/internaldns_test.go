@@ -177,6 +177,22 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
+			"not internaldns create",
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
+				t, "otherClassExternalID", "otherPlanExternalID", apiinternaldns.Spec{}),
+			),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
+			false,
+		},
+		{
+			"not internaldns create",
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Update, buildServiceInstance(
+				t, "otherClassExternalID", "otherPlanExternalID", apiinternaldns.Spec{}),
+			),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
+			false,
+		},
+		{
 			"ingress new.domain",
 			buildAdmissionReview(dougComputeService, k8s.IngressGVR, admissionv1beta1.Create, buildIngress(t, []string{"new.domain"})),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
