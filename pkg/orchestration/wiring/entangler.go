@@ -382,6 +382,8 @@ func validateResources(stateResource *orch_v1.StateResource, resources []smith_v
 			metaName = resource.Spec.Object.(meta_v1.Object).GetName()
 		case resource.Spec.Plugin != nil:
 			metaName = resource.Spec.Plugin.ObjectName
+		default:
+			return errors.Errorf("resource in smith bundle %q has an invalid spec missing plugin or object", resource.Name)
 		}
 		if metaName != stateResourceName && !strings.HasPrefix(metaName, stateResourceName+"--") {
 			return errors.Errorf("object %q does not have valid object name", metaName)
