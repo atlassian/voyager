@@ -9,7 +9,6 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // WiringPlugin represents an autowiring plugin.
@@ -70,82 +69,6 @@ type DependantResource struct {
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}
 	Resource   orch_v1.StateResource
-}
-
-// ProtoReference represents bits of information that need to be augmented with more information to
-// construct a valid Smith reference.
-// +k8s:deepcopy-gen=true
-type ProtoReference struct {
-	Resource smith_v1.ResourceName `json:"resource"`
-	Path     string                `json:"path,omitempty"`
-	Example  interface{}           `json:"example,omitempty"`
-	Modifier string                `json:"modifier,omitempty"`
-}
-
-// ToReference should be used to augment ProtoReference with missing information to
-// get a full Reference.
-func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Reference {
-	return smith_v1.Reference{
-		Name:     name,
-		Resource: r.Resource,
-		Path:     r.Path,
-		Example:  r.Example,
-		Modifier: r.Modifier,
-	}
-}
-
-// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
-// since it doesn't know it's JSON).
-func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// BindingProtoReference is a reference to the ServiceBinding's contents.
-// +k8s:deepcopy-gen=true
-type BindingProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
-}
-
-func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// ToReference should be used to augment BindingProtoReference with missing information to
-// get a full Reference.
-func (r *BindingProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
-	return smith_v1.Reference{
-		Name:     name,
-		Resource: bindingResourceName,
-		Path:     r.Path,
-		Example:  r.Example,
-	}
-}
-
-// BindingProtoReference is a reference to the ServiceBinding's Secret's contents.
-// +k8s:deepcopy-gen=true
-type BindingSecretProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
-}
-
-func (r *BindingSecretProtoReference) DeepCopyInto(out *BindingSecretProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// ToReference should be used to augment BindingSecretProtoReference with missing information to
-// get a full Reference.
-func (r *BindingSecretProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
-	return smith_v1.Reference{
-		Name:     name,
-		Resource: bindingResourceName,
-		Path:     r.Path,
-		Example:  r.Example,
-		Modifier: smith_v1.ReferenceModifierBindSecret,
-	}
 }
 
 // ResourceContract contains information about a resource for consumption by other autowiring functions.

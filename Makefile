@@ -15,7 +15,7 @@ APIS_FORMATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/formation/v1
 APIS_OPS_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/ops/v1
 APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
 APIS_REPORTER_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/reporter/v1
-SHAPES_API_DIRS = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/knownshapes
+SHAPES_API_DIRS = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/knownshapes,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/libshapes
 ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_FORMATION_DIR),$(APIS_OPS_DIR),$(APIS_ORCHESTRATION_DIR),$(APIS_REPORTER_DIR)
 
 #===============================================================================
