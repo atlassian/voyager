@@ -83,9 +83,11 @@ func (o *ObjectUpdater) CreateOrUpdate(logger *zap.Logger, updatePrecondition fu
 		existingCopy := existingObj.(runtime.Object).DeepCopyObject()
 		existingCopy.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
 
-		if preconditionErr := updatePrecondition(existingCopy); preconditionErr != nil {
-			// Preconditions does not pass
-			return false, false, nil, preconditionErr
+		if updatePrecondition != nil {
+			if preconditionErr := updatePrecondition(existingCopy); preconditionErr != nil {
+				// Preconditions does not pass
+				return false, false, nil, preconditionErr
+			}
 		}
 
 		return o.Update(logger, obj, existingCopy)
