@@ -185,7 +185,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"not internaldns create",
+			"not internaldns update",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Update, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiinternaldns.Spec{}),
 			),
