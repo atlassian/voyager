@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func isInternalDNSServiceClass(serviceInstance sc_v1b1.ServiceInstance) bool {
+func isInternalDNSServiceClass(serviceInstance *sc_v1b1.ServiceInstance) bool {
 	return serviceInstance.Spec.ClusterServiceClassExternalID == string(apiinternaldns.ClusterServiceClassExternalID)
 }
 
@@ -47,7 +47,7 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		if err := json.Unmarshal(admissionRequest.Object.Raw, &serviceInstance); err != nil {
 			return nil, errors.Wrap(err, "error parsing ServiceInstance")
 		}
-		if !isInternalDNSServiceClass(serviceInstance) {
+		if !isInternalDNSServiceClass(&serviceInstance) {
 			return &admissionv1beta1.AdmissionResponse{
 				Allowed: true,
 				Result: &metav1.Status{
