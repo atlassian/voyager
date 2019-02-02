@@ -1,0 +1,62 @@
+[
+  {
+    "createdBy": "fcobb",
+    "createdOn": "2019-01-29T03:03:45.58564Z",
+    "id": 21,
+    "modifiedBy": "fcobb",
+    "modifiedOn": "2019-01-29T03:03:45.585638Z",
+    "schema": {
+      "id": 6,
+      "name": "opsgenie",
+      "ref": "/api/v2/schemas/attributes/6"
+    },
+    "service": {
+      "name": "slime",
+      "ref": "/api/v2/services/175096a2-6b18-4df4-8bd0-65fe6e0c56b4",
+      "uuid": "175096a2-6b18-4df4-8bd0-65fe6e0c56b4"
+    },
+    "value": {
+      "team": "FraserWasHere"
+    }
+  },
+  {
+    "createdBy": "fcobb",
+    "createdOn": "2019-01-29T04:08:15.810106Z",
+    "id": 23,
+    "modifiedBy": "fcobb",
+    "modifiedOn": "2019-01-29T04:08:15.810104Z",
+    "schema": {
+      "id": 6,
+      "name": "opsgenie",
+      "ref": "/api/v2/schemas/attributes/6"
+    },
+    "service": {
+      "name": "slime",
+      "ref": "/api/v2/services/175096a2-6b18-4df4-8bd0-65fe6e0c56b4",
+      "uuid": "175096a2-6b18-4df4-8bd0-65fe6e0c56b4"
+    },
+    "value": {
+      "team": "Platform SRE"
+    }
+  },
+  {
+    "createdBy": "fcobb",
+    "createdOn": "2019-01-29T04:47:43.648583Z",
+    "id": 30,
+    "modifiedBy": "fcobb",
+    "modifiedOn": "2019-01-29T04:47:43.648581Z",
+    "schema": {
+      "id": 6,
+      "name": "opsgenie",
+      "ref": "/api/v2/schemas/attributes/6"
+    },
+    "service": {
+      "name": "slime",
+      "ref": "/api/v2/services/175096a2-6b18-4df4-8bd0-65fe6e0c56b4",
+      "uuid": "175096a2-6b18-4df4-8bd0-65fe6e0c56b4"
+    },
+    "value": {
+      "team": ""
+    }
+  }
+]

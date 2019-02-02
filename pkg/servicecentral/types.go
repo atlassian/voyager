@@ -30,9 +30,34 @@ type ServiceData struct {
 	Stateless            bool   `json:"stateless,omitempty"`
 	BusinessUnit         string `json:"business_unit,omitempty"`
 
+	Attributes []ServiceAttribute
+
 	// Compliance is a read-only field. It can be nil, in which case it means
 	// they have not completed their compliance questions yet
 	Compliance *ServiceComplianceConf `json:"compliance,omitempty"`
+}
+
+type ServiceAttribute struct {
+	Team string
+}
+
+type serviceAttributeResponse struct {
+	ID      int `json:"id"`
+	Service struct {
+		Ref  string `json:"ref"`
+		UUID string `json:"uuid"`
+		Name string `json:"name"`
+	} `json:"service"`
+	Schema struct {
+		Ref  string `json:"ref"`
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"schema"`
+	Value      map[string]string `json:"value"`
+	CreatedOn  time.Time         `json:"createdOn"`
+	CreatedBy  string            `json:"createdBy"`
+	ModifiedOn time.Time         `json:"modifiedOn"`
+	ModifiedBy string            `json:"modifiedBy"`
 }
 
 // ServiceComplianceConf includes all service compliance related data

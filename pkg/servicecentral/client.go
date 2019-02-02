@@ -259,6 +259,7 @@ func (c *Client) listModifiedServices(ctx context.Context, user auth.OptionalUse
 }
 
 func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceData, error) {
+	l := c.logger
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),
@@ -294,7 +295,23 @@ func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, service
 	if len(parsedBody.Data) == 0 {
 		return nil, errors.New("data is empty")
 	}
-	return &parsedBody.Data[0], nil
+	service := &parsedBody.Data[0]
+
+	resp, err := c.GetServiceAttributes(ctx, user, serviceUUID)
+	if err != nil {
+		l.Error("Failed to get attributes for service", zap.Error(err), zap.String("service", serviceUUID))
+	}
+	ogTeamAttr, found, err := findOpsGenieTeamServiceAttribute(resp)
+	if err != nil {
+		// We do not return an error here as OpsGenie team is currently optional, likely to change when we remove PagerDuty
+		l.Error("Failed to find OpsGenie team in service attributes", zap.Error(err))
+	}
+
+	if found {
+		service.Attributes = append(service.Attributes, ogTeamAttr)
+	}
+
+	return service, nil
 }
 
 func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID string) error {
@@ -326,6 +343,44 @@ func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID 
 	}
 
 	return nil
+}
+
+// GetServiceAttributes queries service central for the attributes of a given service. Can return an empty array if no attributes were found
+func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]serviceAttributeResponse, error) {
+	req, err := c.rm.NewRequest(
+		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
+		restclient.Method(http.MethodGet),
+		restclient.JoinPath(fmt.Sprintf(v2ServicesPath+"/%s/attributes", url.PathEscape(serviceUUID))),
+		restclient.Context(ctx),
+		restclient.Header("Accept", "application/json"),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create get service attributes request")
+	}
+
+	response, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute get service attributes request")
+	}
+
+	defer util.CloseSilently(response.Body)
+	respBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	if response.StatusCode != http.StatusOK {
+		message := fmt.Sprintf("failed to get attributes for service %q. Response: %s", serviceUUID, respBody)
+		return nil, clientError(response.StatusCode, message)
+	}
+
+	var parsedBody []serviceAttributeResponse
+	err = json.Unmarshal(respBody, &parsedBody)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal response body")
+	}
+
+	return parsedBody, nil
 }
 
 func clientError(statusCode int, message string) error {
@@ -388,4 +443,22 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceData {
 	creationTimestamp := v2Service.CreatedOn.UTC().Format(time.RFC3339)
 	service.CreationTimestamp = &creationTimestamp
 	return service
+}
+
+func findOpsGenieTeamServiceAttribute(attributes []serviceAttributeResponse) (s ServiceAttribute, found bool, err error) {
+	// https://developer.atlassian.com/platform/service-central/rest/#api-api-v2-schemas-attributes-get
+	const opsGenieSchemaName = "opsgenie"
+	for _, attr := range attributes {
+		if attr.Schema.Name != opsGenieSchemaName {
+			continue
+		}
+
+		team, ok := attr.Value["team"]
+		if !ok {
+			return ServiceAttribute{}, false, errors.Errorf("expected to find team name within schema of name %q", opsGenieSchemaName)
+		}
+
+		return ServiceAttribute{Team: team}, true, nil
+	}
+	return ServiceAttribute{}, false, nil
 }
