@@ -346,7 +346,7 @@ func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID 
 }
 
 // GetServiceAttributes queries service central for the attributes of a given service. Can return an empty array if no attributes were found
-func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]serviceAttributeResponse, error) {
+func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]ServiceAttributeResponse, error) {
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),
@@ -374,7 +374,7 @@ func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUse
 		return nil, clientError(response.StatusCode, message)
 	}
 
-	var parsedBody []serviceAttributeResponse
+	var parsedBody []ServiceAttributeResponse
 	err = json.Unmarshal(respBody, &parsedBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal response body")
@@ -445,7 +445,7 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceData {
 	return service
 }
 
-func findOpsGenieTeamServiceAttribute(attributes []serviceAttributeResponse) (s ServiceAttribute, found bool, err error) {
+func findOpsGenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (s ServiceAttribute, found bool, err error) {
 	const opsGenieSchemaName = "opsgenie"
 	for _, attr := range attributes {
 		if attr.Schema.Name != opsGenieSchemaName {

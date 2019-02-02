@@ -41,7 +41,7 @@ type ServiceAttribute struct {
 	Team string
 }
 
-type serviceAttributeResponse struct {
+type ServiceAttributeResponse struct {
 	ID      int `json:"id"`
 	Service struct {
 		Ref  string `json:"ref"`
