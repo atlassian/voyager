@@ -446,7 +446,6 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceData {
 }
 
 func findOpsGenieTeamServiceAttribute(attributes []serviceAttributeResponse) (s ServiceAttribute, found bool, err error) {
-	// https://developer.atlassian.com/platform/service-central/rest/#api-api-v2-schemas-attributes-get
 	const opsGenieSchemaName = "opsgenie"
 	for _, attr := range attributes {
 		if attr.Schema.Name != opsGenieSchemaName {
