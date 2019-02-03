@@ -1,0 +1,40 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  # name: jspearritt-test-svc
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  # configMapName: config
+  resources:
+  - type: KubeCompute
+    name: kubecompute-simple
+    spec:
+      containers:
+        - name: microservice
+          image: docker.example.com/atlassian/micros-analytics:0.1.8
+    defaults:
+      Scaling:
+        MinReplicas: 1
+        MaxReplicas: 5
+        Metrics:
+        - Type: Resource
+          Resource:
+            Name: cpu
+            TargetAverageUtilization: 80
+      Container:
+        ImagePullPolicy: IfNotPresent
+        Resources:
+          Requests:
+            cpu: 50m
+            memory: 50Mi
+          Limits:
+            cpu: 250m
+            memory: 150Mi
+      Port:
+        Protocol: TCP
+  - type: datadog
+    name: alarms
+    dependsOn:
+      - kubecompute-simple

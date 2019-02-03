@@ -52,6 +52,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 
 	deploymentResourceName, deploymentLabels, err := extractKubeComputeDetails(context)
+
 	if err != nil {
 		return nil, false, err
 	}

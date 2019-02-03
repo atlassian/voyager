@@ -140,6 +140,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 		}
 
 		_, _, err := extractKubeComputeDetails(&context)
+
 		assert.Error(t, err)
 	})
 
@@ -149,6 +150,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 		}
 
 		_, _, err := extractKubeComputeDetails(&context)
+
 		assert.Error(t, err)
 	})
 
@@ -158,6 +160,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 		}
 
 		_, _, err := extractKubeComputeDetails(&context)
+
 		assert.Error(t, err)
 	})
 }
