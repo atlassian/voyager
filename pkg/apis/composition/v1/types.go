@@ -113,7 +113,7 @@ func (in *ServiceDescriptorResourceDependency) DeepCopyInto(out *ServiceDescript
 // resource name, or an object containing name and attributes.
 func (in *ServiceDescriptorResourceDependency) UnmarshalJSON(data []byte) error {
 	type fakeServiceDescriptorResourceDependency ServiceDescriptorResourceDependency
-	res := fakeServiceDescriptorResourceDependency{}
+	var res fakeServiceDescriptorResourceDependency
 	if err := json.Unmarshal(data, &res); err == nil {
 		in.Name = res.Name
 		in.Attributes = res.Attributes
@@ -126,10 +126,6 @@ func (in *ServiceDescriptorResourceDependency) UnmarshalJSON(data []byte) error 
 	}
 
 	in.Name = resourceName
-	// TODO: the empty map below (vs nil) is necessary due to deepcopy issues. Remove once we are on 1.11 machinery
-	// see also  https://github.com/kubernetes/kubernetes/pull/62063/files#diff-42b29a4397bd0cf0a0e6183239fbe393R448
-	// https://github.com/kubernetes/kubernetes/pull/62063#discussion_r179122869
-	in.Attributes = map[string]interface{}{}
 	return nil
 }
 
