@@ -2,6 +2,7 @@ package knownshapes
 
 import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -23,15 +24,10 @@ func NewASAPKey() *ASAPKey {
 	}
 }
 
-// Name returns the ASAPKey ShapeName
-func (a *ASAPKey) Name() wiringplugin.ShapeName {
-	return a.ShapeName
-}
-
 // FindASAPKeyShapes returns the first instance of ASAPKey if found
 func FindASAPKeyShapes(shapes []wiringplugin.Shape) (*ASAPKey, bool /*found*/, error) {
 	typed := &ASAPKey{}
-	found, err := FindAndCopyShapeByName(shapes, ASAPKeyShapeName, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, ASAPKeyShapeName, typed)
 	if err != nil {
 		return nil, false, err
 	}

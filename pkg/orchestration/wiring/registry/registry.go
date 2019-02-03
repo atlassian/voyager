@@ -15,19 +15,20 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/sqs"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 )
 
 var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	apik8scompute.ResourceType:  wiringplugin.StatusAdapter(k8scompute.WireUp),
-	kubeingress.ResourceType:    wiringplugin.StatusAdapter(kubeingress.WireUp),
-	ec2compute_v2.ResourceType:  wiringplugin.StatusAdapter(ec2compute_v2.WireUp),
-	ups.ResourceType:            wiringplugin.StatusAdapter(ups.New().WireUp),
+	apik8scompute.ResourceType:  wiringutil.StatusAdapter(k8scompute.WireUp),
+	kubeingress.ResourceType:    wiringutil.StatusAdapter(kubeingress.WireUp),
+	ec2compute_v2.ResourceType:  wiringutil.StatusAdapter(ec2compute_v2.WireUp),
+	ups.ResourceType:            wiringutil.StatusAdapter(ups.New().WireUp),
 	aws.Cfn:                     aws.ResourceTypes[aws.Cfn],
 	aws.DynamoDB:                aws.ResourceTypes[aws.DynamoDB],
 	aws.S3:                      aws.ResourceTypes[aws.S3],
-	postgres.ResourceType:       wiringplugin.StatusAdapter(postgres.New().WireUp),
-	rds.ResourceType:            wiringplugin.StatusAdapter(rds.New().WireUp),
-	sqs.ResourceType:            wiringplugin.StatusAdapter(sqs.WireUp),
-	asapkey.ResourceType:        wiringplugin.StatusAdapter(asapkey.New().WireUp),
-	apiinternaldns.ResourceType: wiringplugin.StatusAdapter(internaldns.New().WireUp),
+	postgres.ResourceType:       wiringutil.StatusAdapter(postgres.New().WireUp),
+	rds.ResourceType:            wiringutil.StatusAdapter(rds.New().WireUp),
+	sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
+	asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
+	apiinternaldns.ResourceType: wiringutil.StatusAdapter(internaldns.New().WireUp),
 }

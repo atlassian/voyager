@@ -3,6 +3,7 @@ package knownshapes
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -22,7 +23,7 @@ type IngressEndpoint struct {
 
 // +k8s:deepcopy-gen=true
 type IngressEndpointData struct {
-	IngressEndpoint wiringplugin.ProtoReference `json:"ingressEndpoint"`
+	IngressEndpoint libshapes.ProtoReference `json:"ingressEndpoint"`
 }
 
 func NewIngressEndpoint(resourceName smith_v1.ResourceName) *IngressEndpoint {
@@ -31,7 +32,7 @@ func NewIngressEndpoint(resourceName smith_v1.ResourceName) *IngressEndpoint {
 			ShapeName: IngressEndpointShape,
 		},
 		Data: IngressEndpointData{
-			IngressEndpoint: wiringplugin.ProtoReference{
+			IngressEndpoint: libshapes.ProtoReference{
 				Resource: resourceName,
 				Path:     kubeIngressRefMetadataEndpointPath,
 				Example:  kubeIngressRefExample,
@@ -40,13 +41,9 @@ func NewIngressEndpoint(resourceName smith_v1.ResourceName) *IngressEndpoint {
 	}
 }
 
-func (s *IngressEndpoint) Name() wiringplugin.ShapeName {
-	return s.ShapeName
-}
-
 func FindIngressEndpointShape(shapes []wiringplugin.Shape) (*IngressEndpoint, bool /*found*/, error) {
 	typed := &IngressEndpoint{}
-	found, err := FindAndCopyShapeByName(shapes, IngressEndpointShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, IngressEndpointShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

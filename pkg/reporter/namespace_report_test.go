@@ -993,6 +993,121 @@ func TestHandlesProviderProxy(t *testing.T) {
 	require.Equal(t, expected, report)
 }
 
+func TestHandlesProviderProxyOpsSchema(t *testing.T) {
+	t.Parallel()
+	objs := copiedTestObject()
+	objs = append(objs, &sc_v1b1.ServiceInstance{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       "ServiceInstance",
+			APIVersion: "servicecatalog.k8s.io/v1beta1",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: "sns",
+		},
+		Spec: sc_v1b1.ServiceInstanceSpec{
+			PlanReference: sc_v1b1.PlanReference{
+				ServiceClassExternalName: "cloudformation",
+				ServicePlanExternalName:  "default",
+			},
+			ServiceClassRef: &sc_v1b1.LocalObjectReference{
+				Name: "class-id",
+			},
+			ServicePlanRef: &sc_v1b1.LocalObjectReference{
+				Name: "plan-id",
+			},
+		},
+		Status: sc_v1b1.ServiceInstanceStatus{
+			Conditions: []sc_v1b1.ServiceInstanceCondition{
+				sc_v1b1.ServiceInstanceCondition{
+					Type:    "Ready",
+					Status:  "True",
+					Message: "all done",
+				},
+			},
+		},
+	})
+
+	resp := http.Response{
+		StatusCode: 200,
+	}
+
+	providerResp, err := json.Marshal(ProviderOpsResponse{
+		Result: &ProviderResponse{
+			Name: "instance",
+			Status: reporter_v1.Status{
+				Status: "complete",
+			},
+			Properties: map[string]interface{}{"output": "vars"},
+			Spec:       map[string]interface{}{"input": "vars"},
+			Version:    "latest",
+		},
+	})
+	require.NoError(t, err)
+	resp.Body = ioutil.NopCloser(bytes.NewReader(providerResp))
+
+	providers := map[string]ops.ProviderInterface{
+		"cloudformation": &MockProvider{
+			name:     "cloudformation",
+			plan:     "uuid",
+			response: resp,
+		},
+	}
+	nrh, err := NewNamespaceReportHandler("namespace", "service", objs, RequestFilter{}, currentLocation)
+	require.NoError(t, err)
+
+	ctx := request.WithUser(logz.CreateContextWithLogger(context.Background(), zaptest.NewLogger(t)), userInfo)
+
+	report := nrh.GenerateReport(ctx, providers, &MockASAPConfig{})
+
+	expected := *expectedReport
+	expected.Report.Objects.Resources = append(expected.Report.Objects.Resources, reporter_v1.Resource{
+		Name:         "sns",
+		ResourceType: "ServiceInstance",
+		Status: reporter_v1.Status{
+			Status: "Ready",
+			Reason: "all done",
+		},
+		Spec: sc_v1b1.ServiceInstanceSpec{
+			PlanReference: sc_v1b1.PlanReference{
+				ServiceClassExternalName: "cloudformation",
+				ServicePlanExternalName:  "default",
+			},
+			ServiceClassRef: &sc_v1b1.LocalObjectReference{
+				Name: "class-id",
+			},
+			ServicePlanRef: &sc_v1b1.LocalObjectReference{
+				Name: "plan-id",
+			},
+		},
+		Provider: &reporter_v1.ResourceProvider{
+			ClassID:    "class-id",
+			PlanID:     "plan-id",
+			Namespaced: true,
+		},
+		References: []reporter_v1.Reference{},
+	})
+
+	expected.Report.Providers.Resources = append(expected.Report.Providers.Resources, reporter_v1.Resource{
+		Name:    "instance",
+		Version: "latest",
+		Status: reporter_v1.Status{
+			Status: "complete",
+		},
+		ResourceType: "cloudformation",
+		Properties:   map[string]interface{}{"output": "vars"},
+		Spec:         map[string]interface{}{"input": "vars"},
+		References: []reporter_v1.Reference{
+			reporter_v1.Reference{
+				Layer: "object",
+				Name:  "sns",
+			},
+		},
+	})
+
+	stripNowTimestamps(&report.Report)
+	require.Equal(t, expected, report)
+}
+
 func TestHandlesInProgressServiceInstance(t *testing.T) {
 	t.Parallel()
 	objs := copiedTestObject()
