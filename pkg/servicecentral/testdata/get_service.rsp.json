@@ -1,0 +1,31 @@
+{
+  "data": [
+    {
+      "businessUnit": "<string>",
+      "compliancePolicyID": 48,
+      "createdOn": "<string>",
+      "description": "<string>",
+      "hipchatRoomName": "<string>",
+      "location": "<string>",
+      "loggingID": "<string>",
+      "modifiedBy": "<string>",
+      "modifiedOn": "<string>",
+      "name": "<string>",
+      "owner": "<string>",
+      "pagerdutyServiceID": "<string>",
+      "platform": "<string>",
+      "publicFacing": true,
+      "serviceTier": 47,
+      "servingURL": "<string>",
+      "ssamContainerName": "<string>",
+      "stateless": true,
+      "team": "<string>",
+      "thirdPartyProvided": true,
+      "uuid": "<string>",
+      "zeroDowntimeUpgrades": true
+    }
+  ],
+  "message": "Yeah nah for sure",
+  "meta": null,
+  "status_code": 200
+}
