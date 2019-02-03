@@ -304,8 +304,6 @@ func TestObjectCreateErrorTypes(t *testing.T) {
 		errorToThrow := c.Error
 
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
 			tc := newTestCase()
 
 			// given

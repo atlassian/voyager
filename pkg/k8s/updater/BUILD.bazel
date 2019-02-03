@@ -25,6 +25,7 @@ go_library(
 
 go_test(
     name = "go_default_test",
+    size = "small",
     srcs = ["objectupdater_test.go"],
     embed = [":go_default_library"],
     race = "on",
@@ -41,5 +42,4 @@ go_test(
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
     ],
-    size = "small",
 )
