@@ -250,21 +250,10 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 		// status changes (i.e. transition timestamp changes)
 		resourceStatuses = make([]form_v1.ResourceStatus, 0, len(state.Status.ResourceStatuses))
 		for _, resourceStatus := range state.Status.ResourceStatuses {
-			conditions := make([]cond_v1.Condition, 0, len(resourceStatus.Conditions))
-
-			for _, condition := range resourceStatus.Conditions {
-				conditions = append(conditions, cond_v1.Condition{
-					LastTransitionTime: condition.LastTransitionTime,
-					Message:            condition.Message,
-					Reason:             condition.Reason,
-					Status:             condition.Status,
-					Type:               condition.Type,
-				})
-			}
-
+			resourceStatusCopy := resourceStatus.DeepCopy()
 			resourceStatuses = append(resourceStatuses, form_v1.ResourceStatus{
-				Name:       resourceStatus.Name,
-				Conditions: conditions,
+				Name:       resourceStatusCopy.Name,
+				Conditions: resourceStatusCopy.Conditions,
 			})
 		}
 	}
