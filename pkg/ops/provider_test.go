@@ -365,7 +365,7 @@ func TestHandlesMissingSchema(t *testing.T) {
 
 	_, _, err := NewProvider(zaptest.NewLogger(t), broker)
 	require.Error(t, err, "Attempted to get provider schema returned status code: 404")
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func MockProxyRequest(t *testing.T, method string, requestURI string) *http.Request {
@@ -421,7 +421,7 @@ func TestProxyPostRequestSuccessfully(t *testing.T) {
 	body, err := ioutil.ReadAll(recorder.Result().Body)
 	require.NoError(t, err)
 	require.Equal(t, dummyScaleResponse, string(body))
-	require.Equal(t, 2, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 }
 
 func TestSetupReportCorrectly(t *testing.T) {
@@ -481,7 +481,7 @@ func TestProxyGetRequestSuccessfully(t *testing.T) {
 	body, err := ioutil.ReadAll(recorder.Result().Body)
 	require.NoError(t, err)
 	require.Equal(t, dummyScaleResult, string(body))
-	require.Equal(t, 2, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 }
 
 func TestHandleASAPFailure(t *testing.T) {
@@ -522,7 +522,7 @@ func TestHandleASAPFailure(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, opsErrors.Message, "some-request-id: error making request to provider ec2provider: Error setting up asap with provider: Failed to sign request for some reason")
 	require.EqualValues(t, opsErrors.Code, http.StatusInternalServerError)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestRouteWithContextPath(t *testing.T) {

@@ -46,8 +46,8 @@ func TestSSAMClientGetContainerThatExists(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	assert.Equal(t, container, response)
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodGet, req.Method)
 	assert.Equal(t, fmt.Sprintf("/api/access/containers/%s/", container.ShortName), req.Path)
 	assert.Contains(t, req.Header, "Authorization")
@@ -75,8 +75,8 @@ func TestSSAMClientGetContainerThatDoesNotExist(t *testing.T) {
 	require.Error(t, err)
 	assert.Nil(t, response)
 	assert.True(t, httputil.IsNotFound(err), fmt.Sprintln(err))
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodGet, req.Method)
 	assert.Equal(t, "/api/access/containers/container-name-that-wont-exist/", req.Path)
 	assert.Contains(t, req.Header, "Authorization")
@@ -113,9 +113,9 @@ func TestSSAMClientPostContainer(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
 	assert.Equal(t, expectedContainer, response)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodPost, req.Method)
 	assert.Equal(t, "/api/access/containers/", req.Path)
 	assert.Contains(t, req.Header, "Authorization")
@@ -145,9 +145,9 @@ func TestSSAMClientGetAccessLevel(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
 	assert.Equal(t, expectedAccessLevel, response)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodGet, req.Method)
 	expectedPath := fmt.Sprintf("/api/access/containers/%s/access-levels/%s/", expectedAccessLevel.System, expectedAccessLevel.ShortName)
 	assert.Equal(t, expectedPath, req.Path)
@@ -188,9 +188,9 @@ func TestSSAMClientPostAccessLevel(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
 	assert.Equal(t, expectedAccessLevel, response)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodPost, req.Method)
 	assert.Equal(t, fmt.Sprintf("/api/access/containers/%s/access-levels/", containerShortName), req.Path)
 	assert.Contains(t, req.Header, "Authorization")
@@ -217,8 +217,8 @@ func TestSSAMClientDeleteContainerSuccess(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodDelete, req.Method)
 	assert.Equal(t, fmt.Sprintf("/api/access/containers/%s/", containerShortName), req.Path)
 	assert.Contains(t, req.Header, "Authorization")
@@ -247,8 +247,8 @@ func TestSSAMClientDeleteContainerNotFound(t *testing.T) {
 	// THEN
 	require.Error(t, deleteErr)
 	require.True(t, httputil.IsNotFound(deleteErr))
-	assert.Equal(t, handler.ReqestSnapshots.Calls(), 1)
-	req := handler.ReqestSnapshots.Snapshots[0]
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
+	req := handler.RequestSnapshots.Snapshots[0]
 	assert.Equal(t, http.MethodDelete, req.Method)
 	assert.Equal(t, fmt.Sprintf("/api/access/containers/%s/", containerShortName), req.Path)
 	assert.Contains(t, req.Header, "Authorization")

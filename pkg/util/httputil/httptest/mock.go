@@ -6,15 +6,15 @@ import (
 )
 
 type HTTPMock struct {
-	handlers        []http.Handler
-	ReqestSnapshots *RequestSnapshotter
+	handlers         []http.Handler
+	RequestSnapshots *RequestSnapshotter
 }
 
 func MockHandler(h ...http.Handler) *HTTPMock {
 	rs := NewRequestSnapshotter()
 	return &HTTPMock{
-		handlers:        append([]http.Handler{rs}, h...),
-		ReqestSnapshots: rs,
+		handlers:         append([]http.Handler{rs}, h...),
+		RequestSnapshots: rs,
 	}
 }
 
