@@ -202,7 +202,7 @@ func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *com
 	}
 
 	// Once LocationDescriptor is gone, we don't need to propagate status anymore, delete namespace
-	logger.Sugar().Debugf("Location descriptor deleted, marking namespace %q for deletion", formationObjectDef.Namespace)
+	logger.Sugar().Debugf("LocationDescriptor deleted, marking namespace %q for deletion", formationObjectDef.Namespace)
 	conflict, retriable, ns, err := c.deleteNamespace(logger, formationObjectDef.Namespace)
 	if err != nil {
 		return false, conflict, retriable, nil, err
