@@ -307,7 +307,7 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string,
 			sd.Finalizers = removeServiceDescriptorFinalizer(sd.GetFinalizers())
 			finalizersUpdated = true
 			deletionDuration := c.clock.Now().Sub(sd.ObjectMeta.DeletionTimestamp.Time)
-			logger.Info("SD deleted", zap.Duration("deletionDuration", deletionDuration))
+			logger.Info("ServiceDescriptor deleted", zap.Duration("deletionDuration", deletionDuration))
 		}
 	}
 
