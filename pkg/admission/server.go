@@ -9,12 +9,20 @@ import (
 	ctrllogz "github.com/atlassian/ctrl/logz"
 	"github.com/atlassian/voyager/pkg/util/httputil"
 	"github.com/atlassian/voyager/pkg/util/logz"
+	"github.com/atlassian/voyager/pkg/util/sets"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+var (
+	kubesystemAccounts = sets.NewString(
+		"system:serviceaccount:kube-system:generic-garbage-collector",
+		"system:serviceaccount:kube-system:namespace-controller",
+	)
 )
 
 func AdmitFuncHandlerFunc(admitFuncName string, admitFunc AdmitFunc) http.HandlerFunc {
@@ -47,6 +55,18 @@ func AdmitFuncHandlerFunc(admitFuncName string, admitFunc AdmitFunc) http.Handle
 		if admissionReview.Request == nil {
 			logger.Error("admissionReview.Request is nil")
 			handleErrorf(logger, w, "request admissionReview did not have request object")
+			return
+		}
+
+		// blanket exempt garbage collector and namespace-controller from our webhooks
+		if kubesystemAccounts.Has(admissionReview.Request.UserInfo.Username) {
+			response := &v1beta1.AdmissionResponse{
+				Allowed: true,
+				Result: &metav1.Status{
+					Message: "kube-system accounts allowed through webhook",
+				},
+			}
+			writeResponse(logger, w, response, admissionReview.Request.UID)
 			return
 		}
 
