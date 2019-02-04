@@ -6,7 +6,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/atlassian/voyager/cmd/trebuchet",
     visibility = ["//visibility:public"],
-    deps = ["//cmd/creator/app:go_default_library"],
+    deps = ["//cmd/trebuchet/app:go_default_library"],
 )
 
 define_command_targets(

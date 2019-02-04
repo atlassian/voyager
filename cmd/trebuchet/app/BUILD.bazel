@@ -7,8 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd:go_default_library",
-        "//pkg/creator/server:go_default_library",
-        "//pkg/creator/server/options:go_default_library",
+        "//pkg/trebuchet/server:go_default_library",
+        "//pkg/trebuchet/server/options:go_default_library",
         "//pkg/util/apiserver:go_default_library",
         "//pkg/util/crash:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/server/options:go_default_library",
