@@ -3,6 +3,7 @@ package knownshapes
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -18,37 +19,39 @@ type BindableEnvironmentVariables struct {
 
 // +k8s:deepcopy-gen=true
 type BindableEnvironmentVariablesData struct {
-	wiringplugin.BindableShapeStruct `json:",inline"`
-	Prefix                           string            `json:"prefix,omitempty"`
-	Vars                             map[string]string `json:"vars,omitempty"`
+	libshapes.BindableShapeStruct `json:",inline"`
+	Prefix                        string            `json:"prefix,omitempty"`
+	Vars                          map[string]string `json:"vars,omitempty"`
+	ExcludeResourceNameInKey      bool              `json:"excludeResourceNameInKey,omitempty"`
 }
 
-func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix string, vars map[string]string) *BindableEnvironmentVariables {
+func NewBindableEnvironmentVariablesWithExcludeResourceName(resourceName smith_v1.ResourceName, prefix string, vars map[string]string, excludeResourceNameInKey bool) *BindableEnvironmentVariables {
 	return &BindableEnvironmentVariables{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: BindableEnvironmentVariablesShape,
 		},
 		Data: BindableEnvironmentVariablesData{
-			BindableShapeStruct: wiringplugin.BindableShapeStruct{
-				ServiceInstanceName: wiringplugin.ProtoReference{
+			BindableShapeStruct: libshapes.BindableShapeStruct{
+				ServiceInstanceName: libshapes.ProtoReference{
 					Resource: resourceName,
 					Path:     "metadata.name",
 					Example:  "aname",
 				},
 			},
-			Prefix: prefix,
-			Vars:   vars,
+			Prefix:                   prefix,
+			Vars:                     vars,
+			ExcludeResourceNameInKey: excludeResourceNameInKey,
 		},
 	}
 }
 
-func (b *BindableEnvironmentVariables) Name() wiringplugin.ShapeName {
-	return b.ShapeMeta.ShapeName
+func NewBindableEnvironmentVariables(resourceName smith_v1.ResourceName, prefix string, vars map[string]string) *BindableEnvironmentVariables {
+	return NewBindableEnvironmentVariablesWithExcludeResourceName(resourceName, prefix, vars, false)
 }
 
 func FindBindableEnvironmentVariablesShape(shapes []wiringplugin.Shape) (*BindableEnvironmentVariables, bool /*found*/, error) {
 	typed := &BindableEnvironmentVariables{}
-	found, err := FindAndCopyShapeByName(shapes, BindableEnvironmentVariablesShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, BindableEnvironmentVariablesShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

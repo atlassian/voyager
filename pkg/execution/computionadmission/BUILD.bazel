@@ -12,7 +12,6 @@ go_library(
         "//pkg/k8s:go_default_library",
         "//pkg/synchronization/api:go_default_library",
         "//pkg/util/layers:go_default_library",
-        "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/go-chi/chi:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
@@ -24,6 +23,7 @@ go_library(
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )
 

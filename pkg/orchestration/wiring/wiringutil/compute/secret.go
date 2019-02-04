@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"encoding/hex"
 	"io"
+	"sort"
 	"strings"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
@@ -13,23 +14,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-type BindingResult struct {
-	ResourceName            voyager.ResourceName
-	BindableEnvVarShape     knownshapes.BindableEnvironmentVariables
-	CreatedBindingFromShape smith_v1.Resource
+type ResourceWithEnvVarBinding struct {
+	ResourceName        voyager.ResourceName
+	ResourceType        voyager.ResourceType
+	BindableEnvVarShape knownshapes.BindableEnvironmentVariables
+	BindingName         smith_v1.ResourceName
 }
 
 var (
 	envVarReplacer = strings.NewReplacer("-", "_", ".", "_")
 )
 
-func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingResult) ([]smith_v1.Reference, map[string]string, error) {
+func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []ResourceWithEnvVarBinding) ([]smith_v1.Reference, map[string]string, error) {
 	originalEnvVars := map[string]string{}
 	var dependencyReferences []smith_v1.Reference
 
 	for _, bindingResult := range bindingResults {
 		prefix := bindingResult.BindableEnvVarShape.Data.Prefix
-		bindingName := bindingResult.CreatedBindingFromShape.Name
+		bindingName := bindingResult.BindingName
 		resourceName := bindingResult.ResourceName
 
 		for envVarKey, path := range bindingResult.BindableEnvVarShape.Data.Vars {
@@ -42,7 +44,12 @@ func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingRes
 
 			// Create the environment name {PREFIX}_{RESOURCE_NAME}_{KEY}
 			// Fail on any clashes
-			envVarName := makeEnvVarName([]string{prefix, string(resourceName), envVarKey}...)
+			envVarNameSlice := []string{prefix}
+			if !bindingResult.BindableEnvVarShape.Data.ExcludeResourceNameInKey {
+				envVarNameSlice = append(envVarNameSlice, string(resourceName))
+			}
+			envVarNameSlice = append(envVarNameSlice, envVarKey)
+			envVarName := makeEnvVarName(envVarNameSlice...)
 			_, exists := originalEnvVars[envVarName]
 			if exists {
 				return nil, nil, errors.Errorf("clashing environment variable %q", envVarName)
@@ -58,6 +65,11 @@ func GenerateEnvVars(renameEnvVar map[string]string, bindingResults []BindingRes
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
+
+	// sort the dependecy references to make the output stable
+	sort.Slice(dependencyReferences, func(i, j int) bool {
+		return dependencyReferences[i].Name < dependencyReferences[j].Name
+	})
 
 	return dependencyReferences, envVars, nil
 

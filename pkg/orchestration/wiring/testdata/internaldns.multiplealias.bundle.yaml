@@ -206,8 +206,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: InternalDNS
           name: internaldns
         spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7

@@ -5,13 +5,13 @@ metadata:
   namespace: ptl-percolator
 spec:
   resources:
-  - name: basic
+  - name: ups
     type: UPS
 
   - name: compute
     type: EC2Compute
     dependsOn:
-    - basic
+    - ups
     spec:
       meaninglesskey: used as an example
       notifications:

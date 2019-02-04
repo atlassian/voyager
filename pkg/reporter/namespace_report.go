@@ -68,6 +68,10 @@ type NamespaceReportHandler struct {
 	location voyager.Location
 }
 
+type ProviderOpsResponse struct {
+	Result *ProviderResponse `json:"result,omitempty"`
+}
+
 type ProviderResponse struct {
 	Name       string                 `json:"name,omitempty"`
 	Status     reporter_v1.Status     `json:"status,omitempty"`
@@ -225,14 +229,22 @@ func (n *NamespaceReportHandler) getResourceFromProvider(ctx context.Context, pr
 		return handleProviderError(logger, obj, errors.Errorf("Failed request responded with status %d body %s", resp.StatusCode, string(body)), "request")
 	}
 
-	providerResp := ProviderResponse{}
-	err = json.Unmarshal(body, &providerResp)
+	providerOpsResp := ProviderOpsResponse{}
+	err = json.Unmarshal(body, &providerOpsResp)
 	if err != nil {
-		return handleProviderError(logger, obj, err, "unmarshal json")
+		return handleProviderError(logger, obj, err, "unmarshal new reporter response json")
+	} else if providerOpsResp.Result == nil {
+		// Support migration from report model to ops api spec
+		logger.Warn("Provider using old report spec", zap.String("provider", provider.Name()), zap.Error(err))
+		providerOpsResp.Result = &ProviderResponse{}
+		err = json.Unmarshal(body, providerOpsResp.Result)
+		if err != nil {
+			return handleProviderError(logger, obj, err, "unmarshal json")
+		}
 	}
 
 	return reporter_v1.Resource{
-		Name:         providerResp.Name,
+		Name:         providerOpsResp.Result.Name,
 		ResourceType: getClassName(obj.Spec.(sc_v1b1.ServiceInstanceSpec)),
 		References: []reporter_v1.Reference{
 			reporter_v1.Reference{
@@ -240,10 +252,10 @@ func (n *NamespaceReportHandler) getResourceFromProvider(ctx context.Context, pr
 				Layer: reporter_v1.LayerObject,
 			},
 		},
-		Properties: providerResp.Properties,
-		Spec:       providerResp.Spec,
-		Status:     providerResp.Status,
-		Version:    providerResp.Version,
+		Properties: providerOpsResp.Result.Properties,
+		Spec:       providerOpsResp.Result.Spec,
+		Status:     providerOpsResp.Result.Status,
+		Version:    providerOpsResp.Result.Version,
 	}
 }
 

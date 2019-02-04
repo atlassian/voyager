@@ -107,7 +107,7 @@ func assertOperationRejected(t *testing.T, operation admissionv1beta1.Operation)
 		}),
 	}, authz_v1.SubjectAccessReviewStatus{})
 	require.NoError(t, err)
-	require.Equal(t, int32(400), ar.Result.Code)
+	require.Equal(t, int32(422), ar.Result.Code)
 	require.Equal(t, fmt.Sprintf("unsupported operation %q", string(operation)), ar.Result.Message)
 	require.Empty(t, actions)
 }

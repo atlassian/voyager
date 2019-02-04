@@ -8,10 +8,7 @@ import (
 	"sort"
 	"text/template"
 
-	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
-	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/execution/plugins"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -96,7 +93,7 @@ var defaultEC2ComputeAssumeRoleStatement = IamAssumeRoleStatement{
 	Action: "sts:AssumeRole",
 }
 
-func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
+func defaultJSON(serviceName voyager.ServiceName) IamPolicy {
 	var condition json.RawMessage = []byte(fmt.Sprintf(`
 					{
 						"StringEquals": {
@@ -104,9 +101,9 @@ func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
 						}
                   	}`, serviceName))
 
-	return &IamPolicy{
+	return IamPolicy{
 		PolicyName: "default.json",
-		PolicyDocument: &IamPolicyDocument{
+		PolicyDocument: IamPolicyDocument{
 			Version: "2012-10-17",
 			Statement: []IamPolicyStatement{
 				{
@@ -171,10 +168,19 @@ func defaultJSON(serviceName voyager.ServiceName) *IamPolicy {
 	}
 }
 
-func generateRoleInstance(spec *Spec, dependencies map[smith_v1.ResourceName]smith_plugin.Dependency) (*sc_v1b1.ServiceInstance, error) {
-	policyDocuments, err := extractIamPolicies(dependencies)
-	if err != nil {
-		return nil, err
+func generateRoleInstance(spec *Spec) (*sc_v1b1.ServiceInstance, error) {
+	policyDocuments := make([]IamPolicyDocument, 0, len(spec.PolicySnippets))
+	for resourceName, policySnippet := range spec.PolicySnippets {
+		policy := IamPolicyDocument{}
+		if err := json.Unmarshal([]byte(policySnippet), &policy); err != nil {
+			return nil, errors.Wrapf(err, "failed to extract IAM policy from the resource %q", resourceName)
+		}
+
+		if err := validatePolicy(&policy); err != nil {
+			return nil, errors.Wrapf(err, "invalid policy emitted by %q", resourceName)
+		}
+
+		policyDocuments = append(policyDocuments, policy)
 	}
 
 	policy, err := combineIamPolicies(policyDocuments)
@@ -214,16 +220,16 @@ func generateRoleInstance(spec *Spec, dependencies map[smith_v1.ResourceName]smi
 	}, nil
 }
 
-func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy *IamPolicy, serviceID voyager.ServiceName, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
+func constructCloudFormationPayload(computeType ComputeType, oapResourceName string, policy IamPolicy, serviceID voyager.ServiceName, createInstanceProfile bool, managedPolicies, assumeRoles []string, env oap.ServiceEnvironment) (*runtime.RawExtension, error) {
 
-	iamPolicies := make([]*IamPolicy, 0, 2) // should not be nil to avoid serializing it as `null`
+	iamPolicies := make([]IamPolicy, 0, 2) // should not be nil to avoid serializing it as `null`
 
 	// only add default.json policy if compute type is EC2ComputeType
 	if computeType == EC2ComputeType && serviceID != "" {
 		iamPolicies = append(iamPolicies, defaultJSON(serviceID))
 	}
 
-	if policy != nil && policy.PolicyDocument != nil && len(policy.PolicyDocument.Statement) > 0 {
+	if len(policy.PolicyDocument.Statement) > 0 {
 		iamPolicies = append(iamPolicies, policy)
 	}
 
@@ -265,40 +271,12 @@ func constructCloudFormationPayload(computeType ComputeType, oapResourceName str
 	})
 }
 
-func extractIamPolicies(dependencies map[smith_v1.ResourceName]smith_plugin.Dependency) ([]*IamPolicyDocument, error) {
-	policies := make([]*IamPolicyDocument, 0, len(dependencies))
-	for resourceName, dependency := range dependencies {
-		binding, ok := dependency.Actual.(*sc_v1b1.ServiceBinding)
-		if !ok {
-			gvk := dependency.Actual.GetObjectKind().GroupVersionKind()
-			var temp *sc_v1b1.ServiceBinding // so we can print type
-			return nil, errors.Errorf("unexpected dependency GVK for name=%s, got: %s (%T), expected: %s (%T)",
-				resourceName, gvk, dependency.Actual, sc_v1b1.SchemeGroupVersion.WithKind("ServiceBinding"), temp)
-		}
-
-		policy, err := extractPolicy(binding, &dependency)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to extract IAM policy from the resource %q", resourceName)
-		}
-		if policy == nil {
-			continue
-		}
-
-		if err := validatePolicy(policy); err != nil {
-			return nil, errors.Wrapf(err, "invalid policy emitted by %q", resourceName)
-		}
-
-		policies = append(policies, policy)
-	}
-	return policies, nil
-}
-
-func combineIamPolicies(policies []*IamPolicyDocument) (*IamPolicy, error) {
+func combineIamPolicies(policies []IamPolicyDocument) (IamPolicy, error) {
 	rolePolicy, err := mergePolicies(policies)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmergeable policy")
+		return IamPolicy{}, errors.Wrap(err, "unmergeable policy")
 	}
-	return &IamPolicy{
+	return IamPolicy{
 		PolicyName:     "voyager-merge",
 		PolicyDocument: rolePolicy,
 	}, nil
@@ -328,33 +306,30 @@ func makeStatementKey(statement *IamPolicyStatement) (string, error) {
 	return key.String(), nil
 }
 
-func mergePolicies(policies []*IamPolicyDocument) (*IamPolicyDocument, error) {
+func mergePolicies(policies []IamPolicyDocument) (IamPolicyDocument, error) {
 	// This not only puts all statements in one policy, it also merges
 	// statements that have the same actions/conditions.
-	statementsByKey := make(map[string]*IamPolicyStatement)
+	statementsByKey := make(map[string]IamPolicyStatement)
 	for _, policy := range policies {
 		for _, statement := range policy.Statement {
 			statementKey, err := makeStatementKey(&statement)
 			if err != nil {
-				return nil, err
+				return IamPolicyDocument{}, err
 			}
 			for _, resource := range statement.Resource {
-				if _, present := statementsByKey[statementKey]; !present {
-					statementsByKey[statementKey] = &IamPolicyStatement{
+				statementByKey, present := statementsByKey[statementKey]
+				if !present {
+					statementByKey = IamPolicyStatement{
 						Effect:    "Allow",
 						Action:    statement.Action,
 						NotAction: statement.NotAction,
 						Condition: statement.Condition,
 					}
 				}
-				statementsByKey[statementKey].Resource = append(statementsByKey[statementKey].Resource, resource)
+				statementByKey.Resource = append(statementByKey.Resource, resource)
+				statementsByKey[statementKey] = statementByKey
 			}
 		}
-	}
-
-	finalPolicy := IamPolicyDocument{
-		Version:   "2012-10-17",
-		Statement: make([]IamPolicyStatement, 0, len(statementsByKey)),
 	}
 
 	// Now we need to sort things so we have a stable output
@@ -363,34 +338,17 @@ func mergePolicies(policies []*IamPolicyDocument) (*IamPolicyDocument, error) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	statements := make([]IamPolicyStatement, 0, len(statementsByKey))
 	for _, k := range keys {
-		sort.Strings(statementsByKey[k].Resource)
-		finalPolicy.Statement = append(finalPolicy.Statement, *statementsByKey[k])
+		statementByKey := statementsByKey[k]
+		sort.Strings(statementByKey.Resource)
+		statements = append(statements, statementByKey)
 	}
 
-	return &finalPolicy, nil
-}
-
-func extractPolicy(binding *sc_v1b1.ServiceBinding, dependency *smith_plugin.Dependency) (*IamPolicyDocument, error) {
-	bindingSecretName := binding.Spec.SecretName
-	secret := plugins.FindBindingSecret(binding, dependency.Outputs)
-	if secret == nil {
-		return nil, errors.Errorf("secret %q not found in the ServiceBinding outputs", bindingSecretName)
-	}
-
-	data, policyPresent := secret.Data[IamPolicyFieldName]
-	if !policyPresent {
-		return nil, nil
-	}
-
-	// Even if it was originally JSON, it's all strings by the time it's thrown
-	// into a Kubernetes secret.
-	policy := IamPolicyDocument{}
-	if err := json.Unmarshal(data, &policy); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal IAM policy from JSON object")
-	}
-
-	return &policy, nil
+	return IamPolicyDocument{
+		Version:   "2012-10-17",
+		Statement: statements,
+	}, nil
 }
 
 func validatePolicy(policy *IamPolicyDocument) error {

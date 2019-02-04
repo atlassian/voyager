@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/svcat:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
     ],
 )
 

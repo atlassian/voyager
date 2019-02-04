@@ -1,0 +1,25 @@
+policySnippets:
+  dynamo: >
+    {
+      "Statement": [{
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable",
+          "dynamodb:GetItem",
+          "dynamodb:ListTables",
+          "dynamodb:PutItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem",
+          "dynamodb:UpdateTable",
+          "dynamodb:DescribeStream",
+          "dynamodb:GetRecords",
+          "dynamodb:GetShardIterator",
+          "dynamodb:ListStreams"
+        ],
+        "NotResource": ["arn:aws:dynamodb:us-west-2:444455556666:table/Books"]
+      }]
+    }

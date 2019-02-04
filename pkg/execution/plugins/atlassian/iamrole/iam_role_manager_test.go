@@ -12,12 +12,10 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/testutil"
-	"github.com/ghodss/yaml"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	core_v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 const fixturesDir = "testdata"
@@ -25,7 +23,7 @@ const fixturesDir = "testdata"
 func TestFixtures(t *testing.T) {
 	t.Parallel()
 
-	files, errRead := filepath.Glob(filepath.Join(fixturesDir, "*.dependencies.yaml"))
+	files, errRead := filepath.Glob(filepath.Join(fixturesDir, "*.policySnippets.yaml"))
 	require.NoError(t, errRead)
 	for _, file := range files {
 		t.Run(string(EC2ComputeType)+"/"+file, func(t *testing.T) {
@@ -41,10 +39,10 @@ func TestFixtures(t *testing.T) {
 func TestGenerateTemplate(t *testing.T) {
 	t.Parallel()
 	var serviceNameHack voyager.ServiceName = "aNameLongerThan37CharactersNotTHEREYet"
-	policyBytes, err := json.MarshalIndent([]*IamPolicy{
+	policyBytes, err := json.MarshalIndent([]IamPolicy{
 		{
 			PolicyName: "voyager-merge",
-			PolicyDocument: &IamPolicyDocument{
+			PolicyDocument: IamPolicyDocument{
 				ID:        "wee",
 				Version:   "2",
 				Statement: nil,
@@ -84,7 +82,6 @@ func TestGenerateTemplate(t *testing.T) {
 func TestGenerateRoleInstance(t *testing.T) {
 	t.Parallel()
 
-	noDeps := map[smith_v1.ResourceName]smith_plugin.Dependency{}
 	spec := &Spec{
 		ServiceName:     "test-svc-app",
 		OAPResourceName: "app-iamrole",
@@ -132,7 +129,7 @@ func TestGenerateRoleInstance(t *testing.T) {
 		spec.CreateInstanceProfile = true
 		spec.ManagedPolicies = []string{"arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-11210HMV0LWK"}
 
-		actualSI, err := generateRoleInstance(spec, noDeps)
+		actualSI, err := generateRoleInstance(spec)
 		require.NoError(t, err)
 
 		verifyServiceInstance(t, "iam_role_service_instance_ec2_compute.yaml", actualSI)
@@ -143,7 +140,7 @@ func TestGenerateRoleInstance(t *testing.T) {
 		spec.CreateInstanceProfile = false
 		spec.ManagedPolicies = nil
 
-		actualSI, err := generateRoleInstance(spec, noDeps)
+		actualSI, err := generateRoleInstance(spec)
 		require.NoError(t, err)
 
 		verifyServiceInstance(t, "iam_role_service_instance_kube_compute.yaml", actualSI)
@@ -180,10 +177,13 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 		rawSpec["managedPolicies"] = []string{"arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-11210HMV0LWK"}
 	}
 
-	dependenciesData, err := ioutil.ReadFile(file)
+	// Read the policy snippets and write it into the rawspec
+	policySnippets, err := ioutil.ReadFile(file)
 	require.NoError(t, err)
-	dependencies, err := unmarshalDependencies(dependenciesData)
+	spec := Spec{}
+	err = yaml.Unmarshal(policySnippets, &spec)
 	require.NoError(t, err)
+	rawSpec["policySnippets"] = spec.PolicySnippets
 
 	var resultFilePrefix string
 	{
@@ -197,10 +197,10 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 	require.NoError(t, err)
 
 	context := smith_plugin.Context{
-		Dependencies: dependencies,
+		Dependencies: createDependencies(),
 	}
 
-	processResult, err := iamRolePlugin.Process(rawSpec, &context)
+	processResult := iamRolePlugin.Process(rawSpec, &context)
 
 	resultFilePostFix := ".iam_template_ec2_compute.json"
 	if computeType == KubeComputeType {
@@ -210,16 +210,17 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 	filename := resultFilePrefix + resultFilePostFix
 	data, errSuccess := ioutil.ReadFile(filename)
 	if errSuccess == nil {
-		require.NoError(t, err)
+		require.Equal(t, smith_plugin.ProcessResultSuccessType, processResult.StatusType())
 
 		// turn the processResult into a serviceInstance
-		serviceInstance := processResult.Object.(*sc_v1b1.ServiceInstance)
+		serviceInstance := processResult.(*smith_plugin.ProcessResultSuccess).Object.(*sc_v1b1.ServiceInstance)
 		validateServiceInstance(t, serviceInstance, data, filename)
 	}
 
 	data, errFailure := ioutil.ReadFile(resultFilePrefix + ".error")
 	if errFailure == nil {
-		require.EqualError(t, err, strings.TrimSpace(string(data)))
+		require.Equal(t, smith_plugin.ProcessResultFailureType, processResult.StatusType())
+		require.EqualError(t, processResult.(*smith_plugin.ProcessResultFailure).Error, strings.TrimSpace(string(data)))
 	}
 
 	if errFailure != nil && errSuccess != nil {
@@ -266,38 +267,8 @@ func getTemplateBodyAsJSONObject(t *testing.T, si *sc_v1b1.ServiceInstance) *map
 	return &templateBody
 }
 
-// To load the dependencies from a file is fun, because we don't have type information.
-// We therefore create a new 'struct' with the correct types, but even then
-// core_v1.Secret doesn't seem to unmarshal StringData into Data (there's no
-// custom unmarshaller - apparently happens at the API level), so we do that manually.
-func unmarshalDependencies(dependenciesData []byte) (map[smith_v1.ResourceName]smith_plugin.Dependency, error) {
-	var unprocessedDependencies map[smith_v1.ResourceName]struct {
-		Spec    smith_v1.Resource
-		Actual  *sc_v1b1.ServiceBinding
-		Outputs []*core_v1.Secret
-	}
-
-	err := yaml.Unmarshal(dependenciesData, &unprocessedDependencies)
-	if err != nil {
-		return nil, err
-	}
-
-	dependencies := make(map[smith_v1.ResourceName]smith_plugin.Dependency, len(unprocessedDependencies))
-	for key, value := range unprocessedDependencies {
-		outputs := make([]runtime.Object, len(value.Outputs))
-		for i, output := range value.Outputs {
-			output.Data = make(map[string][]byte, len(output.StringData))
-			for key, datum := range output.StringData {
-				output.Data[key] = []byte(datum)
-			}
-			output.StringData = nil
-			outputs[i] = output
-		}
-		dependencies[key] = smith_plugin.Dependency{
-			Spec:    value.Spec,
-			Actual:  value.Actual,
-			Outputs: outputs,
-		}
-	}
-	return dependencies, nil
+func createDependencies() map[smith_v1.ResourceName]smith_plugin.Dependency {
+	// This creates an empty map. The reason it does so is because while the
+	// plugin *should* be passed dependencies, the dependencies are ignored.
+	return map[smith_v1.ResourceName]smith_plugin.Dependency{}
 }

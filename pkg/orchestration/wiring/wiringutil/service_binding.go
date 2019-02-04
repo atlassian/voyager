@@ -3,7 +3,7 @@ package wiringutil
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -16,7 +16,7 @@ import (
 // there is a need to bind to multiple ServiceInstances produced by the same producer, construct names
 // (using ConsumerProducerResourceNameWithPostfix() and ConsumerProducerMetaNameWithPostfix() functions) with
 // different postfixes.
-func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, resourceReference wiringplugin.ProtoReference) smith_v1.Resource {
+func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, resourceReference libshapes.ProtoReference) smith_v1.Resource {
 	bindingResourceName := ConsumerProducerResourceNameWithPostfix(consumer, producer, "binding")
 	bindingMetaName := ConsumerProducerMetaName(consumer, producer)
 	referenceName := ReferenceName(resourceReference.Resource, "metadata", "name")

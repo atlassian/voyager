@@ -42,8 +42,6 @@ type State struct {
 
 // +k8s:deepcopy-gen=true
 type StateSpec struct {
-	//Name      string          `json:"name,omitempty"` // TODO this field exists in examples, but do we actually need it?
-
 	// ConfigMapName is the name of the config map to read in the State's
 	// namespace that will hold the state configuration, e.g. tags,
 	// businessUnit, notificationEmail
@@ -88,7 +86,7 @@ func (sd *StateDependency) DeepCopyInto(out *StateDependency) {
 // resource name, or an object containing name and attributes.
 func (sd *StateDependency) UnmarshalJSON(data []byte) error {
 	type fakeStateDependency StateDependency
-	res := fakeStateDependency{}
+	var res fakeStateDependency
 	if err := json.Unmarshal(data, &res); err == nil {
 		sd.Name = res.Name
 		sd.Attributes = res.Attributes
@@ -101,10 +99,6 @@ func (sd *StateDependency) UnmarshalJSON(data []byte) error {
 	}
 
 	sd.Name = resourceName
-	// TODO: the empty map below (vs nil) is necessary due to deepcopy issues. Remove once we are on 1.11 machinery
-	// see also  https://github.com/kubernetes/kubernetes/pull/62063/files#diff-42b29a4397bd0cf0a0e6183239fbe393R448
-	// https://github.com/kubernetes/kubernetes/pull/62063#discussion_r179122869
-	sd.Attributes = map[string]interface{}{}
 	return nil
 }
 
@@ -140,9 +134,45 @@ func (ss *StateStatus) String() string {
 }
 
 // +k8s:deepcopy-gen=true
+type ResourceStatusData struct {
+	Conditions []cond_v1.Condition    `json:"conditions,omitempty"`
+	Data       map[string]interface{} `json:"data,omitempty"`
+}
+
+// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
+// since it doesn't know it's JSON).
+func (in *ResourceStatusData) DeepCopyInto(out *ResourceStatusData) {
+	*out = *in
+
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make([]cond_v1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	out.Data = runtime.DeepCopyJSON(in.Data)
+}
+
+// +k8s:deepcopy-gen=true
 type ResourceStatus struct {
-	Name       voyager.ResourceName `json:"name,omitempty"`
-	Conditions []cond_v1.Condition  `json:"conditions,omitempty"`
+	Name               voyager.ResourceName `json:"name,omitempty"`
+	ResourceStatusData `json:",inline"`
+}
+
+// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
+// since it doesn't know it's JSON).
+func (in *ResourceStatus) DeepCopyInto(out *ResourceStatus) {
+	*out = *in
+
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make([]cond_v1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	out.Data = runtime.DeepCopyJSON(in.Data)
 }
 
 func (s *State) GetCondition(conditionType cond_v1.ConditionType) (int, *cond_v1.Condition) {

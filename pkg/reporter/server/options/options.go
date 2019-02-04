@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	kubeoptions "k8s.io/apiserver/pkg/server/options"
 )
 
 type ReporterServerOptions struct {
@@ -18,9 +19,9 @@ type ReporterServerOptions struct {
 }
 
 // NewReporterServerOptions creates default options.
-func NewReporterServerOptions(reporterHandler http.Handler) *ReporterServerOptions {
+func NewReporterServerOptions(reporterHandler http.Handler, processInfo *kubeoptions.ProcessInfo) *ReporterServerOptions {
 	o := &ReporterServerOptions{
-		RecommendedOptions: utilapiserver.NewRecommendedOptions(),
+		RecommendedOptions: utilapiserver.NewRecommendedOptions(processInfo),
 		ReporterHandler:    reporterHandler,
 	}
 

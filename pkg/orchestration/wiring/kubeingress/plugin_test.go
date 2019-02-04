@@ -7,7 +7,6 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -111,7 +110,6 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 
 	computeDep := wiringplugin.WiredDependency{
 		Name: deploymentName,
-		Type: apik8scompute.ResourceType,
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(smith_v1.ResourceName(deploymentName), labels),
@@ -119,9 +117,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 		},
 	}
 
-	nonComputeDep := wiringplugin.WiredDependency{
-		Type: voyager.ResourceType("MiscellaneousResource"),
-	}
+	nonComputeDep := wiringplugin.WiredDependency{}
 
 	t.Run("valid single dependency", func(t *testing.T) {
 		context := wiringplugin.WiringContext{

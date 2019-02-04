@@ -3,6 +3,7 @@ package knownshapes
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -35,13 +36,9 @@ func NewSetOfPodsSelectableByLabels(resourceName smith_v1.ResourceName, labels m
 	}
 }
 
-func (s *SetOfPodsSelectableByLabels) Name() wiringplugin.ShapeName {
-	return s.ShapeName
-}
-
 func FindSetOfPodsSelectableByLabelsShape(shapes []wiringplugin.Shape) (*SetOfPodsSelectableByLabels, bool /*found*/, error) {
 	typed := &SetOfPodsSelectableByLabels{}
-	found, err := FindAndCopyShapeByName(shapes, SetOfPodsSelectableByLabelsShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, SetOfPodsSelectableByLabelsShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

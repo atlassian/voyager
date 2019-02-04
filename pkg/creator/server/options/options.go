@@ -1,7 +1,6 @@
 package options
 
 import (
-	"io"
 	"net"
 
 	"github.com/atlassian/voyager/pkg/creator"
@@ -11,24 +10,19 @@ import (
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	kubeoptions "k8s.io/apiserver/pkg/server/options"
 )
 
 type CreatorServerOptions struct {
 	RecommendedOptions *utilapiserver.RecommendedOptions
 	CreatorOptions     *CreatorOptions
-
-	StdOut io.Writer
-	StdErr io.Writer
 }
 
 // NewCreatorServerOptions creates default options.
-func NewCreatorServerOptions(out, errOut io.Writer) *CreatorServerOptions {
+func NewCreatorServerOptions(processInfo *kubeoptions.ProcessInfo) *CreatorServerOptions {
 	o := &CreatorServerOptions{
-		RecommendedOptions: utilapiserver.NewRecommendedOptions(),
+		RecommendedOptions: utilapiserver.NewRecommendedOptions(processInfo),
 		CreatorOptions:     NewCreatorOptions(),
-
-		StdOut: out,
-		StdErr: errOut,
 	}
 
 	return o

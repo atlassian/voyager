@@ -3,12 +3,10 @@ package datadog
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -160,15 +158,11 @@ func validateRequest(stateResource *orch_v1.StateResource, context *wiringplugin
 	if stateResource.Type != ResourceType {
 		return errors.Errorf("invalid resource type: %q", stateResource.Type)
 	}
-	depResource := context.Dependencies
 	if len(context.Dependencies) != 1 {
 		return errors.New("default alarm should only dependent on one KubeCompute")
 	}
 	if stateResource.Spec != nil {
 		return errors.Errorf("default alarm does not accept any user parameters")
-	}
-	if strings.Compare(string(depResource[0].Type), string(apik8scompute.ResourceType)) != 0 {
-		return errors.New("default alarms should only dependent on KubeCompute resource")
 	}
 	return nil
 }
@@ -221,4 +215,3 @@ func (q *QueryParams) generateQuery() string {
 //	return setOfScalingShape.Data.DeploymentResourceName, &scaling, nil
 //}
 //
-//( avg:kubernetes.cpu.usage.total{env:prod,kube_replica_set:creator-c45fccd7,kube_namespace:voyager,kube_deployment:creator} by {container_id} / ( avg:kubernetes.cpu.limits{env:prod,kube_replica_set:creator-c45fccd7,kube_namespace:voyager,kube_deployment:creator} by {container_id} * 1000000 ) ) * 100

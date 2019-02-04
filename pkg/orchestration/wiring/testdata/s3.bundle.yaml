@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: S3
           name: my-bucket
         spec:
           clusterServiceClassExternalID: a6bf1e70-9bbb-4826-9793-75871cb540f1

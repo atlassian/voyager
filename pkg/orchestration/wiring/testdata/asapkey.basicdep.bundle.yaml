@@ -19,8 +19,6 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          annotations:
-            voyager.atl-paas.net/envResourcePrefix: ASAPKey
           name: asap
         spec:
           clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
@@ -45,18 +43,35 @@ spec:
           instanceRef:
             name: '!{asap--instance-metadata-name}'
           secretName: kubecompute-simple--asap
-  - name: kubecompute-simple--podsecretenvvar
+  - name: kubecompute-simple--secret
     references:
-    - resource: kubecompute-simple--asap--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70
+      path: data.private_key
+      resource: kubecompute-simple--asap--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e
+      path: data.key_id
+      resource: kubecompute-simple--asap--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc
+      path: data.issuer
+      resource: kubecompute-simple--asap--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1
+      path: data.audience
+      resource: kubecompute-simple--asap--binding
     spec:
       plugin:
-        name: podsecretenvvar
-        objectName: kubecompute-simple--podsecretenvvar
+        name: secret
+        objectName: kubecompute-simple--secret
         spec:
-          ignoreKeyRegex: ^IamPolicySnippet$
+          data:
+            ASAP_PRIVATE_KEY: '!{kubecompute-simple--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
+            ASAP_KEY_ID: '!{kubecompute-simple--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+            ASAP_ISSUER: '!{kubecompute-simple--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+            ASAP_AUDIENCE: '!{kubecompute-simple--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
   - name: kubecompute-simple---iamrole
-    references:
-    - resource: kubecompute-simple--asap--binding
     spec:
       plugin:
         name: iamrole
@@ -100,6 +115,7 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
+          policySnippets: {}
   - name: kubecompute-simple---iamrole-binding
     references:
     - name: kubecompute-simple---iamrole-metadata-name
@@ -139,9 +155,9 @@ spec:
               stateName: state1
   - name: kubecompute-simple
     references:
-    - name: kubecompute-simple--podsecretenvvar-metadata-name
+    - name: kubecompute-simple--secret-metadata-name
       path: metadata.name
-      resource: kubecompute-simple--podsecretenvvar
+      resource: kubecompute-simple--secret
     - example: arn:aws:iam::123456789012:role/path/role
       modifier: bindsecret
       name: kubecompute-simple---iamrole-binding-IAMRoleARN
@@ -218,7 +234,7 @@ spec:
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 envFrom:
                 - secretRef:
-                    name: '!{kubecompute-simple--podsecretenvvar-metadata-name}'
+                    name: '!{kubecompute-simple--secret-metadata-name}'
                     optional: false
                 - secretRef:
                     name: common-secrets

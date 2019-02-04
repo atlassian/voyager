@@ -1,0 +1,5 @@
+policySnippets:
+  dynamo: >
+    {
+      "Statement": "wrongtype"
+    }

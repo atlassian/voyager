@@ -60,6 +60,7 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: my-service
+          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name
@@ -120,12 +121,17 @@ spec:
               envType: testenv
               region: testregion
             meaninglesskey: used as an example
+            alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
             notifications:
               email: abc@email.com
-              pagerduty:
-                cloudwatch: custom-cloudwatch
-                generic: custom-generic
-                lowPriority: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             service:
               id: my-service
               loggingId: custom-logging-id

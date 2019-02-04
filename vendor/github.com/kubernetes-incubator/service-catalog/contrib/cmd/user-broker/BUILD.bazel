@@ -7,10 +7,10 @@ go_library(
     importpath = "github.com/kubernetes-incubator/service-catalog/contrib/cmd/user-broker",
     visibility = ["//visibility:private"],
     deps = [
-        "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/user_provided/controller:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
     ],
 )
 

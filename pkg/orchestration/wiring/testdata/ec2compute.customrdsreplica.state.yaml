@@ -1,0 +1,38 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+spec:
+  resources:
+  - name: rds
+    type: RDS
+    spec:
+      RDSType: postgres961
+      ReadReplica: true
+  - name: db
+    type: Postgres
+    dependsOn:
+    - rds
+  - name: compute
+    type: EC2Compute
+    dependsOn:
+    - db
+    spec:
+      meaninglesskey: used as an example
+      notifications:
+        email: notification@email.com
+      ec2:
+        instanceType: t2.small
+      autoScalingGroup:
+        minSize: 1
+        maxSize: 2
+      docker:
+        envVars:
+          key: "value"
+        compose:
+          backendapp:
+            image: docker.example.com/my-app
+            tag: '1.0'
+            ports:
+            - 8080:8080

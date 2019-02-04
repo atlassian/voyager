@@ -22,19 +22,23 @@ func (p *Plugin) Describe() *smith_plugin.Description {
 }
 
 // Process processes a plugin specification and produces an object as the result.
-func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.Context) (*smith_plugin.ProcessResult, error) {
+func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.Context) smith_plugin.ProcessResult {
 	spec := Spec{}
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(rawSpec, &spec)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal json spec")
+		return &smith_plugin.ProcessResultFailure{
+			Error: errors.Wrap(err, "failed to unmarshal json spec"),
+		}
 	}
 
 	// Do the processing
-	roleInstance, err := generateRoleInstance(&spec, context.Dependencies)
+	roleInstance, err := generateRoleInstance(&spec)
 	if err != nil {
-		return nil, err
+		return &smith_plugin.ProcessResultFailure{
+			Error: err,
+		}
 	}
-	return &smith_plugin.ProcessResult{
+	return &smith_plugin.ProcessResultSuccess{
 		Object: roleInstance,
-	}, nil
+	}
 }

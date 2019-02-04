@@ -6,8 +6,8 @@ import (
 
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	"github.com/atlassian/voyager/pkg/options"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 type Options struct {

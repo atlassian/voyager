@@ -6,6 +6,8 @@
 package v1
 
 import (
+	"time"
+
 	v1 "github.com/atlassian/voyager/pkg/apis/formation/v1"
 	scheme "github.com/atlassian/voyager/pkg/formation/client/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,11 +64,16 @@ func (c *locationDescriptors) Get(name string, options metav1.GetOptions) (resul
 
 // List takes label and field selectors, and returns the list of LocationDescriptors that match those selectors.
 func (c *locationDescriptors) List(opts metav1.ListOptions) (result *v1.LocationDescriptorList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.LocationDescriptorList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("locationdescriptors").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -74,11 +81,16 @@ func (c *locationDescriptors) List(opts metav1.ListOptions) (result *v1.Location
 
 // Watch returns a watch.Interface that watches the requested locationDescriptors.
 func (c *locationDescriptors) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("locationdescriptors").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -120,10 +132,15 @@ func (c *locationDescriptors) Delete(name string, options *metav1.DeleteOptions)
 
 // DeleteCollection deletes a collection of objects.
 func (c *locationDescriptors) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("locationdescriptors").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

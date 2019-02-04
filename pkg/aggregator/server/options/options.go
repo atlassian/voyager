@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	kubeoptions "k8s.io/apiserver/pkg/server/options"
 )
 
 type AggregatorServerOptions struct {
@@ -18,9 +19,9 @@ type AggregatorServerOptions struct {
 }
 
 // NewAggregatorServerOptions creates default options.
-func NewAggregatorServerOptions(aggregatorHandler http.Handler) *AggregatorServerOptions {
+func NewAggregatorServerOptions(aggregatorHandler http.Handler, processInfo *kubeoptions.ProcessInfo) *AggregatorServerOptions {
 	o := &AggregatorServerOptions{
-		RecommendedOptions: utilapiserver.NewRecommendedOptions(),
+		RecommendedOptions: utilapiserver.NewRecommendedOptions(processInfo),
 		AggregatorHandler:  aggregatorHandler,
 	}
 

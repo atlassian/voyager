@@ -13,18 +13,20 @@ const (
 )
 
 var (
+	_ wiringplugin.Shape = &ASAPKey{}
 	_ wiringplugin.Shape = &BindableEnvironmentVariables{}
 	_ wiringplugin.Shape = &BindableIamAccessible{}
 	_ wiringplugin.Shape = &IngressEndpoint{}
 	_ wiringplugin.Shape = &SetOfPodsSelectableByLabels{}
+	_ wiringplugin.Shape = &SharedDb{}
 	_ wiringplugin.Shape = &SnsSubscribable{}
-	_ wiringplugin.Shape = &ASAPKey{}
 )
 
 func TestAllKnownShapes(t *testing.T) {
 	t.Parallel()
 
 	allKnownShapes := []wiringplugin.Shape{
+		NewASAPKey(),
 		NewBindableEnvironmentVariables(resourceName, "abc", map[string]string{"a": "b"}),
 		NewBindableIamAccessible(resourceName, "somePath"),
 		NewIngressEndpoint(resourceName),
@@ -33,8 +35,25 @@ func TestAllKnownShapes(t *testing.T) {
 			MinReplicas: 1,
 			MaxReplicas: 5,
 		}),
+		NewSharedDbShape(resourceName, true),
 		NewSnsSubscribable(resourceName),
-		NewASAPKey(),
+
+		&wiringplugin.UnstructuredShape{
+			ShapeMeta: wiringplugin.ShapeMeta{
+				ShapeName: "somename",
+			},
+			Data: map[string]interface{}{
+				"a": "b",
+				"b": int64(5),
+				"c": map[string]interface{}{
+					"x": "z",
+				},
+				"d": []interface{}{
+					"1",
+				},
+				"e": float64(1.1),
+			},
+		},
 	}
 
 	for _, shape := range allKnownShapes {

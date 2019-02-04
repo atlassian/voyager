@@ -1,1 +1,1 @@
-failed to wire up resource "db" of type "Postgres": error invoking plugin: Postgres resources can only depend on one RDS resource type
+failed to wire up resource "db" of type "Postgres": error invoking plugin: can only depend on a single resource, but multiple were found

@@ -1,5 +1,6 @@
 package secretplugin
 
 type Spec struct {
-	Data map[string][]byte `json:"data"`
+	JSONData map[string]interface{} `json:"jsondata,omitempty"`
+	Data     map[string]string      `json:"data,omitempty"`
 }

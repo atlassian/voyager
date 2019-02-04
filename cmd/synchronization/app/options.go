@@ -7,9 +7,9 @@ import (
 
 	"github.com/atlassian/voyager/pkg/options"
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/yaml"
 )
 
 type Options struct {

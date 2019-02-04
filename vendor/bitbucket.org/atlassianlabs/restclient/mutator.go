@@ -32,14 +32,11 @@ func (rm *RequestMutator) Mutate(req *http.Request, mutations ...RequestMutation
 // NewRequest will create a blank http.Request and then call Mutate(newrequest, mutations)
 func (rm *RequestMutator) NewRequest(mutations ...RequestMutation) (*http.Request, error) {
 	req, err := http.NewRequest("", "", nil)
-
-	// This should NEVER happen, else something is very broken
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	req, err = rm.Mutate(req, mutations...)
-
 	if err != nil {
 		return nil, err
 	}

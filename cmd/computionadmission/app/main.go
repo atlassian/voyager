@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/atlassian/voyager/cmd"
+	"k8s.io/klog"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(func(ctx context.Context) error {
 		server, err := NewServerFromFlags(fakeServiceName, flag.CommandLine, os.Args[1:])
 		if err != nil {

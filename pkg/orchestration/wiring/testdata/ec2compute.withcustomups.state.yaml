@@ -1,0 +1,35 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: ptl-percolator
+  namespace: ptl-percolator
+spec:
+  resources:
+  - name: ups
+    type: UPS
+    spec:
+      credentials:
+        my-thing: xxx
+
+  - name: compute
+    type: EC2Compute
+    dependsOn:
+    - ups
+    spec:
+      meaninglesskey: used as an example
+      notifications:
+        email: notification@email.com
+      ec2:
+        instanceType: t2.small
+      autoScalingGroup:
+        minSize: 1
+        maxSize: 2
+      docker:
+        envVars:
+          key: "value"
+        compose:
+          backendapp:
+            image: docker.example.com/my-app
+            tag: '1.0'
+            ports:
+            - 8080:8080

@@ -9,16 +9,16 @@ go_library(
         "ingress_endpoint.go",
         "scaling.go",
         "set_of_pods_selectable_by_labels.go",
+        "shareddb.go",
         "sns_subscribable.go",
-        "util.go",
         "zz_generated.deepcopy.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/libshapes:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
-        "//vendor/github.com/pkg/errors:go_default_library",
     ],
 )
 

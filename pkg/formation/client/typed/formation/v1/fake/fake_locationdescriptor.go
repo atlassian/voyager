@@ -106,7 +106,7 @@ func (c *FakeLocationDescriptors) DeleteCollection(options *v1.DeleteOptions, li
 // Patch applies the patch and returns the patched locationDescriptor.
 func (c *FakeLocationDescriptors) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *formationv1.LocationDescriptor, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(locationdescriptorsResource, c.ns, name, data, subresources...), &formationv1.LocationDescriptor{})
+		Invokes(testing.NewPatchSubresourceAction(locationdescriptorsResource, c.ns, name, pt, data, subresources...), &formationv1.LocationDescriptor{})
 
 	if obj == nil {
 		return nil, err

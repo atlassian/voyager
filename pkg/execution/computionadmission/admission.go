@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/atlassian/voyager/pkg/admission"
@@ -12,7 +13,6 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/layers"
-	"github.com/ghodss/yaml"
 	"github.com/go-chi/chi"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -24,6 +24,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -292,6 +293,8 @@ func rejectWithReason(reason string) *admission_v1beta1.AdmissionResponse {
 		Allowed: false,
 		Result: &meta_v1.Status{
 			Message: reason,
+			Code:    http.StatusUnprocessableEntity,
+			Reason:  meta_v1.StatusReasonInvalid,
 		},
 	}
 }

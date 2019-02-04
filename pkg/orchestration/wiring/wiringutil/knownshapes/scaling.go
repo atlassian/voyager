@@ -3,6 +3,7 @@ package knownshapes
 import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
 )
 
 const (
@@ -49,7 +50,7 @@ func (s *SetOfScaling) Name() wiringplugin.ShapeName {
 
 func FindSetOfPScalingShape(shapes []wiringplugin.Shape) (*SetOfScaling, bool /*found*/, error) {
 	typed := &SetOfScaling{}
-	found, err := FindAndCopyShapeByName(shapes, SetOfScalingShape, typed)
+	found, err := libshapes.FindAndCopyShapeByName(shapes, SetOfScalingShape, typed)
 	if err != nil {
 		return nil, false, err
 	}

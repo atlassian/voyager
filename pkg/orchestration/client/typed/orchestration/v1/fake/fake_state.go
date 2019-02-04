@@ -106,7 +106,7 @@ func (c *FakeStates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.
 // Patch applies the patch and returns the patched state.
 func (c *FakeStates) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *orchestrationv1.State, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(statesResource, c.ns, name, data, subresources...), &orchestrationv1.State{})
+		Invokes(testing.NewPatchSubresourceAction(statesResource, c.ns, name, pt, data, subresources...), &orchestrationv1.State{})
 
 	if obj == nil {
 		return nil, err

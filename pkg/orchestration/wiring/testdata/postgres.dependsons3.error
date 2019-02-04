@@ -1,0 +1,1 @@
+failed to wire up resource "db" of type "Postgres": error invoking plugin: expected to find shape voyager.atl-paas.net/SharedDb in "my-bucket"
