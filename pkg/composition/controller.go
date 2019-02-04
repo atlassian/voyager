@@ -492,6 +492,11 @@ func (c *Controller) updateServiceDescriptor(logger *zap.Logger, sd *comp_v1.Ser
 		if api_errors.IsConflict(err) {
 			return true, false, nil
 		}
+		for _, isNonRetriable := range updater.NonRetriableErrors {
+			if isNonRetriable(err) {
+				return false, false, errors.WithStack(err)
+			}
+		}
 		return false, true, errors.Wrap(err, "failed to update ServiceDescriptor")
 	}
 	return false, false, nil
