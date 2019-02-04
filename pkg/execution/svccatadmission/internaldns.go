@@ -18,6 +18,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func isInternalDNSServiceClass(serviceInstance *sc_v1b1.ServiceInstance) bool {
+	return serviceInstance.Spec.ClusterServiceClassExternalID == string(apiinternaldns.ClusterServiceClassExternalID)
+}
+
 // InternalDNSAdmitFunc checks existing DNS alias ownership via micros server API, for both InternalDNS Services and Ingress Resources
 func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerClient, scClient serviceCentralClient, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
 	logger := logz.RetrieveLoggerFromContext(ctx).Sugar()
@@ -42,6 +46,14 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		serviceInstance := sc_v1b1.ServiceInstance{}
 		if err := json.Unmarshal(admissionRequest.Object.Raw, &serviceInstance); err != nil {
 			return nil, errors.Wrap(err, "error parsing ServiceInstance")
+		}
+		if !isInternalDNSServiceClass(&serviceInstance) {
+			return &admissionv1beta1.AdmissionResponse{
+				Allowed: true,
+				Result: &metav1.Status{
+					Message: "requested ServiceInstance is not InternalDNS type",
+				},
+			}, nil
 		}
 		var internalDNSSpec apiinternaldns.Spec
 		if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &internalDNSSpec); err != nil {

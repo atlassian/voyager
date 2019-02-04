@@ -126,20 +126,23 @@ func setupMicrosServerMock() *microsServerClientMock {
 func buildServiceInstance(t *testing.T, serviceClass servicecatalog.ClassExternalID, servicePlan servicecatalog.PlanExternalID, parameters interface{}) []byte {
 	rawParameters, err := json.Marshal(parameters)
 	require.NoError(t, err)
-	rawServiceInstance, err := json.Marshal(sc_v1b1.ServiceInstance{
+	serviceInstance := sc_v1b1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: serviceInstanceName,
 		},
 		Spec: sc_v1b1.ServiceInstanceSpec{
 			PlanReference: sc_v1b1.PlanReference{
-				ClusterServiceClassName: string(serviceClass),
-				ClusterServicePlanName:  string(servicePlan),
+				ClusterServiceClassName:       string(serviceClass),
+				ClusterServicePlanName:        string(servicePlan),
+				ClusterServiceClassExternalID: string(serviceClass),
+				ClusterServicePlanExternalID:  string(servicePlan),
 			},
 			Parameters: &runtime.RawExtension{
 				Raw: rawParameters,
 			},
 		},
-	})
+	}
+	rawServiceInstance, err := json.Marshal(serviceInstance)
 	require.NoError(t, err)
 	return rawServiceInstance
 }
