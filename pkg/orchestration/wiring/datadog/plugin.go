@@ -99,6 +99,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 		resourceName = string(resource.Name)
 	}
 	//
+	resourceName = resourceName + "--" + string(alarmType)
 	serviceInstanceSpec := ServiceInstanceSpec{
 		ServiceName: context.StateContext.ServiceName,
 		Attributes:  alarmsAtt,
@@ -110,9 +111,9 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	if err != nil {
 		return smith_v1.Resource{}, err
 	}
-
+	smithResourceName := voyager.ResourceName(resourceName)
 	alarmInstanceResource := smith_v1.Resource{
-		Name: wiringutil.ServiceInstanceResourceName(resource.Name),
+		Name: wiringutil.ServiceInstanceResourceName(smithResourceName),
 		References: []smith_v1.Reference{
 			{
 				Resource: deploymentResourceName,
@@ -125,7 +126,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.ServiceInstanceMetaName(resource.Name),
+					Name: wiringutil.ServiceInstanceMetaName(smithResourceName),
 				},
 				Spec: sc_v1b1.ServiceInstanceSpec{
 					PlanReference: sc_v1b1.PlanReference{

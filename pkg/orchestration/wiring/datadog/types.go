@@ -11,8 +11,8 @@ const (
 	Metric AlarmSpecType = "metric alert"
 )
 const (
-	CPU    AlarmType = "CPU"
-	Memory AlarmType = "Memory"
+	CPU    AlarmType = "cpu"
+	Memory AlarmType = "memory"
 )
 
 type Alarm struct {

@@ -150,7 +150,7 @@ spec:
             apiVersion: apps/v1
             kind: Deployment
             name: '!{kubecompute-simple-metadata-name}'
-  - name: alarms--instance
+  - name: alarms--cpu--instance
     references:
     - resource: kubecompute-simple
     spec:
@@ -158,13 +158,13 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: alarms
+          name: alarms--cpu
         spec:
           clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
-              name: test-servicename-alarms-CPU
+              name: test-servicename-alarms-cpu
               options:
                 require_full_window: true
                 thresholds:
@@ -177,7 +177,7 @@ spec:
             environment: testenv
             region: testregion
             serviceName: test-servicename
-  - name: alarms--instance
+  - name: alarms--memory--instance
     references:
     - resource: kubecompute-simple
     spec:
@@ -185,13 +185,13 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: alarms
+          name: alarms--memory
         spec:
           clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
-              name: test-servicename-alarms-Memory
+              name: test-servicename-alarms-memory
               options:
                 require_full_window: true
                 thresholds:
