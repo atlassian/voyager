@@ -81,12 +81,14 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 
 	var hasDeadLetterQueue bool
 	if stateResource.Spec != nil {
-		var spec map[string]interface{}
+		var spec struct {
+			MaxReceiveCount int `json:"MaxReceiveCount"`
+		}
 		err := json.Unmarshal(stateResource.Spec.Raw, &spec)
 		if err != nil {
 			return nil, false, errors.WithStack(err)
 		}
-		_, hasDeadLetterQueue = spec["MaxReceiveCount"]
+		hasDeadLetterQueue = spec.MaxReceiveCount > 0
 	}
 
 	envVars := map[string]string{
