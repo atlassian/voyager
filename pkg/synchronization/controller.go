@@ -68,8 +68,8 @@ const (
 
 var (
 	// in-memory cache of service records from Service Central
-	serviceCache map[voyager.ServiceName]*creator_v1.Service
-	serviceTombstone = &creator_v1.Service{}
+	serviceCache      map[voyager.ServiceName]*creator_v1.Service
+	serviceTombstone  = &creator_v1.Service{}
 	serviceCacheMutex sync.RWMutex
 )
 
@@ -459,7 +459,7 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 	return false, nil
 }
 
-func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1.Service, /* ok */ bool) {
+func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1.Service /* ok */, bool) {
 	serviceCacheMutex.RLock()
 	defer serviceCacheMutex.RUnlock()
 
