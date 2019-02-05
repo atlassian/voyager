@@ -458,7 +458,7 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 	return false, nil
 }
 
-func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1.Service /* ok */, bool) {
+func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1.Service, bool /* ok */) {
 	serviceCacheMutex.RLock()
 	defer serviceCacheMutex.RUnlock()
 
