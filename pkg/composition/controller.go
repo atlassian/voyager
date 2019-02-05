@@ -105,7 +105,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	retriable := false
 
 	if err != nil {
-		conflict, processRetriable, processErr := c.handleProcessResult(ctx.Logger, serviceName, sd, foResults, false, retriable, err)
+		conflict, processRetriable, processErr := c.handleProcessResult(logger, serviceName, sd, foResults, false, retriable, err)
 		if conflict {
 			return false, nil
 		}
@@ -149,7 +149,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		}
 	}
 
-	conflict, retriable, err := c.handleProcessResult(ctx.Logger, serviceName, sd, foResults, deleteFinished, retriable, err)
+	conflict, retriable, err := c.handleProcessResult(logger, serviceName, sd, foResults, deleteFinished, retriable, err)
 	if conflict {
 		return false, nil
 	}
@@ -202,6 +202,7 @@ func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *com
 	}
 
 	// Once LocationDescriptor is gone, we don't need to propagate status anymore, delete namespace
+	logger.Sugar().Debugf("LocationDescriptor deleted, marking namespace %q for deletion", formationObjectDef.Namespace)
 	conflict, retriable, ns, err := c.deleteNamespace(logger, formationObjectDef.Namespace)
 	if err != nil {
 		return false, conflict, retriable, nil, err
@@ -305,6 +306,8 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string,
 		if sd.ObjectMeta.DeletionTimestamp != nil && deleteFinished {
 			sd.Finalizers = removeServiceDescriptorFinalizer(sd.GetFinalizers())
 			finalizersUpdated = true
+			deletionDuration := c.clock.Now().Sub(sd.ObjectMeta.DeletionTimestamp.Time)
+			logger.Info("ServiceDescriptor deleted", zap.Duration("deletionDuration", deletionDuration))
 		}
 	}
 
