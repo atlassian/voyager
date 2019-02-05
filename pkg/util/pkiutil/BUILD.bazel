@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "asap_client.go",
         "asap_middleware.go",
-        "asap_server.go",
         "keyprovider.go",
         "keys.go",
     ],
