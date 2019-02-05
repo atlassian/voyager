@@ -135,7 +135,11 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	ctx.Logger.Sugar().Infof("Looking up service data for service %q from Service Central", serviceName)
 	serviceData, err := c.getServiceData(auth.NoUser(), serviceName)
 	if err != nil {
-		// should be able to retry SC errors
+		if servicecentral.IsNotFound(err) {
+			// no retries if SC is missing a service record
+			return false, err
+		}
+		// should be able to retry other SC errors
 		return true, err
 	}
 
