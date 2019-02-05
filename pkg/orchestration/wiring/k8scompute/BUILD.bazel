@@ -13,7 +13,7 @@ go_library(
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/execution/plugins/generic/secretplugin:go_default_library",
         "//pkg/k8s:go_default_library",
-        "//pkg/orchestration/wiring/asapkey:go_default_library",
+        "//pkg/orchestration/wiring/compute:go_default_library",
         "//pkg/orchestration/wiring/k8scompute/api:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
