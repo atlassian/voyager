@@ -69,6 +69,7 @@ const (
 var (
 	// in-memory cache of service records from Service Central
 	serviceCache map[voyager.ServiceName]*creator_v1.Service
+	serviceCacheMutex sync.Mutex
 )
 
 type ServiceMetadataStore interface {
@@ -462,6 +463,8 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 }
 
 func (c *Controller) getServiceData(user auth.OptionalUser, name voyager.ServiceName, allowCached bool) (*creator_v1.Service, error) {
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
 	if allowCached {
 		service, ok := serviceCache[name]
 		if ok {
