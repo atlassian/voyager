@@ -4,6 +4,8 @@ import (
 	"github.com/atlassian/ctrl"
 	"github.com/atlassian/smith/pkg/specchecker"
 	"github.com/atlassian/smith/pkg/store"
+	"github.com/atlassian/voyager"
+	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	comp_v1_client "github.com/atlassian/voyager/pkg/composition/client"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
@@ -144,6 +146,8 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 		AccessUpdateErrorCounter:       accessUpdateErrorCounter,
 
 		AllowMutateServices: opts.AllowMutateServices,
+
+		ServiceCache: make(map[voyager.ServiceName]*creator_v1.Service),
 	}
 
 	return &ctrl.Constructed{

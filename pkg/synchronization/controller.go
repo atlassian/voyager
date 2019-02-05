@@ -66,12 +66,6 @@ const (
 	rmsPollJitterFactor                 = 1.2
 )
 
-var (
-	// in-memory cache of service records from Service Central
-	serviceCache      = make(map[voyager.ServiceName]*creator_v1.Service)
-	serviceCacheMutex sync.RWMutex
-)
-
 type ServiceMetadataStore interface {
 	GetService(ctx context.Context, user auth.OptionalUser, name servicecentral.ServiceName) (*creator_v1.Service, error)
 	ListServices(ctx context.Context, user auth.OptionalUser) ([]creator_v1.Service, error)
@@ -105,6 +99,9 @@ type Controller struct {
 	LastFetchedModifiedServices *time.Time
 	LastFetchedAllReleases      *time.Time
 	NextFetchAllReleasesStart   *time.Time
+
+	ServiceCache      map[voyager.ServiceName]*creator_v1.Service
+	ServiceCacheMutex sync.RWMutex
 }
 
 func (c *Controller) Run(ctx context.Context) {
@@ -340,7 +337,7 @@ func (c *Controller) syncServiceMetadata() {
 			for service := range svcChan {
 				// Service Central actually doesn't include misc data so we need to perform
 				// additional query to fill out the miscdata for our builds
-				fullService, err := c.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(service.Name))
+				fullService, err := c.fetchAndCacheServiceData(voyager.ServiceName(service.Name))
 				if err != nil {
 					c.Logger.With(zap.Error(err)).Sugar().Errorf("Error getting full service info for %q", service.Name)
 					continue
@@ -459,30 +456,30 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 }
 
 func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1.Service, bool /* ok */) {
-	serviceCacheMutex.RLock()
-	defer serviceCacheMutex.RUnlock()
+	c.ServiceCacheMutex.RLock()
+	defer c.ServiceCacheMutex.RUnlock()
 
-	service, ok := serviceCache[name]
+	service, ok := c.ServiceCache[name]
 	return service, ok
 }
 
-func (c *Controller) fetchAndCacheServiceData(user auth.OptionalUser, name voyager.ServiceName) (*creator_v1.Service, error) {
-	serviceCacheMutex.Lock()
-	defer serviceCacheMutex.Unlock()
+func (c *Controller) fetchAndCacheServiceData(name voyager.ServiceName) (*creator_v1.Service, error) {
+	c.ServiceCacheMutex.Lock()
+	defer c.ServiceCacheMutex.Unlock()
 
-	service, err := c.fetchServiceData(user, name)
+	service, err := c.fetchServiceData(name)
 	if err != nil {
 		if servicecentral.IsNotFound(err) {
-			delete(serviceCache, name)
+			delete(c.ServiceCache, name)
 		}
 		return nil, err
 	}
-	serviceCache[name] = service
+	c.ServiceCache[name] = service
 	return service, nil
 }
 
-func (c *Controller) fetchServiceData(user auth.OptionalUser, name voyager.ServiceName) (*creator_v1.Service, error) {
-	return c.ServiceCentral.GetService(context.Background(), user, servicecentral.ServiceName(name))
+func (c *Controller) fetchServiceData(name voyager.ServiceName) (*creator_v1.Service, error) {
+	return c.ServiceCentral.GetService(context.Background(), auth.NoUser(), servicecentral.ServiceName(name))
 }
 
 func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta.Notifications, error) {
