@@ -338,7 +338,7 @@ func (c *Controller) syncServiceMetadata() {
 			for service := range svcChan {
 				// Service Central actually doesn't include misc data so we need to perform
 				// additional query to fill out the miscdata for our builds
-				fullService, err := c.ServiceCentral.GetService(context.Background(), auth.NoUser(), servicecentral.ServiceName(service.Name))
+				fullService, err := c.getServiceData(auth.NoUser(), voyager.ServiceName(service.Name))
 				if err != nil {
 					c.Logger.With(zap.Error(err)).Sugar().Errorf("Error getting full service info for %q", service.Name)
 					continue
