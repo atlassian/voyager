@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -29,10 +29,10 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"internaldns new.domain",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
-					Aliases: []apiinternaldns.Alias{
+				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
+					Aliases: []apiplatformdns.Alias{
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new.domain",
 						},
 					},
@@ -44,30 +44,30 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"internaldns multiple new.domain",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
-					Aliases: []apiinternaldns.Alias{
+				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
+					Aliases: []apiplatformdns.Alias{
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new1.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new2.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new3.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new4.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new5.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new6.domain",
 						},
 					},
@@ -79,10 +79,10 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"internaldns registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
-					Aliases: []apiinternaldns.Alias{
+				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
+					Aliases: []apiplatformdns.Alias{
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "doug.domain",
 						},
 					},
@@ -94,30 +94,30 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"internaldns multiple with one registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
-					Aliases: []apiinternaldns.Alias{
+				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
+					Aliases: []apiplatformdns.Alias{
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "doug.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new2.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new3.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new4.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new5.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new6.domain",
 						},
 					},
@@ -129,10 +129,10 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"internaldns registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
-					Aliases: []apiinternaldns.Alias{
+				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
+					Aliases: []apiplatformdns.Alias{
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "elsie.domain",
 						},
 					},
@@ -144,30 +144,30 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"internaldns multiple with one registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiinternaldns.ClusterServiceClassExternalID, apiinternaldns.ClusterServicePlanExternalID, apiinternaldns.Spec{
-					Aliases: []apiinternaldns.Alias{
+				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
+					Aliases: []apiplatformdns.Alias{
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "elsie.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new2.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new3.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new4.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new5.domain",
 						},
 						{
-							AliasType: apiinternaldns.AliasTypeSimple,
+							AliasType: apiplatformdns.AliasTypeSimple,
 							Name:      "new6.domain",
 						},
 					},
@@ -179,7 +179,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"not internaldns create",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, "otherClassExternalID", "otherPlanExternalID", apiinternaldns.Spec{}),
+				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
 			false,
@@ -187,7 +187,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		{
 			"not internaldns update",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Update, buildServiceInstance(
-				t, "otherClassExternalID", "otherPlanExternalID", apiinternaldns.Spec{}),
+				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
 			false,

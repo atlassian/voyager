@@ -13,15 +13,19 @@ spec:
         - name: microservice
           image: docker.example.com/atlassian/micros-analytics:0.1.8
   - type: KubeIngress
-    name: ingress
+    name: ingress1
     dependsOn:
       - kubecompute-simple
-  - type: InternalDNS
-    name: internaldns
+  - type: KubeIngress
+    name: ingress2
+    dependsOn:
+      - kubecompute-simple
+  - type: PlatformDNS
+    name: platformdns
     spec:
-      target: invalid-parameter.atl-paas.net
       aliases:
         - type: Simple
           name: foo.staging.atl-paas.net
     dependsOn:
-      - ingress
+      - ingress1
+      - ingress2

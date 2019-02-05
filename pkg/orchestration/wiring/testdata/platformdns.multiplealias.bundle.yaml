@@ -201,7 +201,7 @@ spec:
                   serviceName: ingress--service
                   servicePort: 8080
                 path: /
-  - name: internaldns--instance
+  - name: platformdns--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
       name: ingress-metadata-endpoint
@@ -212,7 +212,7 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: internaldns
+          name: platformdns
         spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
