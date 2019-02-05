@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -170,18 +171,16 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 			if err != nil {
 				return false, errors.Wrap(err, "failed to sync software release data")
 			}
-			return c.createOrUpdateReleaseData(ctx.Logger, ns, &resolvedRelease.ResolvedData)
+			return c.createOrUpdateReleaseData(nsLogger, ns, &resolvedRelease.ResolvedData)
 		},
 		func() (bool, error) {
-			retriable, _, err := c.setupDockerSecret(nsLogger, ns)
-			return retriable, err
+			return c.setupDockerSecret(nsLogger, ns.Name)
 		},
 		func() (bool, error) {
-			retriable, _, err := c.createOrUpdateNamespaceAnnotations(ctx.Logger, serviceName, ns)
-			return retriable, err
+			return c.createOrUpdateNamespaceAnnotations(nsLogger, serviceName, ns)
 		},
 		func() (bool, error) {
-			return c.ensureCommonSecretExists(ctx.Logger, ns)
+			return c.ensureCommonSecretExists(nsLogger, ns)
 		},
 	}
 
@@ -497,52 +496,58 @@ func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta
 	}, nil
 }
 
-func (c *Controller) setupDockerSecret(logger *zap.Logger, namespace *core_v1.Namespace) (bool /* retriable */, *core_v1.Secret, error) {
+func (c *Controller) setupDockerSecret(logger *zap.Logger, namespaceName string) (bool /* retriable */, error) {
 	dockerSecret, err := c.MainClient.CoreV1().Secrets(dockerSecretNamespace).Get(dockerSecretName, meta_v1.GetOptions{})
 	if err != nil {
-		return true, nil, errors.Wrapf(err, "failed retrieving secret %q in namespace %q", dockerSecretName, dockerSecretNamespace)
+		return true, errors.Wrapf(err, "failed retrieving Secret %q in Namespace %q", dockerSecretName, dockerSecretNamespace)
 	}
-
-	secret := dockerSecret.DeepCopy()
 
 	// Check this secret is actually a docker config
-	if secret.Type != core_v1.SecretTypeDockerConfigJson {
-		return false, nil, errors.Errorf("secret %q in namespace %q is not a docker config secret", dockerSecretName, dockerSecretNamespace)
+	if dockerSecret.Type != core_v1.SecretTypeDockerConfigJson {
+		return false, errors.Errorf("Secret %q in Namespace %q is not a Docker config secret", dockerSecretName, dockerSecretNamespace)
 	}
 
-	// Set the namespace in the spec to the one we intend to copy to
-	secret.Namespace = namespace.Name
-
-	// Reset the UID, owner references and resourceVersion
-	secret.UID = ""
-	secret.ObjectMeta.OwnerReferences = nil
-	secret.ResourceVersion = ""
+	secret := &core_v1.Secret{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.SecretKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      dockerSecretName,
+			Namespace: namespaceName,
+		},
+		Data: dockerSecret.Data,
+		Type: core_v1.SecretTypeDockerConfigJson,
+	}
 
 	return c.createOrUpdateSecret(logger, secret)
 }
 
-func (c *Controller) createOrUpdateSecret(logger *zap.Logger, secretSpec *core_v1.Secret) (bool /* retriable */, *core_v1.Secret, error) {
-	logger.Sugar().Debugf("Attempting to create or update secret %q", secretSpec.Name)
+func (c *Controller) createOrUpdateSecret(logger *zap.Logger, secretSpec *core_v1.Secret) (bool /* retriable */, error) {
+	logger.Sugar().Debugf("Attempting to create or update Secret %q", secretSpec.Name)
 
 	// Determine if the secret already exists
-	existingSecret, err := c.MainClient.CoreV1().Secrets(secretSpec.Namespace).Get(secretSpec.Name, meta_v1.GetOptions{})
+	secretsClient := c.MainClient.CoreV1().Secrets(secretSpec.Namespace)
+	existingSecret, err := secretsClient.Get(secretSpec.Name, meta_v1.GetOptions{})
 	exists := true
 	if err != nil {
 		if !api_errors.IsNotFound(err) {
-			return true, nil, err
+			return true, err
 		}
 		exists = false
 	}
 
 	if exists {
-		existingSecret.Type = secretSpec.Type
-		existingSecret.Data = secretSpec.Data
-		secret, err := c.MainClient.CoreV1().Secrets(secretSpec.Namespace).Update(existingSecret)
-		return true, secret, err
+		if existingSecret.Type == secretSpec.Type && reflect.DeepEqual(existingSecret.Data, secretSpec.Data) {
+			return false, nil
+		}
+		secretSpec.ResourceVersion = existingSecret.ResourceVersion
+		_, err := secretsClient.Update(secretSpec)
+		return true, err
 	}
 
-	secret, err := c.MainClient.CoreV1().Secrets(secretSpec.Namespace).Create(secretSpec)
-	return true, secret, err
+	_, err = secretsClient.Create(secretSpec)
+	return true, err
 }
 
 func (c *Controller) ensureCommonSecretExists(logger *zap.Logger, ns *core_v1.Namespace) (bool /* retriable */, error) {
@@ -574,17 +579,17 @@ func (c *Controller) ensureCommonSecretExists(logger *zap.Logger, ns *core_v1.Na
 	}
 }
 
-func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serviceName voyager.ServiceName, namespace *core_v1.Namespace) (bool /* retriable */, *core_v1.Namespace, error) {
+func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serviceName voyager.ServiceName, namespace *core_v1.Namespace) (bool /* retriable */, error) {
 	// Get the desired value of the annotation
 	desiredVal, err := c.getNamespaceAllowedRoles(serviceName)
 	if err != nil {
-		return true, namespace, err
+		return true, err
 	}
 
 	// Determine if the annotation needs adding or updating
 	val, exists := namespace.Annotations[allowedRolesAnnotation]
 	if exists && val == desiredVal {
-		return true, namespace, nil
+		return true, nil
 	}
 
 	// Ensure the annotations have been initialised
@@ -602,12 +607,12 @@ func (c *Controller) createOrUpdateNamespaceAnnotations(logger *zap.Logger, serv
 		namespace,
 	)
 	if conflict {
-		return true, namespace, nil
+		return true, nil
 	}
 	if err != nil {
-		return retriable, namespace, err
+		return retriable, err
 	}
-	return true, namespace, nil
+	return true, nil
 }
 
 // getNamespaceAllowedRoles returns a JSON encoded string of all the IAM roles pods in a namespace are allowed to assume
