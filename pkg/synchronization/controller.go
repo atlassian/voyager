@@ -142,8 +142,12 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	ctx.Logger.Sugar().Infof("Looking up service data for service %q from Service Central", serviceName)
 	serviceData, ok := c.getCachedServiceData(serviceName)
 	if !ok {
-		// no retries if SC is missing a service record
+		// no retries if service is missing in cache
 		return false, errors.New("service not found in cache")
+	}
+	if serviceData == serviceTombstone {
+		// no retries if service is missing in SC
+		return false, errors.New("service does not exist in Service Central")
 	}
 
 	operations := []func() (bool, error){
