@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["env.go"],
+    importpath = "github.com/atlassian/voyager/pkg/orchestration/wiring/compute",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go_default_library",
+        "//pkg/orchestration/wiring/asapkey:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+    ],
+)

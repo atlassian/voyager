@@ -117,7 +117,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e4738e3d9ece38d700e213a047b489a24ad2aab482843d97437f3bb3216510c2"
+  digest = "1:c301de2309e2971613d8ac458b16401c9778e5cfe60826aa041c9817ec7a5df0"
   name = "github.com/atlassian/smith"
   packages = [
     ".",
@@ -144,7 +144,7 @@
     "pkg/util/logz",
   ]
   pruneopts = "NT"
-  revision = "de8ee1aa706145c23db93ecb83886292cf262741"
+  revision = "25ca425e3b6b06c67c355948f0478bd23047bcab"
 
 [[projects]]
   digest = "1:07918ac16957399fa68bf94b3ab26dccccc6992f1ccbcf589896734569a0a7e7"
