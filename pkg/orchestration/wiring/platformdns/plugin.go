@@ -102,7 +102,7 @@ func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext
 
 	// Ensure we only depend on one resource, as we can only bind to a single ingress
 	if len(context.Dependencies) != 1 {
-		return nil, errors.Errorf("platformdns resources must depend on only one ingress resource")
+		return nil, errors.Errorf("%s resources must depend on only one ingress resource", apiplatformdns.ResourceType)
 	}
 	dependency := context.Dependencies[0]
 
