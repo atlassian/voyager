@@ -69,7 +69,6 @@ const (
 var (
 	// in-memory cache of service records from Service Central
 	serviceCache      = make(map[voyager.ServiceName]*creator_v1.Service)
-	serviceTombstone  = &creator_v1.Service{}
 	serviceCacheMutex sync.RWMutex
 )
 
@@ -144,10 +143,6 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	if !ok {
 		// no retries if service is missing in cache
 		return false, errors.New("service not found in cache")
-	}
-	if serviceData == serviceTombstone {
-		// no retries if service is missing in SC
-		return false, errors.New("service does not exist in Service Central")
 	}
 
 	operations := []func() (bool, error){
@@ -477,12 +472,10 @@ func (c *Controller) fetchAndCacheServiceData(user auth.OptionalUser, name voyag
 
 	service, err := c.fetchServiceData(user, name)
 	if err != nil {
-		if !servicecentral.IsNotFound(err) {
-			return nil, err
+		if servicecentral.IsNotFound(err) {
+			delete(serviceCache, name)
 		}
-		// Add a tombstone to the cache instead of returning an error
-		// to prevent sending more requests for missing service
-		service = serviceTombstone
+		return nil, err
 	}
 	serviceCache[name] = service
 	return service, nil
