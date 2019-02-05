@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	clusterServiceClassExternalID                      = "daa6e8e7-7201-4031-86f2-ef9fdfeae7d6"
+	clusterServiceClassExternalID                      = "875d4a87-e887-4838-a0b5-b64491dbf9cb"
 	clusterServicePlanExternalID                       = "d8048a2d-49de-4fda-b7ef-328de171cd32"
 	ResourceType                  voyager.ResourceType = "datadog"
 )
@@ -77,11 +77,6 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	if err != nil {
 		return smith_v1.Resource{}, err
 	}
-	//deploymentResourceName, deploymentSpec, err := extractKubeComputeDetails(context)
-	//if err != nil {
-	//	return smith_v1.Resource{}, err
-	//}
-
 	threshold := AlarmThresholds{
 		Critical: 90,
 		Warning:  80,
@@ -98,7 +93,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	if resourceName == "" {
 		resourceName = string(resource.Name)
 	}
-	//
+
 	resourceName = resourceName + "--" + string(alarmType)
 	serviceInstanceSpec := ServiceInstanceSpec{
 		ServiceName: context.StateContext.ServiceName,
@@ -189,30 +184,12 @@ func (q *QueryParams) generateQuery() string {
 	switch q.AlarmType {
 	case CPU:
 		cpuUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.cpu.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
-		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > 90", q.Env, q.KubeNamespace, q.KubeDeployment)
+		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
 		return cpuUsageString + cpuLimitString
 	case Memory:
 		memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
-		memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > 90", q.Env, q.KubeNamespace, q.KubeDeployment)
+		memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
 		return memoryUsageString + memoryLimitString
 	}
 	return ""
 }
-
-//func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, *knownshapes.Scaling, error) {
-//	// Require exactly one KubeCompute dependency
-//	kubeComputeDependency, err := context.TheOnlyDependency()
-//	if err != nil {
-//		return "", nil, err
-//	}
-//	setOfScalingShape, found, err := knownshapes.FindSetOfPScalingShape(kubeComputeDependency.Contract.Shapes)
-//	if err != nil {
-//		return "", nil, err
-//	}
-//	if !found {
-//		return "", nil, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfScalingShape, kubeComputeDependency.Name)
-//	}
-//	scaling := setOfScalingShape.Data.Scaling
-//	return setOfScalingShape.Data.DeploymentResourceName, &scaling, nil
-//}
-//

@@ -160,7 +160,7 @@ spec:
         metadata:
           name: alarms--cpu
         spec:
-          clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
+          clusterServiceClassExternalID: 875d4a87-e887-4838-a0b5-b64491dbf9cb
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
@@ -187,7 +187,7 @@ spec:
         metadata:
           name: alarms--memory
         spec:
-          clusterServiceClassExternalID: daa6e8e7-7201-4031-86f2-ef9fdfeae7d6
+          clusterServiceClassExternalID: 875d4a87-e887-4838-a0b5-b64491dbf9cb
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
