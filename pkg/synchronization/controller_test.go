@@ -174,7 +174,10 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 			expected := basicServiceProperties(service, voyager.EnvTypeDev)
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
@@ -282,6 +285,9 @@ func TestIncludesPagerDutyForClusterEnvironment(t *testing.T) {
 
 					tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
+					_, err = cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+					require.NoError(t, err)
+
 					// make sure the controller knows we are our specific environment type
 					cntrlr.ClusterLocation = voyager.ClusterLocation{
 						EnvType: subCase.envType,
@@ -343,6 +349,9 @@ func TestReturnsErrorWhenPagerDutyNotPresent(t *testing.T) {
 
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
 			// we have not set pagerduty for this environment
 			cntrlr.ClusterLocation = voyager.ClusterLocation{
 				EnvType: voyager.EnvTypeProduction,
@@ -388,6 +397,9 @@ func TestReturnsErrorWhenPagerDutyEmptyForEnvironment(t *testing.T) {
 			}
 
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
+
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
 
 			// we have not set pagerduty for this environment
 			cntrlr.ClusterLocation = voyager.ClusterLocation{
@@ -473,7 +485,10 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			expected := basicServiceProperties(service, voyager.EnvTypeDev)
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
@@ -580,7 +595,10 @@ func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(existingService, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
@@ -625,10 +643,13 @@ func TestMarksRetriableWhenNotKnownService(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(&creator_v1.Service{}, errors.Errorf("Could not find service"))
 
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.Error(t, err)
+
 			retriable, err := cntrlr.Process(ctx)
 
 			require.Error(t, err)
-			assert.True(t, retriable)
+			assert.False(t, retriable)
 		},
 	}
 
@@ -792,7 +813,10 @@ func TestCreatesDockerSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			secrets := findCreatedSecrets(tc.mainFake.Actions())
@@ -878,7 +902,10 @@ func TestUpdatesDockerSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			secrets := findUpdatedSecrets(tc.mainFake.Actions())
@@ -931,7 +958,10 @@ func TestDockerSecretNonExistent(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			assert.Error(t, err, "Should return an error as the docker secret does not exist")
 		},
 	}
@@ -977,7 +1007,10 @@ func TestDockerSecretIncorrectType(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			assert.Error(t, err, "Should return an error as the docker secret is of the wrong type")
 
 		},
@@ -1026,7 +1059,10 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			// Ensure the namespace is updated
@@ -1088,7 +1124,10 @@ func TestCreatesCommonSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			secrets := findCreatedSecrets(tc.mainFake.Actions())
@@ -1176,7 +1215,10 @@ func TestHandlesExistingCommonSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			// the fact that there is no error means that it
@@ -1230,7 +1272,10 @@ func TestUpdatesKube2IamAnnotation(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			// Ensure the namespace is updated

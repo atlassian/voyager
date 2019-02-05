@@ -68,7 +68,7 @@ const (
 
 var (
 	// in-memory cache of service records from Service Central
-	serviceCache      map[voyager.ServiceName]*creator_v1.Service
+	serviceCache      = make(map[voyager.ServiceName]*creator_v1.Service)
 	serviceTombstone  = &creator_v1.Service{}
 	serviceCacheMutex sync.RWMutex
 )
