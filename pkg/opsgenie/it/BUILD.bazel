@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "go_default_test",
+    srcs = ["client_manual_test.go"],
+    race = "on",
+    tags = [
+        "external",
+        "manual",
+    ],
+    deps = [
+        "//pkg/opsgenieIntegrationManager:go_default_library",
+        "//pkg/util:go_default_library",
+        "//pkg/util/logz:go_default_library",
+        "//pkg/util/pkiutil:go_default_library",
+        "//pkg/util/testutil:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/client-go/kubernetes/scheme:go_default_library",
+    ],
+    size="medium"
+)
