@@ -464,10 +464,13 @@ func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1
 }
 
 func (c *Controller) fetchAndCacheServiceData(name voyager.ServiceName) (*creator_v1.Service, error) {
+	service, err := c.fetchServiceData(name)
+
+	// setting lock after a call to SC, so that the HTTP requests are
+	// still parallelized
 	c.ServiceCacheMutex.Lock()
 	defer c.ServiceCacheMutex.Unlock()
 
-	service, err := c.fetchServiceData(name)
 	if err != nil {
 		if servicecentral.IsNotFound(err) {
 			delete(c.ServiceCache, name)
