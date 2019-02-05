@@ -1,1 +1,1 @@
-failed to wire up resource "platformdns" of type "PlatformDNS": error invoking plugin: platformdns resources must depend on only one ingress resource
+failed to wire up resource "platformdns" of type "PlatformDNS": error invoking plugin: PlatformDNS resources must depend on only one ingress resource
