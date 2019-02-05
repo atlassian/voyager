@@ -57,7 +57,10 @@ func TestCreatesRoleBindingsFromServiceCentralData(t *testing.T) {
 
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
@@ -180,7 +183,10 @@ func TestSkipsUpdateOfRoleBindingsIfNoChange(t *testing.T) {
 
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
@@ -229,7 +235,10 @@ func TestEmptyBuildRoleBindingsWhenListsEmpty(t *testing.T) {
 
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
@@ -278,7 +287,10 @@ func TestEmptyRoleBindingsNonExistantBuilds(t *testing.T) {
 
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			_, err := cntrlr.fetchAndCacheServiceData(voyager.ServiceName(serviceNameSc))
+			require.NoError(t, err)
+
+			_, err = cntrlr.Process(ctx)
 			require.NoError(t, err)
 
 			actions := tc.mainFake.Actions()
