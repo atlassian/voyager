@@ -219,7 +219,10 @@ func (ac *AdmissionContext) checkPRGBRequired(ar *admission_v1beta1.AdmissionReq
 
 	data := cfgMap.Data[orch_meta.ConfigMapConfigKey]
 	var config orch_meta.ServiceProperties
-	err = yaml.UnmarshalStrict([]byte(data), &config)
+	// If we introduce new fields in the contents of that key in the ConfigMap we still want
+	// it to be parseable by old versions of the webhook to avoid breaking it.
+	// That is why we don't use UnmarshalStrict() here.
+	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
 		return false, rejectWithReason(reasonWrongFormatServiceMetaData), nil
 	}
