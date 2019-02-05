@@ -176,7 +176,7 @@ func parseConfigMap(configMap *core_v1.ConfigMap) (*orch_meta.ServiceProperties,
 	}
 
 	serviceProperties := &orch_meta.ServiceProperties{}
-	err := yaml.Unmarshal(configMapConfigData, serviceProperties)
+	err := yaml.UnmarshalStrict(configMapConfigData, serviceProperties)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

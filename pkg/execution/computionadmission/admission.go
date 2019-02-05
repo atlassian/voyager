@@ -219,7 +219,7 @@ func (ac *AdmissionContext) checkPRGBRequired(ar *admission_v1beta1.AdmissionReq
 
 	data := cfgMap.Data[orch_meta.ConfigMapConfigKey]
 	var config orch_meta.ServiceProperties
-	err = yaml.Unmarshal([]byte(data), &config)
+	err = yaml.UnmarshalStrict([]byte(data), &config)
 	if err != nil {
 		return false, rejectWithReason(reasonWrongFormatServiceMetaData), nil
 	}

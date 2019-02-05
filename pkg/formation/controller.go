@@ -131,7 +131,7 @@ func (c *Controller) processLocationDescriptor(logger *zap.Logger, ld *form_v1.L
 		if !ok {
 			return false, false, nil, errors.Errorf("release config map is missing expected data key: '%s'", releaseConfigMapDataKey)
 		}
-		err = yaml.Unmarshal([]byte(releaseStr), &releaseData)
+		err = yaml.UnmarshalStrict([]byte(releaseStr), &releaseData)
 		if err != nil {
 			return false, false, nil, err
 		}
