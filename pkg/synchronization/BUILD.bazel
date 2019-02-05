@@ -19,6 +19,7 @@ go_library(
         "//pkg/composition/client:go_default_library",
         "//pkg/k8s:go_default_library",
         "//pkg/k8s/updater:go_default_library",
+        "//pkg/opsgenie:go_default_library",
         "//pkg/orchestration/wiring/k8scompute/api:go_default_library",
         "//pkg/pagerduty:go_default_library",
         "//pkg/releases:go_default_library",
