@@ -57,7 +57,7 @@ type Controller struct {
 	serviceDescriptorTransitionsCounter *prometheus.CounterVec
 }
 
-type FormationObjectResult struct {
+type formationObjectResult struct {
 	namespace *core_v1.Namespace
 	ld        *form_v1.LocationDescriptor
 }
@@ -101,7 +101,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	}
 
 	formationObjectDefList, err := c.sdTransformer.CreateFormationObjectDef(sd)
-	foResults := make([]*FormationObjectResult, 0, len(formationObjectDefList))
+	foResults := make([]formationObjectResult, 0, len(formationObjectDefList))
 	retriable := false
 
 	if err != nil {
@@ -145,7 +145,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		if foResult != nil {
 			// Save the results from processing the location descriptor. We'll
 			// handle the result after this loop
-			foResults = append(foResults, foResult)
+			foResults = append(foResults, *foResult)
 		}
 	}
 
@@ -160,7 +160,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	return false, nil
 }
 
-func (c *Controller) processFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *FormationObjectResult, error) {
+func (c *Controller) processFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *formationObjectResult, error) {
 	if sd.ObjectMeta.DeletionTimestamp != nil {
 		return c.processDeleteFormationObjectDef(logger, sd, formationObjectDef)
 	}
@@ -169,7 +169,7 @@ func (c *Controller) processFormationObjectDef(logger *zap.Logger, sd *comp_v1.S
 	return false, conflict, retriable, foResult, err
 }
 
-func (c *Controller) processNormalFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* conflict */, bool /* retriable */, *FormationObjectResult, error) {
+func (c *Controller) processNormalFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* conflict */, bool /* retriable */, *formationObjectResult, error) {
 	conflict, retriable, ns, err := c.createOrUpdateNamespace(logger, formationObjectDef, sd)
 	if err != nil || conflict {
 		return conflict, retriable, nil, err
@@ -180,10 +180,10 @@ func (c *Controller) processNormalFormationObjectDef(logger *zap.Logger, sd *com
 		return conflict, retriable, nil, err
 	}
 
-	return false, false, &FormationObjectResult{namespace: ns, ld: ld}, nil
+	return false, false, &formationObjectResult{namespace: ns, ld: ld}, nil
 }
 
-func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *FormationObjectResult, error) {
+func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *formationObjectResult, error) {
 	// Delete LocationDescriptor with Foreground policy first
 	conflict, retriable, ld, err := c.deleteLocationDescriptor(logger, formationObjectDef)
 	if err != nil {
@@ -198,7 +198,7 @@ func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *com
 		if !exists {
 			return false, false, false, nil, errors.Errorf("unexpectedly can't find Namespace %q", ld.Namespace)
 		}
-		return false, false, false, &FormationObjectResult{namespace: ns.(*core_v1.Namespace), ld: ld}, nil
+		return false, false, false, &formationObjectResult{namespace: ns.(*core_v1.Namespace), ld: ld}, nil
 	}
 
 	// Once LocationDescriptor is gone, we don't need to propagate status anymore, delete namespace
@@ -217,7 +217,7 @@ func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *com
 	return true, false, false, nil, nil
 }
 
-func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string, sd *comp_v1.ServiceDescriptor, foResults []*FormationObjectResult, deleteFinished bool, retriable bool, err error) (bool /* conflict */, bool /* retriable */, error) {
+func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string, sd *comp_v1.ServiceDescriptor, foResults []formationObjectResult, deleteFinished bool, retriable bool, err error) (bool /* conflict */, bool /* retriable */, error) {
 	logger.Debug("Handling results of processing")
 
 	inProgressCond := cond_v1.Condition{
@@ -374,7 +374,7 @@ func copyCondition(ld *form_v1.LocationDescriptor, condType cond_v1.ConditionTyp
 	cond.LastTransitionTime = ldCond.LastTransitionTime
 }
 
-func (c *Controller) calculateLocationStatuses(serviceName string, results []*FormationObjectResult, retriable bool) ([]comp_v1.LocationStatus, error) {
+func (c *Controller) calculateLocationStatuses(serviceName string, results []formationObjectResult, retriable bool) ([]comp_v1.LocationStatus, error) {
 	// Make sure to collect Lds that we aren't touching as well
 	// (sd should show status of _everything_ it is responsible for, even
 	// if not currently referenced).
@@ -392,7 +392,7 @@ func (c *Controller) calculateLocationStatuses(serviceName string, results []*Fo
 		return nil, errors.WithStack(err)
 	}
 	// i.e. all results ever
-	allResults := make(map[string]*FormationObjectResult)
+	allResults := make(map[string]formationObjectResult)
 	for _, ns := range nsList {
 		namespace := ns.(*core_v1.Namespace)
 		existingLds, err := c.ldIndexer.ByIndex(cache.NamespaceIndex, namespace.Name)
@@ -402,7 +402,7 @@ func (c *Controller) calculateLocationStatuses(serviceName string, results []*Fo
 		// we only expect one LD here, but...
 		for _, objLd := range existingLds {
 			existingLd := objLd.(*form_v1.LocationDescriptor)
-			allResults[ldKeyOf(existingLd)] = &FormationObjectResult{
+			allResults[ldKeyOf(existingLd)] = formationObjectResult{
 				namespace: namespace,
 				ld:        existingLd,
 			}
