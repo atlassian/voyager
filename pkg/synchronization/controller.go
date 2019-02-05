@@ -69,7 +69,8 @@ const (
 var (
 	// in-memory cache of service records from Service Central
 	serviceCache map[voyager.ServiceName]*creator_v1.Service
-	serviceCacheMutex sync.Mutex
+	serviceTombstone = &creator_v1.Service{}
+	serviceCacheMutex sync.RWMutex
 )
 
 type ServiceMetadataStore interface {
@@ -139,14 +140,10 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	}
 
 	ctx.Logger.Sugar().Infof("Looking up service data for service %q from Service Central", serviceName)
-	serviceData, err := c.getServiceData(auth.NoUser(), serviceName, true)
-	if err != nil {
-		if servicecentral.IsNotFound(err) {
-			// no retries if SC is missing a service record
-			return false, err
-		}
-		// should be able to retry other SC errors
-		return true, err
+	serviceData, ok := c.getCachedServiceData(serviceName)
+	if !ok {
+		// no retries if SC is missing a service record
+		return false, errors.New("service not found in cache")
 	}
 
 	operations := []func() (bool, error){
@@ -344,7 +341,7 @@ func (c *Controller) syncServiceMetadata() {
 			for service := range svcChan {
 				// Service Central actually doesn't include misc data so we need to perform
 				// additional query to fill out the miscdata for our builds
-				fullService, err := c.getServiceData(auth.NoUser(), voyager.ServiceName(service.Name), false)
+				fullService, err := c.fetchAndCacheServiceData(auth.NoUser(), voyager.ServiceName(service.Name))
 				if err != nil {
 					c.Logger.With(zap.Error(err)).Sugar().Errorf("Error getting full service info for %q", service.Name)
 					continue
@@ -462,21 +459,26 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 	return false, nil
 }
 
-func (c *Controller) getServiceData(user auth.OptionalUser, name voyager.ServiceName, allowCached bool) (*creator_v1.Service, error) {
+func (c *Controller) getCachedServiceData(name voyager.ServiceName) (*creator_v1.Service, /* ok */ bool) {
+	serviceCacheMutex.RLock()
+	defer serviceCacheMutex.RUnlock()
+
+	service, ok := serviceCache[name]
+	return service, ok
+}
+
+func (c *Controller) fetchAndCacheServiceData(user auth.OptionalUser, name voyager.ServiceName) (*creator_v1.Service, error) {
 	serviceCacheMutex.Lock()
 	defer serviceCacheMutex.Unlock()
-	if allowCached {
-		service, ok := serviceCache[name]
-		if ok {
-			return service, nil
-		}
-	}
+
 	service, err := c.fetchServiceData(user, name)
 	if err != nil {
-		if servicecentral.IsNotFound(err) {
-			delete(serviceCache, name)
+		if !servicecentral.IsNotFound(err) {
+			return nil, err
 		}
-		return nil, err
+		// Add a tombstone to the cache instead of returning an error
+		// to prevent sending more requests for missing service
+		service = serviceTombstone
 	}
 	serviceCache[name] = service
 	return service, nil
