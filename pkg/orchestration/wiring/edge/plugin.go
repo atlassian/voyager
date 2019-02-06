@@ -31,11 +31,13 @@ func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wi
 
 	if resource.Type != ResourceType {
 		err = errors.Errorf("invalid resource type: %q", resource.Type)
-		return
+		return nil, false, err
 	}
 
 	serviceInstance, err := osb.ConstructServiceInstance(resource, ServiceId, PlanId)
-	if err != nil { return }
+	if err != nil {
+		return nil, false, err
+	}
 
 	instanceParameters, err := instanceParameters(resource, context)
 	if err != nil { return }
@@ -57,7 +59,7 @@ func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wi
 		},
 		Resources: []smith.Resource{serviceInstanceResource},
 	}
-	return
+	return result, false, nil
 }
 
 func instanceParameters(resource *orchestration.StateResource, context *wiring.WiringContext) ([]byte, error) {
@@ -78,7 +80,7 @@ func instanceParameters(resource *orchestration.StateResource, context *wiring.W
 
 	}
 
-	if parameters.Resource.Attributes.UpstreamAddress == nil {
+	if len(parameters.Resource.Attributes.UpstreamAddress) == 0 {
 		return nil, errors.New("UpstreamAddress is required")
 
 		// TODO: Make upstream address optional and produce it from InternalDNS / KubeIngress output

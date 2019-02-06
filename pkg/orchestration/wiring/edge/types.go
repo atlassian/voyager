@@ -12,8 +12,8 @@ type ResourceParameters struct {
 }
 
 type Attributes struct {
-	UpstreamAddress *UpstreamAddress `json:"upstream_address"`
-	UpstreamPort    int              `json:"upstream_port,omitempty"`
+	UpstreamAddress []UpstreamAddress `json:"upstream_address"`
+	UpstreamPort    int32            `json:"upstream_port,omitempty"`
 	UpstreamSuffix  string           `json:"upstream_suffix,omitempty"`
 	UpstreamOnly    string           `json:"upstream_only,omitempty"`
 	Domain          []string         `json:"domain,omitempty"`
@@ -22,7 +22,7 @@ type Attributes struct {
 	Routes          Routes           `json:"routes,omitempty"`
 }
 
-type UpstreamAddress []struct {
+ type UpstreamAddress struct {
 	Address string         `json:"address"`
 	Region  voyager.Region `json:"region,omitempty"`
 }
