@@ -8,24 +8,14 @@ func MakeServiceEnvironmentFromContext(context *wiringplugin.WiringContext) *Ser
 	config := context.StateContext.LegacyConfig
 	location := context.StateContext.Location
 	serviceProperties := context.StateContext.ServiceProperties
+	alarmEndpoints := PagerdutyAlarmEndpoints(
+		serviceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
+		serviceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch)
 
 	return &ServiceEnvironment{
 		NotificationEmail: serviceProperties.Notifications.Email,
-		AlarmEndpoints: []MicrosAlarmSpec{
-			{
-				Type:     "CloudWatch",
-				Priority: "high",
-				Endpoint: serviceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
-				Consumer: "pagerduty",
-			},
-			{
-				Type:     "CloudWatch",
-				Priority: "low",
-				Endpoint: serviceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
-				Consumer: "pagerduty",
-			},
-		},
-		Tags: context.StateContext.Tags,
+		AlarmEndpoints:    alarmEndpoints,
+		Tags:              context.StateContext.Tags,
 		PrimaryVpcEnvironment: &VPCEnvironment{
 			VPCID:                 config.Vpc,
 			JumpboxSecurityGroup:  config.JumpboxSecurityGroup,
@@ -38,6 +28,23 @@ func MakeServiceEnvironmentFromContext(context *wiringplugin.WiringContext) *Ser
 			Zones:                 config.Zones,
 			Region:                string(location.Region),
 			EMRSubnet:             config.EMRSubnet,
+		},
+	}
+}
+
+func PagerdutyAlarmEndpoints(highPriorityPagerdutyEndpoint string, lowPriorityPagerdutyEndpoint string) []MicrosAlarmSpec {
+	return []MicrosAlarmSpec{
+		{
+			Type:     "CloudWatch",
+			Priority: "high",
+			Endpoint: highPriorityPagerdutyEndpoint,
+			Consumer: "pagerduty",
+		},
+		{
+			Type:     "CloudWatch",
+			Priority: "low",
+			Endpoint: lowPriorityPagerdutyEndpoint,
+			Consumer: "pagerduty",
 		},
 	}
 }
