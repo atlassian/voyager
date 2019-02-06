@@ -273,7 +273,7 @@ func TestInvalidLocation(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	require.Equal(t, rejected("", `location "foo" does not exist in "staging"`), resp)
+	require.Equal(t, rejected("", `location "foo" (region: "z", account: "a") does not exist in "staging" environment, see go/micros2-locations`), resp)
 }
 
 func TestSDTooLarge(t *testing.T) {

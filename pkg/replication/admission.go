@@ -275,7 +275,7 @@ func (ac *AdmissionContext) validateLocationsAndTransforms(sd *comp_v1.ServiceDe
 		clusterLocations.Insert(location)
 		if sdLocation.EnvType == ac.CurrentLocation.EnvType && !ac.ReplicatedLocations.Has(location) {
 			rejectionMessages = append(rejectionMessages,
-				fmt.Sprintf("location %q does not exist in %q", sdLocation.Name, sdLocation.EnvType))
+				fmt.Sprintf("location %q (region: %q, account: %q) does not exist in %q environment, see go/micros2-locations", sdLocation.Name, sdLocation.Region, sdLocation.Account, sdLocation.EnvType))
 		}
 	}
 
