@@ -44,7 +44,8 @@ func TestGetServiceAttributes(t *testing.T) {
 	t.Logf("Number of returned attributes: %v", len(resp))
 	t.Logf("Attributes: %#v", resp)
 
-	bytes, _ := json.Marshal(resp)
+	bytes, err := json.Marshal(resp)
+	require.NoError(t, err)
 	t.Logf("Attributes JSON: %#v", string(bytes))
 }
 
