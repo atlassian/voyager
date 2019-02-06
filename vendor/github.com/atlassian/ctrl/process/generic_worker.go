@@ -39,7 +39,6 @@ func (g *Generic) processNextWorkItem() bool {
 
 	holder := g.Controllers[key.gvk]
 	logger := g.logger.With(logz.NamespaceName(key.Namespace),
-		logz.ControllerGk(key.gvk.GroupKind()),
 		logz.ObjectName(key.Name),
 		logz.ObjectGk(key.gvk.GroupKind()),
 		logz.Iteration(atomic.AddUint32(&g.iter, 1)))
