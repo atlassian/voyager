@@ -48,7 +48,7 @@ func ByConfigMapNameIndexKey(namespace string, configMapName string) string {
 
 type Entangler interface {
 	Entangle(*orch_v1.State, *wiring.EntangleContext) wiring.EntangleResult
-	Status(*orch_v1.StateResource, *wiring.StatusContext) wiring.EntangleStatusResult
+	Status(*orch_v1.StateResource, *wiring.StatusContext) wiring.StatusResult
 }
 
 type Controller struct {
@@ -336,9 +336,9 @@ func (c *Controller) calculateResourceStatuses(stateResources []orch_v1.StateRes
 
 		result := c.Entangler.Status(&stateRes, prepareStatusContext(stateRes.Name, bundle))
 		switch r := result.(type) {
-		case *wiring.EntangleStatusResultSuccess:
+		case *wiring.StatusResultSuccess:
 			status.ResourceStatusData = r.ResourceStatusData
-		case *wiring.EntangleStatusResultFailure:
+		case *wiring.StatusResultFailure:
 			// External Errors are not special - all errors are just placed into the status
 			status.ResourceStatusData = orch_v1.ResourceStatusData{
 				Conditions: []cond_v1.Condition{

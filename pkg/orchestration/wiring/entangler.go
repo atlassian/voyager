@@ -84,13 +84,13 @@ type wiredStateResource struct {
 }
 
 type EntangleResultType string
-type EntangleStatusResultType string
+type StatusResultType string
 
 const (
-	EntangleResultSuccessType       EntangleResultType       = "success"
-	EntangleResultFailureType       EntangleResultType       = "failure"
-	EntangleStatusResultSuccessType EntangleStatusResultType = "success"
-	EntangleStatusResultFailureType EntangleStatusResultType = "failure"
+	EntangleResultSuccessType EntangleResultType = "success"
+	EntangleResultFailureType EntangleResultType = "failure"
+	StatusResultSuccessType   StatusResultType   = "success"
+	StatusResultFailureType   StatusResultType   = "failure"
 )
 
 type EntangleResult interface {
@@ -115,25 +115,25 @@ func (e *EntangleResultFailure) StatusType() EntangleResultType {
 	return EntangleResultFailureType
 }
 
-type EntangleStatusResult interface {
-	StatusType() EntangleStatusResultType
+type StatusResult interface {
+	StatusType() StatusResultType
 }
 
-type EntangleStatusResultSuccess struct {
+type StatusResultSuccess struct {
 	ResourceStatusData orch_v1.ResourceStatusData
 }
 
-func (e *EntangleStatusResultSuccess) StatusType() EntangleStatusResultType {
-	return EntangleStatusResultSuccessType
+func (e *StatusResultSuccess) StatusType() StatusResultType {
+	return StatusResultSuccessType
 }
 
-type EntangleStatusResultFailure struct {
+type StatusResultFailure struct {
 	Error           error
 	IsExternalError bool
 }
 
-func (e *EntangleStatusResultFailure) StatusType() EntangleStatusResultType {
-	return EntangleStatusResultFailureType
+func (e *StatusResultFailure) StatusType() StatusResultType {
+	return StatusResultFailureType
 }
 
 func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) EntangleResult {
@@ -242,12 +242,12 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) En
 	}
 }
 
-func (en *Entangler) Status(resource *orch_v1.StateResource, context *StatusContext) EntangleStatusResult {
+func (en *Entangler) Status(resource *orch_v1.StateResource, context *StatusContext) StatusResult {
 	plugin, ok := en.Plugins[resource.Type]
 	if !ok {
 		// The plugin not existing is an external issue, the service descriptor contains
 		// an invalid resource type.
-		return &EntangleStatusResultFailure{
+		return &StatusResultFailure{
 			Error:           errors.New("unknown resource type"),
 			IsExternalError: true,
 		}
@@ -266,16 +266,16 @@ func (en *Entangler) Status(resource *orch_v1.StateResource, context *StatusCont
 	})
 	switch r := result.(type) {
 	case *wiringplugin.StatusResultSuccess:
-		return &EntangleStatusResultSuccess{
+		return &StatusResultSuccess{
 			ResourceStatusData: r.ResourceStatusData,
 		}
 	case *wiringplugin.StatusResultFailure:
-		return &EntangleStatusResultFailure{
+		return &StatusResultFailure{
 			Error:           errors.Wrap(r.Error, "error invoking autowiring plugin"),
 			IsExternalError: r.IsExternalError,
 		}
 	default:
-		return &EntangleStatusResultFailure{
+		return &StatusResultFailure{
 			Error: errors.Errorf("unknown status result type %q", r.StatusType()),
 		}
 	}
