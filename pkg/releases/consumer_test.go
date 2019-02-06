@@ -16,7 +16,7 @@ voyager (consumer) and trebuchet (provider).
 
 To validate the pact against the current provider specs locally, use the contract testing cli found here:
 https://hello.atlassian.net/wiki/spaces/TESTA/pages/128609304/Contract+Testing+Getting+Started+Guide+for+Consumers
- */
+*/
 func TestConsumerPact(t *testing.T) {
 
 	// Initialize the pact
@@ -50,16 +50,17 @@ func ResolveEndpointTest(pact *dsl.Pact) {
 	var resolveTest = func() error {
 		u := fmt.Sprintf("http://%s:%d/api/v1/resolve", pact.Host, pact.Server.Port)
 		req, err := http.NewRequest("GET", u, nil)
+
+		if err != nil {
+			return err
+		}
+
 		q := req.URL.Query()
 		q.Add("service", "serviceName")
 		q.Add("environment", "dev")
 		q.Add("region", "us-east-1")
 		q.Add("account", "1233")
 		req.URL.RawQuery = q.Encode()
-
-		if err != nil {
-			return err
-		}
 
 		req.Header.Set("Accept", "application/json")
 
@@ -110,15 +111,15 @@ func BatchResolveEndpointTest(pact *dsl.Pact) {
 		u := fmt.Sprintf("http://%s:%d/api/v1/resolve/batch", pact.Host, pact.Server.Port)
 		req, err := http.NewRequest("GET", u, nil)
 
+		if err != nil {
+			return err
+		}
+
 		q := req.URL.Query()
 		q.Add("environment", "dev")
 		q.Add("region", "us-east-1")
 		q.Add("account", "1233")
 		req.URL.RawQuery = q.Encode()
-
-		if err != nil {
-			return err
-		}
 
 		req.Header.Set("Accept", "application/json")
 

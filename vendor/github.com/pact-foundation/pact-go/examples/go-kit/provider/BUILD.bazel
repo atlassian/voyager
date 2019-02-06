@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "endpoints.go",
+        "middlewares.go",
+        "repository.go",
+        "transport.go",
+        "user_service.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/pact-foundation/pact-go/examples/go-kit/provider",
+    importpath = "github.com/pact-foundation/pact-go/examples/go-kit/provider",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-kit/kit/endpoint:go_default_library",
+        "//vendor/github.com/go-kit/kit/log:go_default_library",
+        "//vendor/github.com/go-kit/kit/transport/http:go_default_library",
+        "//vendor/github.com/gorilla/mux:go_default_library",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "broker.go",
+        "client.go",
+        "interaction.go",
+        "matcher.go",
+        "message.go",
+        "mock_service.go",
+        "pact.go",
+        "publish.go",
+        "request.go",
+        "response.go",
+        "service_mock.go",
+        "verify_mesage_request.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/pact-foundation/pact-go/dsl",
+    importpath = "github.com/pact-foundation/pact-go/dsl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/logutils:go_default_library",
+        "//vendor/github.com/pact-foundation/pact-go/client:go_default_library",
+        "//vendor/github.com/pact-foundation/pact-go/install:go_default_library",
+        "//vendor/github.com/pact-foundation/pact-go/types:go_default_library",
+        "//vendor/github.com/pact-foundation/pact-go/utils:go_default_library",
+    ],
+)

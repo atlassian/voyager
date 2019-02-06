@@ -499,6 +499,14 @@
   revision = "2500245aa6110c562d17020fb31a2c133d737799"
 
 [[projects]]
+  branch = "master"
+  digest = "1:c7d9de42b661ba85788f5f631cbac165795a2ff7dc1c59a4241d6228b129c3e4"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "d40cf49b3a77bba84a7afdbd7f1dc295d114efb1"
+
+[[projects]]
   digest = "1:475b179287e8afdcd352014b2c2500e67decdf63e66125e2129286873453e1cd"
   name = "github.com/hashicorp/golang-lru"
   packages = [
@@ -524,6 +532,14 @@
   ]
   pruneopts = "NT"
   revision = "d8c773c4cba11b11539e3d45f93daeaa5dcf1fa1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:9e12c5649c4b1a47e113593d61acf2eb131dad59fea70a05111a89fa4aead0ee"
+  name = "github.com/hashicorp/logutils"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "a335183dfd075f638afcc820c90591ca3c97eba6"
 
 [[projects]]
   digest = "1:65300ccc4bcb38b107b868155c303312978981e56bca707c81efec57575b5e06"
@@ -653,6 +669,20 @@
   packages = ["."]
   pruneopts = "NT"
   revision = "94122c33edd36123c84d5368cfb2b69df93a0ec8"
+
+[[projects]]
+  digest = "1:d7d3b8d95749327ab005cb86e8a03f38cbc2ac93bb0157265bf4f6a0bb8ce069"
+  name = "github.com/pact-foundation/pact-go"
+  packages = [
+    "client",
+    "dsl",
+    "install",
+    "types",
+    "utils",
+  ]
+  pruneopts = "NT"
+  revision = "6ec25718366e22bf3f50b126b9c4db4d91b9cfce"
+  version = "v1.0.0-beta.3"
 
 [[projects]]
   digest = "1:9072181164e616e422cbfbe48ca9ac249a4d76301ca0876c9f56b937cf214a2f"
@@ -1632,6 +1662,7 @@
     "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset",
     "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake",
     "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1",
+    "github.com/pact-foundation/pact-go/dsl",
     "github.com/pborman/uuid",
     "github.com/pkg/errors",
     "github.com/pmezard/go-difflib/difflib",

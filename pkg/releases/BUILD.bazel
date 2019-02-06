@@ -19,7 +19,10 @@ go_library(
 go_test(
     name = "go_default_test",
     size = "small",
-    srcs = ["model_test.go"],
+    srcs = [
+        "consumer_test.go",
+        "model_test.go",
+    ],
     embed = [":go_default_library"],
     race = "on",
     deps = [
@@ -28,6 +31,7 @@ go_test(
         "//pkg/releases/deployinator/models:go_default_library",
         "//vendor/github.com/go-openapi/runtime:go_default_library",
         "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/pact-foundation/pact-go/dsl:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",
         "//vendor/github.com/stretchr/testify/mock:go_default_library",
         "//vendor/github.com/stretchr/testify/require:go_default_library",

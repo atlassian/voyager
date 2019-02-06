@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "message_service.go",
+        "mock_service.go",
+        "service.go",
+        "service_manager.go",
+        "verification_service.go",
+    ],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/pact-foundation/pact-go/client",
+    importpath = "github.com/pact-foundation/pact-go/client",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["installer.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/pact-foundation/pact-go/install",
+    importpath = "github.com/pact-foundation/pact-go/install",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/hashicorp/go-version:go_default_library"],
+)
