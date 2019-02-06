@@ -2,15 +2,24 @@ package edge
 
 import "github.com/atlassian/voyager"
 
-type Parameters struct {
-	UpstreamAddress `json:"upstream_address"`
-	UpstreamPort    int      `json:"upstream_port,omitempty"`
-	UpstreamSuffix  string   `json:"upstream_suffix,omitempty"`
-	UpstreamOnly    string   `json:"upstream_only,omitempty"`
-	Domain          []string `json:"domain,omitempty"`
-	Healthcheck     string   `json:"healthcheck,omitempty"`
-	Rewrite         string   `json:"rewrite,omitempty"`
-	Routes          `json:"routes"`
+type InstanceParameters struct {
+	ServiceName string             `json:"serviceName"`
+	Resource    ResourceParameters `json:"resource"`
+}
+
+type ResourceParameters struct {
+	Attributes Attributes `json:"attributes"`
+}
+
+type Attributes struct {
+	UpstreamAddress *UpstreamAddress `json:"upstream_address"`
+	UpstreamPort    int              `json:"upstream_port,omitempty"`
+	UpstreamSuffix  string           `json:"upstream_suffix,omitempty"`
+	UpstreamOnly    string           `json:"upstream_only,omitempty"`
+	Domain          []string         `json:"domain,omitempty"`
+	Healthcheck     string           `json:"healthcheck,omitempty"`
+	Rewrite         string           `json:"rewrite,omitempty"`
+	Routes          Routes           `json:"routes,omitempty"`
 }
 
 type UpstreamAddress []struct {
@@ -19,15 +28,16 @@ type UpstreamAddress []struct {
 }
 
 type Routes []struct {
-	RouteMatch     `json:"match,omitempty"`
-	RouteAction    `json:"route,omitempty"`
-	RedirectAction string `json:"redirect,omitempty"`
+	Match    RouteMatch  `json:"match,omitempty"`
+	Route    RouteAction `json:"route,omitempty"`
+	Redirect string      `json:"redirect,omitempty"`
 }
 
 type RouteMatch struct {
 	Prefix string `json:"prefix,omitempty"`
 	Regex  string `json:"regex,omitempty"`
 	Path   string `json:"path,omitempty"`
+	Host   string `json:"host,omitempty"`
 }
 
 type RouteAction struct {
