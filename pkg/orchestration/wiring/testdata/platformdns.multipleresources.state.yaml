@@ -26,7 +26,7 @@ spec:
     name: ingress2
     dependsOn:
       - c2
-  - type: InternalDNS
+  - type: PlatformDNS
     name: i11
     spec:
       aliases:
@@ -34,7 +34,7 @@ spec:
           name: foo11.staging.atl-paas.net
     dependsOn:
       - ingress1
-  - type: InternalDNS
+  - type: PlatformDNS
     name: i12
     spec:
       aliases:
@@ -42,7 +42,7 @@ spec:
           name: foo12.staging.atl-paas.net
     dependsOn:
       - ingress1
-  - type: InternalDNS
+  - type: PlatformDNS
     name: i21
     spec:
       aliases:
@@ -50,7 +50,7 @@ spec:
           name: foo21.staging.atl-paas.net
     dependsOn:
       - ingress2
-  - type: InternalDNS
+  - type: PlatformDNS
     name: i22
     spec:
       aliases:

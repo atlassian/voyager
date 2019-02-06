@@ -12,8 +12,8 @@ spec:
         containers:
           - name: microservice
             image: docker.example.com/atlassian/micros-analytics:0.1.8
-    - type: InternalDNS
-      name: internaldns
+    - type: PlatformDNS
+      name: platformdns
       spec:
         aliases:
           - type: Simple
