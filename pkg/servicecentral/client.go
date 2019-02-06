@@ -445,7 +445,7 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceData {
 	return service
 }
 
-func findOpsGenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (s ServiceAttribute, found bool, err error) {
+func findOpsGenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (ServiceAttribute, bool /*found*/, error) {
 	const opsGenieSchemaName = "opsgenie"
 	for _, attr := range attributes {
 		if attr.Schema.Name != opsGenieSchemaName {
