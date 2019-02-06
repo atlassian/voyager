@@ -147,7 +147,7 @@ func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResou
 	}, nil
 }
 
-func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error) {
 	if resource.Type != e.ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
@@ -162,7 +162,7 @@ func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wirin
 		return nil, false, err
 	}
 
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Contract:  *resourceContract,
 		Resources: []smith_v1.Resource{serviceInstance},
 	}

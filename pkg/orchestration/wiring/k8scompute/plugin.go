@@ -99,7 +99,7 @@ func validateScaling(s Scaling) error {
 }
 
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool /*retriable*/, error) {
 	if resource.Type != apik8scompute.ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
@@ -355,7 +355,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, hpa)
 	}
 
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),

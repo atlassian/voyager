@@ -43,7 +43,7 @@ type partialSqsAttributes struct {
 // exposing too much. This is a separate function - for the moment - because
 // it needs to understand how to wire the dependencies, which is atypical
 // for aws-osb-provider resources.
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error) {
 	if stateResource.Type != ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", stateResource.Type)
 	}
@@ -102,7 +102,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		envVars["DEAD_QUEUE_NAME"] = "data.dead-queue-name"
 		envVars["DEAD_QUEUE_ARN"] = "data.dead-queue-arn"
 	}
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name, ResourcePrefix, envVars),

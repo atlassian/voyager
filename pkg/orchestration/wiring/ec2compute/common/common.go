@@ -99,7 +99,7 @@ func constructComputeSpec(spec *runtime.RawExtension) (StateComputeSpec, error) 
 	return computeSpec, err
 }
 
-func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) (*wiringplugin.WiringResultSuccess, bool, error) {
 	dependencies := context.Dependencies
 
 	if err := compute.ValidateASAPDependencies(context); err != nil {
@@ -253,7 +253,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	// Wire Result
 	smithResources := append(bindingResources, iamPluginInstanceSmithResource, iamPluginBindingSmithResource, computeResource)
 
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Resources: smithResources,
 	}
 

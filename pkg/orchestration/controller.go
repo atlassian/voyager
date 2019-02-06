@@ -47,8 +47,8 @@ func ByConfigMapNameIndexKey(namespace string, configMapName string) string {
 }
 
 type Entangler interface {
-	Entangle(*orch_v1.State, *wiring.EntangleContext) (*smith_v1.Bundle, bool /*retriable*/, error)
-	Status(*orch_v1.StateResource, *wiring.StatusContext) (orch_v1.ResourceStatusData, bool /*retriable*/, error)
+	Entangle(*orch_v1.State, *wiring.EntangleContext) wiring.EntangleResult
+	Status(*orch_v1.StateResource, *wiring.StatusContext) wiring.EntangleStatusResult
 }
 
 type Controller struct {
@@ -85,65 +85,105 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 		return false, nil
 	}
 
-	conflict, retriable, bundle, err := c.process(ctx.Logger, state)
+	bundle, external, conflict, retriable, err := c.process(ctx.Logger, state)
 	if conflict || bundle == nil && err == nil {
 		return false, nil
 	}
 
-	conflict, retriable, err = c.handleProcessResult(ctx.Logger, state, bundle, retriable, err)
+	conflict, processRetriable, processErr := c.handleProcessResult(ctx.Logger, state, bundle, retriable, err)
 	if conflict {
 		return false, nil
 	}
+	if processErr != nil {
+		if err != nil && !external {
+			ctx.Logger.Info("Failed to set State status", zap.Error(processErr))
+			return processRetriable || retriable, err
+		} else if external {
+			// We are going to return the error from handleProcessResult instead
+			ctx.Logger.Info("Invalid State Descriptor", zap.Error(err))
+		}
+		return processRetriable, processErr
+	}
 
-	return retriable, err
+	if err != nil {
+		if external {
+			ctx.Logger.Info("Invalid State Descriptor", zap.Error(err))
+			return false, nil
+		}
+		return retriable, err
+	}
+
+	return false, nil
 }
 
-// process processes the given State object performing autowiring for it.
-// It tries to return a Bundle even if there was an error.
-func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (conflictRet, retriableRet bool, b *smith_v1.Bundle, e error) {
+func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (b *smith_v1.Bundle, external bool, conflict bool, retriable bool, err error) {
+	entanglerContext, err := c.constructEntanglerContext(state)
+	if err != nil {
+		return nil, false, false, false, err
+	}
+
+	bundle, external, retriable, err := c.entangle(state, entanglerContext)
+	if err != nil {
+		return nil, external, false, retriable, err
+	}
+
+	conflict, retriable, bundle, err = c.createOrUpdateBundle(logger, state, bundle)
+	return bundle, false, conflict, retriable, err
+
+}
+
+func (c *Controller) constructEntanglerContext(state *orch_v1.State) (*wiring.EntangleContext, error) {
 	// Grab the namespace
 	namespaceObj, exists, err := c.NamespaceInformer.GetIndexer().GetByKey(state.Namespace)
 	if err != nil {
-		return false, false, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	if !exists {
-		return false, false, nil, errors.Errorf("missing Namespace %q in informer", state.Namespace)
+		return nil, errors.Errorf("missing Namespace %q in informer", state.Namespace)
 	}
 	namespace := namespaceObj.(*core_v1.Namespace)
 
-	// Grab the ConfigMap
-	if state.Spec.ConfigMapName == "" {
-		return false, false, nil, errors.Errorf("configMapName is not provided in State spec for %q", state.GetName())
-	}
 	key := ByConfigMapNameIndexKey(state.Namespace, state.Spec.ConfigMapName)
 	configMapInterface, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		return false, false, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	if !exists {
-		return false, false, nil, errors.Errorf("missing ConfigMap %q (key: %q) in informer", state.Spec.ConfigMapName, key)
+		return nil, errors.Errorf("missing ConfigMap %q (key: %q) in informer", state.Spec.ConfigMapName, key)
 	}
 	serviceProperties, err := parseConfigMap(configMapInterface.(*core_v1.ConfigMap))
 	if err != nil {
-		return false, false, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	if err != nil {
-		return false, false, nil, err
+		return nil, err
 	}
 
 	// Entangle the State
-	entangleContext := &wiring.EntangleContext{
+	return &wiring.EntangleContext{
 		ServiceName:       serviceName,
 		Label:             layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: *serviceProperties,
-	}
-	bundleSpec, retriable, err := c.Entangler.Entangle(state, entangleContext)
-	if err != nil {
-		return false, retriable, nil, errors.Wrapf(err, "failed to wire up Bundle for State %q", state.Name)
-	}
+	}, nil
+}
 
+func (c *Controller) entangle(state *orch_v1.State, entangleContext *wiring.EntangleContext) (*smith_v1.Bundle, bool /* external */, bool /* retriable */, error) {
+	result := c.Entangler.Entangle(state, entangleContext)
+	switch r := result.(type) {
+	case *wiring.EntangleResultSuccess:
+		return r.Bundle, false, false, nil
+	case *wiring.EntangleResultFailure:
+		return nil, r.IsExternalError, r.IsRetriableError, errors.Wrapf(r.Error, "failed to wire up Bundle for State %q", state.Name)
+	default:
+		return nil, false, false, errors.Errorf("unknown entangler state %q", r.StatusType())
+	}
+}
+
+// process processes the given State object performing autowiring for it.
+// It tries to return a Bundle even if there was an error.
+func (c *Controller) createOrUpdateBundle(logger *zap.Logger, state *orch_v1.State, bundleSpec *smith_v1.Bundle) (conflictRet, retriableRet bool, b *smith_v1.Bundle, e error) {
 	conflict, retriable, bundle, err := c.BundleObjectUpdater.CreateOrUpdate(
 		logger,
 		func(r runtime.Object) error {
@@ -214,6 +254,10 @@ func copyCondition(bundle *smith_v1.Bundle, condType cond_v1.ConditionType, cond
 	}
 }
 
+// handleProcessResult takes the the results of processing and writes it into the
+// status of the State. Contrary to prior behavior it no longer returns
+// the passed in error, thus allowing the caller to distinguish between "Status
+// Update Failed" vs "This was the error I passed in"
 func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.State, bundle *smith_v1.Bundle, retriable bool, err error) (conflictRet, retriableRet bool, e error) {
 	inProgressCond := cond_v1.Condition{
 		Type:   cond_v1.ConditionInProgress,
@@ -273,10 +317,6 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 	if inProgressUpdated || readyUpdated || errorUpdated || resourcesUpdated {
 		conflictStatus, retriableStatus, errStatus := c.setStatus(logger, state)
 		if errStatus != nil {
-			if err != nil {
-				logger.Info("Failed to set State status", zap.Error(errStatus))
-				return false, retriableStatus || retriable, err
-			}
 			return false, retriableStatus, errStatus
 		}
 		if conflictStatus {
@@ -284,7 +324,7 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 		}
 	}
 
-	return false, retriable, err
+	return false, false, nil
 }
 
 func (c *Controller) calculateResourceStatuses(stateResources []orch_v1.StateResource, bundle *smith_v1.Bundle) []orch_v1.ResourceStatus {
@@ -294,9 +334,12 @@ func (c *Controller) calculateResourceStatuses(stateResources []orch_v1.StateRes
 			Name: stateRes.Name,
 		}
 
-		var err error
-		status.ResourceStatusData, _, err = c.Entangler.Status(&stateRes, prepareStatusContext(stateRes.Name, bundle))
-		if err != nil {
+		result := c.Entangler.Status(&stateRes, prepareStatusContext(stateRes.Name, bundle))
+		switch r := result.(type) {
+		case *wiring.EntangleStatusResultSuccess:
+			status.ResourceStatusData = r.ResourceStatusData
+		case *wiring.EntangleStatusResultFailure:
+			// External Errors are not special - all errors are just placed into the status
 			status.ResourceStatusData = orch_v1.ResourceStatusData{
 				Conditions: []cond_v1.Condition{
 					{
@@ -311,13 +354,16 @@ func (c *Controller) calculateResourceStatuses(stateResources []orch_v1.StateRes
 						Type:    cond_v1.ConditionError,
 						Status:  cond_v1.ConditionTrue,
 						Reason:  ReasonStatusRetrievalFailed,
-						Message: fmt.Sprintf("Failed to get status of resource: %v", err),
+						Message: fmt.Sprintf("Failed to get status of resource: %v", r.Error),
 					},
 				},
 			}
+		default:
 		}
+
 		calculatedResourceStatuses = append(calculatedResourceStatuses, status)
 	}
+
 	return calculatedResourceStatuses
 }
 

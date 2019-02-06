@@ -44,7 +44,7 @@ const (
 )
 
 // WireUp is the main autowiring function for KubeIngress
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool /*retriable*/, error) {
 
 	// Fail if the resource type is wrong
 	if resource.Type != ResourceType {
@@ -65,7 +65,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, errors.Wrap(err, "failed building ingress resource")
 	}
 
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewIngressEndpoint(ingressResource.Name),
