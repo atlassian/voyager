@@ -8,7 +8,10 @@ go_library(
     deps = [
         "//pkg/apis/trebuchet/v1:go_default_library",
         "//vendor/go.uber.org/zap:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/internalversion:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/registry/rest:go_default_library",
     ],
 )
 

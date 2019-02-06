@@ -3,14 +3,11 @@ package apiserver
 import (
 	apis_trebuchet "github.com/atlassian/voyager/pkg/apis/trebuchet"
 	"github.com/atlassian/voyager/pkg/apis/trebuchet/install"
-	trebuchetrest "github.com/atlassian/voyager/pkg/creator/server/rest"
-	trebuchet "github.com/atlassian/voyager/pkg/trebuchet"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/version"
-	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
@@ -36,7 +33,6 @@ func init() {
 
 type Config struct {
 	GenericConfig *genericapiserver.RecommendedConfig
-	ExtraConfig   *trebuchet.ExtraConfig
 }
 
 // TrebuchetServer contains state for a Kubernetes cluster master/api server.
@@ -46,7 +42,6 @@ type TrebuchetServer struct {
 
 type completedConfig struct {
 	GenericConfig genericapiserver.CompletedConfig
-	ExtraConfig   *trebuchet.ExtraConfig
 }
 
 type CompletedConfig struct {
@@ -58,7 +53,6 @@ type CompletedConfig struct {
 func (cfg *Config) Complete() CompletedConfig {
 	c := completedConfig{
 		cfg.GenericConfig.Complete(),
-		cfg.ExtraConfig,
 	}
 
 	c.GenericConfig.EnableDiscovery = false
@@ -82,12 +76,6 @@ func (c completedConfig) New() (*TrebuchetServer, error) {
 	}
 
 	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(apis_trebuchet.GroupName, Scheme, metav1.ParameterCodec, Codecs)
-
-	v1Storage := map[string]rest.Storage{}
-	v1Storage["services"] = &trebuchetrest.REST{
-		Logger: c.ExtraConfig.Logger,
-	}
-	apiGroupInfo.VersionedResourcesStorageMap["v1"] = v1Storage
 
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 		return nil, err

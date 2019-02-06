@@ -3,7 +3,6 @@ package options
 import (
 	"net"
 
-	"github.com/atlassian/voyager/pkg/trebuchet"
 	"github.com/atlassian/voyager/pkg/trebuchet/server/apiserver"
 	utilapiserver "github.com/atlassian/voyager/pkg/util/apiserver"
 	"github.com/pkg/errors"
@@ -38,7 +37,6 @@ func (o *TrebuchetServerOptions) AddFlags(fs *pflag.FlagSet) {
 func (o *TrebuchetServerOptions) Validate() error {
 	var errors []error
 	errors = append(errors, o.RecommendedOptions.Validate()...)
-	errors = append(errors, o.TrebuchetOptions.Validate()...)
 	return utilerrors.NewAggregate(errors)
 }
 
@@ -58,14 +56,8 @@ func (o *TrebuchetServerOptions) Config() (*apiserver.Config, error) {
 		return nil, err
 	}
 
-	extraConfig := trebuchet.ExtraConfig{}
-	if err := o.TrebuchetOptions.ApplyTo(&extraConfig); err != nil {
-		return nil, err
-	}
-
 	config := &apiserver.Config{
 		GenericConfig: serverConfig,
-		ExtraConfig:   &extraConfig,
 	}
 	return config, nil
 }

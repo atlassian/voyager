@@ -8,6 +8,7 @@ package fake
 import (
 	trebuchetv1 "github.com/atlassian/voyager/pkg/apis/trebuchet/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -40,7 +41,18 @@ func (c *FakeReleases) List(opts v1.ListOptions) (result *trebuchetv1.ReleaseLis
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*trebuchetv1.ReleaseList), err
+
+	label, _, _ := testing.ExtractFromListOptions(opts)
+	if label == nil {
+		label = labels.Everything()
+	}
+	list := &trebuchetv1.ReleaseList{ListMeta: obj.(*trebuchetv1.ReleaseList).ListMeta}
+	for _, item := range obj.(*trebuchetv1.ReleaseList).Items {
+		if label.Matches(labels.Set(item.Labels)) {
+			list.Items = append(list.Items, item)
+		}
+	}
+	return list, err
 }
 
 // Watch returns a watch.Interface that watches the requested releases.

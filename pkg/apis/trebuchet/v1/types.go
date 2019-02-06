@@ -17,5 +17,15 @@ type Release struct {
 	meta_v1.TypeMeta   `json:",inline"`
 	meta_v1.ObjectMeta `json:"metadata,omitempty"`
 
-	Uuid string `json:"uuid,omitempty"`
+	UUID string `json:"uuid,omitempty"`
+}
+
+// ReleaseList is a list of Releases.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ReleaseList struct {
+	meta_v1.TypeMeta `json:",inline"`
+	meta_v1.ListMeta `json:"metadata,omitempty"`
+
+	Items []Release `json:"items"`
 }

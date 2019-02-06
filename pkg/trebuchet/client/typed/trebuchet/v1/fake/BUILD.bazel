@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "doc.go",
         "fake_release.go",
-        "fake_service.go",
         "fake_trebuchet_client.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/trebuchet/client/typed/trebuchet/v1/fake",

@@ -31,6 +31,7 @@ var (
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Release{},
+		&ReleaseList{},
 	)
 	meta_v1.AddToGroupVersion(scheme, SchemeGroupVersion)
 
