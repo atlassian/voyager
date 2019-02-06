@@ -101,11 +101,11 @@ func TestExternalUUIDAdmitFunc(t *testing.T) {
 
 			got, err := ExternalUUIDAdmitFunc(ctx, uuidStub, scStore, rpsCache, tc.admissionReview)
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("ExternalUUIDAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
+				require.Equal(t, tc.wantErr, err)
 			}
 			if got.Allowed != true {
 				if !reflect.DeepEqual(got, tc.want) {
-					t.Fatalf("ExternalUUIDAdmitFunc() = %v, want %v", got, tc.want)
+					require.Equal(t, tc.want, got)
 				}
 			} else {
 				// if it's Allowed, we're attempting a patch with a UUID, which

@@ -39,7 +39,7 @@ func TestCreateNewService(t *testing.T) {
 	handler := MockHandler(Match(
 		Method(http.MethodPost),
 		Path("/api/v1/services"),
-		JSONof(t, newTestServiceData(false)),
+		JSONof(t, newWriteData(false)),
 	).Respond(
 		Status(http.StatusCreated),
 		JSONFromFile(t, "create_service_rsp.json"),
@@ -48,7 +48,7 @@ func TestCreateNewService(t *testing.T) {
 	defer serviceCentralServerMock.Close()
 	// when
 	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
-	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newTestServiceData(false))
+	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newWriteData(false))
 	// then
 	assert.NoError(t, err)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestCreateServiceFailsIfItAlreadyExists(t *testing.T) {
 	defer serviceCentralServerMock.Close()
 	// when
 	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
-	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newTestServiceData(false))
+	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newWriteData(false))
 	// then
 	assert.True(t, httputil.IsConflict(errors.Cause(err)))
 }
@@ -76,7 +76,7 @@ func TestCreateServiceFailsWhenServiceCentralInternalError(t *testing.T) {
 	defer serviceCentralServerMock.Close()
 	// when
 	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
-	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newTestServiceData(false))
+	_, err := serviceCentralClient.CreateService(context.Background(), testUser, newWriteData(false))
 	// then
 	assert.True(t, httputil.IsUnknown(err))
 }
@@ -84,7 +84,7 @@ func TestCreateServiceFailsWhenServiceCentralInternalError(t *testing.T) {
 func TestUpdateService(t *testing.T) {
 	t.Parallel()
 	// given
-	expectedData := newTestServiceData(true)
+	expectedData := newWriteData(true)
 	expectedData.ServiceUUID = nil
 	expectedData.ServiceName = ""
 	handler := MockHandler(Match(
@@ -96,9 +96,9 @@ func TestUpdateService(t *testing.T) {
 	defer serviceCentralServerMock.Close()
 	// when
 	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
-	testServiceData := newTestServiceData(true)
+	testServiceData := newReadData(true)
 	copiedTestServiceData := *testServiceData
-	err := serviceCentralClient.PatchService(context.Background(), testUser, testServiceData)
+	err := serviceCentralClient.PatchService(context.Background(), testUser, newWriteData(true))
 	// check that no mutation has occurred
 	assert.Equal(t, *testServiceData, copiedTestServiceData)
 	// then
@@ -126,7 +126,7 @@ func TestListServices(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.Equal(t, 1, len(serviceData))
-	require.Equal(t, *newTestServiceData(true), serviceData[0])
+	require.Equal(t, *newReadData(true), serviceData[0])
 }
 
 func TestListModifiedServices(t *testing.T) {
@@ -150,7 +150,7 @@ func TestListModifiedServices(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 	assert.Equal(t, 1, len(serviceData))
-	expected := *newTestServiceData(true)
+	expected := *newReadData(true)
 	expected.Misc = nil // v2 api does not return misc data
 	assert.Equal(t, expected, serviceData[0])
 }
@@ -191,8 +191,8 @@ func TestListServicesPaginates(t *testing.T) {
 	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 	require.Equal(t, 2, len(serviceData))
 	// cheating here with test data returning the same "service" twice
-	require.Equal(t, *newTestServiceData(true), serviceData[0])
-	require.Equal(t, *newTestServiceData(true), serviceData[1])
+	require.Equal(t, *newReadData(true), serviceData[0])
+	require.Equal(t, *newReadData(true), serviceData[1])
 }
 
 func TestDeleteService(t *testing.T) {
@@ -276,10 +276,18 @@ func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress stri
 }
 
 // should match data from create_service_rsp.json and list_services_rsp.json
-func newTestServiceData(setID bool) *ServiceData {
-	s := ServiceData{
+func newReadData(setID bool) *ServiceDataRead {
+	s := ServiceDataRead{
+		ServiceDataWrite: *newWriteData(setID),
+		ServiceOwner:     ServiceOwner{Username: testUser.Name()},
+	}
+	return &s
+}
+
+// should match data from create_service_rsp.json and list_services_rsp.json
+func newWriteData(setID bool) *ServiceDataWrite {
+	s := ServiceDataWrite{
 		ServiceName:          testServiceName,
-		ServiceOwner:         ServiceOwner{Username: testUser.Name()},
 		ServiceTier:          3,
 		Platform:             "micros2",
 		ZeroDowntimeUpgrades: true,

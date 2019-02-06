@@ -78,6 +78,20 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		return nil, errors.Errorf("error fetching service central data for serviceName %q", serviceName)
 	}
 
+	if serviceCentralData == nil {
+		reason := fmt.Sprintf(
+			"namespace service %q does not exist in Service Central - should be impossible",
+			serviceName)
+		return &admissionv1beta1.AdmissionResponse{
+			Allowed: false,
+			Result: &metav1.Status{
+				Message: reason,
+				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
+			},
+		}, nil
+	}
+
 	// types to store parallel domain owner fetches
 	type domainOwnership struct {
 		requestedDomain         string

@@ -9,7 +9,7 @@ import (
 )
 
 type serviceCentralClient interface {
-	ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]servicecentral.ServiceData, error)
+	ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]servicecentral.ServiceDataRead, error)
 }
 
 type microsServerClient interface {
