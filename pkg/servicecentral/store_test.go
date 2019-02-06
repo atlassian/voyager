@@ -540,6 +540,10 @@ func newServiceServiceCentralDataRead(setID bool) *ServiceDataRead {
 		ServiceDataWrite: *newServiceServiceCentralDataWrite(setID),
 		ServiceOwner:     ServiceOwner{Username: testUser.Name()},
 	}
+	if setID {
+		creationTimestamp := testCreationTimestamp
+		sd.CreationTimestamp = &creationTimestamp
+	}
 	return &sd
 }
 
@@ -555,8 +559,6 @@ func newServiceServiceCentralDataWrite(setID bool) *ServiceDataWrite {
 	if setID {
 		serviceUUID := testServiceUUID
 		sd.ServiceUUID = &serviceUUID
-		creationTimestamp := testCreationTimestamp
-		sd.CreationTimestamp = &creationTimestamp
 	}
 	return &sd
 }
@@ -573,8 +575,6 @@ func newServiceWriteData(setID bool) *ServiceDataWrite {
 	if setID {
 		serviceUUID := testServiceUUID
 		sd.ServiceUUID = &serviceUUID
-		creationTimestamp := testCreationTimestamp
-		sd.CreationTimestamp = &creationTimestamp
 	}
 	return &sd
 }

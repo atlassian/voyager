@@ -281,6 +281,10 @@ func newReadData(setID bool) *ServiceDataRead {
 		ServiceDataWrite: *newWriteData(setID),
 		ServiceOwner:     ServiceOwner{Username: testUser.Name()},
 	}
+	if setID {
+		creationTimestamp := testCreationTimestamp
+		s.CreationTimestamp = &creationTimestamp
+	}
 	return &s
 }
 
@@ -303,8 +307,6 @@ func newWriteData(setID bool) *ServiceDataWrite {
 	if setID {
 		serviceUUID := testServiceUUID
 		s.ServiceUUID = &serviceUUID
-		creationTimestamp := testCreationTimestamp
-		s.CreationTimestamp = &creationTimestamp
 	}
 	return &s
 }

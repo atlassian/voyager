@@ -80,14 +80,14 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 
 	if serviceCentralData == nil {
 		reason := fmt.Sprintf(
-			"namespace service %q does not exist in Service Central - should be impossible",
+			"namespace service %q does not exist in Service Central",
 			serviceName)
 		return &admissionv1beta1.AdmissionResponse{
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: reason,
-				Code:    http.StatusForbidden,
-				Reason:  metav1.StatusReasonForbidden,
+				Code:    http.StatusInternalServerError,
+				Reason:  metav1.StatusReasonInternalError,
 			},
 		}, nil
 	}

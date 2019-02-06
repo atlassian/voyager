@@ -15,7 +15,6 @@ type ServiceOwner struct {
 
 type ServiceDataWrite struct {
 	ServiceUUID        *string     `json:"service_uuid,omitempty"`
-	CreationTimestamp  *string     `json:"creation_timestamp,omitempty"`
 	ServiceName        ServiceName `json:"service_name,omitempty"`
 	ServiceTier        int         `json:"service_tier,omitempty"`
 	Tags               []string    `json:"tags,omitempty"`
@@ -28,17 +27,18 @@ type ServiceDataWrite struct {
 	ZeroDowntimeUpgrades bool   `json:"zero_downtime_upgrades,omitempty"`
 	Stateless            bool   `json:"stateless,omitempty"`
 	BusinessUnit         string `json:"business_unit,omitempty"`
-
-	// Compliance is a read-only field. It can be nil, in which case it means
-	// they have not completed their compliance questions yet
-	Compliance *ServiceComplianceConf `json:"compliance,omitempty"`
 }
 
 type ServiceDataRead struct {
 	ServiceDataWrite
+	CreationTimestamp *string `json:"creation_timestamp,omitempty"`
 	// ServiceOwner is a read only field
 	// see: VYGR-425
 	ServiceOwner ServiceOwner `json:"service_owner,omitempty"`
+
+	// Compliance is a read-only field. It can be nil, in which case it means
+	// they have not completed their compliance questions yet
+	Compliance *ServiceComplianceConf `json:"compliance,omitempty"`
 }
 
 // ServiceComplianceConf includes all service compliance related data
