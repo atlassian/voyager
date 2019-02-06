@@ -22,9 +22,6 @@ const (
 	fakeTestUsername         = "fcobb"
 )
 
-// You can run this file from root using
-// `go test -v pkg/servicecentral/it/client_manual_test.go`
-
 func TestGetServiceAttributes(t *testing.T) {
 	t.Parallel()
 
@@ -44,19 +41,19 @@ func TestGetServiceAttributes(t *testing.T) {
 	resp, err := c.GetServiceAttributes(ctx, auth.ToOptionalUser(testUser), "slime")
 	require.NoError(t, err)
 
-	testLogger.Sugar().Infof("Number of returned attributes: %v", len(resp))
-	testLogger.Sugar().Infof("Attributes: %#v", resp)
+	t.Logf("Number of returned attributes: %v", len(resp))
+	t.Logf("Attributes: %#v", resp)
 
 	bytes, _ := json.Marshal(resp)
-	testLogger.Sugar().Infof("Attributes JSON: %#v", string(bytes))
+	t.Logf("Attributes JSON: %#v", string(bytes))
 }
 
 // data should be "export CENTRAL_YAML=$(kubectl -n voyager get secrets asap-creator -o yaml)"
-func getSecret(t *testing.T) *v1.Secret {
+func getSecret(t *testing.T) *core_v1.Secret {
 	data := os.Getenv("CENTRAL_YAML") //Envvar containing the yaml contents of the secret
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	destination := &v1.Secret{}
+	destination := &core_v1.Secret{}
 	_, _, err := decode([]byte(data), nil, destination)
 	require.NoError(t, err)
 	return destination

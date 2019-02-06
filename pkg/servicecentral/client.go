@@ -259,7 +259,6 @@ func (c *Client) listModifiedServices(ctx context.Context, user auth.OptionalUse
 }
 
 func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceData, error) {
-	l := c.logger
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),
@@ -299,12 +298,12 @@ func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, service
 
 	resp, err := c.GetServiceAttributes(ctx, user, serviceUUID)
 	if err != nil {
-		l.Error("Failed to get attributes for service", zap.Error(err), zap.String("service", serviceUUID))
+		return nil, errors.Wrap(err, "failed to get attributes for service")
 	}
 	ogTeamAttr, found, err := findOpsGenieTeamServiceAttribute(resp)
 	if err != nil {
 		// We do not return an error here as OpsGenie team is currently optional, likely to change when we remove PagerDuty
-		l.Error("Failed to find OpsGenie team in service attributes", zap.Error(err))
+		c.logger.Debug("Failed to find OpsGenie team in service attributes", zap.Error(err))
 	}
 
 	if found {
