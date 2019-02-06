@@ -10,8 +10,8 @@ import (
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/execution/plugins/generic/secretplugin"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
+	compute_common "github.com/atlassian/voyager/pkg/orchestration/wiring/compute"
+	apik8scompute "github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
@@ -47,6 +47,11 @@ const (
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
 	defaultPodDisruptionBudget = "30%"
+
+	// Default environment variable names
+	awsRegionKey   = "MICROS_AWS_REGION"
+	envTypeKey     = "MICROS_ENVTYPE"
+	serviceNameKey = "MICROS_SERVICE"
 )
 
 var (
@@ -119,13 +124,15 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, false, err
 	}
 	// Prepare environment variables
+	var envDefault []core_v1.EnvVar
 	var envFrom []core_v1.EnvFromSource
 	var smithResources []smith_v1.Resource
-	var bindingResult []compute.BindingResult
+	var resourceWithEnvVarBindings []compute.ResourceWithEnvVarBinding
+	var resourcesWithIamAccessibleBindings []iam.ResourceWithIamAccessibleBinding
 	references := make([]smith_v1.Reference, 0, len(context.Dependencies))
 
 	for _, dep := range context.Dependencies {
-		bindableShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
+		bindableEnvVarShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
 		if err != nil {
 			return nil, false, err
 		}
@@ -133,28 +140,44 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
 		}
 
-		resourceReference := bindableShape.Data.ServiceInstanceName
+		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
-		bindingResult = append(bindingResult, compute.BindingResult{
-			ResourceName:            dep.Name,
-			BindableEnvVarShape:     *bindableShape,
-			CreatedBindingFromShape: binding,
+		resourceWithEnvVarBindings = append(resourceWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
+			ResourceName:        dep.Name,
+			BindableEnvVarShape: *bindableEnvVarShape,
+			BindingName:         binding.Name,
 		})
+
+		// We also depend on BindableIamAccessible shape
+		bindableIamAccessibleShape, iamFound, err := knownshapes.FindBindableIamAccessibleShape(dep.Contract.Shapes)
+		if err != nil {
+			return nil, false, err
+		}
+		if iamFound {
+			var iamBindingResource smith_v1.Resource
+			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName
+			// Reuse the binding if the service instance name is the same, otherwise
+			// we'll need to do another binding
+			if iamResourceReference == resourceReference {
+				iamBindingResource = binding
+			} else {
+				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, iamResourceReference)
+				smithResources = append(smithResources, iamBindingResource)
+			}
+			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
+				ResourceName:               dep.Name,
+				BindingName:                iamBindingResource.Name,
+				BindableIamAccessibleShape: *bindableIamAccessibleShape,
+			})
+		}
 	}
 
 	var iamRoleRef *smith_v1.Reference
 
-	bindingReferences := make([]smith_v1.Reference, 0, len(bindingResult))
-	for _, res := range bindingResult {
-		bindingReferences = append(bindingReferences, smith_v1.Reference{
-			Resource: res.CreatedBindingFromShape.Name,
-		})
-	}
-
 	// Reference environment variables retrieved from ServiceBinding objects
-	if len(bindingResult) > 0 {
-		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, bindingResult)
+	if len(resourceWithEnvVarBindings) > 0 {
+		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, resourceWithEnvVarBindings)
 		if err != nil {
 			return nil, false, err
 		}
@@ -184,7 +207,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, secretResource)
 
 		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
-			context.StateContext.ServiceName, false, bindingReferences, context, []string{}, buildKube2iamRoles(context))
+			context.StateContext.ServiceName, false, resourcesWithIamAccessibleBindings, context, []string{}, buildKube2iamRoles(context))
 		if err != nil {
 			return nil, false, err
 		}
@@ -226,13 +249,14 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	}
 	references = append(references, serviceAccountNameRef)
 
-	// default env vars for containers
-	var envDefault []core_v1.EnvVar
+	// Shared default env vars
+	// - Including ASAP public key servers, as all containers
+	//   should know where to get the public keys
+	//   regardless if they're using ASAP or not
+	envDefault = append(envDefault, compute_common.GetSharedDefaultEnvVars(context.StateContext.Location)...)
 
-	// ASAP public key servers
-	// we want every container to know where to get the public keys
-	// regardless if they're using ASAP or not
-	envDefault = append(envDefault, asapkey.GetPublicKeyRepoEnvVars(context.StateContext.Location)...)
+	// Add Micros provided defaults
+	envDefault = append(envDefault, buildDefaultEnvVars(context.StateContext)...)
 
 	// always bind to the common secret, it's OK if it doesn't exist
 	trueVar := true
@@ -441,6 +465,23 @@ func buildContainers(spec *Spec, envDefault []core_v1.EnvVar, envFrom []core_v1.
 	}
 
 	return containers
+}
+
+func buildDefaultEnvVars(context wiringplugin.StateContext) []core_v1.EnvVar {
+	return []core_v1.EnvVar{
+		{
+			Name:  awsRegionKey,
+			Value: string(context.Location.Region),
+		},
+		{
+			Name:  envTypeKey,
+			Value: string(context.Location.EnvType),
+		},
+		{
+			Name:  serviceNameKey,
+			Value: string(context.ServiceName),
+		},
+	}
 }
 
 func buildAffinity(labelMap map[string]string) *core_v1.Affinity {

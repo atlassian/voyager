@@ -44,22 +44,28 @@ func (p *Plugin) Describe() *smith_plugin.Description {
 	}
 }
 
-func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.Context) (*smith_plugin.ProcessResult, error) {
+func (p *Plugin) Process(rawSpec map[string]interface{}, context *smith_plugin.Context) smith_plugin.ProcessResult {
 	spec := Spec{}
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(rawSpec, &spec)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert into typed spec")
+		return &smith_plugin.ProcessResultFailure{
+			Error: errors.Wrap(err, "failed to convert into typed spec"),
+		}
 	}
 
 	if len(spec.Mapping) == 0 {
-		return nil, errors.New("spec is invalid - must provide at least one secret to map")
+		return &smith_plugin.ProcessResultFailure{
+			Error: errors.New("spec is invalid - must provide at least one secret to map"),
+		}
 	}
 
 	secret, err := createSecret(spec, context.Dependencies)
 	if err != nil {
-		return nil, err
+		return &smith_plugin.ProcessResultFailure{
+			Error: err,
+		}
 	}
-	return &smith_plugin.ProcessResult{
+	return &smith_plugin.ProcessResultSuccess{
 		Object: secret,
-	}, nil
+	}
 }

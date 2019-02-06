@@ -5,6 +5,7 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
@@ -34,9 +35,9 @@ const (
 // All osb-aws-provider resources are 'almost' the same, differing only in the service/plan names,
 // what they need passed in the ServiceEnvironment.
 var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	DynamoDB: Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes),
-	S3:       Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes),
-	Cfn:      Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes),
+	DynamoDB: wiringutil.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes).WireUp),
+	S3:       wiringutil.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes).WireUp),
+	Cfn:      wiringutil.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
 }
 
 func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
@@ -55,6 +56,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"TOPICARN":    "data.TopicArn",
 				"TOPICREGION": "data.TopicRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "kinesis-v1":
 		return []wiringplugin.Shape{
@@ -63,6 +65,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"STREAMARN":    "data.StreamArn",
 				"STREAMREGION": "data.StreamRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "elasticsearch-v5":
 		fallthrough
@@ -75,6 +78,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"DOMAINENDPOINT": "data.DomainEndpoint",
 				"DOMAINREGION":   "data.DomainRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "firehose-v1":
 		return []wiringplugin.Shape{
@@ -84,6 +88,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"S3BUCKETARN":           "data.S3BucketArn",
 				"STREAMARN":             "data.StreamArn",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	case "simple-workflow-service-v1":
 		return []wiringplugin.Shape{
@@ -91,6 +96,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"DOMAINPREFIX": "data.DomainPrefix",
 				"DOMAINREGION": "data.DomainRegion",
 			}),
+			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 		}, nil
 	default:
 		// There's only a small set of supported Voyager resources in the
@@ -118,7 +124,6 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 		//    environment variables that don't match ignoreKeyRegex.
 		return nil, errors.Errorf("cloudformation template %q is not supported", templateName)
 	}
-	return nil, nil
 }
 
 func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
@@ -129,6 +134,7 @@ func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Res
 			"TABLE_NAME":   "data.table-name",
 			"TABLE_REGION": "data.table-region",
 		}),
+		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 	}, nil
 }
 
@@ -140,6 +146,7 @@ func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource,
 			"BUCKET_PATH":   "data.bucket-path",
 			"BUCKET_REGION": "data.bucket-region",
 		}),
+		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
 	}, nil
 }
 

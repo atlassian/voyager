@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission/rps"
+	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/uuid"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -25,9 +26,9 @@ func ExternalUUIDAdmitFunc(ctx context.Context, uuidGenerator uuid.Generator, sc
 
 	// Try to handle the resource
 	switch admissionRequest.Resource {
-	case serviceInstanceResource:
+	case k8s.ServiceInstanceGVR:
 		return handleExternalIDServiceInstance(ctx, uuidGenerator, scClient, rpsCache, admissionRequest)
-	case serviceBindingResource:
+	case k8s.ServiceBindingGVR:
 		return handleExternalIDServiceBinding(uuidGenerator, admissionRequest)
 	default:
 		return nil, errors.Errorf("unsupported resource, got %v", admissionRequest.Resource)
@@ -64,6 +65,7 @@ func handleExternalIDServiceBinding(uuidGenerator uuid.Generator, admissionReque
 			Result: &metav1.Status{
 				Message: reason,
 				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}
@@ -100,6 +102,7 @@ func allowedToMigrateFromRPS(ctx context.Context, scClient serviceCentralClient,
 			Result: &metav1.Status{
 				Message: reason,
 				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}

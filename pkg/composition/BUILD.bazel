@@ -39,7 +39,6 @@ go_library(
         "//vendor/github.com/atlassian/smith/pkg/resources:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/specchecker:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/store:go_default_library",
-        "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/github.com/prometheus/client_golang/prometheus:go_default_library",
         "//vendor/github.com/schollz/closestmatch:go_default_library",
@@ -52,6 +51,7 @@ go_library(
         "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
         "//vendor/k8s.io/client-go/informers/core/v1:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )
 
@@ -89,7 +89,6 @@ go_test(
         "//vendor/github.com/atlassian/smith/pkg/resources:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/specchecker:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/store:go_default_library",
-        "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/prometheus/client_golang/prometheus:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",
         "//vendor/github.com/stretchr/testify/mock:go_default_library",
@@ -105,5 +104,6 @@ go_test(
         "//vendor/k8s.io/client-go/kubernetes/fake:go_default_library",
         "//vendor/k8s.io/client-go/testing:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )

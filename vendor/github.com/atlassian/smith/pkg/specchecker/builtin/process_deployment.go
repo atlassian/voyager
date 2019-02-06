@@ -156,7 +156,7 @@ func (deployment) generateHashForContainers(store specchecker.Store, namespace s
 		for _, envFrom := range container.EnvFrom {
 			secretRef := envFrom.SecretRef
 			if secretRef != nil {
-				err := specchecker.HashSecretRef(store, namespace, secretRef.Name, sets.NewString(), secretRef.Optional, hasher)
+				err := specchecker.HashSecretRef(store, namespace, secretRef.Name, nil, secretRef.Optional, hasher)
 				if err != nil {
 					return err
 				}
@@ -164,18 +164,19 @@ func (deployment) generateHashForContainers(store specchecker.Store, namespace s
 
 			configMapRef := envFrom.ConfigMapRef
 			if configMapRef != nil {
-				err := specchecker.HashConfigMapRef(store, namespace, configMapRef.Name, sets.NewString(), configMapRef.Optional, hasher)
+				err := specchecker.HashConfigMapRef(store, namespace, configMapRef.Name, nil, configMapRef.Optional, hasher)
 				if err != nil {
 					return err
 				}
 			}
 		}
 		for _, env := range container.Env {
-			if env.ValueFrom == nil {
+			valueFrom := env.ValueFrom
+			if valueFrom == nil {
 				continue
 			}
 
-			secretKeyRef := env.ValueFrom.SecretKeyRef
+			secretKeyRef := valueFrom.SecretKeyRef
 			if secretKeyRef != nil {
 				err := specchecker.HashSecretRef(store, namespace, secretKeyRef.Name, sets.NewString(secretKeyRef.Key), secretKeyRef.Optional, hasher)
 				if err != nil {
@@ -183,7 +184,7 @@ func (deployment) generateHashForContainers(store specchecker.Store, namespace s
 				}
 			}
 
-			configMapKeyRef := env.ValueFrom.ConfigMapKeyRef
+			configMapKeyRef := valueFrom.ConfigMapKeyRef
 			if configMapKeyRef != nil {
 				err := specchecker.HashConfigMapRef(store, namespace, configMapKeyRef.Name, sets.NewString(configMapKeyRef.Key), configMapKeyRef.Optional, hasher)
 				if err != nil {

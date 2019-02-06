@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	rps_testing "github.com/atlassian/voyager/pkg/execution/svccatadmission/rps/testing"
+	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/util/uuid"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/stretchr/testify/assert"
@@ -46,50 +47,50 @@ func TestExternalUUIDAdmitFunc(t *testing.T) {
 	}{
 		{
 			"no external id for ServiceInstance",
-			buildAdmissionReview("", serviceInstance, admissionv1beta1.Create, []byte(`{"spec":{"externalId": ""}}`)),
-			buildAdmissionResponse(true, 0, []byte(`\[{"op":"add","path":"/spec/externalID","value":"[^"]+"}\]`), ""),
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, []byte(`{"spec":{"externalId": ""}}`)),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, []byte(`\[{"op":"add","path":"/spec/externalID","value":"[^"]+"}\]`), ""),
 			false,
 		},
 		{
 			"no external id for ServiceBinding",
-			buildAdmissionReview("", serviceInstance, admissionv1beta1.Create, []byte(`{"spec":{"externalId": ""}}`)),
-			buildAdmissionResponse(true, 0, []byte(`\[{"op":"add","path":"/spec/externalID","value":"[^"]+"}\]`), ""),
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, []byte(`{"spec":{"externalId": ""}}`)),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, []byte(`\[{"op":"add","path":"/spec/externalID","value":"[^"]+"}\]`), ""),
 			false,
 		},
 		{
 			"external id for ServiceInstance",
-			buildAdmissionReview("", serviceInstance, admissionv1beta1.Create, []byte(`{"spec":{"externalId": "foo"}}`)),
-			buildAdmissionResponse(true, 0, nil, ""),
+			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, []byte(`{"spec":{"externalId": "foo"}}`)),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, ""),
 			false,
 		},
 		{
 			"external id for ServiceInstance in RPS with wrong user",
-			buildAdmissionReview(dougMicros2Service, serviceInstance, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")),
-			buildAdmissionResponse(false, http.StatusUnauthorized, nil, `service central owner of service "elsie-compute-service" (elsie) is different to micros2 service "doug-micros2-service" (doug)`),
+			buildAdmissionReview(dougMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `service central owner of service "elsie-compute-service" (elsie) is different to micros2 service "doug-micros2-service" (doug)`),
 			false,
 		},
 		{
 			"external id for ServiceInstance in RPS with missing namespace service",
-			buildAdmissionReview(missingService, serviceInstance, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")),
-			buildAdmissionResponse(false, http.StatusUnauthorized, nil, `namespace service "missing-service" does not exist in Service Central - should be impossible`),
+			buildAdmissionReview(missingService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `namespace service "missing-service" does not exist in Service Central - should be impossible`),
 			false,
 		},
 		{
 			"external id for ServiceInstance in RPS with no resource service",
-			buildAdmissionReview(dougMicros2Service, serviceInstance, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "d0aea45f-7718-4bfe-9c89-1aaf5a668161")),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `for instanceId "d0aea45f-7718-4bfe-9c89-1aaf5a668161" RPS claims owning service is "missing-service", but that doesn't exist in service central`),
+			buildAdmissionReview(dougMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "d0aea45f-7718-4bfe-9c89-1aaf5a668161")),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `for instanceId "d0aea45f-7718-4bfe-9c89-1aaf5a668161" RPS claims owning service is "missing-service", but that doesn't exist in service central`),
 			false,
 		},
 		{
 			"external id for ServiceInstance in RPS with right user",
-			buildAdmissionReview(elsieMicros2Service, serviceInstance, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")),
-			buildAdmissionResponse(true, 0, nil, `good migration wooh`),
+			buildAdmissionReview(elsieMicros2Service, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstanceWithExternalID(t, "9a3f2d35-0ce8-48b7-8531-a72b5cd02fd4")),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `good migration wooh`),
 			false,
 		},
 		{
 			"external id for ServiceBinding",
-			buildAdmissionReview(elsieMicros2Service, serviceBinding, admissionv1beta1.Create, []byte(`{"spec":{"externalId": "foo"}}`)),
-			buildAdmissionResponse(false, http.StatusForbidden, nil, `externalID was set by user to "foo", expected empty`),
+			buildAdmissionReview(elsieMicros2Service, k8s.ServiceBindingGVR, admissionv1beta1.Create, []byte(`{"spec":{"externalId": "foo"}}`)),
+			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `externalID was set by user to "foo", expected empty`),
 			false,
 		},
 	}

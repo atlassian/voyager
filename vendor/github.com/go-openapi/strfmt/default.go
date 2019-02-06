@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net/mail"
 	"regexp"
 	"strings"
 
@@ -112,12 +111,6 @@ func IsUUID5(str string) bool {
 	return rxUUID5.MatchString(str)
 }
 
-// Validates an email address.
-func IsEmail(str string) bool {
-	addr, e := mail.ParseAddress(str)
-	return e == nil && addr.Address != ""
-}
-
 func init() {
 	// register formats in the default registry:
 	//   - byte
@@ -143,7 +136,7 @@ func init() {
 	Default.Add("uri", &u, govalidator.IsRequestURI)
 
 	eml := Email("")
-	Default.Add("email", &eml, IsEmail)
+	Default.Add("email", &eml, govalidator.IsEmail)
 
 	hn := Hostname("")
 	Default.Add("hostname", &hn, IsHostname)

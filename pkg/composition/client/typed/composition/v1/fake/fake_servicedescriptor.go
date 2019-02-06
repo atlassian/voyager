@@ -99,7 +99,7 @@ func (c *FakeServiceDescriptors) DeleteCollection(options *v1.DeleteOptions, lis
 // Patch applies the patch and returns the patched serviceDescriptor.
 func (c *FakeServiceDescriptors) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *compositionv1.ServiceDescriptor, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(servicedescriptorsResource, name, data, subresources...), &compositionv1.ServiceDescriptor{})
+		Invokes(testing.NewRootPatchSubresourceAction(servicedescriptorsResource, name, pt, data, subresources...), &compositionv1.ServiceDescriptor{})
 	if obj == nil {
 		return nil, err
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // WiringPlugin represents an autowiring plugin.
@@ -19,6 +18,7 @@ type WiringPlugin interface {
 	// Error may be retriable if its an RPC error (like network error). Most errors are not retriable because
 	// this method should be pure/deterministic so if it fails, it fails.
 	WireUp(resource *orch_v1.StateResource, context *WiringContext) (result *WiringResult, retriable bool, err error)
+	Status(resource *orch_v1.StateResource, context *StatusContext) (result *StatusResult, retriable bool, err error)
 }
 
 // WiringContext contains context information that is passed to an autowiring function to perform autowiring
@@ -30,6 +30,7 @@ type WiringContext struct {
 	Dependants   []DependantResource
 }
 
+// TheOnlyDependency will return a single dependency, returning an error if there is more or less than one
 func (c *WiringContext) TheOnlyDependency() (*WiredDependency, error) {
 	switch len(c.Dependencies) {
 	case 0:
@@ -41,10 +42,21 @@ func (c *WiringContext) TheOnlyDependency() (*WiredDependency, error) {
 	}
 }
 
+// FindTheOnlyDependency will return a single dependency if found, returning and error if more than one is found
+func (c *WiringContext) FindTheOnlyDependency() (*WiredDependency, bool /* found */, error) {
+	switch len(c.Dependencies) {
+	case 0:
+		return nil, false, nil
+	case 1:
+		return &c.Dependencies[0], true, nil
+	default:
+		return nil, false, errors.Errorf("can only depend on a single resource, but multiple were found")
+	}
+}
+
 // WiredDependency represents a resource that has been processed by a corresponding autowiring function.
 type WiredDependency struct {
 	Name     voyager.ResourceName
-	Type     voyager.ResourceType
 	Contract ResourceContract
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}
@@ -57,82 +69,6 @@ type DependantResource struct {
 	// Attributes are attributes attached to the edge between resources.
 	Attributes map[string]interface{}
 	Resource   orch_v1.StateResource
-}
-
-// ProtoReference represents bits of information that need to be augmented with more information to
-// construct a valid Smith reference.
-// +k8s:deepcopy-gen=true
-type ProtoReference struct {
-	Resource smith_v1.ResourceName `json:"resource"`
-	Path     string                `json:"path,omitempty"`
-	Example  interface{}           `json:"example,omitempty"`
-	Modifier string                `json:"modifier,omitempty"`
-}
-
-// ToReference should be used to augment ProtoReference with missing information to
-// get a full Reference.
-func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Reference {
-	return smith_v1.Reference{
-		Name:     name,
-		Resource: r.Resource,
-		Path:     r.Path,
-		Example:  r.Example,
-		Modifier: r.Modifier,
-	}
-}
-
-// DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
-// since it doesn't know it's JSON).
-func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// BindingProtoReference is a reference to the ServiceBinding's contents.
-// +k8s:deepcopy-gen=true
-type BindingProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
-}
-
-func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// ToReference should be used to augment BindingProtoReference with missing information to
-// get a full Reference.
-func (r *BindingProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
-	return smith_v1.Reference{
-		Name:     name,
-		Resource: bindingResourceName,
-		Path:     r.Path,
-		Example:  r.Example,
-	}
-}
-
-// BindingProtoReference is a reference to the ServiceBinding's Secret's contents.
-// +k8s:deepcopy-gen=true
-type BindingSecretProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
-}
-
-func (r *BindingSecretProtoReference) DeepCopyInto(out *BindingSecretProtoReference) {
-	*out = *r
-	out.Example = runtime.DeepCopyJSONValue(r.Example)
-}
-
-// ToReference should be used to augment BindingSecretProtoReference with missing information to
-// get a full Reference.
-func (r *BindingSecretProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
-	return smith_v1.Reference{
-		Name:     name,
-		Resource: bindingResourceName,
-		Path:     r.Path,
-		Example:  r.Example,
-		Modifier: smith_v1.ReferenceModifierBindSecret,
-	}
 }
 
 // ResourceContract contains information about a resource for consumption by other autowiring functions.
@@ -182,4 +118,23 @@ type ClusterConfig struct {
 	ClusterDomainName string
 	KittClusterEnv    string
 	Kube2iamAccount   string
+}
+
+type BundleResource struct {
+	// Resource is the Smith resource that has been produced as the result of processing an Orchestration StateResource.
+	Resource smith_v1.Resource `json:"resource"`
+	// Status is the status of that object as reported by Smith.
+	Status smith_v1.ResourceStatusData `json:"status"`
+}
+
+type StatusContext struct {
+	// BundleResources is a list of resources and their statuses in a Bundle.
+	// Only resources for a particular StateResource are in the list.
+	BundleResources []BundleResource `json:"bundleResources,omitempty"`
+	// PluginStatuses is a list of statuses for Smith plugins used in a Bundle.
+	PluginStatuses []smith_v1.PluginStatus `json:"pluginStatuses,omitempty"`
+}
+
+type StatusResult struct {
+	ResourceStatusData orch_v1.ResourceStatusData `json:"resourceStatusData"`
 }

@@ -58,8 +58,6 @@ spec:
               secretEnvVars:
                 UPS_UPS_MY_THING: '!{compute--ups--binding-ec77961a2a5d37c885fc880a40c624d07d8d3aa9}'
   - name: compute---iamrole
-    references:
-    - resource: compute--ups--binding
     spec:
       plugin:
         name: iamrole
@@ -106,6 +104,7 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
+          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name
@@ -169,12 +168,17 @@ spec:
               envType: testenv
               region: testregion
             meaninglesskey: used as an example
+            alarmEndpoints:
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: high
+                type: CloudWatch
+              - consumer: pagerduty
+                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+                priority: low
+                type: CloudWatch
             notifications:
               email: notification@email.com
-              pagerduty:
-                cloudwatch: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                generic: "123123123123123"
-                lowPriority: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
             service:
               id: test-servicename-compute
               loggingId: logging-id-from-configmap

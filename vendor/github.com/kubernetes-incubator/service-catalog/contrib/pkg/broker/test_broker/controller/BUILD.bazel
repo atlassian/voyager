@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["controller.go"],
+    importmap = "github.com/atlassian/voyager/vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/test_broker/controller",
+    importpath = "github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/test_broker/controller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server:go_default_library",
+        "//vendor/github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
+    ],
+)

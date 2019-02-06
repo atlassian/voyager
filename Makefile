@@ -15,7 +15,7 @@ APIS_FORMATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/formation/v1
 APIS_OPS_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/ops/v1
 APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
 APIS_REPORTER_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/reporter/v1
-SHAPES_API_DIRS = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/knownshapes
+SHAPES_API_DIRS = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/knownshapes,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/libshapes
 ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_FORMATION_DIR),$(APIS_OPS_DIR),$(APIS_ORCHESTRATION_DIR),$(APIS_REPORTER_DIR)
 
 #===============================================================================
@@ -79,6 +79,17 @@ verify-vendor:
 	# generate BUILD files in vendor
 	bazel run $(BAZEL_OPTIONS) //:gazelle
 	$(check-git-status)
+
+#===============================================================================
+
+.PHONY: update-smith
+update-smith:
+	dep ensure -v -update github.com/atlassian/smith
+
+.PHONY: bump-dependencies
+bump-dependencies: \
+	update-smith \
+	update-vendor
 
 #===============================================================================
 
@@ -424,7 +435,6 @@ generate-deepcopy:
 	find pkg -name zz_generated.deepcopy.go -delete
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/deepcopy-gen
 	./bazel-bin/vendor/k8s.io/code-generator/cmd/deepcopy-gen/$(BINARY_PREFIX_DIRECTORY)/deepcopy-gen $(VERIFY_CODE) \
-	--v 1 --logtostderr \
 	--input-dirs "$(ALL_DIRS),$(SHAPES_API_DIRS)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
 	--output-file-base zz_generated.deepcopy
@@ -436,7 +446,6 @@ generate-sets:
 	rm -rf pkg/util/sets
 	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/gengo/examples/set-gen
 	./bazel-bin/vendor/k8s.io/gengo/examples/set-gen/$(BINARY_PREFIX_DIRECTORY)/set-gen $(VERIFY_CODE) \
-	--v 1 --logtostderr \
 	--input-dirs "$(MAIN_PACKAGE_DIR),$(ALL_DIRS)" \
 	--go-header-file "build/code-generator/boilerplate.go.txt" \
 	--output-package '$(MAIN_PACKAGE_DIR)/pkg/util/sets'

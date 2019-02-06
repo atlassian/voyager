@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/atlassian/voyager/pkg/k8s"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -31,7 +32,7 @@ func AsapKeyAdmitFunc(ctx context.Context, admissionReview admissionv1beta1.Admi
 	admissionRequest := admissionReview.Request
 
 	// Validate supported resource type
-	if admissionRequest.Resource != serviceInstanceResource {
+	if admissionRequest.Resource != k8s.ServiceInstanceGVR {
 		return nil, errors.Errorf("unsupported resource, got %v", admissionRequest.Resource)
 	}
 
@@ -77,6 +78,7 @@ func AsapKeyAdmitFunc(ctx context.Context, admissionReview admissionv1beta1.Admi
 			Result: &metav1.Status{
 				Message: reason,
 				Code:    http.StatusForbidden,
+				Reason:  metav1.StatusReasonForbidden,
 			},
 		}, nil
 	}

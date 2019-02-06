@@ -85,8 +85,8 @@ func (ldd *LocationDescriptorDependency) DeepCopyInto(out *LocationDescriptorDep
 // UnmarshalJSON for LocationDescriptorDependency handles them being either a single
 // resource name, or an object containing name and attributes.
 func (ldd *LocationDescriptorDependency) UnmarshalJSON(data []byte) error {
-	type FakeLocationDescriptorDependency LocationDescriptorDependency
-	res := FakeLocationDescriptorDependency{}
+	type fakeLocationDescriptorDependency LocationDescriptorDependency
+	var res fakeLocationDescriptorDependency
 	if err := json.Unmarshal(data, &res); err == nil {
 		ldd.Name = res.Name
 		ldd.Attributes = res.Attributes
@@ -99,8 +99,6 @@ func (ldd *LocationDescriptorDependency) UnmarshalJSON(data []byte) error {
 	}
 
 	ldd.Name = resourceName
-	// TODO - remove once we are on apimachinery 1.11
-	ldd.Attributes = map[string]interface{}{}
 	return nil
 }
 

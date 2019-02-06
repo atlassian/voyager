@@ -9,10 +9,12 @@ import (
 
 	"github.com/atlassian/voyager/cmd"
 	"github.com/atlassian/voyager/pkg/util/crash"
+	"k8s.io/klog"
 )
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(runWithContext)
 }
 

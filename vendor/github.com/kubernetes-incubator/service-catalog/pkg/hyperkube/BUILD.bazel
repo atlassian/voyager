@@ -10,7 +10,6 @@ go_library(
     importpath = "github.com/kubernetes-incubator/service-catalog/pkg/hyperkube",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/template:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/version:go_default_library",
@@ -19,5 +18,6 @@ go_library(
         "//vendor/k8s.io/apiserver/pkg/server:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/flag:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/logs:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
     ],
 )

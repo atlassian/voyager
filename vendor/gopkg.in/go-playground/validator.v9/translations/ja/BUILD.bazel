@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["ja.go"],
+    importmap = "github.com/atlassian/voyager/vendor/gopkg.in/go-playground/validator.v9/translations/ja",
+    importpath = "gopkg.in/go-playground/validator.v9/translations/ja",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-playground/locales:go_default_library",
+        "//vendor/github.com/go-playground/universal-translator:go_default_library",
+        "//vendor/gopkg.in/go-playground/validator.v9:go_default_library",
+    ],
+)

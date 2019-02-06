@@ -12,10 +12,12 @@ import (
 	"github.com/atlassian/smith/cmd/smith/app"
 	"github.com/atlassian/voyager/cmd"
 	"github.com/atlassian/voyager/cmd/smith/config"
+	"k8s.io/klog"
 )
 
 func Main() {
 	rand.Seed(time.Now().UnixNano())
+	klog.InitFlags(nil)
 	cmd.RunInterruptably(runWithContext)
 }
 

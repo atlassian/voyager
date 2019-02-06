@@ -16,14 +16,15 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/testutil"
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -59,6 +60,53 @@ func TestEntangler(t *testing.T) {
 	}
 }
 
+func TestEntanglerWithBadWiringFunction(t *testing.T) {
+	t.Parallel()
+
+	// Given: this set of plugins
+	plugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
+		"DoubleASAP": &delegatingPlugin{
+			wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+				return &wiringplugin.WiringResult{
+					Contract: wiringplugin.ResourceContract{
+						Shapes: []wiringplugin.Shape{
+							knownshapes.NewASAPKey(),
+							knownshapes.NewASAPKey(),
+						},
+					},
+				}, false, nil
+			},
+			status: emptyStatus,
+		},
+	}
+
+	// Given: this state
+	state := &orch_v1.State{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       "State",
+			APIVersion: "orchestration.voyager.atl-paas.net/v1",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "state1",
+			Namespace: "namespace1",
+		},
+		Spec: orch_v1.StateSpec{
+			Resources: []orch_v1.StateResource{
+				{
+					Name: "resource1",
+					Type: "DoubleASAP",
+				},
+			},
+		},
+	}
+
+	// When: we build an entangler and run it with those plugins against this state
+	_, _, err := entangleTestState(t, state, plugins)
+
+	// Then: we expect an error as we can't have an auto-wiring function return >1 shape of the same type
+	assert.EqualError(t, err, `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
+}
+
 func TestDependants(t *testing.T) {
 	t.Parallel()
 
@@ -76,36 +124,42 @@ func TestDependants(t *testing.T) {
 	}
 
 	// Build the parent func, which will need to be able to access the child spec
-	var parentFunc registry.WireUpFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
-		// ensure that the dependents slice is not empty
-		require.Len(t, context.Dependants, 1)
-		dependantResource := context.Dependants[0]
+	parentPlugin := delegatingPlugin{
+		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+			// ensure that the dependents slice is not empty
+			require.Len(t, context.Dependants, 1)
+			dependantResource := context.Dependants[0]
 
-		// ensure that the child is actually passed as the dependant resource to the parent
-		assert.Equal(t, childName, dependantResource.Name)
-		assert.Equal(t, attrs, dependantResource.Attributes)
+			// ensure that the child is actually passed as the dependant resource to the parent
+			assert.Equal(t, childName, dependantResource.Name)
+			assert.Equal(t, attrs, dependantResource.Attributes)
 
-		// unmarshal the spec
-		var spec map[string]string
-		err := json.Unmarshal(dependantResource.Resource.Spec.Raw, &spec)
-		require.NoError(t, err)
+			// unmarshal the spec
+			var spec map[string]string
+			err := json.Unmarshal(dependantResource.Resource.Spec.Raw, &spec)
+			require.NoError(t, err)
 
-		// ensure the parent can access the data in the spec
-		value, ok := spec[childFieldKey]
-		assert.True(t, ok)
-		assert.Equal(t, childFieldValue, value)
+			// ensure the parent can access the data in the spec
+			value, ok := spec[childFieldKey]
+			assert.True(t, ok)
+			assert.Equal(t, childFieldValue, value)
 
-		return &wiringplugin.WiringResult{}, false, nil
+			return &wiringplugin.WiringResult{}, false, nil
+		},
+		status: emptyStatus,
 	}
 
 	// Child spec, does nothing
-	var childFunc registry.WireUpFunc = func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (r *wiringplugin.WiringResult, retriable bool, e error) {
-		return &wiringplugin.WiringResult{}, false, nil
+	childPlugin := delegatingPlugin{
+		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+			return &wiringplugin.WiringResult{}, false, nil
+		},
+		status: emptyStatus,
 	}
 
 	wiringPlugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
-		parentType: parentFunc,
-		childType:  childFunc,
+		parentType: parentPlugin,
+		childType:  childPlugin,
 	}
 
 	// Build the child's spec which we will have access to in the parent
@@ -235,7 +289,7 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 	state.SetLabels(labels)
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
-	bundle, retriable, err := ent.Entangle(state, &EntanglerContext{
+	bundle, retriable, err := ent.Entangle(state, &EntangleContext{
 		ServiceName: serviceName,
 		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: orch_meta.ServiceProperties{
@@ -316,4 +370,21 @@ func writeBundleToTestData(t *testing.T, filename string, bundle *smith_v1.Bundl
 
 	err = ioutil.WriteFile(filepath.Join(testutil.FixturesDir, filename), data, 0644)
 	require.NoError(t, err)
+}
+
+type delegatingPlugin struct {
+	wireUp func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error)
+	status func(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error)
+}
+
+func (p delegatingPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+	return p.wireUp(resource, context)
+}
+
+func (p delegatingPlugin) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
+	return p.status(resource, context)
+}
+
+func emptyStatus(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
+	return &wiringplugin.StatusResult{}, false, nil
 }

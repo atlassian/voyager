@@ -79,18 +79,34 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	}
 	wiredResources = append(wiredResources, serviceInstance)
 
+	var hasDeadLetterQueue bool
+	if stateResource.Spec != nil {
+		var spec struct {
+			MaxReceiveCount int `json:"MaxReceiveCount"`
+		}
+		err := json.Unmarshal(stateResource.Spec.Raw, &spec)
+		if err != nil {
+			return nil, false, errors.WithStack(err)
+		}
+		hasDeadLetterQueue = spec.MaxReceiveCount > 0
+	}
+
+	envVars := map[string]string{
+		"QUEUE_URL":    "data.queue-url",
+		"QUEUE_NAME":   "data.queue-name",
+		"QUEUE_ARN":    "data.queue-arn",
+		"QUEUE_REGION": "data.queue-region",
+	}
+	if hasDeadLetterQueue {
+		envVars["DEAD_QUEUE_URL"] = "data.dead-queue-url"
+		envVars["DEAD_QUEUE_NAME"] = "data.dead-queue-name"
+		envVars["DEAD_QUEUE_ARN"] = "data.dead-queue-arn"
+	}
 	result := &wiringplugin.WiringResult{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
-				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name, ResourcePrefix, map[string]string{
-					"QUEUE_URL":       "data.queue-url",
-					"QUEUE_NAME":      "data.queue-name",
-					"QUEUE_ARN":       "data.queue-arn",
-					"QUEUE_REGION":    "data.queue-region",
-					"DEAD_QUEUE_URL":  "data.dead-queue-url",
-					"DEAD_QUEUE_NAME": "data.dead-queue-name",
-					"DEAD_QUEUE_ARN":  "data.dead-queue-arn",
-				}),
+				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name, ResourcePrefix, envVars),
+				knownshapes.NewBindableIamAccessible(serviceInstance.Name, "data.IamPolicySnippet"),
 			},
 		},
 		Resources: wiredResources,

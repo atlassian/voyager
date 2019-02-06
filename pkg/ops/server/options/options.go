@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	kubeoptions "k8s.io/apiserver/pkg/server/options"
 )
 
 type OpsServerOptions struct {
@@ -18,9 +19,9 @@ type OpsServerOptions struct {
 }
 
 // NewOpsServerOptions creates default options.
-func NewOpsServerOptions(opsHandler http.Handler) *OpsServerOptions {
+func NewOpsServerOptions(opsHandler http.Handler, processInfo *kubeoptions.ProcessInfo) *OpsServerOptions {
 	o := &OpsServerOptions{
-		RecommendedOptions: utilapiserver.NewRecommendedOptions(),
+		RecommendedOptions: utilapiserver.NewRecommendedOptions(processInfo),
 		OpsHandler:         opsHandler,
 	}
 

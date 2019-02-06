@@ -30,8 +30,9 @@ func TestMissingMapping(t *testing.T) {
 
 	p, err := New()
 	require.NoError(t, err)
-	_, err = p.Process(spec, context)
-	require.EqualError(t, err, "spec is invalid - must provide at least one secret to map")
+	result := p.Process(spec, context)
+	require.Equal(t, smith_plugin.ProcessResultFailureType, result.StatusType())
+	require.EqualError(t, result.(*smith_plugin.ProcessResultFailure).Error, "spec is invalid - must provide at least one secret to map")
 }
 
 func TestBasic(t *testing.T) {
@@ -72,9 +73,9 @@ func TestBasic(t *testing.T) {
 
 	p, err := New()
 	require.NoError(t, err)
-	res, err := p.Process(spec, context)
-	require.NoError(t, err)
-	secret := res.Object.(*core_v1.Secret)
+	result := p.Process(spec, context)
+	require.Equal(t, smith_plugin.ProcessResultSuccessType, result.StatusType())
+	secret := result.(*smith_plugin.ProcessResultSuccess).Object.(*core_v1.Secret)
 
 	assertSecretKey(t, secret.Data["binding1"], map[string]string{
 		"primaryCompute": "google.com",

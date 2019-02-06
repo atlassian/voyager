@@ -37,7 +37,7 @@ func TestCreateNewService(t *testing.T) {
 	_, err := luigiClient.CreateService(context.Background(), newTestServiceData(false))
 	// then
 	assert.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestDeleteService(t *testing.T) {
@@ -55,7 +55,7 @@ func TestDeleteService(t *testing.T) {
 	err := luigiClient.DeleteService(context.Background(), loggingID)
 	// then
 	assert.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 }
 
 func TestCreateServiceFailsIfItAlreadyExists(t *testing.T) {
@@ -105,7 +105,7 @@ func TestListServices(t *testing.T) {
 	serviceData, err := luigiClient.ListServices(context.Background(), "test-serv&ice")
 	// then
 	assert.NoError(t, err)
-	require.Equal(t, 1, handler.ReqestSnapshots.Calls())
+	require.Equal(t, 1, handler.RequestSnapshots.Calls())
 	assert.Equal(t, 9, len(serviceData))
 
 	// *something* in the list should requal

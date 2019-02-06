@@ -6,10 +6,10 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_util "github.com/atlassian/smith/pkg/util"
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 func ObjectCompare(t *testing.T, resActual, resExpected runtime.Object) {
@@ -22,13 +22,10 @@ func ObjectCompareContext(t *testing.T, fileName FileName, paramActual, paramExp
 		return
 	}
 
-	resActual := paramActual.DeepCopyObject()
-	resExpected := paramExpected.DeepCopyObject()
-
-	resActualUnstr, err := smith_util.RuntimeToUnstructured(resActual)
+	resActualUnstr, err := smith_util.RuntimeToUnstructured(paramActual)
 	require.NoError(t, err)
 
-	resExpectedUnstr, err := smith_util.RuntimeToUnstructured(resExpected)
+	resExpectedUnstr, err := smith_util.RuntimeToUnstructured(paramExpected)
 	require.NoError(t, err)
 
 	YAMLCompareContext(t, fileName, resExpectedUnstr.Object, resActualUnstr.Object)

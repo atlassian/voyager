@@ -13,11 +13,6 @@ type UnstructuredShape struct {
 	Data map[string]interface{} `json:"data,omitempty"`
 }
 
-// Name returns the name of the shape.
-func (u *UnstructuredShape) Name() ShapeName {
-	return u.ShapeName
-}
-
 // DeepCopyInto handle the interface{} deepcopy (which k8s can't autogen,
 // since it doesn't know it's JSON).
 func (u *UnstructuredShape) DeepCopyInto(out *UnstructuredShape) {

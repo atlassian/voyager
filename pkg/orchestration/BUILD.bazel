@@ -22,7 +22,6 @@ go_library(
         "//vendor/github.com/atlassian/ctrl/apis/condition/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/client/clientset_generated/clientset/typed/smith/v1:go_default_library",
-        "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/go-chi/chi:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/github.com/prometheus/client_golang/prometheus:go_default_library",
@@ -34,6 +33,7 @@ go_library(
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/clock:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )
 
@@ -48,6 +48,10 @@ go_test(
         "//:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/orchestration/client/fake:go_default_library",
+        "//pkg/orchestration/wiring:go_default_library",
+        "//pkg/orchestration/wiring/legacy:go_default_library",
+        "//pkg/orchestration/wiring/registry:go_default_library",
+        "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/util/testutil:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/prometheus/client_golang/prometheus:go_default_library",

@@ -26,7 +26,6 @@ import (
 	orchInf "github.com/atlassian/voyager/pkg/orchestration/informer"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/testutil"
-	"github.com/ghodss/yaml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,6 +39,7 @@ import (
 	k8s_fake "k8s.io/client-go/kubernetes/fake"
 	kube_testing "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -84,7 +84,7 @@ func testHandleProcessResult(t *testing.T, filePrefix string) {
 	ldExpected := &form_v1.LocationDescriptor{}
 	err = testutil.LoadIntoStructFromTestData(fileName, ldExpected)
 	require.NoError(t, err)
-	testutil.ObjectCompareContext(t, testutil.FileName(fileName), ldExpected, ld)
+	testutil.ObjectCompareContext(t, testutil.FileName(fileName), ld, ldExpected)
 }
 
 func TestFormationWithTestData(t *testing.T) {
