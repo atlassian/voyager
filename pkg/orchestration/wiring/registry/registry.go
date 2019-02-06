@@ -5,11 +5,11 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
 	ec2compute_v2 "github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/v2"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/kubeingress"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/postgres"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/sqs"
@@ -30,5 +30,5 @@ var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	rds.ResourceType:            wiringutil.StatusAdapter(rds.New().WireUp),
 	sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
 	asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
-	apiinternaldns.ResourceType: wiringutil.StatusAdapter(internaldns.New().WireUp),
+	apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
 }

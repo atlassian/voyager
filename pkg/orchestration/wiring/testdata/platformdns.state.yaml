@@ -16,8 +16,8 @@ spec:
     name: ingress
     dependsOn:
       - kubecompute-simple
-  - type: InternalDNS
-    name: internaldns
+  - type: PlatformDNS
+    name: platformdns
     spec:
       aliases:
         - type: Simple
