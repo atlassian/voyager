@@ -271,6 +271,12 @@ func (ac *AdmissionContext) validateLocationsAndTransforms(sd *comp_v1.ServiceDe
 				fmt.Sprintf("labels are currently not supported (location: %q)", sdLocation.Name))
 		}
 
+		if sdLocation.EnvType == "" {
+			rejectionMessages = append(rejectionMessages,
+				fmt.Sprintf("location %q (region: %q, account: %q) is missing envType, see go/micros2-locations", sdLocation.Name, sdLocation.Region, sdLocation.Account))
+			continue
+		}
+
 		location := sdLocation.VoyagerLocation().ClusterLocation()
 		clusterLocations.Insert(location)
 		if sdLocation.EnvType != ac.CurrentLocation.EnvType {
