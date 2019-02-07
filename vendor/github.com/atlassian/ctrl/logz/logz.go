@@ -8,13 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// ControllerGk is a zap field used to identify logs coming from a specific controller
-// or controller constructor. It includes logs that don't involve processing an
-// object.
-func ControllerGk(gk schema.GroupKind) zapcore.Field {
-	return zap.Stringer("ctrl_gk", &gk)
-}
-
 // Object returns a zap field used to record ObjectName.
 func Object(obj meta_v1.Object) zapcore.Field {
 	return ObjectName(obj.GetName())
