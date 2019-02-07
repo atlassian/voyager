@@ -18,12 +18,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func isInternalDNSServiceClass(serviceInstance *sc_v1b1.ServiceInstance) bool {
+func isPlatformDNSServiceClass(serviceInstance *sc_v1b1.ServiceInstance) bool {
 	return serviceInstance.Spec.ClusterServiceClassExternalID == string(apiplatformdns.ClusterServiceClassExternalID)
 }
 
-// InternalDNSAdmitFunc checks existing DNS alias ownership via micros server API, for both InternalDNS Services and Ingress Resources
-func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerClient, scClient serviceCentralClient, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
+// PlatformDNSAdmitFunc checks existing DNS alias ownership via micros server API, for both PlatformDNS Services and Ingress Resources
+func PlatformDNSAdmitFunc(ctx context.Context, microsServerClient microsServerClient, scClient serviceCentralClient, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
 	logger := logz.RetrieveLoggerFromContext(ctx).Sugar()
 	admissionRequest := admissionReview.Request
 
@@ -47,23 +47,23 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		if err := json.Unmarshal(admissionRequest.Object.Raw, &serviceInstance); err != nil {
 			return nil, errors.Wrap(err, "error parsing ServiceInstance")
 		}
-		if !isInternalDNSServiceClass(&serviceInstance) {
+		if !isPlatformDNSServiceClass(&serviceInstance) {
 			return &admissionv1beta1.AdmissionResponse{
 				Allowed: true,
 				Result: &metav1.Status{
-					Message: "requested ServiceInstance is not InternalDNS type",
+					Message: fmt.Sprintf("requested ServiceInstance is not %q type", apiplatformdns.ResourceType),
 				},
 			}, nil
 		}
-		var internalDNSSpec apiplatformdns.Spec
-		if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &internalDNSSpec); err != nil {
-			return nil, errors.Wrap(err, "error parsing InternalDNS spec")
+		var platformDNSSpec apiplatformdns.Spec
+		if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &platformDNSSpec); err != nil {
+			return nil, errors.Wrapf(err, "error parsing %q spec", apiplatformdns.ResourceType)
 		}
-		if len(internalDNSSpec.Aliases) == 0 {
-			return nil, errors.Errorf("cannot process InternalDNS with empty aliases list")
+		if len(platformDNSSpec.Aliases) == 0 {
+			return nil, errors.Errorf("cannot process %q with empty aliases list", apiplatformdns.ResourceType)
 		}
-		domainsToCheck = make(chan string, len(internalDNSSpec.Aliases))
-		for _, alias := range internalDNSSpec.Aliases {
+		domainsToCheck = make(chan string, len(platformDNSSpec.Aliases))
+		for _, alias := range platformDNSSpec.Aliases {
 			domainsToCheck <- alias.Name
 		}
 	default:
