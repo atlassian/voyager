@@ -95,10 +95,11 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 		return false, nil
 	}
 	if processErr != nil {
-		if err != nil && !external {
-			ctx.Logger.Info("Failed to set State status", zap.Error(processErr))
-			return processRetriable || retriable, err
-		} else if external {
+		if err != nil {
+			if !external {
+				ctx.Logger.Info("Failed to set State status", zap.Error(processErr))
+				return processRetriable || retriable, err
+			}
 			// We are going to return the error from handleProcessResult instead
 			ctx.Logger.Info("Invalid State Descriptor", zap.Error(err))
 		}
@@ -107,7 +108,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 
 	if err != nil {
 		if external {
-			ctx.Logger.Info("Invalid State Descriptor", zap.Error(err))
+			ctx.Logger.Info("Invalid State Object", zap.Error(err))
 			return false, nil
 		}
 		return retriable, err
@@ -116,7 +117,9 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 	return false, nil
 }
 
-func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (b *smith_v1.Bundle, external bool, conflict bool, retriable bool, err error) {
+// process processes the given State object performing autowiring for it.
+// It tries to return a Bundle even if there was an error.
+func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (*smith_v1.Bundle, bool /* external */, bool /* conflict */, bool /* retriable */, error) {
 	entanglerContext, err := c.constructEntanglerContext(state)
 	if err != nil {
 		return nil, false, false, false, err
@@ -181,8 +184,6 @@ func (c *Controller) entangle(state *orch_v1.State, entangleContext *wiring.Enta
 	}
 }
 
-// process processes the given State object performing autowiring for it.
-// It tries to return a Bundle even if there was an error.
 func (c *Controller) createOrUpdateBundle(logger *zap.Logger, state *orch_v1.State, bundleSpec *smith_v1.Bundle) (conflictRet, retriableRet bool, b *smith_v1.Bundle, e error) {
 	conflict, retriable, bundle, err := c.BundleObjectUpdater.CreateOrUpdate(
 		logger,
@@ -255,9 +256,8 @@ func copyCondition(bundle *smith_v1.Bundle, condType cond_v1.ConditionType, cond
 }
 
 // handleProcessResult takes the the results of processing and writes it into the
-// status of the State. Contrary to prior behavior it no longer returns
-// the passed in error, thus allowing the caller to distinguish between "Status
-// Update Failed" vs "This was the error I passed in"
+// status of the State. it does not returns the passed in error, thus allowing the
+// caller to distinguish between "Status Update Failed" vs "This was the error I passed in"
 func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.State, bundle *smith_v1.Bundle, retriable bool, err error) (conflictRet, retriableRet bool, e error) {
 	inProgressCond := cond_v1.Condition{
 		Type:   cond_v1.ConditionInProgress,
@@ -359,6 +359,24 @@ func (c *Controller) calculateResourceStatuses(stateResources []orch_v1.StateRes
 				},
 			}
 		default:
+			status.ResourceStatusData = orch_v1.ResourceStatusData{
+				Conditions: []cond_v1.Condition{
+					{
+						Type:   cond_v1.ConditionInProgress,
+						Status: cond_v1.ConditionFalse,
+					},
+					{
+						Type:   cond_v1.ConditionReady,
+						Status: cond_v1.ConditionFalse,
+					},
+					{
+						Type:    cond_v1.ConditionError,
+						Status:  cond_v1.ConditionTrue,
+						Reason:  ReasonStatusRetrievalFailed,
+						Message: fmt.Sprintf("Unexpected status result type: %q", r.StatusType()),
+					},
+				},
+			}
 		}
 
 		calculatedResourceStatuses = append(calculatedResourceStatuses, status)
