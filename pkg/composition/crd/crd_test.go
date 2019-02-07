@@ -16,7 +16,7 @@ func runCRDTestCase(t *testing.T, schemaValidator *validate.SchemaValidator, fil
 	require.NoError(t, err)
 
 	var testData interface{}
-	err = yaml.Unmarshal(srcFile, &testData)
+	err = yaml.UnmarshalStrict(srcFile, &testData)
 	require.NoError(t, err)
 
 	result := schemaValidator.Validate(testData)

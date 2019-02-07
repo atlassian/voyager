@@ -176,6 +176,9 @@ func parseConfigMap(configMap *core_v1.ConfigMap) (*orch_meta.ServiceProperties,
 	}
 
 	serviceProperties := &orch_meta.ServiceProperties{}
+	// If we introduce new fields in the contents of that key in the ConfigMap we still want
+	// it to be parseable by old versions of the controller to avoid breaking it.
+	// That is why we don't use UnmarshalStrict() here.
 	err := yaml.Unmarshal(configMapConfigData, serviceProperties)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -48,50 +48,41 @@ spec:
 status:
   conditions:
   - lastTransitionTime: 2018-07-11T08:49:10Z
-    lastUpdateTime: 2018-07-11T08:49:10Z
     status: "False"
     type: InProgress
   - lastTransitionTime: 2018-07-11T08:49:10Z
-    lastUpdateTime: 2018-07-11T08:49:10Z
     status: "True"
     type: Ready
     reason: AllDone
     message: 'Smith: i am done'
   - lastTransitionTime: 2018-07-11T08:32:01Z
-    lastUpdateTime: null
     status: "False"
     type: Error
   resourceStatuses:
   - conditions:
     - lastTransitionTime: 1970-01-01T00:00:00Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 1970-01-01T00:00:00Z
-      lastUpdateTime: null
       message: 'kind: ServiceInstance, name: basic-sqs, message: yes, ready!, reason: AllDone'
       status: "True"
       type: Ready
     - lastTransitionTime: 1970-01-01T00:00:00Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: basic-sqs
   - conditions:
     - lastTransitionTime: 1970-01-01T00:00:00Z
-      lastUpdateTime: null
       message: 'kind: ServiceBinding, name: showenv--basic-sqs, message: working on it, reason: WorkingOnIt'
       status: "True"
       type: InProgress
     - lastTransitionTime: 1970-01-01T00:00:00Z
-      lastUpdateTime: null
       message: |-
         kind: ServiceBinding, name: showenv---iamrole, message: what is going on?
         kind: ServiceInstance, name: showenv, message: what is going on here?, reason: IDunno
       status: "Unknown"
       type: Ready
     - lastTransitionTime: 1970-01-01T00:00:00Z
-      lastUpdateTime: null
       message: 'kind: ServiceInstance, name: showenv---iamrole, message: something broke'
       status: "True"
       type: Error

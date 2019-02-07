@@ -38,7 +38,7 @@ func readAndValidateOptions(configFile string) (*Options, error) {
 	}
 
 	var opts Options
-	if err := yaml.Unmarshal(doc, &opts); err != nil {
+	if err := yaml.UnmarshalStrict(doc, &opts); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
