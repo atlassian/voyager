@@ -97,7 +97,7 @@ func (r *Report) Run(ctx context.Context) error {
 	for _, namespace := range namespaces.Items {
 		reports, err := r.ReporterClient.ReporterV1().Reports(namespace.Name).List(meta_v1.ListOptions{})
 		if err != nil {
-			r.Logger.Error("Could not list reports in namespace", zap.String("namespace", namespace.Name))
+			r.Logger.Error("Could not list reports in namespace", zap.String("namespace", namespace.Name), zap.Error(err))
 			continue
 		}
 
