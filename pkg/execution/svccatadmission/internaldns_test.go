@@ -9,6 +9,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/util/logz"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -255,10 +256,10 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := InternalDNSAdmitFunc(ctx, microsServerMock, serviceCentralMock, tc.admissionReview)
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("InternalDNSAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
+				require.Equal(t, tc.wantErr, err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("InternalDNSAdmitFunc() = %v, want %v", got, tc.want)
+				require.Equal(t, tc.want, got)
 			}
 		})
 	}
