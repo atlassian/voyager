@@ -166,7 +166,7 @@ func validateRequest(stateResource *orch_v1.StateResource, context *wiringplugin
 
 func createFinalAlarmSpec(resource *orch_v1.StateResource, stateContext *wiringplugin.StateContext, query QueryParams) Alarm {
 	alarmOption := &AlarmOption{
-		EscalationMessage: "",
+		EscalationMessage: query.generateMessage(&stateContext.ServiceProperties.Notifications),
 		NotifyNOData:      false,
 		RequireFullWindow: true,
 		Thresholds:        *query.Threshold,
@@ -183,13 +183,13 @@ func createFinalAlarmSpec(resource *orch_v1.StateResource, stateContext *wiringp
 
 func (q *QueryParams) generateQuery() string {
 	if q.AlarmType == CPU {
-		cpuUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.cpu.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
-		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
+		cpuUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.cpu.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region)
+		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region, q.Threshold.Critical)
 		return cpuUsageString + cpuLimitString
 	}
 
-	memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
-	memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
+	memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region)
+	memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region, q.Threshold.Critical)
 	return memoryUsageString + memoryLimitString
 
 }

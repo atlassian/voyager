@@ -48,7 +48,6 @@ type AlarmThresholds struct {
 }
 
 type QueryParams struct {
-	//	Metric         string
 	KubeDeployment string
 	KubeNamespace  string
 	Env            string
