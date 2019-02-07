@@ -130,7 +130,7 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (*smith_v
 		return nil, external, false, retriable, err
 	}
 
-	conflict, retriable, bundle, err = c.createOrUpdateBundle(logger, state, bundle)
+	conflict, retriable, bundle, err := c.createOrUpdateBundle(logger, state, bundle)
 	return bundle, false, conflict, retriable, err
 
 }
