@@ -3,9 +3,11 @@ package datadog
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
+	meta_orch "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
@@ -21,7 +23,7 @@ import (
 const (
 	clusterServiceClassExternalID                      = "875d4a87-e887-4838-a0b5-b64491dbf9cb"
 	clusterServicePlanExternalID                       = "d8048a2d-49de-4fda-b7ef-328de171cd32"
-	ResourceType                  voyager.ResourceType = "datadog"
+	ResourceType                  voyager.ResourceType = "datadog-alarm"
 )
 
 type WiringPlugin struct {
@@ -37,7 +39,6 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	if err != nil {
 		return nil, false, err
 	}
-	// Require exactly one KubeCompute dependency
 	kubeComputeDependency, err := context.TheOnlyDependency()
 	if err != nil {
 		return nil, false, err
@@ -82,7 +83,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 		Warning:  80,
 	}
 	query := generateQuerySpec(context, alarmType, threshold)
-	alarmsAtt := createFinalAlarmSpec(resource, context.StateContext.ServiceName, query)
+	alarmsAtt := createFinalAlarmSpec(resource, &context.StateContext, query)
 	if err != nil {
 		return smith_v1.Resource{}, err
 	}
@@ -163,7 +164,7 @@ func validateRequest(stateResource *orch_v1.StateResource, context *wiringplugin
 	return nil
 }
 
-func createFinalAlarmSpec(resource *orch_v1.StateResource, serviceName voyager.ServiceName, query QueryParams) Alarm {
+func createFinalAlarmSpec(resource *orch_v1.StateResource, stateContext *wiringplugin.StateContext, query QueryParams) Alarm {
 	alarmOption := &AlarmOption{
 		EscalationMessage: "",
 		NotifyNOData:      false,
@@ -171,25 +172,30 @@ func createFinalAlarmSpec(resource *orch_v1.StateResource, serviceName voyager.S
 		Thresholds:        *query.Threshold,
 	}
 	alarmSpec := &Alarm{
-		Name:  string(serviceName) + "-" + string(resource.Name) + "-" + string(query.AlarmType),
-		Type:  string(Metric),
-		Query: query.generateQuery(),
-
-		Option: *alarmOption,
+		Name:    string(stateContext.ServiceName) + "-" + string(resource.Name) + "-" + string(query.AlarmType),
+		Type:    string(Metric),
+		Query:   query.generateQuery(),
+		Message: query.generateMessage(&stateContext.ServiceProperties.Notifications),
+		Option:  *alarmOption,
 	}
 	return *alarmSpec
 }
 
 func (q *QueryParams) generateQuery() string {
-	switch q.AlarmType {
-	case CPU:
+	if q.AlarmType == CPU {
 		cpuUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.cpu.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
 		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
 		return cpuUsageString + cpuLimitString
-	case Memory:
-		memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
-		memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
-		return memoryUsageString + memoryLimitString
 	}
-	return ""
+
+	memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment)
+	memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Threshold.Critical)
+	return memoryUsageString + memoryLimitString
+
+}
+
+func (q *QueryParams) generateMessage(notificationProp *meta_orch.Notifications) string {
+	msg := fmt.Sprintf("High %s usage for deployment %s in %s %s @%s", strings.ToUpper(string(q.AlarmType)),
+		q.KubeDeployment, q.Region, q.Env, notificationProp.PagerdutyEndpoint)
+	return msg
 }

@@ -16,10 +16,11 @@ const (
 )
 
 type Alarm struct {
-	Name   string      `json:"name"`
-	Type   string      `json:"type"`
-	Query  string      `json:"query"`
-	Option AlarmOption `json:"options"`
+	Name    string      `json:"name"`
+	Type    string      `json:"type"`
+	Query   string      `json:"query"`
+	Option  AlarmOption `json:"options"`
+	Message string      `json:"message"`
 }
 
 type ServiceInstanceSpec struct {
@@ -28,9 +29,9 @@ type ServiceInstanceSpec struct {
 	Environment voyager.EnvType     `json:"environment"`
 	Region      voyager.Region      `json:"region"`
 }
-
 type AlarmOption struct {
 	Timeout           int             `json:"timeout_h,omitempty"`
+	locked            bool            `json:"locked,omitempty"`
 	NotifyNOData      bool            `json:"notify_no_data,omitempty"`
 	NodDataTimeFrame  string          `json:"no_data_timeframe,omitempty"`
 	NotifyAudit       bool            `json:"notify_audit,omitempty"`

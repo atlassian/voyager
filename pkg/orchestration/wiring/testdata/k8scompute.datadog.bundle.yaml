@@ -164,6 +164,8 @@ spec:
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
+              message: High CPU usage for deployment state1 in testregion testenv @{123123123123123
+                https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
               name: test-servicename-alarms-cpu
               options:
                 require_full_window: true
@@ -191,6 +193,8 @@ spec:
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
+              message: High MEMORY usage for deployment state1 in testregion testenv @{123123123123123
+                https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
               name: test-servicename-alarms-memory
               options:
                 require_full_window: true
