@@ -9,7 +9,7 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
-	internaldns_api "github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
+	internaldns_api "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"

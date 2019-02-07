@@ -11,7 +11,7 @@ import (
 func TestSetsAndGetsMetadataCorrectly(t *testing.T) {
 	t.Parallel()
 
-	serviceData := &ServiceData{}
+	serviceData := &ServiceDataWrite{}
 
 	pdMetadata := creator_v1.PagerDutyMetadata{
 		Staging: creator_v1.PagerDutyEnvMetadata{
@@ -41,16 +41,18 @@ func TestGetMetadataReturnsErrorWhenMiscHasInvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	// we have to know how it's stored in the misc field unfortunately...
-	serviceData := &ServiceData{
-		Misc: []miscData{
-			{
-				Key:   PagerDutyMetadataKey,
-				Value: "{ \"foo\": notvalid }", // not valid json
+	serviceData := &ServiceDataRead{
+		ServiceDataWrite: ServiceDataWrite{
+			Misc: []miscData{
+				{
+					Key:   PagerDutyMetadataKey,
+					Value: "{ \"foo\": notvalid }", // not valid json
+				},
 			},
 		},
 	}
 
-	_, err := GetPagerDutyMetadata(serviceData)
+	_, err := GetPagerDutyMetadata(&serviceData.ServiceDataWrite)
 
 	require.Error(t, err)
 }
@@ -58,7 +60,7 @@ func TestGetMetadataReturnsErrorWhenMiscHasInvalidJSON(t *testing.T) {
 func TestGetMetadataReturnsNilWhenNoPreviousData(t *testing.T) {
 	t.Parallel()
 
-	actual, err := GetPagerDutyMetadata(&ServiceData{})
+	actual, err := GetPagerDutyMetadata(&ServiceDataWrite{})
 
 	require.NoError(t, err)
 	assert.Nil(t, actual)
@@ -67,7 +69,7 @@ func TestGetMetadataReturnsNilWhenNoPreviousData(t *testing.T) {
 func TestSetsAndGetsBuildsCorrectly(t *testing.T) {
 	t.Parallel()
 
-	serviceData := &ServiceData{}
+	serviceData := &ServiceDataRead{}
 
 	buildMetadata := creator_v1.BambooMetadata{
 		Builds: []creator_v1.BambooPlanRef{
@@ -84,10 +86,10 @@ func TestSetsAndGetsBuildsCorrectly(t *testing.T) {
 		},
 	}
 
-	err := SetBambooMetadata(serviceData, &buildMetadata)
+	err := SetBambooMetadata(&serviceData.ServiceDataWrite, &buildMetadata)
 	require.NoError(t, err)
 
-	actual, err := GetBambooMetadata(serviceData)
+	actual, err := GetBambooMetadata(&serviceData.ServiceDataWrite)
 
 	require.NoError(t, err)
 	assert.Equal(t, &buildMetadata, actual)
@@ -97,16 +99,18 @@ func TestGetBuildsReturnsErrorWhenMiscHasInvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	// we have to know how it's stored in the misc field unfortunately...
-	serviceData := &ServiceData{
-		Misc: []miscData{
-			{
-				Key:   BambooMetadataKey,
-				Value: "{ \"foo\": notvalid }", // not valid json
+	serviceData := &ServiceDataRead{
+		ServiceDataWrite: ServiceDataWrite{
+			Misc: []miscData{
+				{
+					Key:   BambooMetadataKey,
+					Value: "{ \"foo\": notvalid }", // not valid json
+				},
 			},
 		},
 	}
 
-	_, err := GetBambooMetadata(serviceData)
+	_, err := GetBambooMetadata(&serviceData.ServiceDataWrite)
 
 	require.Error(t, err)
 }
@@ -114,7 +118,7 @@ func TestGetBuildsReturnsErrorWhenMiscHasInvalidJSON(t *testing.T) {
 func TestGetBuildsReturnsNilWhenNoPreviousData(t *testing.T) {
 	t.Parallel()
 
-	actual, err := GetBambooMetadata(&ServiceData{})
+	actual, err := GetBambooMetadata(&ServiceDataWrite{})
 
 	require.NoError(t, err)
 	assert.Nil(t, actual)

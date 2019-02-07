@@ -1,0 +1,1 @@
+failed to wire up resource "platformdns" of type "PlatformDNS": error invoking plugin: shape "voyager.atl-paas.net/IngressEndpointShape" is required to create ServiceBinding for "kubecompute-simple" but was not found

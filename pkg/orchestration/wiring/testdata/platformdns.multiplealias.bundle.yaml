@@ -105,6 +105,12 @@ spec:
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                - name: MICROS_AWS_REGION
+                  value: testregion
+                - name: MICROS_ENVTYPE
+                  value: testenv
+                - name: MICROS_SERVICE
+                  value: test-servicename
                 envFrom:
                 - secretRef:
                     name: common-secrets
@@ -195,7 +201,7 @@ spec:
                   serviceName: ingress--service
                   servicePort: 8080
                 path: /
-  - name: internaldns--instance
+  - name: platformdns--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
       name: ingress-metadata-endpoint
@@ -206,7 +212,7 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: internaldns
+          name: platformdns
         spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3

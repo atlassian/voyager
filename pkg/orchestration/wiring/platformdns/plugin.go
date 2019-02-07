@@ -1,4 +1,4 @@
-package internaldns
+package platformdns
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -34,12 +34,12 @@ type WiringPlugin struct {
 func New() *WiringPlugin {
 	return &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: apiinternaldns.ClusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  apiinternaldns.ClusterServicePlanExternalID,
+			ClusterServiceClassExternalID: apiplatformdns.ClusterServiceClassExternalID,
+			ClusterServicePlanExternalID:  apiplatformdns.ClusterServicePlanExternalID,
 			InstanceSpec:                  getInstanceSpec,
 			ObjectMeta:                    getObjectMeta,
 			References:                    getReferences,
-			ResourceType:                  apiinternaldns.ResourceType,
+			ResourceType:                  apiplatformdns.ResourceType,
 		},
 	}
 }
@@ -95,14 +95,14 @@ func mapEnvironmentType(envType voyager.EnvType) string {
 	return string(envType)
 }
 
-// svccatentangler plugin expects reference function to return a slice of references, in the case of internaldns it will
+// svccatentangler plugin expects reference function to return a slice of references, in the case of platformdns it will
 // always be a single reference.
 func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
 	var references []smith_v1.Reference
 
 	// Ensure we only depend on one resource, as we can only bind to a single ingress
 	if len(context.Dependencies) != 1 {
-		return nil, errors.Errorf("internaldns resources must depend on only one ingress resource")
+		return nil, errors.Errorf("%s resources must depend on only one ingress resource", apiplatformdns.ResourceType)
 	}
 	dependency := context.Dependencies[0]
 

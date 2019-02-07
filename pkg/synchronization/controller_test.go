@@ -885,12 +885,11 @@ func TestUpdatesDockerSecret(t *testing.T) {
 
 			// Ensure secret exists
 			secret, ok := secrets[existingDockerSecret.Name]
-			assert.True(t, ok)
-			assert.Equal(t, existingDockerSecret.GetUID(), secret.GetUID())
+			require.True(t, ok)
 
 			// Ensure the secret type and data has been updated
 			assert.Equal(t, existingDefaultDockerSecret().Type, secret.Type)
-			assert.True(t, reflect.DeepEqual(existingDefaultDockerSecret().Data, secret.Data))
+			assert.Equal(t, existingDefaultDockerSecret().Data, secret.Data)
 		},
 	}
 
@@ -1032,11 +1031,11 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 			// Ensure the namespace is updated
 			updatedNamespaces := findUpdatedNamespaces(tc.mainFake.Actions())
 			namespace, ok := updatedNamespaces[ns.Name]
-			assert.True(t, ok)
+			require.True(t, ok)
 
 			// Ensure the namespace has the annotation
 			val, ok := namespace.Annotations[allowedRolesAnnotation]
-			assert.True(t, ok)
+			require.True(t, ok)
 
 			// Ensure the value of the annotation is correct
 			expectedVal, err := cntrlr.getNamespaceAllowedRoles(serviceNameVoy)

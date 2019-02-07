@@ -16,17 +16,12 @@ spec:
     name: ingress
     dependsOn:
       - kubecompute-simple
-  - type: InternalDNS
-    name: internaldns
+  - type: PlatformDNS
+    name: platformdns
     spec:
+      target: invalid-parameter.atl-paas.net
       aliases:
         - type: Simple
-          name: foo1.staging.atl-paas.net
-        - type: Simple
-          name: foo2.staging.atl-paas.net
-        - type: Simple
-          name: foo3.staging.atl-paas.net
-        - type: Simple
-          name: foo4.staging.atl-paas.net
+          name: foo.staging.atl-paas.net
     dependsOn:
       - ingress

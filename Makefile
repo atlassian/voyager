@@ -82,13 +82,13 @@ verify-vendor:
 
 #===============================================================================
 
-.PHONY: update-smith
-update-smith:
-	dep ensure -v -update github.com/atlassian/smith
+.PHONY: dep-update-things
+dep-update-things:
+	dep ensure -v -update github.com/atlassian/ctrl github.com/atlassian/smith
 
 .PHONY: bump-dependencies
 bump-dependencies: \
-	update-smith \
+	dep-update-things \
 	update-vendor
 
 #===============================================================================

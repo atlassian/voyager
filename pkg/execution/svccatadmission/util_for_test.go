@@ -37,13 +37,13 @@ type serviceCentralClientMock struct {
 
 var _ serviceCentralClient = &serviceCentralClientMock{}
 
-func (m *serviceCentralClientMock) ListServices(ctx context.Context, user auth.OptionalUser, serviceName string) ([]servicecentral.ServiceData, error) {
+func (m *serviceCentralClientMock) ListServices(ctx context.Context, user auth.OptionalUser, serviceName string) ([]servicecentral.ServiceDataRead, error) {
 	args := m.Called(ctx, user, serviceName)
 	result := args.Get(0)
 	if result == nil {
 		return nil, args.Error(1)
 	}
-	return []servicecentral.ServiceData{result.(servicecentral.ServiceData)}, args.Error(1)
+	return []servicecentral.ServiceDataRead{result.(servicecentral.ServiceDataRead)}, args.Error(1)
 }
 
 func setupSCMock() serviceCentralClient {
@@ -56,32 +56,40 @@ func setupSCMock() serviceCentralClient {
 		Return(nil, nil)
 	scStore.
 		On("ListServices", mock.Anything, auth.NoUser(), makeSearchString(dougComputeService)).
-		Return(servicecentral.ServiceData{
-			ServiceName: dougComputeService,
+		Return(servicecentral.ServiceDataRead{
+			ServiceDataWrite: servicecentral.ServiceDataWrite{
+				ServiceName: dougComputeService,
+			},
 			ServiceOwner: servicecentral.ServiceOwner{
 				Username: "doug",
 			},
 		}, nil)
 	scStore.
 		On("ListServices", mock.Anything, auth.NoUser(), makeSearchString(dougMicros2Service)).
-		Return(servicecentral.ServiceData{
-			ServiceName: dougMicros2Service,
+		Return(servicecentral.ServiceDataRead{
+			ServiceDataWrite: servicecentral.ServiceDataWrite{
+				ServiceName: dougMicros2Service,
+			},
 			ServiceOwner: servicecentral.ServiceOwner{
 				Username: "doug",
 			},
 		}, nil)
 	scStore.
 		On("ListServices", mock.Anything, auth.NoUser(), makeSearchString(elsieComputeService)).
-		Return(servicecentral.ServiceData{
-			ServiceName: elsieComputeService,
+		Return(servicecentral.ServiceDataRead{
+			ServiceDataWrite: servicecentral.ServiceDataWrite{
+				ServiceName: elsieComputeService,
+			},
 			ServiceOwner: servicecentral.ServiceOwner{
 				Username: "elsie",
 			},
 		}, nil)
 	scStore.
 		On("ListServices", mock.Anything, auth.NoUser(), makeSearchString(elsieMicros2Service)).
-		Return(servicecentral.ServiceData{
-			ServiceName: elsieMicros2Service,
+		Return(servicecentral.ServiceDataRead{
+			ServiceDataWrite: servicecentral.ServiceDataWrite{
+				ServiceName: elsieMicros2Service,
+			},
 			ServiceOwner: servicecentral.ServiceOwner{
 				Username: "elsie",
 			},
@@ -126,20 +134,23 @@ func setupMicrosServerMock() *microsServerClientMock {
 func buildServiceInstance(t *testing.T, serviceClass servicecatalog.ClassExternalID, servicePlan servicecatalog.PlanExternalID, parameters interface{}) []byte {
 	rawParameters, err := json.Marshal(parameters)
 	require.NoError(t, err)
-	rawServiceInstance, err := json.Marshal(sc_v1b1.ServiceInstance{
+	serviceInstance := sc_v1b1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: serviceInstanceName,
 		},
 		Spec: sc_v1b1.ServiceInstanceSpec{
 			PlanReference: sc_v1b1.PlanReference{
-				ClusterServiceClassName: string(serviceClass),
-				ClusterServicePlanName:  string(servicePlan),
+				ClusterServiceClassName:       string(serviceClass),
+				ClusterServicePlanName:        string(servicePlan),
+				ClusterServiceClassExternalID: string(serviceClass),
+				ClusterServicePlanExternalID:  string(servicePlan),
 			},
 			Parameters: &runtime.RawExtension{
 				Raw: rawParameters,
 			},
 		},
-	})
+	}
+	rawServiceInstance, err := json.Marshal(serviceInstance)
 	require.NoError(t, err)
 	return rawServiceInstance
 }

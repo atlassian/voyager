@@ -63,22 +63,10 @@ spec:
           secretName: kubecompute-simple--basic
   - name: kubecompute-simple--secret
     references:
-    - name: kubecompute-simple--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231
-      resource: kubecompute-simple--basic--binding
-      path: data.dead-queue-name
-      modifier: bindsecret
-    - modifier: bindsecret
-      name: kubecompute-simple--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04
-      path: data.dead-queue-arn
-      resource: kubecompute-simple--basic--binding
     - modifier: bindsecret
       name: kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
       path: data.queue-arn
       resource: kubecompute-simple--basic--binding
-    - name: kubecompute-simple--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8
-      resource: kubecompute-simple--basic--binding
-      path: data.dead-queue-url
-      modifier: bindsecret
     - name: kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
       resource: kubecompute-simple--basic--binding
       path: data.queue-name
@@ -99,9 +87,6 @@ spec:
           data:
             MY_QUEUE_REGION: '!{kubecompute-simple--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
             MY_QUEUE_URL: '!{kubecompute-simple--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-            SQS_BASIC_DEAD_QUEUE_ARN: '!{kubecompute-simple--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
-            SQS_BASIC_DEAD_QUEUE_NAME: "!{kubecompute-simple--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}"
-            SQS_BASIC_DEAD_QUEUE_URL: "!{kubecompute-simple--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}"
             SQS_BASIC_QUEUE_NAME: "!{kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}"
             SQS_BASIC_QUEUE_ARN: '!{kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
   - name: kubecompute-simple---iamrole
@@ -271,6 +256,12 @@ spec:
                   value: https://asap-distribution.us-west-1.staging.paas-inf.net/
                 - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                - name: MICROS_AWS_REGION
+                  value: testregion
+                - name: MICROS_ENVTYPE
+                  value: testenv
+                - name: MICROS_SERVICE
+                  value: test-servicename
                 envFrom:
                 - secretRef:
                     name: '!{kubecompute-simple--secret-metadata-name}'

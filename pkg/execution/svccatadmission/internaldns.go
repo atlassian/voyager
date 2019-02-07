@@ -9,7 +9,7 @@ import (
 
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/microsserver"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/internaldns/api"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -17,6 +17,10 @@ import (
 	ext_v1b1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func isInternalDNSServiceClass(serviceInstance *sc_v1b1.ServiceInstance) bool {
+	return serviceInstance.Spec.ClusterServiceClassExternalID == string(apiplatformdns.ClusterServiceClassExternalID)
+}
 
 // InternalDNSAdmitFunc checks existing DNS alias ownership via micros server API, for both InternalDNS Services and Ingress Resources
 func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerClient, scClient serviceCentralClient, admissionReview admissionv1beta1.AdmissionReview) (*admissionv1beta1.AdmissionResponse, error) {
@@ -43,7 +47,15 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		if err := json.Unmarshal(admissionRequest.Object.Raw, &serviceInstance); err != nil {
 			return nil, errors.Wrap(err, "error parsing ServiceInstance")
 		}
-		var internalDNSSpec apiinternaldns.Spec
+		if !isInternalDNSServiceClass(&serviceInstance) {
+			return &admissionv1beta1.AdmissionResponse{
+				Allowed: true,
+				Result: &metav1.Status{
+					Message: "requested ServiceInstance is not InternalDNS type",
+				},
+			}, nil
+		}
+		var internalDNSSpec apiplatformdns.Spec
 		if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &internalDNSSpec); err != nil {
 			return nil, errors.Wrap(err, "error parsing InternalDNS spec")
 		}
@@ -64,6 +76,20 @@ func InternalDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 	serviceCentralData, err := getServiceData(ctx, scClient, serviceName)
 	if err != nil {
 		return nil, errors.Errorf("error fetching service central data for serviceName %q", serviceName)
+	}
+
+	if serviceCentralData == nil {
+		reason := fmt.Sprintf(
+			"namespace service %q does not exist in Service Central",
+			serviceName)
+		return &admissionv1beta1.AdmissionResponse{
+			Allowed: false,
+			Result: &metav1.Status{
+				Message: reason,
+				Code:    http.StatusInternalServerError,
+				Reason:  metav1.StatusReasonInternalError,
+			},
+		}, nil
 	}
 
 	// types to store parallel domain owner fetches
