@@ -338,7 +338,7 @@ generate-clients: \
 
 .PHONY: update-deployinator-spec
 update-deployinator-spec:
-	curl -s https://deployinator-trebuchet.prod.atl-paas.net/api/swagger.json | jq '.' > pkg/releases/deployinator-trebuchet.json
+	contract-testing get-spec deployinator-trebuchet > pkg/releases/deployinator-trebuchet.json
 
 #===============================================================================
 

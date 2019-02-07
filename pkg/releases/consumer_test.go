@@ -2,12 +2,12 @@ package releases
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/releases/deployinator/models"
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/stretchr/testify/require"
 )
 
 /**
@@ -15,7 +15,7 @@ This test tests the consumer interactions surrounding the resolve endpoints betw
 voyager (consumer) and trebuchet (provider).
 
 To validate the pact against the current provider specs locally, use the contract testing cli found here:
-https://hello.atlassian.net/wiki/spaces/TESTA/pages/128609304/Contract+Testing+Getting+Started+Guide+for+Consumers
+go/contract-testing
 */
 func TestConsumerPact(t *testing.T) {
 
@@ -31,15 +31,15 @@ func TestConsumerPact(t *testing.T) {
 
 	// Define the interactions in resolve and batchResolve separately, with the same pact
 
-	ResolveEndpointTest(pact)
+	ResolveEndpointTest(t, pact)
 
-	BatchResolveEndpointTest(pact)
+	BatchResolveEndpointTest(t, pact)
 
 	// Once interactions are verified successfully,
 	// a pact contract between the voyager/trebuchet should have now been generated. See contract under pacts/
 }
 
-func ResolveEndpointTest(pact *dsl.Pact) {
+func ResolveEndpointTest(t *testing.T, pact *dsl.Pact) {
 	singleReleaseGroup := models.ResolutionResponseType{
 		Label:         "",
 		Service:       "ServiceName",
@@ -94,13 +94,11 @@ func ResolveEndpointTest(pact *dsl.Pact) {
 		})
 
 	// Verify the interaction
-	if err := pact.Verify(resolveTest); err != nil {
-		log.Fatalf("Error on Vertify for resolve endpoint: %v", err)
-	}
-
+	err := pact.Verify(resolveTest)
+	require.NoError(t, err)
 }
 
-func BatchResolveEndpointTest(pact *dsl.Pact) {
+func BatchResolveEndpointTest(t *testing.T, pact *dsl.Pact) {
 	singleReleaseGroup := models.ResolutionResponseType{
 		Label:         "",
 		Service:       "ServiceName",
@@ -155,8 +153,6 @@ func BatchResolveEndpointTest(pact *dsl.Pact) {
 			},
 		})
 
-	if err := pact.Verify(batchResolveTest); err != nil {
-		log.Fatalf("Error on Vertify for resolve endpoint: %v", err)
-	}
-
+	err := pact.Verify(batchResolveTest)
+	require.NoError(t, err)
 }
