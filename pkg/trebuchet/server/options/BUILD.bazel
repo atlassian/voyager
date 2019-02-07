@@ -9,8 +9,11 @@ go_library(
     importpath = "github.com/atlassian/voyager/pkg/trebuchet/server/options",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/trebuchet:go_default_library",
         "//pkg/trebuchet/server/apiserver:go_default_library",
+        "//pkg/util:go_default_library",
         "//pkg/util/apiserver:go_default_library",
+        "//pkg/util/pkiutil:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",
         "//vendor/github.com/atlassian/ctrl/options:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",

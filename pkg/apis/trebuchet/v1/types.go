@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	ServiceResourceVersion = "v1"
+	ReleaseResourceVersion = "v1"
 )
 
 // +genclient

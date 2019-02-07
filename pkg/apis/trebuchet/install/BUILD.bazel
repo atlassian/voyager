@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/atlassian/voyager/pkg/apis/trebuchet/install",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/apis/trebuchet/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/runtime:go_default_library",
     ],

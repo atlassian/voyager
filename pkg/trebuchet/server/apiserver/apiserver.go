@@ -3,11 +3,15 @@ package apiserver
 import (
 	apis_trebuchet "github.com/atlassian/voyager/pkg/apis/trebuchet"
 	"github.com/atlassian/voyager/pkg/apis/trebuchet/install"
+	"github.com/atlassian/voyager/pkg/apis/trebuchet/v1"
+	"github.com/atlassian/voyager/pkg/trebuchet"
+	trebuchetrest "github.com/atlassian/voyager/pkg/trebuchet/server/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
@@ -33,6 +37,7 @@ func init() {
 
 type Config struct {
 	GenericConfig *genericapiserver.RecommendedConfig
+	ExtraConfig   *trebuchet.ExtraConfig
 }
 
 // TrebuchetServer contains state for a Kubernetes cluster master/api server.
@@ -42,6 +47,7 @@ type TrebuchetServer struct {
 
 type completedConfig struct {
 	GenericConfig genericapiserver.CompletedConfig
+	ExtraConfig   *trebuchet.ExtraConfig
 }
 
 type CompletedConfig struct {
@@ -53,6 +59,7 @@ type CompletedConfig struct {
 func (cfg *Config) Complete() CompletedConfig {
 	c := completedConfig{
 		cfg.GenericConfig.Complete(),
+		cfg.ExtraConfig,
 	}
 
 	c.GenericConfig.EnableDiscovery = false
@@ -76,6 +83,15 @@ func (c completedConfig) New() (*TrebuchetServer, error) {
 	}
 
 	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(apis_trebuchet.GroupName, Scheme, metav1.ParameterCodec, Codecs)
+
+	// TODO: inject a custom Store or HTTP handler to proxy request to underlying service
+
+	v1Storage := map[string]rest.Storage{}
+	v1Storage["services"] = &trebuchetrest.REST{
+		Logger: c.ExtraConfig.Logger,
+	}
+
+	apiGroupInfo.VersionedResourcesStorageMap[v1.ReleaseResourceVersion] = v1Storage
 
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 		return nil, err

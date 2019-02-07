@@ -8,7 +8,7 @@ import (
 )
 
 // SchemeGroupVersion is group version used to register these objects.
-var SchemeGroupVersion = schema.GroupVersion{Group: trebuchet.GroupName, Version: ServiceResourceVersion}
+var SchemeGroupVersion = schema.GroupVersion{Group: trebuchet.GroupName, Version: ReleaseResourceVersion}
 
 // Resource takes an unqualified resource and returns a Group qualified GroupResource
 func Resource(resource string) schema.GroupResource {
