@@ -3,8 +3,8 @@ package edge
 import "github.com/atlassian/voyager"
 
 type InstanceParameters struct {
-	ServiceName string             `json:"serviceName"`
-	Resource    ResourceParameters `json:"resource"`
+	ServiceName voyager.ServiceName `json:"serviceName"`
+	Resource    ResourceParameters  `json:"resource"`
 }
 
 type ResourceParameters struct {

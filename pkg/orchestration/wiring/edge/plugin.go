@@ -26,9 +26,6 @@ func New() *WiringPlugin {
 }
 
 func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wiring.WiringContext) (result *wiring.WiringResult, retriable bool, err error) {
-	result = nil
-	retriable = false
-
 	if resource.Type != ResourceType {
 		err = errors.Errorf("invalid resource type: %q", resource.Type)
 		return nil, false, err
@@ -40,7 +37,9 @@ func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wi
 	}
 
 	instanceParameters, err := instanceParameters(resource, context)
-	if err != nil { return }
+	if err != nil {
+		return nil, false, err
+	}
 
 	serviceInstance.Spec.Parameters = &runtime.RawExtension{
 		Raw: instanceParameters,
@@ -73,7 +72,7 @@ func instanceParameters(resource *orchestration.StateResource, context *wiring.W
 		return nil, errors.WithStack(err)
 	}
 	parameters := InstanceParameters{
-		ServiceName: string(context.StateContext.ServiceName),
+		ServiceName: context.StateContext.ServiceName,
 		Resource: ResourceParameters{
 			Attributes: attributes,
 		},
@@ -83,7 +82,7 @@ func instanceParameters(resource *orchestration.StateResource, context *wiring.W
 	if len(parameters.Resource.Attributes.UpstreamAddress) == 0 {
 		return nil, errors.New("UpstreamAddress is required")
 
-		// TODO: Make upstream address optional and produce it from InternalDNS / KubeIngress output
+		// TODO: Make upstream address optional and produce it from EC2Compute / KubeIngress output
 		// 1. Find dependency of some expected shape ("UpstreamAddressProviderShape" or whatever)
 		// 2. Generate a reference to the field from that dependency to be used as an upstream address
 		// 3. set UpstreamAddress to this reference inside parameters, i.e.
