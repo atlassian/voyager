@@ -46,8 +46,6 @@ const (
 	hpaPostfix              = "hpa"
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
-	defaultPodDisruptionBudget = "30%"
-
 	// Default environment variable names
 	awsRegionKey   = "MICROS_AWS_REGION"
 	envTypeKey     = "MICROS_ENVTYPE"
@@ -282,8 +280,11 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
+	// The kube deployment object spec
+	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
+
 	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, deploymentSpec.Replicas)
 	pdb := smith_v1.Resource{
 		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
 		Spec: smith_v1.ResourceSpec{
@@ -300,9 +301,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		},
 	}
 	smithResources = append(smithResources, pdb)
-
-	// The kube deployment object spec
-	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
 
 	// The final wired deployment object
 	deployment := smith_v1.Resource{
@@ -539,11 +537,24 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	}
 }
 
-func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
+func buildPodDisruptionBudgetSpec(labelMap map[string]string, replicas *int32) policy_v1.PodDisruptionBudgetSpec {
+	// Set this to ensure we can still drain nodes if we get weird input here
+	pdbPercentage := "100%"
+	if replicas != nil {
+		switch *replicas {
+		case 0, 1:
+			// pdbPercentage = "100%"
+		case 2:
+			pdbPercentage = "50%"
+		default:
+			pdbPercentage = "30%"
+		}
+	}
+
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
 			Type:   intstr.String,
-			StrVal: defaultPodDisruptionBudget,
+			StrVal: pdbPercentage,
 		},
 		Selector: &meta_v1.LabelSelector{
 			MatchLabels: labelMap,

@@ -1,0 +1,116 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - type: KubeCompute
+    name: c1
+    defaults:
+      filledInBy: "Formation layer"
+      replicas: 5
+      Scaling:
+        MinReplicas: 5
+        MaxReplicas: 10
+        Metrics:
+        - Type: Resource
+          Resource:
+            Name: cpu
+            TargetAverageUtilization: 80
+      Container:
+        ImagePullPolicy: IfNotPresent
+        Resources:
+          Requests:
+            cpu: 50m
+            memory: 50Mi
+          Limits:
+            cpu: 250m
+            memory: 150Mi
+      Port:
+        Protocol: TCP
+    spec:
+      scaling:
+        minReplicas: 5
+        maxReplicas: 10
+        metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            targetAverageUtilization: 50
+        - type: Resource
+          resource:
+            name: memory
+            targetAverageValue: "50Mi"
+      containers:
+        - name: microservice
+          image: "docker.example.com/atlassian/micros-analytics:0.1"
+          ports:
+          - containerPort: 8080
+          resources:
+            requests:
+                memory: "64Mi"
+                cpu: "250m"
+            limits:
+                memory: "128Mi"
+                cpu: "500m"
+        - name: pgbouncer
+          image: "docker.example.com/my_pgbouncer:abcxyz"
+          ports:
+          - containerPort: 5432
+            protocol: UDP
+  - type: KubeCompute
+    name: c2
+    defaults:
+      filledInBy: "Formation layer"
+      replicas: 2
+      Scaling:
+        MinReplicas: 2
+        MaxReplicas: 10
+        Metrics:
+        - Type: Resource
+          Resource:
+            Name: cpu
+            TargetAverageUtilization: 80
+      Container:
+        ImagePullPolicy: IfNotPresent
+        Resources:
+          Requests:
+            cpu: 50m
+            memory: 50Mi
+          Limits:
+            cpu: 250m
+            memory: 150Mi
+      Port:
+        Protocol: TCP
+    spec:
+      scaling:
+        minReplicas: 2
+        maxReplicas: 10
+        metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            targetAverageUtilization: 50
+        - type: Resource
+          resource:
+            name: memory
+            targetAverageValue: "50Mi"
+      containers:
+        - name: microservice
+          image: "docker.example.com/atlassian/micros-analytics:0.1"
+          ports:
+          - containerPort: 8080
+          resources:
+            requests:
+                memory: "64Mi"
+                cpu: "250m"
+            limits:
+                memory: "128Mi"
+                cpu: "500m"
+        - name: pgbouncer
+          image: "docker.example.com/my_pgbouncer:abcxyz"
+          ports:
+          - containerPort: 5432
+            protocol: UDP

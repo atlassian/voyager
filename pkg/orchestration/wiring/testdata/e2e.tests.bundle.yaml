@@ -1350,7 +1350,7 @@ spec:
         metadata:
           name: kc--pdb
         spec:
-          minAvailable: 30%
+          minAvailable: 100%
           selector:
             matchLabels:
               resourceName: kc
