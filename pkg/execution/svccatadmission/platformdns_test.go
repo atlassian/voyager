@@ -182,7 +182,7 @@ func TestPlatformDNSAdmitFunc(t *testing.T) {
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not PlatformDNS type"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested ServiceInstance is not "PlatformDNS" type`),
 			false,
 		},
 		{
@@ -190,7 +190,7 @@ func TestPlatformDNSAdmitFunc(t *testing.T) {
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Update, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not PlatformDNS type"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested ServiceInstance is not "PlatformDNS" type`),
 			false,
 		},
 		{
