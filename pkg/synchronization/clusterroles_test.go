@@ -106,7 +106,7 @@ func TestCreatesClusterRole(t *testing.T) {
 			cntrlr.syncServiceMetadata()
 
 			crs := findCreatedClusterRoles(tc.mainFake.Actions())
-			require.Len(t, crs, 2)
+			require.Len(t, crs, 3)
 
 			assert.Equal(t, "paas:composition:servicedescriptor:first-service:crud", crs[0].GetName())
 			assert.Equal(t, "composition.voyager.atl-paas.net", crs[0].Rules[0].APIGroups[0])
@@ -114,9 +114,15 @@ func TestCreatesClusterRole(t *testing.T) {
 			assert.EqualValues(t, firstServiceName, crs[0].Rules[0].ResourceNames[0])
 			assert.Equal(t, []string{"claim", "update", "patch", "delete"}, crs[0].Rules[0].Verbs)
 
-			assert.Equal(t, "paas:creator:service:first-service:modify", crs[1].GetName())
-			assert.Equal(t, "creator.voyager.atl-paas.net", crs[1].Rules[0].APIGroups[0])
-			assert.Equal(t, "services", crs[1].Rules[0].Resources[0])
+			assert.Equal(t, "paas:trebuchet:service:first-service:modify", crs[1].GetName())
+			assert.Equal(t, "trebuchet.atl-paas.net", crs[1].Rules[0].APIGroups[0])
+			assert.Equal(t, "releases", crs[1].Rules[0].Resources[0])
+			assert.Equal(t, "release-groups", crs[1].Rules[0].Resources[1])
+			assert.Equal(t, []string{"*"}, crs[1].Rules[0].Verbs)
+
+			assert.Equal(t, "paas:creator:service:first-service:modify", crs[2].GetName())
+			assert.Equal(t, "creator.voyager.atl-paas.net", crs[2].Rules[0].APIGroups[0])
+			assert.Equal(t, "services", crs[2].Rules[0].Resources[0])
 		},
 	}
 
@@ -155,7 +161,7 @@ func TestCreatesMultipleClusterRoles(t *testing.T) {
 			cntrlr.syncServiceMetadata()
 
 			crs := findCreatedClusterRoles(tc.mainFake.Actions())
-			require.Len(t, crs, 4)
+			require.Len(t, crs, 6)
 
 			// These can appear in any order
 			names := sets.NewString()
@@ -165,6 +171,8 @@ func TestCreatesMultipleClusterRoles(t *testing.T) {
 			assert.True(t, names.HasAll(
 				"paas:composition:servicedescriptor:first-service:crud",
 				"paas:composition:servicedescriptor:second-service:crud",
+				"paas:trebuchet:service:first-service:modify",
+				"paas:trebuchet:service:second-service:modify",
 				"paas:creator:service:first-service:modify",
 				"paas:creator:service:second-service:modify",
 			))
@@ -209,7 +217,7 @@ func TestDoesntCreateServiceClusterRole(t *testing.T) {
 			cntrlr.syncServiceMetadata()
 
 			crs := findCreatedClusterRoles(tc.mainFake.Actions())
-			require.Len(t, crs, 2)
+			require.Len(t, crs, 4)
 
 			// These can appear in any order
 			names := sets.NewString()
@@ -220,6 +228,8 @@ func TestDoesntCreateServiceClusterRole(t *testing.T) {
 			assert.True(t, names.HasAll(
 				"paas:composition:servicedescriptor:first-service:crud",
 				"paas:composition:servicedescriptor:second-service:crud",
+				"paas:trebuchet:service:first-service:modify",
+				"paas:trebuchet:service:second-service:modify",
 			))
 		},
 	}
@@ -259,7 +269,7 @@ func TestCreatesClusterRoleBinding(t *testing.T) {
 			cntrlr.syncServiceMetadata()
 
 			crbs := findCreatedClusterRoleBindings(tc.mainFake.Actions())
-			require.Len(t, crbs, 4)
+			require.Len(t, crbs, 6)
 
 			// These can appear in any order
 			names := sets.NewString()
@@ -269,6 +279,8 @@ func TestCreatesClusterRoleBinding(t *testing.T) {
 			assert.True(t, names.HasAll(
 				"paas:composition:servicedescriptor:first-service:crud",
 				"paas:composition:servicedescriptor:second-service:crud",
+				"paas:trebuchet:service:first-service:modify",
+				"paas:trebuchet:service:second-service:modify",
 				"paas:creator:service:first-service:modify",
 				"paas:creator:service:second-service:modify",
 			))
@@ -320,7 +332,7 @@ func TestBuildsInClusterRoleBinding(t *testing.T) {
 			cntrlr.syncServiceMetadata()
 
 			crbs := findCreatedClusterRoleBindings(tc.mainFake.Actions())
-			require.Len(t, crbs, 2) // 1: sds, 2: services
+			require.Len(t, crbs, 3) // 1: sds, 2: trebuchet, 3: services
 
 			assert.Equal(t, "Group", crbs[0].Subjects[0].Kind)
 			assert.Equal(t, "builds:bambooBuild:one:two", crbs[0].Subjects[0].Name)
@@ -408,6 +420,45 @@ func TestNoUpdatesToClusterRoleBindingWhenNoChanges(t *testing.T) {
 			},
 		},
 	}
+	trebuchetCrb := &rbac_v1.ClusterRoleBinding{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: rbac_v1.SchemeGroupVersion.String(),
+			Kind:       k8s.ClusterRoleBindingKind,
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: "paas:trebuchet:service:first-service:modify",
+			Labels: map[string]string{
+				"voyager.atl-paas.net/customer":     "paas",
+				"voyager.atl-paas.net/generated_by": "paas-synchronization",
+			},
+		},
+		RoleRef: rbac_v1.RoleRef{
+			Kind: k8s.ClusterRoleKind,
+			Name: "paas:trebuchet:service:first-service:modify",
+		},
+		Subjects: []rbac_v1.Subject{
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "builds:bambooBuild:one:two",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "builds:bambooBuild:three:four",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "builds:bambooDeployment:five:six",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "first-ssam-container-dl-dev",
+			},
+		},
+	}
 	svcCrb := &rbac_v1.ClusterRoleBinding{
 		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: rbac_v1.SchemeGroupVersion.String(),
@@ -433,7 +484,7 @@ func TestNoUpdatesToClusterRoleBindingWhenNoChanges(t *testing.T) {
 		},
 	}
 	tc := testCase{
-		mainClientObjects: []runtime.Object{sdCrb, svcCrb, existingDefaultDockerSecret()},
+		mainClientObjects: []runtime.Object{sdCrb, trebuchetCrb, svcCrb, existingDefaultDockerSecret()},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
@@ -514,6 +565,45 @@ func TestUpdateClusterRoleBindingWhenChangesToSSAMContainer(t *testing.T) {
 			},
 		},
 	}
+	trebuchetCrb := &rbac_v1.ClusterRoleBinding{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: rbac_v1.SchemeGroupVersion.String(),
+			Kind:       k8s.ClusterRoleBindingKind,
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: "paas:trebuchet:service:first-service:modify",
+			Labels: map[string]string{
+				"voyager.atl-paas.net/customer":     "paas",
+				"voyager.atl-paas.net/generated_by": "paas-synchronization",
+			},
+		},
+		RoleRef: rbac_v1.RoleRef{
+			Kind: k8s.ClusterRoleKind,
+			Name: "paas:trebuchet:service:first-service:modify",
+		},
+		Subjects: []rbac_v1.Subject{
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "builds:bambooBuild:one:two",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "builds:bambooBuild:three:four",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "builds:bambooDeployment:five:six",
+			},
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Group",
+				Name:     "first-ssam-container-dl-dev",
+			},
+		},
+	}
 	svcCrb := &rbac_v1.ClusterRoleBinding{
 		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: rbac_v1.SchemeGroupVersion.String(),
@@ -539,7 +629,7 @@ func TestUpdateClusterRoleBindingWhenChangesToSSAMContainer(t *testing.T) {
 		},
 	}
 	tc := testCase{
-		mainClientObjects: []runtime.Object{crb, svcCrb, existingDefaultDockerSecret()},
+		mainClientObjects: []runtime.Object{crb, trebuchetCrb, svcCrb, existingDefaultDockerSecret()},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			tc.scFake.On("ListServices", mock.Anything, auth.NoUser()).Return([]creator_v1.Service{
 				sourceService,
@@ -551,9 +641,12 @@ func TestUpdateClusterRoleBindingWhenChangesToSSAMContainer(t *testing.T) {
 			crbs := findCreatedClusterRoleBindings(tc.mainFake.Actions())
 			assert.Len(t, crbs, 0)
 			crbs = findUpdatedClusterRoleBindings(tc.mainFake.Actions())
-			assert.Len(t, crbs, 1)
+			assert.Len(t, crbs, 2)
 
 			assert.Equal(t, "Group", crbs[0].Subjects[0].Kind)
+			assert.Equal(t, "another-ssam-container-dl-dev", crbs[0].Subjects[0].Name)
+
+			assert.Equal(t, "Group", crbs[1].Subjects[0].Kind)
 			assert.Equal(t, "another-ssam-container-dl-dev", crbs[0].Subjects[0].Name)
 		},
 	}

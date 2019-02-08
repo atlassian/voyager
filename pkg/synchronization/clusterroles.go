@@ -16,15 +16,21 @@ import (
 )
 
 const (
-	crServiceModifyAccessFormat      = "paas:creator:service:%s:modify"
-	crbServiceModifyAccessFormat     = "paas:creator:service:%s:modify"
-	crServiceDescriptorAccessFormat  = "paas:composition:servicedescriptor:%s:crud"
-	crbServiceDescriptorAccessFormat = "paas:composition:servicedescriptor:%s:crud"
+	crServiceModifyAccessFormat           = "paas:creator:service:%s:modify"
+	crbServiceModifyAccessFormat          = "paas:creator:service:%s:modify"
+	crServiceModifyTrebuchetAccessFormat  = "paas:trebuchet:service:%s:modify"
+	crbServiceModifyTrebuchetAccessFormat = "paas:trebuchet:service:%s:modify"
+	crServiceDescriptorAccessFormat       = "paas:composition:servicedescriptor:%s:crud"
+	crbServiceDescriptorAccessFormat      = "paas:composition:servicedescriptor:%s:crud"
 
 	customerLabelKey      = voyager.Domain + "/customer"
 	customerLabelValue    = "paas"
 	generatedByLabelKey   = voyager.Domain + "/generated_by"
 	generatedByLabelValue = "paas-synchronization"
+
+	trebuchetAPIGroup              = "trebuchet.atl-paas.net"
+	trebuchetReleasesResource      = "releases"
+	trebuchetReleaseGroupsResource = "release-groups"
 )
 
 func (c *Controller) createOrUpdateServiceDescriptorAccess(service *creator_v1.Service) error {
@@ -50,6 +56,16 @@ func (c *Controller) createOrUpdateServiceDescriptorAccess(service *creator_v1.S
 	}
 
 	err = util.RetryObjectUpdater(c.Logger, c.ClusterRoleBindingUpdater, crbSpecServiceDescriptorAccess(service, groups))
+	if err != nil {
+		return err
+	}
+
+	err = util.RetryObjectUpdater(c.Logger, c.ClusterRoleUpdater, crSpecServiceModifyTrebuchetAccess(service))
+	if err != nil {
+		return err
+	}
+
+	err = util.RetryObjectUpdater(c.Logger, c.ClusterRoleBindingUpdater, crbSpecServiceModifyTrebuchetAccess(service, groups))
 	if err != nil {
 		return err
 	}
@@ -94,6 +110,31 @@ func crSpecServiceDescriptorAccess(svc *creator_v1.Service) *rbac_v1.ClusterRole
 					k8s.PatchVerb,
 					k8s.DeleteVerb,
 				},
+			},
+		},
+	}
+
+	return &cr
+}
+
+func crSpecServiceModifyTrebuchetAccess(svc *creator_v1.Service) *rbac_v1.ClusterRole {
+	cr := rbac_v1.ClusterRole{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: rbac_v1.SchemeGroupVersion.String(),
+			Kind:       k8s.ClusterRoleKind,
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: trebuchetModifyClusterRoleName(svc.GetName()),
+			Labels: map[string]string{
+				customerLabelKey:    customerLabelValue,
+				generatedByLabelKey: generatedByLabelValue,
+			},
+		},
+		Rules: []rbac_v1.PolicyRule{
+			rbac_v1.PolicyRule{
+				APIGroups: []string{trebuchetAPIGroup},
+				Resources: trebuchetResources(),
+				Verbs:     []string{"*"},
 			},
 		},
 	}
@@ -162,6 +203,37 @@ func crbSpecServiceDescriptorAccess(svc *creator_v1.Service, groups []string) *r
 	return &crb
 }
 
+func crbSpecServiceModifyTrebuchetAccess(svc *creator_v1.Service, groups []string) *rbac_v1.ClusterRoleBinding {
+	crb := rbac_v1.ClusterRoleBinding{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: rbac_v1.SchemeGroupVersion.String(),
+			Kind:       k8s.ClusterRoleBindingKind,
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: trebuchetModifyClusterRoleBindingName(svc.GetName()),
+			Labels: map[string]string{
+				customerLabelKey:    customerLabelValue,
+				generatedByLabelKey: generatedByLabelValue,
+			},
+		},
+		RoleRef: rbac_v1.RoleRef{
+			Kind: k8s.ClusterRoleKind,
+			Name: trebuchetModifyClusterRoleName(svc.GetName()),
+		},
+		Subjects: make([]rbac_v1.Subject, 0, len(groups)),
+	}
+
+	for _, group := range groups {
+		crb.Subjects = append(crb.Subjects, rbac_v1.Subject{
+			APIGroup: rbac_v1.GroupName,
+			Kind:     rbac_v1.GroupKind,
+			Name:     group,
+		})
+	}
+
+	return &crb
+}
+
 func crbSpecServiceModifyAccess(svc *creator_v1.Service, owner string) *rbac_v1.ClusterRoleBinding {
 	crb := rbac_v1.ClusterRoleBinding{
 		TypeMeta: meta_v1.TypeMeta{
@@ -195,6 +267,10 @@ func sdClusterRoleName(sdName string) string {
 	return fmt.Sprintf(crServiceDescriptorAccessFormat, sdName)
 }
 
+func trebuchetModifyClusterRoleName(svcName string) string {
+	return fmt.Sprintf(crServiceModifyTrebuchetAccessFormat, svcName)
+}
+
 func svcModifyClusterRoleName(svcName string) string {
 	return fmt.Sprintf(crServiceModifyAccessFormat, svcName)
 }
@@ -203,6 +279,14 @@ func sdClusterRoleBindingName(sdName string) string {
 	return fmt.Sprintf(crbServiceDescriptorAccessFormat, sdName)
 }
 
+func trebuchetModifyClusterRoleBindingName(svcName string) string {
+	return fmt.Sprintf(crbServiceModifyTrebuchetAccessFormat, svcName)
+}
+
 func svcModifyClusterRoleBindingName(svcName string) string {
 	return fmt.Sprintf(crbServiceModifyAccessFormat, svcName)
+}
+
+func trebuchetResources() []string {
+	return []string{trebuchetReleasesResource, trebuchetReleaseGroupsResource}
 }
