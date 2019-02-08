@@ -280,11 +280,8 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
-	// The kube deployment object spec
-	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
-
 	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, deploymentSpec.Replicas)
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
 	pdb := smith_v1.Resource{
 		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
 		Spec: smith_v1.ResourceSpec{
@@ -301,6 +298,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		},
 	}
 	smithResources = append(smithResources, pdb)
+
+	// The kube deployment object spec
+	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
 
 	// The final wired deployment object
 	deployment := smith_v1.Resource{
@@ -537,18 +537,16 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	}
 }
 
-func buildPodDisruptionBudgetSpec(labelMap map[string]string, replicas *int32) policy_v1.PodDisruptionBudgetSpec {
-	// Set this to ensure we can still drain nodes if we get weird input here
-	pdbPercentage := "100%"
-	if replicas != nil {
-		switch *replicas {
-		case 0, 1:
-			// pdbPercentage = "100%"
-		case 2:
-			pdbPercentage = "50%"
-		default:
-			pdbPercentage = "30%"
-		}
+func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) policy_v1.PodDisruptionBudgetSpec {
+	// Make sure we can drain nodes if the minReplicas is < 3
+	var pdbPercentage string
+	switch minReplicas {
+	case 0, 1:
+		pdbPercentage = "100%"
+	case 2:
+		pdbPercentage = "50%"
+	default:
+		pdbPercentage = "30%"
 	}
 
 	return policy_v1.PodDisruptionBudgetSpec{
