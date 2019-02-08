@@ -38,6 +38,7 @@ func (o *TrebuchetServerOptions) AddFlags(fs *pflag.FlagSet) {
 func (o *TrebuchetServerOptions) Validate() error {
 	var errors []error
 	errors = append(errors, o.RecommendedOptions.Validate()...)
+	errors = append(errors, o.TrebuchetOptions.Validate()...)
 	return utilerrors.NewAggregate(errors)
 }
 
