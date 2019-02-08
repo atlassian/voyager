@@ -542,11 +542,11 @@ func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32)
 	var pdbPercentage string
 	switch minReplicas {
 	case 0, 1:
-		pdbPercentage = "100%"
+		pdbPercentage = "0%"
 	case 2:
 		pdbPercentage = "50%"
 	default:
-		pdbPercentage = "30%"
+		pdbPercentage = "66%"
 	}
 
 	return policy_v1.PodDisruptionBudgetSpec{
