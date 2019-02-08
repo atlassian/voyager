@@ -44,22 +44,23 @@ func New() *WiringPlugin {
 	}
 }
 
-func getInstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
+func getInstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
 
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
 		var ourSpec autowiringOnlySpec
 		if err := json.Unmarshal(resource.Spec.Raw, &ourSpec); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, false, false, errors.WithStack(err)
 		}
 		if ourSpec != (autowiringOnlySpec{}) {
-			return nil, errors.Errorf("unsupported parameters were provided: %+v", ourSpec)
+			return nil, true, false, errors.Errorf("unsupported parameters were provided: %+v", ourSpec)
 		}
 	}
 
-	references, err := getReferences(resource, context)
+	references, external, retriable, err := getReferences(resource, context)
 	if err != nil {
-		return nil, err
+		// User error from providing invalid dependency
+		return nil, external, retriable, err
 	}
 
 	autowiringSpec, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&autowiringOnlySpec{
@@ -68,21 +69,22 @@ func getInstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.Wiri
 		ServiceName:     context.StateContext.ServiceName,
 	})
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	var userSpec map[string]interface{}
 	if resource.Spec != nil {
 		if err = json.Unmarshal(resource.Spec.Raw, &userSpec); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, false, false, errors.WithStack(err)
 		}
 	}
 	finalSpec, err := wiringutil.Merge(userSpec, autowiringSpec)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
-	return json.Marshal(&finalSpec)
+	bytes, err := json.Marshal(&finalSpec)
+	return bytes, false, false, err
 }
 
 func mapEnvironmentType(envType voyager.EnvType) string {
@@ -97,29 +99,29 @@ func mapEnvironmentType(envType voyager.EnvType) string {
 
 // svccatentangler plugin expects reference function to return a slice of references, in the case of platformdns it will
 // always be a single reference.
-func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, error) {
+func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]smith_v1.Reference, bool /* externalErr */, bool /* retriable */, error) {
 	var references []smith_v1.Reference
 
 	// Ensure we only depend on one resource, as we can only bind to a single ingress
 	if len(context.Dependencies) != 1 {
-		return nil, errors.Errorf("%s resources must depend on only one ingress resource", apiplatformdns.ResourceType)
+		return nil, true, false, errors.Errorf("%s resources must depend on only one ingress resource", apiplatformdns.ResourceType)
 	}
 	dependency := context.Dependencies[0]
 
 	ingressShape, found, err := knownshapes.FindIngressEndpointShape(dependency.Contract.Shapes)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 	if !found {
-		return nil, errors.Errorf("shape %q is required to create ServiceBinding for %q but was not found",
+		return nil, true, false, errors.Errorf("shape %q is required to create ServiceBinding for %q but was not found",
 			knownshapes.IngressEndpointShape, dependency.Name)
 	}
 	ingressEndpoint := ingressShape.Data.IngressEndpoint
 	referenceName := wiringutil.ReferenceName(ingressEndpoint.Resource, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
 	references = append(references, ingressEndpoint.ToReference(referenceName))
-	return references, nil
+	return references, false, false, nil
 }
 
-func getObjectMeta(_ *orch_v1.StateResource, _ *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{}, nil
+func getObjectMeta(_ *orch_v1.StateResource, _ *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool, bool, error) {
+	return meta_v1.ObjectMeta{}, false, false, nil
 }
