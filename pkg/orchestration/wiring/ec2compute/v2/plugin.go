@@ -153,7 +153,7 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 	return util.ToRawExtension(finalSpec)
 }
 
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error) {
 	if stateResource.Type != ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", stateResource.Type)
 	}

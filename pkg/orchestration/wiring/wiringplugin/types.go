@@ -11,14 +11,25 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type WiringResultType string
+type StatusResultType string
+
+const (
+	WiringResultSuccessType WiringResultType = "success"
+	WiringResultFailureType WiringResultType = "failure"
+
+	StatusResultSuccessType StatusResultType = "success"
+	StatusResultFailureType StatusResultType = "failure"
+)
+
 // WiringPlugin represents an autowiring plugin.
 // Autowiring plugin is an in-code representation of an autowiring function.
 type WiringPlugin interface {
 	// WireUp wires up the resource.
 	// Error may be retriable if its an RPC error (like network error). Most errors are not retriable because
 	// this method should be pure/deterministic so if it fails, it fails.
-	WireUp(resource *orch_v1.StateResource, context *WiringContext) (result *WiringResult, retriable bool, err error)
-	Status(resource *orch_v1.StateResource, context *StatusContext) (result *StatusResult, retriable bool, err error)
+	WireUp(resource *orch_v1.StateResource, context *WiringContext) (result WiringResult)
+	Status(resource *orch_v1.StateResource, context *StatusContext) (result StatusResult)
 }
 
 // WiringContext contains context information that is passed to an autowiring function to perform autowiring
@@ -78,9 +89,27 @@ type ResourceContract struct {
 	Shapes []Shape `json:"shapes,omitempty"`
 }
 
-type WiringResult struct {
+type WiringResult interface {
+	StatusType() WiringResultType
+}
+
+type WiringResultSuccess struct {
 	Contract  ResourceContract
 	Resources []smith_v1.Resource
+}
+
+func (w *WiringResultSuccess) StatusType() WiringResultType {
+	return WiringResultSuccessType
+}
+
+type WiringResultFailure struct {
+	Error            error
+	IsExternalError  bool
+	IsRetriableError bool
+}
+
+func (w *WiringResultFailure) StatusType() WiringResultType {
+	return WiringResultFailureType
 }
 
 // StateContext is used as input for the plugins. Everything in the StateContext
@@ -135,6 +164,23 @@ type StatusContext struct {
 	PluginStatuses []smith_v1.PluginStatus `json:"pluginStatuses,omitempty"`
 }
 
-type StatusResult struct {
+type StatusResult interface {
+	StatusType() StatusResultType
+}
+
+type StatusResultSuccess struct {
 	ResourceStatusData orch_v1.ResourceStatusData `json:"resourceStatusData"`
+}
+
+func (s *StatusResultSuccess) StatusType() StatusResultType {
+	return StatusResultSuccessType
+}
+
+type StatusResultFailure struct {
+	Error           error
+	IsExternalError bool
+}
+
+func (s *StatusResultFailure) StatusType() StatusResultType {
+	return StatusResultFailureType
 }

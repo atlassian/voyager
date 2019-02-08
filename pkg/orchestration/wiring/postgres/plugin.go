@@ -61,7 +61,7 @@ func New() *WiringPlugin {
 	return &WiringPlugin{}
 }
 
-func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool /*retriable*/, error) {
 	if resource.Type != ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
@@ -101,7 +101,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		return nil, false, err
 	}
 
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: shapes,
 		},
