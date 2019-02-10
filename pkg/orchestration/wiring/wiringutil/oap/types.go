@@ -25,18 +25,18 @@ type ServiceEnvironment struct {
 }
 
 type VPCEnvironment struct {
-	VPCID                 string   `json:"vpcId,omitempty"`
-	PrivateDNSZone        string   `json:"privateDnsZone,omitempty"`
-	PrivatePaasDNSZone    string   `json:"privatePaasDnsZone,omitempty"`
-	ServiceSecurityGroup  string   `json:"serviceSecurityGroup,omitempty"`
-	InstanceSecurityGroup string   `json:"instanceSecurityGroup,omitempty"`
-	JumpboxSecurityGroup  string   `json:"jumpboxSecurityGroup,omitempty"`
-	SSLCertificateID      string   `json:"sslCertificateId,omitempty"`
-	Label                 string   `json:"label,omitempty"`
-	AppSubnets            []string `json:"appSubnets,omitempty"`
-	Zones                 []string `json:"zones,omitempty"`
-	Region                string   `json:"region,omitempty"`
-	EMRSubnet             string   `json:"emrSubnet,omitempty"`
+	VPCID                 string         `json:"vpcId,omitempty"`
+	PrivateDNSZone        string         `json:"privateDnsZone,omitempty"`
+	PrivatePaasDNSZone    string         `json:"privatePaasDnsZone,omitempty"`
+	ServiceSecurityGroup  string         `json:"serviceSecurityGroup,omitempty"`
+	InstanceSecurityGroup string         `json:"instanceSecurityGroup,omitempty"`
+	JumpboxSecurityGroup  string         `json:"jumpboxSecurityGroup,omitempty"`
+	SSLCertificateID      string         `json:"sslCertificateId,omitempty"`
+	Label                 voyager.Label  `json:"label,omitempty"`
+	AppSubnets            []string       `json:"appSubnets,omitempty"`
+	Zones                 []string       `json:"zones,omitempty"`
+	Region                voyager.Region `json:"region,omitempty"`
+	EMRSubnet             string         `json:"emrSubnet,omitempty"`
 }
 
 type RPSResource struct {
