@@ -11,7 +11,7 @@ type Cluster struct {
 	Kube2iamAccount   string `json:"kube2iamAccount"`
 }
 
-func (c *Cluster) DefaultAndValdiate() []error {
+func (c *Cluster) DefaultAndValidate() []error {
 	var allErrors []error
 	if c.ClusterDomainName == "" {
 		allErrors = append(allErrors, errors.New("clusterDomainName must be specified in cluster"))

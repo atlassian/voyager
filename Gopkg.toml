@@ -72,6 +72,9 @@ required = [
   name = "github.com/kr/pretty"
   version = "v0.1.0"
 
+[[override]]
+  name = "gopkg.in/launchdarkly/go-client.v4"
+  version = "v4"
 # Overrides below have been generated using https://github.com/ash2k/kubegodep2dep
 # Do not edit manually
 
