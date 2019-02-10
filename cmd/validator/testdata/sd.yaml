@@ -1,0 +1,498 @@
+apiVersion: composition.voyager.atl-paas.net/v1
+kind: ServiceDescriptor
+metadata:
+  annotations:
+  finalizers:
+    - voyager.atl-paas.net/serviceDescriptorComposition
+  generation: 1
+  name: ptl2
+spec:
+  config:
+    - scope: global
+      vars:
+        cronmanUrl: xxx
+        dispatcher:
+          autoScalingGroup:
+            keys:
+              minSize: 2
+          docker:
+            digest: ${release:ptl-dispatcher.docker.digest}
+            image: ${release:ptl-dispatcher.docker.image}
+          ec2:
+            instanceType: t2.medium
+        dispatcherQueueAllowWritesIamRoles:
+          - xxx
+        dnsResolverIp: 10.255.0.1
+        executionQueueMaxReceiveCount: 1000
+        executor:
+          autoScalingGroup:
+            keys:
+              maxSize: 6
+              minSize: 3
+          docker:
+            digest: ${release:ptl-executor.docker.digest}
+            image: ${release:ptl-executor.docker.image}
+          ec2:
+            instanceType: m4.xlarge
+        gateway:
+          autoScalingGroup:
+            keys:
+              minSize: 2
+          docker:
+            digest: ${release:ptl-gateway.docker.digest}
+            image: ${release:ptl-gateway.docker.image}
+          ec2:
+            instanceType: t2.medium
+        percolator:
+          autoScalingGroup:
+            keys:
+              minSize: 3
+          docker:
+            digest: ${release:ptl-percolator.docker.digest}
+            image: ${release:ptl-percolator.docker.image}
+          ec2:
+            instanceType: t2.medium
+        ptlDomain: ptl2
+        reporter:
+          autoScalingGroup:
+            keys:
+              minSize: 3
+          docker:
+            digest: ${release:ptl-reporter.docker.digest}
+            image: ${release:ptl-reporter.docker.image}
+          ec2:
+            instanceType: t2.medium
+        tars:
+          autoScalingGroup:
+            keys:
+              minSize: 3
+          docker:
+            digest: ${release:ptl-tars.docker.digest}
+            image: ${release:ptl-tars.docker.image}
+          ec2:
+            instanceType: r3.large
+        ui:
+          autoScalingGroup:
+            keys:
+              minSize: 1
+          docker:
+            digest: ${release:ptl-ui.docker.digest}
+            image: ${release:ptl-ui.docker.image}
+          ec2:
+            instanceType: t2.micro
+    - scope: dev
+      vars:
+        cronmanUrl: xxx
+        dispatcher:
+          autoScalingGroup:
+            keys:
+              minSize: 1
+          ec2:
+            instanceType: t2.micro
+        dispatcherQueueAllowWritesIamRoles:
+          - xxx
+          - xxx
+        domainSuffix: ap-southeast-2.dev.atl-paas.net
+        executionQueueMaxReceiveCount: 100
+        executor:
+          autoScalingGroup:
+            keys:
+              minSize: 1
+          ec2:
+            instanceType: m4.large
+        gateway:
+          autoScalingGroup:
+            keys:
+              maxSize: 1
+              minSize: 1
+          ec2:
+            instanceType: t2.micro
+        percolator:
+          autoScalingGroup:
+            keys:
+              maxSize: 1
+              minSize: 1
+          ec2:
+            instanceType: t2.micro
+        reporter:
+          autoScalingGroup:
+            keys:
+              maxSize: 1
+              minSize: 1
+          ec2:
+            instanceType: t2.micro
+        tars:
+          autoScalingGroup:
+            keys:
+              minSize: 1
+          ec2:
+            instanceType: t2.micro
+    - scope: staging
+      vars:
+        cronmanUrl: xxx
+        dispatcherQueueAllowWritesIamRoles:
+          - xxx
+        rds:
+          AllocatedStorage: 32
+          DBInstanceClass: db.m4.large
+          FreeStorageAlarm: 4294967296
+          FreeStorageAlarmSec: 8589934592
+          TransactionLogsDiskUsageAlarm: 2147483648
+    - scope: staging.us-east-1
+      vars:
+        domainSuffix: us-east-1.staging.atl-paas.net
+    - scope: prod
+      vars:
+        cronmanUrl: xxx
+        dispatcherQueueAllowWritesIamRoles:
+          - xxx
+        rds:
+          AllocatedStorage: 512
+          DBInstanceClass: db.m4.2xlarge
+          FreeStorageAlarm: 34359738368
+          FreeStorageAlarmSec: 68719476736
+          TransactionLogsDiskUsageAlarm: 4294967296
+    - scope: prod.us-east-1
+      vars:
+        domainSuffix: us-east-1.prod.atl-paas.net
+  locations:
+    - account: "123"
+      envType: dev
+      name: dev-1-apse2
+      region: ap-southeast-2
+    - account: "21234"
+      envType: staging
+      name: staging-1-use1
+      region: us-east-1
+    - account: "2143"
+      envType: prod
+      name: prod-1-use1
+      region: us-east-1
+  resourceGroups:
+    - locations:
+        - dev-1-apse2
+      name: db-dev
+      resources:
+        - name: ptl-executor-db
+          type: Postgres
+        - name: ptl-tars-db
+          type: Postgres
+        - name: ptl-reporter-db
+          type: Postgres
+    - locations:
+        - staging-1-use1
+        - prod-1-use1
+      name: db-prod
+      resources:
+        - name: ptl-rds
+          spec:
+            AllocatedStorage: ${rds.AllocatedStorage}
+            ConnectionAlarm: 299
+            DBInstanceClass: ${rds.DBInstanceClass}
+            DBType: postgres969
+            FreeStorageAlarm: ${rds.FreeStorageAlarm}
+            FreeStorageAlarmSec: ${rds.FreeStorageAlarmSec}
+            RunbookLink: https://hello.atlassian.net/wiki/spaces/MICROS/pages/267897482/Dedicated+RDS+Alarms
+            TransactionLogsDiskUsageAlarm: ${rds.TransactionLogsDiskUsageAlarm}
+          type: RDS
+        - dependsOn:
+            - ptl-rds
+          name: ptl-executor-db
+          type: Postgres
+        - dependsOn:
+            - ptl-rds
+          name: ptl-tars-db
+          type: Postgres
+        - dependsOn:
+            - ptl-rds
+          name: ptl-reporter-db
+          type: Postgres
+    - locations:
+        - dev-1-apse2
+        - staging-1-use1
+        - prod-1-use1
+      name: default
+      resources:
+        - name: messages
+          spec:
+            template: sns-v1
+          type: CloudFormation
+        - name: dispatchtasks
+          spec:
+            MaxReceiveCount: 10
+            Policy:
+              Statement:
+                - Action: sqs:SendMessage
+                  Effect: Allow
+                  Principal:
+                    AWS: ${dispatcherQueueAllowWritesIamRoles}
+                  Sid: Allow-Writer-Writes
+            VisibilityTimeout: 300
+          type: SQS
+        - name: executionqueue-priority-1
+          spec:
+            MaxReceiveCount: ${executionQueueMaxReceiveCount}
+            VisibilityTimeout: 960
+          type: SQS
+        - name: executionqueue
+          spec:
+            MaxReceiveCount: ${executionQueueMaxReceiveCount}
+            VisibilityTimeout: 960
+          type: SQS
+        - dependsOn:
+            - attributes:
+                RawMessageDelivery: true
+              name: messages
+          name: events
+          spec:
+            EncryptionAtRest: false
+            MaxReceiveCount: 100
+            VisibilityTimeout: 30
+          type: SQS
+        - name: report-events
+          spec:
+            parameters:
+              ShardCount: 10
+            template: kinesis-v1
+          type: CloudFormation
+        - name: kcl
+          spec:
+            HashKeyName: leaseKey
+            HashKeyType: S
+            ReadCapacityUnits: 10
+            WriteCapacityUnits: 10
+          type: DynamoDB
+        - dependsOn:
+            - dispatchtasks
+            - executionqueue
+            - executionqueue-priority-1
+            - messages
+          name: dispatcher
+          spec:
+            autoScalingGroup:
+              ${inline}: ${dispatcher.autoScalingGroup.keys}
+            deployment:
+              deepcheck:
+                uri: admin/healthcheck
+              healthcheck:
+                uri: admin/ping
+            docker:
+              compose:
+                ptl-dispatcher:
+                  digest: ${dispatcher.docker.digest}
+                  image: ${dispatcher.docker.image}
+                  ports:
+                    - 8080:8080
+              envVars:
+                CRONMAN_URL: ${cronmanUrl}
+            ec2:
+              instanceType: ${dispatcher.ec2.instanceType}
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+            rename:
+              CF_MESSAGES_TOPICARN: REPORTING_SNS_TOPICARN
+              CF_MESSAGES_TOPICREGION: REPORTING_SNS_TOPICREGION
+              SQS_EXECUTIONQUEUE_PRIORITY_1_QUEUE_REGION: SQS_EXECUTOR_PRIORITY1_QUEUE_REGION
+              SQS_EXECUTIONQUEUE_PRIORITY_1_QUEUE_URL: SQS_EXECUTOR_PRIORITY1_QUEUE_URL
+              SQS_EXECUTIONQUEUE_QUEUE_REGION: SQS_EXECUTOR_QUEUE_REGION
+              SQS_EXECUTIONQUEUE_QUEUE_URL: SQS_EXECUTOR_QUEUE_URL
+          type: EC2Compute
+        - dependsOn:
+            - dispatchtasks
+            - executionqueue
+            - executionqueue-priority-1
+            - messages
+            - ptl-executor-db
+          name: executor
+          spec:
+            autoScalingGroup:
+              ${inline}: ${executor.autoScalingGroup.keys}
+            deployment:
+              deepcheck:
+                uri: admin/healthcheck
+              healthcheck:
+                uri: admin/ping
+            docker:
+              compose:
+                ptl-executor:
+                  digest: ${executor.docker.digest}
+                  image: ${executor.docker.image}
+                  ports:
+                    - 8080:8080
+              envVars:
+                DOMAIN_SUFFIX: ${domainSuffix}
+                PTL_DOMAIN: ${ptlDomain}
+            ec2:
+              instanceType: ${executor.ec2.instanceType}
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+            rename:
+              CF_MESSAGES_TOPICARN: REPORTING_SNS_TOPICARN
+              CF_MESSAGES_TOPICREGION: REPORTING_SNS_TOPICREGION
+              SQS_DISPATCHTASKS_QUEUE_REGION: SQS_DISPATCHER_QUEUE_REGION
+              SQS_DISPATCHTASKS_QUEUE_URL: SQS_DISPATCHER_QUEUE_URL
+          type: EC2Compute
+        - dependsOn:
+            - dispatchtasks
+            - messages
+            - ptl-tars-db
+          name: tars
+          spec:
+            autoScalingGroup:
+              ${inline}: ${tars.autoScalingGroup.keys}
+            deployment:
+              deepcheck:
+                uri: admin/healthcheck
+              healthcheck:
+                uri: admin/ping
+            docker:
+              compose:
+                ptl-tars:
+                  digest: ${tars.docker.digest}
+                  image: ${tars.docker.image}
+                  ports:
+                    - 8080:8080
+              envVars:
+                DOMAIN_SUFFIX: ${domainSuffix}
+            ec2:
+              instanceType: ${tars.ec2.instanceType}
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+            rename:
+              CF_MESSAGES_TOPICARN: REPORTING_SNS_TOPICARN
+              CF_MESSAGES_TOPICREGION: REPORTING_SNS_TOPICREGION
+              SQS_DISPATCHTASKS_QUEUE_REGION: SQS_DISPATCHER_QUEUE_REGION
+              SQS_DISPATCHTASKS_QUEUE_URL: SQS_DISPATCHER_QUEUE_URL
+          type: EC2Compute
+        - name: gateway
+          spec:
+            autoScalingGroup:
+              ${inline}: ${gateway.autoScalingGroup.keys}
+            deployment:
+              healthcheck:
+                uri: /healthcheck
+            docker:
+              compose:
+                ptl-gateway:
+                  digest: ${gateway.docker.digest}
+                  image: ${gateway.docker.image}
+                  ports:
+                    - 8080:8080
+              envVars:
+                DNS_RESOLVER_IP: ${dnsResolverIp}
+                DOMAIN_SUFFIX: ${domainSuffix}
+                PTL_DOMAIN: ${ptlDomain}
+            ec2:
+              instanceType: ${gateway.ec2.instanceType}
+            loadBalancer:
+              attributes:
+                connectionTimeout: 300
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+          type: EC2Compute
+        - dependsOn:
+            - events
+            - report-events
+          name: percolator
+          spec:
+            autoScalingGroup:
+              ${inline}: ${percolator.autoScalingGroup.keys}
+            deployment:
+              deepcheck:
+                uri: admin/healthcheck
+              healthcheck:
+                uri: admin/ping
+            docker:
+              compose:
+                ptl-percolator:
+                  digest: ${percolator.docker.digest}
+                  image: ${percolator.docker.image}
+                  ports:
+                    - 8080:8080
+            ec2:
+              instanceType: ${percolator.ec2.instanceType}
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+            rename:
+              CF_REPORT_EVENTS_STREAMNAME: KINESIS_REPORT_EVENTS_STREAM_NAME
+              CF_REPORT_EVENTS_STREAMREGION: KINESIS_REPORT_EVENTS_STREAM_REGION
+          type: EC2Compute
+        - dependsOn:
+            - kcl
+            - report-events
+            - ptl-reporter-db
+          name: reporter
+          spec:
+            autoScalingGroup:
+              ${inline}: ${reporter.autoScalingGroup.keys}
+            deployment:
+              deepcheck:
+                uri: admin/healthcheck
+              healthcheck:
+                uri: admin/ping
+            docker:
+              compose:
+                ptl-reporter:
+                  digest: ${reporter.docker.digest}
+                  image: ${reporter.docker.image}
+                  ports:
+                    - 8080:8080
+            ec2:
+              instanceType: ${reporter.ec2.instanceType}
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+            rename:
+              CF_REPORT_EVENTS_STREAMNAME: REPORTER_KINESIS_STREAMNAME
+              CF_REPORT_EVENTS_STREAMREGION: REPORTER_KINESIS_STREAMREGION
+          type: EC2Compute
+        - name: ui
+          spec:
+            autoScalingGroup:
+              ${inline}: ${ui.autoScalingGroup.keys}
+            deployment:
+              healthcheck:
+                uri: /proxy/healthcheck
+            docker:
+              compose:
+                ptl-ui:
+                  digest: ${ui.docker.digest}
+                  image: ${ui.docker.image}
+                  ports:
+                    - 8080:8080
+              envVars:
+                DOMAIN_SUFFIX: ${domainSuffix}
+                PTL_DOMAIN: ${ptlDomain}
+            ec2:
+              instanceType: ${ui.ec2.instanceType}
+            notifications:
+              email: infrastructure-deployment-engineering@atlassian.com
+          type: EC2Compute
+  version: "3"
+status:
+  conditions:
+    - lastTransitionTime: 2019-02-08T13:21:54Z
+      status: "False"
+      type: InProgress
+    - lastTransitionTime: 2019-02-08T13:21:54Z
+      status: "True"
+      type: Ready
+    - lastTransitionTime: 2019-02-08T13:15:08Z
+      status: "False"
+      type: Error
+  locationStatuses:
+    - conditions:
+        - lastTransitionTime: 2019-02-08T13:21:54Z
+          status: "False"
+          type: InProgress
+        - lastTransitionTime: 2019-02-08T13:21:54Z
+          status: "True"
+          type: Ready
+        - lastTransitionTime: 2019-02-08T13:15:08Z
+          status: "False"
+          type: Error
+      descriptorName: ptl2
+      descriptorNamespace: ptl2
+      location:
+        account: "1234"
+        envType: prod
+        region: us-east-1

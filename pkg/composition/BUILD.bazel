@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "controller.go",
+        "controller2.go",
         "controller_constructor.go",
         "finalizers.go",
         "options.go",

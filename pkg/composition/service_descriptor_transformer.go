@@ -82,6 +82,27 @@ func getLocationsForResourceGroup(resourceGroup comp_v1.ServiceDescriptorResourc
 	return resourceGroupLocations, nil
 }
 
+type FilteredTransformer struct {
+	// Filter is used to remove elements from the results passed by the wrapped Transformer
+	Remove      func(FormationObjectInfo) bool
+	Transformer SdTransformer
+}
+
+func (t *FilteredTransformer) CreateFormationObjectDef(sd *comp_v1.ServiceDescriptor) ([]FormationObjectInfo, error) {
+	infos, err := t.Transformer.CreateFormationObjectDef(sd)
+	if err != nil {
+		return nil, err
+	}
+	var result []FormationObjectInfo
+	for _, info := range infos {
+		if !t.Remove(info) {
+			result = append(result, info)
+		}
+	}
+
+	return result, nil
+}
+
 // Given a service descriptor, returns a list of formation objects definitions per location.
 // If there are no resources at the location, it will still return a formation object definition,
 // but this definition will only contain location information, and not resource information
