@@ -359,10 +359,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),
-				knownshapes.NewSetOfScaling(deployment.Name, knownshapes.Scaling{
-					MinReplicas: spec.Scaling.MinReplicas,
-					MaxReplicas: spec.Scaling.MaxReplicas,
-				}),
+				knownshapes.NewSetOfDatadog(deployment.Name),
 			},
 		},
 		Resources: smithResources,

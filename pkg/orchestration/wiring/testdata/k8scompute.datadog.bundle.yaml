@@ -156,7 +156,7 @@ spec:
             apiVersion: apps/v1
             kind: Deployment
             name: '!{kubecompute-simple-metadata-name}'
-  - name: alarms--cpu--instance
+  - name: alarms--kubecompute-simple--cpu--instance
     references:
     - resource: kubecompute-simple
     spec:
@@ -170,24 +170,32 @@ spec:
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
-              message: High CPU usage for deployment state1 in testregion testenv
-                @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
-              name: test-servicename-alarms-cpu
+              message: High CPU usage for deployment kubecompute-simple in testregion
+                testenv [[#is_warning]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_warning]] [[#is_warning_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_warning_recovery]] [[#is_alert]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_alert]][[#is_alert_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_alert_recovery]]
+              name: test-servicename-alarms-cpu-testenv-
               options:
-                escalation_message: High CPU usage for deployment state1 in testregion
-                  testenv @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                escalation_message: High CPU usage for deployment kubecompute-simple
+                  in testregion testenv [[#is_warning]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_warning]] [[#is_warning_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_warning_recovery]] [[#is_alert]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_alert]][[#is_alert_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_alert_recovery]]
                 require_full_window: true
                 thresholds:
                   critical: 90
                   warning: 80
-              query: avg(last_5m):( avg:kubernetes.cpu.usage.total{env:testenv,kube_namespace:default123,kube_deployment:state1,region:testregion}
-                by {container_id} / ( avg:kubernetes.cpu.limits{env:testenv,kube_namespace:default123,kube_deployment:state1,region:testregion}
+              query: avg(last_5m):( avg:kubernetes.cpu.usage.total{env:testenv,kube_namespace:default123,kube_deployment:kubecompute-simple,region:testregion}
+                by {container_id} / ( avg:kubernetes.cpu.limits{env:testenv,kube_namespace:default123,kube_deployment:kubecompute-simple,region:testregion}
                 by {container_id} * 1000000 ) ) * 100 > 90
               type: metric alert
             environment: testenv
             region: testregion
             serviceName: test-servicename
-  - name: alarms--memory--instance
+  - name: alarms--kubecompute-simple--memory--instance
     references:
     - resource: kubecompute-simple
     spec:
@@ -201,18 +209,26 @@ spec:
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
           parameters:
             attributes:
-              message: High MEMORY usage for deployment state1 in testregion testenv
-                @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
-              name: test-servicename-alarms-memory
+              message: High MEMORY usage for deployment kubecompute-simple in testregion
+                testenv [[#is_warning]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_warning]] [[#is_warning_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_warning_recovery]] [[#is_alert]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_alert]][[#is_alert_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                [[/is_alert_recovery]]
+              name: test-servicename-alarms-memory-testenv-
               options:
-                escalation_message: High MEMORY usage for deployment state1 in testregion
-                  testenv @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                escalation_message: High MEMORY usage for deployment kubecompute-simple
+                  in testregion testenv [[#is_warning]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_warning]] [[#is_warning_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_warning_recovery]] [[#is_alert]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_alert]][[#is_alert_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
+                  [[/is_alert_recovery]]
                 require_full_window: true
                 thresholds:
                   critical: 90
                   warning: 80
-              query: avg(last_5m):( avg:kubernetes.memory.usage.total{env:testenv,kube_namespace:default123,kube_deployment:state1,region:testregion}
-                by {container_id} / ( avg:kubernetes.memory.limits{env:testenv,kube_namespace:default123,kube_deployment:state1,region:testregion}
+              query: avg(last_5m):( avg:kubernetes.memory.usage.total{env:testenv,kube_namespace:default123,kube_deployment:kubecompute-simple,region:testregion}
+                by {container_id} / ( avg:kubernetes.memory.limits{env:testenv,kube_namespace:default123,kube_deployment:kubecompute-simple,region:testregion}
                 by {container_id} * 1000000 ) ) * 100 > 90
               type: metric alert
             environment: testenv

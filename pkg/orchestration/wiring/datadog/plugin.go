@@ -12,7 +12,6 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -23,46 +22,42 @@ import (
 const (
 	clusterServiceClassExternalID                      = "875d4a87-e887-4838-a0b5-b64491dbf9cb"
 	clusterServicePlanExternalID                       = "d8048a2d-49de-4fda-b7ef-328de171cd32"
-	ResourceType                  voyager.ResourceType = "datadog-alarm"
+	ResourceType                  voyager.ResourceType = "DatadogAlarm"
 )
 
 type WiringPlugin struct {
 	svccatentangler.SvcCatEntangler
 }
 
-var (
-	serviceInstanceGVK = sc_v1b1.SchemeGroupVersion.WithKind("ServiceInstance")
-)
-
 func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
 	err := validateRequest(stateResource, context)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.WithStack(err)
 	}
 	kubeComputeDependency, err := context.TheOnlyDependency()
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.WithStack(err)
 	}
-	setOfScalingShape, found, err := knownshapes.FindSetOfPScalingShape(kubeComputeDependency.Contract.Shapes)
+	setOfScalingShape, found, err := knownshapes.FindSetOfDatadogShape(kubeComputeDependency.Contract.Shapes)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.WithStack(err)
 	}
 	if !found {
-		return nil, false, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfScalingShape, kubeComputeDependency.Name)
+		return nil, false, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfDatadogShape, kubeComputeDependency.Name)
 	}
 
 	var wiredResources []smith_v1.Resource
 
 	deploymentResourceName := setOfScalingShape.Data.DeploymentResourceName
-	CPUServiceInstance, err := constructServiceInstance(stateResource, context, deploymentResourceName, CPU)
+	cpuServiceInstance, err := constructServiceInstance(stateResource, context, deploymentResourceName, CPU)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.WithStack(err)
 	}
-	wiredResources = append(wiredResources, CPUServiceInstance)
+	wiredResources = append(wiredResources, cpuServiceInstance)
 
 	memoryServiceInstance, err := constructServiceInstance(stateResource, context, deploymentResourceName, Memory)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.WithStack(err)
 	}
 	wiredResources = append(wiredResources, memoryServiceInstance)
 
@@ -76,27 +71,18 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, deploymentResourceName smith_v1.ResourceName, alarmType AlarmType) (smith_v1.Resource, error) {
 	instanceID, err := svccatentangler.InstanceID(resource.Spec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, errors.WithStack(err)
 	}
 	threshold := AlarmThresholds{
 		Critical: 90,
 		Warning:  80,
 	}
-	query := generateQuerySpec(context, alarmType, threshold)
+	query := generateQuerySpec(context, alarmType, threshold, deploymentResourceName)
 	alarmsAtt := createFinalAlarmSpec(resource, &context.StateContext, query)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, errors.WithStack(err)
 	}
-	resourceName, err := oap.ResourceName(resource.Spec)
-	if err != nil {
-		return smith_v1.Resource{}, err
-	}
-	if resourceName == "" {
-		resourceName = string(resource.Name)
-	}
-
-	resourceName = resourceName + "--" + string(alarmType)
-	serviceInstanceSpec := ServiceInstanceSpec{
+	serviceInstanceSpec := OSBInstanceParameters{
 		ServiceName: context.StateContext.ServiceName,
 		Attributes:  alarmsAtt,
 		Environment: context.StateContext.Location.EnvType,
@@ -105,11 +91,11 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 
 	serviceInstanceSpecBytes, err := json.Marshal(&serviceInstanceSpec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, errors.WithStack(err)
 	}
-	smithResourceName := voyager.ResourceName(resourceName)
+
 	alarmInstanceResource := smith_v1.Resource{
-		Name: wiringutil.ServiceInstanceResourceName(smithResourceName),
+		Name: createAlarmNamesForSmithResource(resource.Name, deploymentResourceName, alarmType),
 		References: []smith_v1.Reference{
 			{
 				Resource: deploymentResourceName,
@@ -122,7 +108,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.ServiceInstanceMetaName(smithResourceName),
+					Name: wiringutil.ServiceInstanceWithPostfixMetaName(resource.Name, string(alarmType)),
 				},
 				Spec: sc_v1b1.ServiceInstanceSpec{
 					PlanReference: sc_v1b1.PlanReference{
@@ -140,14 +126,17 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	return alarmInstanceResource, nil
 }
 
-func generateQuerySpec(context *wiringplugin.WiringContext, alarmType AlarmType, threshold AlarmThresholds) QueryParams {
+func generateQuerySpec(context *wiringplugin.WiringContext, alarmType AlarmType, threshold AlarmThresholds, deploymentResourceName smith_v1.ResourceName) QueryParams {
 	return QueryParams{
-		Env:            string(context.StateContext.Location.EnvType),
-		Region:         string(context.StateContext.Location.Region),
-		KubeDeployment: string(context.StateMeta.Name),
-		KubeNamespace:  string(context.StateMeta.Namespace),
+
+		KubeDeployment: string(deploymentResourceName),
+		KubeNamespace:  context.StateMeta.Namespace,
 		AlarmType:      alarmType,
 		Threshold:      &threshold,
+		Location: voyager.Location{
+			EnvType: context.StateContext.Location.EnvType,
+			Region:  context.StateContext.Location.Region,
+		},
 	}
 }
 
@@ -164,38 +153,52 @@ func validateRequest(stateResource *orch_v1.StateResource, context *wiringplugin
 	return nil
 }
 
-func createFinalAlarmSpec(resource *orch_v1.StateResource, stateContext *wiringplugin.StateContext, query QueryParams) Alarm {
-	alarmOption := &AlarmOption{
+func createFinalAlarmSpec(resource *orch_v1.StateResource, stateContext *wiringplugin.StateContext, query QueryParams) AlarmAttributes {
+	alarmOption := &AlarmOptions{
 		EscalationMessage: query.generateMessage(&stateContext.ServiceProperties.Notifications),
-		NotifyNOData:      false,
+		NotifyNoData:      false,
 		RequireFullWindow: true,
-		Thresholds:        *query.Threshold,
+		Thresholds:        query.Threshold,
 	}
-	alarmSpec := &Alarm{
-		Name:    string(stateContext.ServiceName) + "-" + string(resource.Name) + "-" + string(query.AlarmType),
+	alarmSpec := &AlarmAttributes{
+		Name: createAlarmNameforDatadog(string(stateContext.ServiceName), string(resource.Name), string(query.AlarmType),
+			string(stateContext.Location.EnvType), string(stateContext.Location.Label)),
 		Type:    string(Metric),
 		Query:   query.generateQuery(),
 		Message: query.generateMessage(&stateContext.ServiceProperties.Notifications),
-		Option:  *alarmOption,
+		Options: *alarmOption,
 	}
 	return *alarmSpec
 }
 
 func (q *QueryParams) generateQuery() string {
 	if q.AlarmType == CPU {
-		cpuUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.cpu.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region)
-		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region, q.Threshold.Critical)
+		cpuUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.cpu.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} ", q.Location.EnvType, q.KubeNamespace, q.KubeDeployment, q.Location.Region)
+		cpuLimitString := fmt.Sprintf("/ ( avg:kubernetes.cpu.limits{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Location.EnvType, q.KubeNamespace, q.KubeDeployment, q.Location.Region, q.Threshold.Critical)
 		return cpuUsageString + cpuLimitString
 	}
 
-	memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} ", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region)
-	memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Env, q.KubeNamespace, q.KubeDeployment, q.Region, q.Threshold.Critical)
+	memoryUsageString := fmt.Sprintf("avg(last_5m):( avg:kubernetes.memory.usage.total{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} ", q.Location.EnvType, q.KubeNamespace, q.KubeDeployment, q.Location.Region)
+	memoryLimitString := fmt.Sprintf("/ ( avg:kubernetes.memory.limits{env:%s,kube_namespace:%s,kube_deployment:%s,region:%s} by {container_id} * 1000000 ) ) * 100 > %d", q.Location.EnvType, q.KubeNamespace, q.KubeDeployment, q.Location.Region, q.Threshold.Critical)
 	return memoryUsageString + memoryLimitString
 
 }
 
 func (q *QueryParams) generateMessage(notificationProp *meta_orch.Notifications) string {
-	msg := fmt.Sprintf("High %s usage for deployment %s in %s %s @%s", strings.ToUpper(string(q.AlarmType)),
-		q.KubeDeployment, q.Region, q.Env, notificationProp.PagerdutyEndpoint)
-	return msg
+	msg := fmt.Sprintf("High %s usage for deployment %s in %s %s", strings.ToUpper(string(q.AlarmType)),
+		q.KubeDeployment, q.Location.Region, q.Location.EnvType)
+	messageType := fmt.Sprintf(" [[#is_warning]] @%s [[/is_warning]] [[#is_warning_recovery]] @%s [[/is_warning_recovery]] [[#is_alert]] @%s [[/is_alert]][[#is_alert_recovery]] @%s [[/is_alert_recovery]]",
+		notificationProp.LowPriorityPagerdutyEndpoint, notificationProp.LowPriorityPagerdutyEndpoint, notificationProp.PagerdutyEndpoint, notificationProp.PagerdutyEndpoint)
+	return msg + messageType
+}
+
+func createAlarmNamesForSmithResource(resourceName voyager.ResourceName, deploymentResourceName smith_v1.ResourceName, alarmType AlarmType) smith_v1.ResourceName {
+	nameList := strings.Join([]string{string(deploymentResourceName), string(alarmType)}, "--")
+	return wiringutil.ServiceInstanceWithPostfixResourceName(resourceName, nameList)
+
+}
+
+func createAlarmNameforDatadog(serviceName string, resourceName string, alarmType string, env string, label string) string {
+	nameList := []string{serviceName, resourceName, alarmType, env, label}
+	return strings.Join(nameList, "-")
 }

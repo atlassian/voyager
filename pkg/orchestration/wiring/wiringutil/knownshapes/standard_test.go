@@ -31,10 +31,7 @@ func TestAllKnownShapes(t *testing.T) {
 		NewBindableIamAccessible(resourceName, "somePath"),
 		NewIngressEndpoint(resourceName),
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
-		NewSetOfScaling(resourceName, Scaling{
-			MinReplicas: 1,
-			MaxReplicas: 5,
-		}),
+		NewSetOfDatadog(resourceName),
 		NewSharedDbShape(resourceName, true),
 		NewSnsSubscribable(resourceName),
 
