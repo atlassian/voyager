@@ -104,13 +104,22 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	foResults := make([]formationObjectResult, 0, len(formationObjectDefList))
 	retriable := false
 
+	// All errors returned by CreateFormationObjectDef are caused by an invalid service descriptor.
 	if err != nil {
-		conflict, processRetriable, processErr := c.handleProcessResult(logger, serviceName, sd, foResults, false, retriable, err)
+		// "not really" an error - just a validation error in reality.
+		logger.Info("Invalid service descriptor", zap.Error(err))
+
+		conflict, handleResultRetriable, handleResultErr := c.handleProcessResult(logger, serviceName, sd, foResults, false, retriable, err)
 		if conflict {
 			return false, nil
 		}
 
-		return processRetriable, processErr
+		// status update failed (real error)
+		if handleResultErr != nil {
+			return handleResultRetriable, handleResultErr
+		}
+
+		return false, nil
 	}
 
 	deleteFinished := true
@@ -149,15 +158,19 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		}
 	}
 
-	conflict, retriable, err := c.handleProcessResult(logger, serviceName, sd, foResults, deleteFinished, retriable, err)
+	conflict, handleResultRetriable, handleResultErr := c.handleProcessResult(logger, serviceName, sd, foResults, deleteFinished, retriable, err)
 	if conflict {
 		return false, nil
 	}
-	if err != nil {
-		return retriable, err
+	if handleResultErr != nil {
+		if err != nil {
+			logger.Info("Failed to set ServiceDescriptor status", zap.Error(handleResultErr))
+			return handleResultRetriable || retriable, err
+		}
+		return handleResultRetriable, handleResultErr
 	}
 
-	return false, nil
+	return retriable, err
 }
 
 func (c *Controller) processFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *formationObjectResult, error) {
@@ -217,6 +230,10 @@ func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *com
 	return true, false, false, nil, nil
 }
 
+// handleProcessResult takes the the results of processing and writes it into the
+// status of the ServiceDescriptor. Contrary to prior behavior it no longer returns
+// the passed in error, thus allowing the caller to distinguish between "Status
+// Update Failed" vs "This was the error I passed in"
 func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string, sd *comp_v1.ServiceDescriptor, foResults []formationObjectResult, deleteFinished bool, retriable bool, err error) (bool /* conflict */, bool /* retriable */, error) {
 	logger.Debug("Handling results of processing")
 
@@ -319,10 +336,6 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string,
 	if inProgressUpdated || readyUpdated || errorUpdated || resourcesUpdated || finalizersUpdated {
 		conflictStatus, retriableStatus, errStatus := c.updateServiceDescriptor(logger, sd)
 		if errStatus != nil {
-			if err != nil {
-				logger.Info("Failed to set ServiceDescriptor status", zap.Error(errStatus))
-				return false, retriableStatus || retriable, err
-			}
 			return false, retriableStatus, errStatus
 		}
 		if conflictStatus {
@@ -330,7 +343,7 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string,
 		}
 	}
 
-	return false, retriable, err
+	return false, false, nil
 }
 
 func filterConditionsByType(statuses []comp_v1.LocationStatus, condType cond_v1.ConditionType) []cond_v1.Condition {
