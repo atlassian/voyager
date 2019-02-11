@@ -52,10 +52,10 @@ func Resource(resourceType voyager.ResourceType,
 	return wiringPlugin
 }
 
-func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
-	rawAttributes, err := oap.BuildAttributes(resource.Spec, resource.Defaults)
+func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriableError */, error) {
+	rawAttributes, external, retriable, err := oap.BuildAttributes(resource.Spec, resource.Defaults)
 	if err != nil {
-		return nil, err
+		return nil, external, retriable, err
 	}
 
 	var attributes []byte
@@ -63,23 +63,23 @@ func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *
 		// only serialize attributes an non empty object
 		attributes, err = json.Marshal(rawAttributes)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, false, false, errors.WithStack(err)
 		}
 	}
 
 	alarms, err := oap.Alarms(resource.Spec)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 
 	userServiceName, err := oap.ServiceName(resource.Spec)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 
 	resourceName, err := oap.ResourceName(resource.Spec)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 	if resourceName == "" {
 		resourceName = string(resource.Name)
@@ -90,8 +90,8 @@ func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *
 	return instanceSpec(serviceName, resourceName, awp.OAPResourceTypeName, *environment, attributes, alarms)
 }
 
-func (awp *WiringPlugin) objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return objectMeta(), nil
+func (awp *WiringPlugin) objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool /* externalErr */, bool /* retriableErr */, error) {
+	return meta_v1.ObjectMeta{}, false, false, nil
 }
 
 func serviceName(userServiceName voyager.ServiceName, context *wiringplugin.WiringContext) voyager.ServiceName {
@@ -104,7 +104,7 @@ func serviceName(userServiceName voyager.ServiceName, context *wiringplugin.Wiri
 	return serviceName
 }
 
-func instanceSpec(serviceName voyager.ServiceName, resourceName string, oapName oap.ResourceType, environment oap.ServiceEnvironment, attributes, alarms []byte) ([]byte, error) {
+func instanceSpec(serviceName voyager.ServiceName, resourceName string, oapName oap.ResourceType, environment oap.ServiceEnvironment, attributes, alarms []byte) ([]byte, bool, bool, error) {
 	serviceInstanceSpec := oap.ServiceInstanceSpec{
 		ServiceName: serviceName,
 		Resource: oap.RPSResource{
@@ -117,12 +117,8 @@ func instanceSpec(serviceName voyager.ServiceName, resourceName string, oapName 
 	}
 	serviceInstanceSpecBytes, err := json.Marshal(&serviceInstanceSpec)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 
-	return serviceInstanceSpecBytes, nil
-}
-
-func objectMeta() meta_v1.ObjectMeta {
-	return meta_v1.ObjectMeta{}
+	return serviceInstanceSpecBytes, false, false, nil
 }

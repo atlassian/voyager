@@ -51,7 +51,7 @@ func New() *WiringPlugin {
 	}
 }
 
-func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
 	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
 		"PRIVATE_KEY": "data.private_key",
 		"ISSUER":      "data.issuer",
@@ -61,16 +61,17 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _
 	return []wiringplugin.Shape{
 		bindableEnvVarShape,
 		knownshapes.NewASAPKey(),
-	}, nil
+	}, false, false, nil
 }
 
-func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
+func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriableErr */, error) {
 	if len(context.Dependencies) > 0 {
-		return nil, errors.New("asap key should not have any dependencies")
+		// this is an external error - the dependencies are wrong
+		return nil, true, false, errors.New("asap key should not have any dependencies")
 	}
 	if resource.Spec != nil {
-		// Don't allow user to set anything they shouldn't
-		return nil, errors.Errorf("asap key does not accept any user parameters")
+		// this is an external error, the user provided a spec which they should not have
+		return nil, true, false, errors.Errorf("asap key does not accept any user parameters")
 	}
 	var spec finalSpec
 	// the issuer name is calculated by first combining the Micros2 serviceName with the ASAPKey resource name
@@ -81,9 +82,13 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	// creator is just a stored description of which entity created the ASAP key pair on keyserver side
 	// not used anywhere
 	spec.Creator = "micros2"
-	return json.Marshal(&spec)
+	result, err := json.Marshal(&spec)
+	if err != nil {
+		return nil, false, false, errors.WithStack(err)
+	}
+	return result, false, false, nil
 }
 
-func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{}, nil
+func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool /* externalErr */, bool /* retriableErr */, error) {
+	return meta_v1.ObjectMeta{}, false, false, nil
 }

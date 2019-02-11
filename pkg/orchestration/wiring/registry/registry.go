@@ -20,15 +20,15 @@ import (
 
 var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	apik8scompute.ResourceType:  wiringutil.StatusAdapter(k8scompute.WireUp),
-	kubeingress.ResourceType:    wiringutil.TemporaryNewWiringMigrationAdapter(kubeingress.WireUp),
+	kubeingress.ResourceType:    wiringutil.StatusAdapter(kubeingress.WireUp),
 	ec2compute_v2.ResourceType:  wiringutil.StatusAdapter(ec2compute_v2.WireUp),
-	ups.ResourceType:            wiringutil.TemporaryNewWiringMigrationAdapter(ups.New().WireUp),
+	ups.ResourceType:            wiringutil.StatusAdapter(ups.New().WireUp),
 	aws.Cfn:                     aws.ResourceTypes[aws.Cfn],
 	aws.DynamoDB:                aws.ResourceTypes[aws.DynamoDB],
 	aws.S3:                      aws.ResourceTypes[aws.S3],
-	postgres.ResourceType:       wiringutil.TemporaryNewWiringMigrationAdapter(postgres.New().WireUp),
-	rds.ResourceType:            wiringutil.TemporaryNewWiringMigrationAdapter(rds.New().WireUp),
-	sqs.ResourceType:            wiringutil.TemporaryNewWiringMigrationAdapter(sqs.WireUp),
-	asapkey.ResourceType:        wiringutil.TemporaryNewWiringMigrationAdapter(asapkey.New().WireUp),
-	apiplatformdns.ResourceType: wiringutil.TemporaryNewWiringMigrationAdapter(platformdns.New().WireUp),
+	postgres.ResourceType:       wiringutil.StatusAdapter(postgres.New().WireUp),
+	rds.ResourceType:            wiringutil.StatusAdapter(rds.New().WireUp),
+	sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
+	asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
+	apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
 }
