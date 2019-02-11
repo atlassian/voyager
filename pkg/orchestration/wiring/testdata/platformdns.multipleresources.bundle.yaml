@@ -30,7 +30,7 @@ spec:
         metadata:
           name: c1--pdb
         spec:
-          minAvailable: 100%
+          minAvailable: 0%
           selector:
             matchLabels:
               resourceName: c1
@@ -149,7 +149,7 @@ spec:
         metadata:
           name: c2--pdb
         spec:
-          minAvailable: 100%
+          minAvailable: 0%
           selector:
             matchLabels:
               resourceName: c2

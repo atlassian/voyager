@@ -30,7 +30,7 @@ spec:
         metadata:
           name: c1--pdb
         spec:
-          minAvailable: 30%
+          minAvailable: 66%
           selector:
             matchLabels:
               resourceName: c1

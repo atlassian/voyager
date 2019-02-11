@@ -539,20 +539,20 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 
 func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) policy_v1.PodDisruptionBudgetSpec {
 	// Make sure we can drain nodes if the minReplicas is < 3
-	var pdbPercentage string
+	var minAvailable string
 	switch minReplicas {
 	case 0, 1:
-		pdbPercentage = "0%"
+		minAvailable = "0%"
 	case 2:
-		pdbPercentage = "50%"
+		minAvailable = "50%"
 	default:
-		pdbPercentage = "66%"
+		minAvailable = "66%"
 	}
 
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
 			Type:   intstr.String,
-			StrVal: pdbPercentage,
+			StrVal: minAvailable,
 		},
 		Selector: &meta_v1.LabelSelector{
 			MatchLabels: labelMap,
