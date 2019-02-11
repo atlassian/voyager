@@ -172,7 +172,7 @@ spec:
         metadata:
           name: kubecompute-simple--pdb
         spec:
-          minAvailable: 30%
+          minAvailable: 0%
           selector:
             matchLabels:
               resourceName: kubecompute-simple

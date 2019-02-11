@@ -46,8 +46,6 @@ const (
 	hpaPostfix              = "hpa"
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
-	defaultPodDisruptionBudget = "30%"
-
 	// Default environment variable names
 	awsRegionKey   = "MICROS_AWS_REGION"
 	envTypeKey     = "MICROS_ENVTYPE"
@@ -283,7 +281,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
 	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
 	pdb := smith_v1.Resource{
 		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
 		Spec: smith_v1.ResourceSpec{
@@ -539,11 +537,22 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	}
 }
 
-func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
+func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) policy_v1.PodDisruptionBudgetSpec {
+	// Make sure we can drain nodes if the minReplicas is < 3
+	var minAvailable string
+	switch minReplicas {
+	case 0, 1:
+		minAvailable = "0%"
+	case 2:
+		minAvailable = "50%"
+	default:
+		minAvailable = "66%"
+	}
+
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
 			Type:   intstr.String,
-			StrVal: defaultPodDisruptionBudget,
+			StrVal: minAvailable,
 		},
 		Selector: &meta_v1.LabelSelector{
 			MatchLabels: labelMap,
