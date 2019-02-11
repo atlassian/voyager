@@ -122,7 +122,11 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (*smith_v1.Bundle, bool /* external */, bool /* conflict */, bool /* retriable */, error) {
 	entanglerContext, err := c.constructEntanglerContext(state)
 	if err != nil {
-		return nil, false, false, false, err
+		// This is an external error, the service is missing critical information
+		// This may be because Synchronization hasn't created anything yet
+		// Possible that we broke another one of our components but this should
+		// be caught as an anomaly in the number of user errors.
+		return nil, true, false, false, err
 	}
 
 	bundle, external, retriable, err := c.entangle(state, entanglerContext)
