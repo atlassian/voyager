@@ -6,7 +6,7 @@ go_library(
         "client.go",
         "types.go",
     ],
-    importpath = "github.com/atlassian/voyager/pkg/opsgenieIntegrationManager",
+    importpath = "github.com/atlassian/voyager/pkg/opsgenie",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/util:go_default_library",
@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "go_default_test",
+    size = "small",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
     embed = [":go_default_library"],
@@ -32,5 +33,4 @@ go_test(
         "//vendor/github.com/stretchr/testify/require:go_default_library",
         "//vendor/go.uber.org/zap/zaptest:go_default_library",
     ],
-    size="small"
 )
