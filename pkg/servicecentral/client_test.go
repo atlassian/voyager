@@ -256,7 +256,14 @@ func TestGetService(t *testing.T) {
 	).Respond(
 		Status(http.StatusOK),
 		JSONFromFile(t, "get_service.rsp.json"),
-	))
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes_empty.rsp.json"),
+		))
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
@@ -379,12 +386,11 @@ func TestGetServiceWithFailedAttributesCall(t *testing.T) {
 	defer serviceCentralServerMock.Close()
 	// when
 	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
-	service, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+	_, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
 
 	// then
-	require.NoError(t, err) // Expect no error as OpsGenie team is optional
+	require.Error(t, err)
 	require.Equal(t, 2, handler.RequestSnapshots.Calls())
-	require.Equal(t, 0, len(service.Attributes))
 }
 
 func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress string, asap pkiutil.ASAP) *Client {
