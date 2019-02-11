@@ -66,10 +66,7 @@ spec:
               MicrosVpcId: vpc-1
   - name: db--instance
     references:
-    - example: myownrds
-      name: rds--instance-metadata-name
-      path: metadata.name
-      resource: rds--instance
+    - resource: rds--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
@@ -87,7 +84,7 @@ spec:
               env: microstestenv
             resource_name: db
             shareddb:
-              resource: '!{rds--instance-metadata-name}'
+              resource: rds
               service: test-servicename
   - name: compute--db--binding
     references:
