@@ -8,7 +8,6 @@ import (
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 )
 
-// TODO: Add logging options for trebuchet
 type TrebuchetOptions struct {
 	LoggingOptions    options.LoggerOptions
 	ConfigFileOptions *ConfigFileOptions

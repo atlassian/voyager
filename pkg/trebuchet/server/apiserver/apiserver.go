@@ -87,7 +87,7 @@ func (c completedConfig) New() (*TrebuchetServer, error) {
 	// TODO: inject a custom Store or HTTP handler to proxy request to underlying service
 
 	v1Storage := map[string]rest.Storage{}
-	v1Storage["services"] = &trebuchetrest.REST{
+	v1Storage["releases"] = &trebuchetrest.REST{
 		Logger: c.ExtraConfig.Logger,
 	}
 
