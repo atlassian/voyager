@@ -30,7 +30,7 @@ func readAndValidateOptions(configFile string) (*Options, error) {
 		ServiceSpec            creator_v1.ServiceSpec `json:"service_spec"`
 	}
 
-	err = yaml.Unmarshal(doc, &rawOptions)
+	err = yaml.UnmarshalStrict(doc, &rawOptions)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -15,7 +15,7 @@ const (
 )
 
 // GetPagerDutyMetadata reads the pagerduty metadata out of a service
-func GetPagerDutyMetadata(serviceCentralData *ServiceData) (*creator_v1.PagerDutyMetadata, error) {
+func GetPagerDutyMetadata(serviceCentralData *ServiceDataWrite) (*creator_v1.PagerDutyMetadata, error) {
 	var m creator_v1.PagerDutyMetadata
 	found, err := unmarshalFromMiscData(serviceCentralData, PagerDutyMetadataKey, &m)
 	if err != nil || !found {
@@ -25,12 +25,12 @@ func GetPagerDutyMetadata(serviceCentralData *ServiceData) (*creator_v1.PagerDut
 }
 
 // SetPagerDutyMetadata stores the metadata for pagerduty into a Service's metadata
-func SetPagerDutyMetadata(serviceCentralData *ServiceData, m *creator_v1.PagerDutyMetadata) error {
+func SetPagerDutyMetadata(serviceCentralData *ServiceDataWrite, m *creator_v1.PagerDutyMetadata) error {
 	return setMetadata(serviceCentralData, PagerDutyMetadataKey, m)
 }
 
 // GetBambooMetadata reads the allowed builds metadata out of a service
-func GetBambooMetadata(serviceCentralData *ServiceData) (*creator_v1.BambooMetadata, error) {
+func GetBambooMetadata(serviceCentralData *ServiceDataWrite) (*creator_v1.BambooMetadata, error) {
 	var m creator_v1.BambooMetadata
 	found, err := unmarshalFromMiscData(serviceCentralData, BambooMetadataKey, &m)
 	if err != nil || !found {
@@ -40,11 +40,11 @@ func GetBambooMetadata(serviceCentralData *ServiceData) (*creator_v1.BambooMetad
 }
 
 // SetBambooMetadata stores the metadata for allowed builds into a Service's metadata
-func SetBambooMetadata(serviceCentralData *ServiceData, m *creator_v1.BambooMetadata) error {
+func SetBambooMetadata(serviceCentralData *ServiceDataWrite, m *creator_v1.BambooMetadata) error {
 	return setMetadata(serviceCentralData, BambooMetadataKey, m)
 }
 
-func unmarshalFromMiscData(serviceCentralData *ServiceData, key string, res interface{}) (bool, error) {
+func unmarshalFromMiscData(serviceCentralData *ServiceDataWrite, key string, res interface{}) (bool, error) {
 	raw, err := GetMiscData(serviceCentralData, key)
 	if err != nil {
 		return false, err
@@ -59,7 +59,7 @@ func unmarshalFromMiscData(serviceCentralData *ServiceData, key string, res inte
 	return true, nil
 }
 
-func setMetadata(serviceCentralData *ServiceData, key string, m interface{}) error {
+func setMetadata(serviceCentralData *ServiceDataWrite, key string, m interface{}) error {
 	if m == nil {
 		return nil
 	}

@@ -61,7 +61,7 @@ func testHandleProcessResult(t *testing.T, filePrefix string) {
 
 	ldFiles, err := filepath.Glob(filepath.Join(testutil.FixturesDir, filePrefix+fixtureLocationDescriptorsGlobSuffix))
 	require.NoError(t, err)
-	results := make([]*FormationObjectResult, 0, len(ldFiles))
+	results := make([]formationObjectResult, 0, len(ldFiles))
 
 	for _, ldFile := range ldFiles {
 		// Bunch of string splitting
@@ -74,7 +74,7 @@ func testHandleProcessResult(t *testing.T, filePrefix string) {
 
 		serviceName, serviceLabel := deconstructNamespaceName(ld.Namespace)
 
-		results = append(results, &FormationObjectResult{
+		results = append(results, formationObjectResult{
 			ld: ld,
 			namespace: &core_v1.Namespace{
 				TypeMeta: meta_v1.TypeMeta{

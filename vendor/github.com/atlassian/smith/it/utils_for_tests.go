@@ -22,6 +22,7 @@ import (
 	"github.com/atlassian/smith/pkg/resources"
 	"github.com/atlassian/smith/pkg/util"
 	smith_testing "github.com/atlassian/smith/pkg/util/testing"
+	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -45,14 +46,17 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/cache"
 	toolswatch "k8s.io/client-go/tools/watch"
+	"sigs.k8s.io/yaml"
 )
 
 var (
 	appsV1Scheme = runtime.NewScheme()
+	scV1B1Scheme = runtime.NewScheme()
 )
 
 func init() {
 	utilruntime.Must(apps_v1.SchemeBuilder.AddToScheme(appsV1Scheme))
+	utilruntime.Must(sc_v1b1.SchemeBuilder.AddToScheme(scV1B1Scheme))
 }
 
 type TestFunc func(context.Context, *testing.T, *Config, ...interface{})
@@ -196,6 +200,23 @@ func IsPodSpecAnnotationCond(t *testing.T, namespace, name, annotation, value st
 	}
 }
 
+// IsServiceInstanceUpdateRequestsCond allows to wait until spec.updateRequests of a ServiceInstance is greater than
+// the provided value.
+func IsServiceInstanceUpdateRequestsCond(t *testing.T, namespace, name string, value int64) toolswatch.ConditionFunc {
+	return func(event watch.Event) (bool, error) {
+		metaObj := event.Object.(meta_v1.Object)
+		if metaObj.GetNamespace() != namespace || metaObj.GetName() != name {
+			return false, nil
+		}
+		si := &sc_v1b1.ServiceInstance{}
+		err := util.ConvertType(scV1B1Scheme, event.Object, si)
+		if err != nil {
+			return false, err
+		}
+		return si.Spec.UpdateRequests > value, nil
+	}
+}
+
 func TestSetup(t *testing.T) (*rest.Config, *kubernetes.Clientset, *smithClientset.Clientset) {
 	config, err := options.LoadRestClientConfig("voyager-test", options.RestClientOptions{
 		APIQPS:               10,
@@ -255,6 +276,12 @@ func SetupApp(t *testing.T, bundle *smith_v1.Bundle, serviceCatalog, createBundl
 		cli := smithClient.SmithV1().Bundles(cfg.Namespace)
 		b, err := cli.Get(bundle.Name, meta_v1.GetOptions{})
 		if err == nil {
+			if t.Failed() {
+				bundleYaml, err := yaml.Marshal(b)
+				if assert.NoError(t, err) {
+					t.Logf("%s", bundleYaml)
+				}
+			}
 			if len(b.Finalizers) > 0 {
 				t.Logf("Removing finalizers from Bundle %q", bundle.Name)
 				b.Finalizers = nil

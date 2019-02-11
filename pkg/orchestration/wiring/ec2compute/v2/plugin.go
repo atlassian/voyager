@@ -6,7 +6,7 @@ import (
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
+	compute_common "github.com/atlassian/voyager/pkg/orchestration/wiring/compute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/common"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
@@ -124,9 +124,9 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 		notificationProp.PagerdutyEndpoint.CloudWatch, notificationProp.LowPriorityPagerdutyEndpoint.CloudWatch)
 
 	// --- default ASAP public key repo env vars
-	asapKeyPublicRepositoryEnvVars := asapkey.GetPublicKeyRepoEnvVars(stateContext.Location)
-	partialSpecData.Docker.EnvVars = make(map[string]string, len(asapKeyPublicRepositoryEnvVars))
-	for _, v := range asapKeyPublicRepositoryEnvVars {
+	sharedDefaultEnvVars := compute_common.GetSharedDefaultEnvVars(stateContext.Location)
+	partialSpecData.Docker.EnvVars = make(map[string]string, len(sharedDefaultEnvVars))
+	for _, v := range sharedDefaultEnvVars {
 		partialSpecData.Docker.EnvVars[v.Name] = v.Value
 	}
 
@@ -153,7 +153,7 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 	return util.ToRawExtension(finalSpec)
 }
 
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error) {
 	if stateResource.Type != ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", stateResource.Type)
 	}

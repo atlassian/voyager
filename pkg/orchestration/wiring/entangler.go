@@ -77,15 +77,73 @@ type Entangler struct {
 }
 
 type wiredStateResource struct {
-	Name         voyager.ResourceName
-	Type         voyager.ResourceType
-	WiringResult wiringplugin.WiringResult
+	Name      voyager.ResourceName
+	Type      voyager.ResourceType
+	Contract  wiringplugin.ResourceContract
+	Resources []smith_v1.Resource
 }
 
-func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) (*smith_v1.Bundle, bool /*retriable*/, error) {
+type EntangleResultType string
+type StatusResultType string
+
+const (
+	EntangleResultSuccessType EntangleResultType = "success"
+	EntangleResultFailureType EntangleResultType = "failure"
+	StatusResultSuccessType   StatusResultType   = "success"
+	StatusResultFailureType   StatusResultType   = "failure"
+)
+
+type EntangleResult interface {
+	StatusType() EntangleResultType
+}
+
+type EntangleResultSuccess struct {
+	Bundle *smith_v1.Bundle
+}
+
+func (e *EntangleResultSuccess) StatusType() EntangleResultType {
+	return EntangleResultSuccessType
+}
+
+type EntangleResultFailure struct {
+	Error            error
+	IsRetriableError bool
+	IsExternalError  bool
+}
+
+func (e *EntangleResultFailure) StatusType() EntangleResultType {
+	return EntangleResultFailureType
+}
+
+type StatusResult interface {
+	StatusType() StatusResultType
+}
+
+type StatusResultSuccess struct {
+	ResourceStatusData orch_v1.ResourceStatusData
+}
+
+func (e *StatusResultSuccess) StatusType() StatusResultType {
+	return StatusResultSuccessType
+}
+
+type StatusResultFailure struct {
+	Error           error
+	IsExternalError bool
+}
+
+func (e *StatusResultFailure) StatusType() StatusResultType {
+	return StatusResultFailureType
+}
+
+func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) EntangleResult {
 	g, sorted, err := sortStateResources(state.Spec.Resources)
 	if err != nil {
-		return nil, false, err
+		// failures here are caused by a cycle or invalid dependency specified by the user
+		return &EntangleResultFailure{
+			Error:           err,
+			IsExternalError: true,
+		}
 	}
 
 	w := worker{
@@ -103,11 +161,15 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) (*
 	// Atlassian Specific Things
 	legacyConfigFunc := en.GetLegacyConfigFunc
 	if legacyConfigFunc == nil {
-		return nil, false, errors.New("missing legacy config")
+		return &EntangleResultFailure{
+			Error: errors.New("missing legacy config"),
+		}
 	}
 	legacyConfig := legacyConfigFunc(location)
 	if legacyConfig == nil {
-		return nil, false, errors.Errorf("no legacy config for %s", location)
+		return &EntangleResultFailure{
+			Error: errors.Errorf("no legacy config for %s", location),
+		}
 	}
 
 	tags := make(map[voyager.Tag]string)
@@ -135,14 +197,20 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) (*
 	for _, v := range sorted {
 		resource := g.Vertices[v].Data.(*orch_v1.StateResource)
 		dependants := getDependants(resource.Name, g.Vertices[v].IncomingEdges, state.Spec.Resources)
-		retriable, entErr := w.entangle(resource, &state.ObjectMeta, &stateContext, dependants)
+		external, retriable, entErr := w.entangle(resource, &state.ObjectMeta, &stateContext, dependants)
 		if entErr != nil {
-			return nil, retriable, errors.Wrapf(entErr, "failed to wire up resource %q of type %q", resource.Name, resource.Type)
+			return &EntangleResultFailure{
+				Error:            errors.Wrapf(entErr, "failed to wire up resource %q of type %q", resource.Name, resource.Type),
+				IsRetriableError: retriable,
+				IsExternalError:  external,
+			}
 		}
 	}
 	processedResources, err := postProcessResources(w.allWiredResourcesList)
 	if err != nil {
-		return nil, false, err
+		return &EntangleResultFailure{
+			Error: err,
+		}
 	}
 	trueVar := true
 	bundle := &smith_v1.Bundle{
@@ -169,13 +237,20 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) (*
 		},
 	}
 
-	return bundle, false, nil
+	return &EntangleResultSuccess{
+		Bundle: bundle,
+	}
 }
 
-func (en *Entangler) Status(resource *orch_v1.StateResource, context *StatusContext) (orch_v1.ResourceStatusData, bool /*retriable*/, error) {
+func (en *Entangler) Status(resource *orch_v1.StateResource, context *StatusContext) StatusResult {
 	plugin, ok := en.Plugins[resource.Type]
 	if !ok {
-		return orch_v1.ResourceStatusData{}, false, errors.New("unknown resource type")
+		// The plugin not existing is an external issue, the service descriptor contains
+		// an invalid resource type.
+		return &StatusResultFailure{
+			Error:           errors.New("unknown resource type"),
+			IsExternalError: true,
+		}
 	}
 	// We don't want to expose types from plugins to the entangler consumer so that they are decoupled.
 	bundleResources := make([]wiringplugin.BundleResource, 0, len(context.BundleResources))
@@ -185,14 +260,25 @@ func (en *Entangler) Status(resource *orch_v1.StateResource, context *StatusCont
 			Status:   res.Status,
 		})
 	}
-	result, retriable, err := plugin.Status(resource, &wiringplugin.StatusContext{
+	result := plugin.Status(resource, &wiringplugin.StatusContext{
 		BundleResources: bundleResources,
 		PluginStatuses:  context.PluginStatuses,
 	})
-	if err != nil {
-		return orch_v1.ResourceStatusData{}, retriable, errors.Wrap(err, "error invoking autowiring plugin")
+	switch r := result.(type) {
+	case *wiringplugin.StatusResultSuccess:
+		return &StatusResultSuccess{
+			ResourceStatusData: r.ResourceStatusData,
+		}
+	case *wiringplugin.StatusResultFailure:
+		return &StatusResultFailure{
+			Error:           errors.Wrap(r.Error, "error invoking autowiring plugin"),
+			IsExternalError: r.IsExternalError,
+		}
+	default:
+		return &StatusResultFailure{
+			Error: errors.Errorf("unknown status result type %q", r.StatusType()),
+		}
 	}
-	return result.ResourceStatusData, false, nil
 }
 
 // postProcessResources converts resources to Unstructured and cleans up some fields:
@@ -239,13 +325,13 @@ type worker struct {
 	allWiredResourcesList []smith_v1.Resource
 }
 
-func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.ObjectMeta, context *wiringplugin.StateContext, dependants []wiringplugin.DependantResource) (bool /*retriable*/, error) {
+func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.ObjectMeta, context *wiringplugin.StateContext, dependants []wiringplugin.DependantResource) (bool /* external */, bool /*retriable*/, error) {
 	if w.allWiredResources[resource.Name] != nil {
-		return false, errors.New("resource with same name already exists")
+		return true, false, errors.New("resource with same name already exists")
 	}
 	plugin := w.plugins[resource.Type]
 	if plugin == nil {
-		return false, errors.New("no plugin for resources type is registered")
+		return true, false, errors.New("no plugin for resources type is registered")
 	}
 	deps := make([]wiringplugin.WiredDependency, 0, len(resource.DependsOn))
 	for _, dep := range resource.DependsOn {
@@ -253,11 +339,11 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		if res == nil {
 			// This can only happen if there is a bug! Dependency on a missing resource should have been detected by
 			// the topological sort.
-			return false, errors.Errorf("resource %q of type %q has a dependency that has not been wired yet: %q", resource.Name, resource.Type, dep)
+			return false, false, errors.Errorf("resource %q of type %q has a dependency that has not been wired yet: %q", resource.Name, resource.Type, dep)
 		}
 		deps = append(deps, wiringplugin.WiredDependency{
 			Name:       res.Name,
-			Contract:   res.WiringResult.Contract,
+			Contract:   res.Contract,
 			Attributes: dep.Attributes,
 		})
 	}
@@ -267,32 +353,39 @@ func (w *worker) entangle(resource *orch_v1.StateResource, stateMeta *meta_v1.Ob
 		Dependants:   dependants,
 	}
 	stateMeta.DeepCopyInto(&wiringContext.StateMeta)
-	result, retriable, err := plugin.WireUp(resource, wiringContext)
-	if err != nil {
-		return retriable, errors.Wrap(err, "error invoking plugin")
-	}
+	result := plugin.WireUp(resource, wiringContext)
+	switch r := result.(type) {
+	case *wiringplugin.WiringResultSuccess:
+		// Sanity check plugin output
+		// If the plugin itself is returning garbage we consider it an internal error
+		err := w.validateWireUp(resource, r)
+		if err != nil {
+			return false, false, err
+		}
 
-	retriable, err = w.validateWireUp(resource, result)
-	if err != nil {
-		return retriable, err
-	}
+		w.allWiredResources[resource.Name] = &wiredStateResource{
+			Name:      resource.Name,
+			Type:      resource.Type,
+			Resources: r.Resources,
+			Contract:  r.Contract,
+		}
+		w.allWiredResourcesList = append(w.allWiredResourcesList, r.Resources...)
+		return false, false, nil
 
-	w.allWiredResources[resource.Name] = &wiredStateResource{
-		Name:         resource.Name,
-		Type:         resource.Type,
-		WiringResult: *result,
+	case *wiringplugin.WiringResultFailure:
+		return r.IsExternalError, r.IsRetriableError, errors.Wrap(r.Error, "error invoking plugin")
+	default:
+		return false, false, errors.Errorf("unexpected wiring result status type %q", r.StatusType())
 	}
-	w.allWiredResourcesList = append(w.allWiredResourcesList, result.Resources...)
-	return false, nil
 }
 
-func (w *worker) validateWireUp(resource *orch_v1.StateResource, result *wiringplugin.WiringResult) (bool, error) {
+func (w *worker) validateWireUp(resource *orch_v1.StateResource, result *wiringplugin.WiringResultSuccess) error {
 	if shapeNames := findDuplicateShapeNames(result.Contract.Shapes); len(shapeNames) != 0 {
-		return false, errors.Errorf("internal error in wiring plugin - duplicate shapes received from plugin: %s",
+		return errors.Errorf("internal error in wiring plugin - duplicate shapes received from plugin: %s",
 			strings.Join(shapeNames, ", "))
 	}
 
-	return false, validateResources(resource, result.Resources)
+	return validateResources(resource, result.Resources)
 }
 
 func sortStateResourcesInternal(g *graph.Graph, stateResources []orch_v1.StateResource) ([]graph.V, error) {

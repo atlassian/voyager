@@ -20,7 +20,7 @@ func getServiceNameFromNamespace(namespace string) voyager.ServiceName {
 	return voyager.ServiceName(strings.Split(namespace, "--")[0])
 }
 
-func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceName voyager.ServiceName) (*servicecentral.ServiceData, error) {
+func getServiceData(ctx context.Context, scClient serviceCentralClient, serviceName voyager.ServiceName) (*servicecentral.ServiceDataRead, error) {
 	search := fmt.Sprintf("service_name='%s'", serviceName)
 	listData, err := scClient.ListServices(ctx, auth.NoUser(), search)
 

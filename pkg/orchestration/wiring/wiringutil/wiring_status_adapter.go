@@ -12,16 +12,34 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// StatusAdapter provides legacy status behavior for autowiring plugins. This adapter is deprecated, implement the Status() function directly.
-type StatusAdapter func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error)
+type TemporaryNewWiringMigrationAdapter func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error)
 
-func (f StatusAdapter) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func (f TemporaryNewWiringMigrationAdapter) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+	success, retriable, err := f(resource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsRetriableError: retriable,
+		}
+	}
+	return success
+}
+
+func (f TemporaryNewWiringMigrationAdapter) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult {
+	return StatusAdapter(f.WireUp).Status(resource, context)
+}
+
+// StatusAdapter provides legacy status behavior for autowiring plugins. This adapter is deprecated, implement the Status() function directly.
+type StatusAdapter func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult
+
+func (f StatusAdapter) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	return f(resource, context)
 }
 
-func (f StatusAdapter) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
+func (f StatusAdapter) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult {
 	resource2type2condition := newResourceConditionsFromStatusContext(context)
-	result := &wiringplugin.StatusResult{
+
+	return &wiringplugin.StatusResultSuccess{
 		ResourceStatusData: orch_v1.ResourceStatusData{
 			Conditions: []cond_v1.Condition{
 				resource2type2condition.aggregateMessages(smith_v1.ResourceInProgress).calculateConditionAny(),
@@ -30,7 +48,6 @@ func (f StatusAdapter) Status(resource *orch_v1.StateResource, context *wiringpl
 			},
 		},
 	}
-	return result, false, nil
 }
 
 type resourceConditions struct {

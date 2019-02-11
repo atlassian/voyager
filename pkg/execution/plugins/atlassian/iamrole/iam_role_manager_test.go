@@ -151,7 +151,7 @@ func verifyServiceInstance(t *testing.T, expectedDataFileName string, actualSI *
 	expectedData, err := ioutil.ReadFile(filepath.Join(fixturesDir, expectedDataFileName))
 	require.NoError(t, err)
 	var expectedSI sc_v1b1.ServiceInstance
-	err = yaml.Unmarshal(expectedData, &expectedSI)
+	err = yaml.UnmarshalStrict(expectedData, &expectedSI)
 	require.NoError(t, err)
 
 	// compare templateBody and the rest separately, because templateBody is JSON so whitespaces don't matter
@@ -181,7 +181,7 @@ func testFixture(t *testing.T, computeType ComputeType, file string) {
 	policySnippets, err := ioutil.ReadFile(file)
 	require.NoError(t, err)
 	spec := Spec{}
-	err = yaml.Unmarshal(policySnippets, &spec)
+	err = yaml.UnmarshalStrict(policySnippets, &spec)
 	require.NoError(t, err)
 	rawSpec["policySnippets"] = spec.PolicySnippets
 
@@ -256,10 +256,10 @@ func validateServiceInstance(t *testing.T, serviceInstance *sc_v1b1.ServiceInsta
 
 func getTemplateBodyAsJSONObject(t *testing.T, si *sc_v1b1.ServiceInstance) *map[string]interface{} {
 	var parameters oap.ServiceInstanceSpec
-	err := yaml.Unmarshal(si.Spec.Parameters.Raw, &parameters)
+	err := yaml.UnmarshalStrict(si.Spec.Parameters.Raw, &parameters)
 	require.NoError(t, err)
 	var attributes CfnAttributes
-	err = yaml.Unmarshal(parameters.Resource.Attributes, &attributes)
+	err = yaml.UnmarshalStrict(parameters.Resource.Attributes, &attributes)
 	require.NoError(t, err)
 	var templateBody map[string]interface{}
 	err = json.Unmarshal([]byte(attributes.TemplateBody), &templateBody)
