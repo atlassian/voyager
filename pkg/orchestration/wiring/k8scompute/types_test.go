@@ -3,7 +3,7 @@ package k8scompute
 import (
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	autoscaling_v2b1 "k8s.io/api/autoscaling/v2beta1"
@@ -19,7 +19,7 @@ func TestApplyDefaults(t *testing.T) {
 		spec := Spec{}
 
 		// Defaults are passed in from the formation layer in the state
-		state := v1.StateResource{
+		state := orch_v1.StateResource{
 			Defaults: &runtime.RawExtension{Raw: []byte(`{"Scaling":{"MaxReplicas":5,"Metrics":[{"Resource":{"Name":"cpu","TargetAverageUtilization":80},"Type":"Resource"}],"MinReplicas":1}}`)},
 		}
 		require.NoError(t, spec.ApplyDefaults(state.Defaults))
@@ -36,7 +36,7 @@ func TestApplyDefaults(t *testing.T) {
 	t.Run("no scaling", func(t *testing.T) {
 		spec := Spec{}
 
-		state := v1.StateResource{
+		state := orch_v1.StateResource{
 			Defaults: &runtime.RawExtension{Raw: []byte(`{}`)},
 		}
 		require.NoError(t, spec.ApplyDefaults(state.Defaults))
@@ -50,7 +50,7 @@ func TestApplyDefaults(t *testing.T) {
 		spec := Spec{}
 		spec.Containers = []Container{{Name: "Web server"}}
 
-		state := v1.StateResource{
+		state := orch_v1.StateResource{
 			Defaults: &runtime.RawExtension{Raw: []byte(`{"Container":{"ImagePullPolicy":"IfNotPresent"}}`)},
 		}
 		require.NoError(t, spec.ApplyDefaults(state.Defaults))
@@ -63,7 +63,7 @@ func TestApplyDefaults(t *testing.T) {
 		spec := Spec{}
 		spec.Containers = []Container{{Name: "Web server", Ports: []ContainerPort{{ContainerPort: 8080}}}}
 
-		state := v1.StateResource{
+		state := orch_v1.StateResource{
 			Defaults: &runtime.RawExtension{Raw: []byte(`{"Port":{"Protocol":"TCP"}}`)},
 		}
 		require.NoError(t, spec.ApplyDefaults(state.Defaults))
@@ -76,7 +76,7 @@ func TestApplyDefaults(t *testing.T) {
 		spec := Spec{}
 		spec.Containers = []Container{{Name: "Web server"}}
 
-		state := v1.StateResource{
+		state := orch_v1.StateResource{
 			Defaults: &runtime.RawExtension{Raw: []byte(`{"Container":{"Resources":{"Limits":{"cpu":"250m","memory":"150Mi"},"Requests":{"cpu":"50m","memory":"50Mi"}}}}`)},
 		}
 		require.NoError(t, spec.ApplyDefaults(state.Defaults))
