@@ -256,7 +256,14 @@ func TestGetService(t *testing.T) {
 	).Respond(
 		Status(http.StatusOK),
 		JSONFromFile(t, "get_service.rsp.json"),
-	))
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes_empty.rsp.json"),
+		))
 	serviceCentralServerMock := httptest.NewServer(handler)
 	defer serviceCentralServerMock.Close()
 	// when
@@ -265,7 +272,153 @@ func TestGetService(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.Equal(t, 1, handler.RequestSnapshots.Calls())
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
+}
+
+func TestGetServiceWithOpsGenieAttribute(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes.rsp.json"),
+		))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	service, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	require.NoError(t, err)
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
+
+	require.Equal(t, 1, len(service.Attributes))
+	require.Equal(t, "Platform SRE", service.Attributes[0].Team)
+}
+
+func TestGetServiceWithEmptyOpsGenieAttribute(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes_empty_team_string.rsp.json"),
+		))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	service, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	require.NoError(t, err)
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
+
+	require.Equal(t, 1, len(service.Attributes))
+	require.Equal(t, "", service.Attributes[0].Team)
+}
+
+func TestGetServiceWithoutOpsGenieAttribute(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes_empty.rsp.json"),
+		))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	service, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	require.NoError(t, err)
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
+	require.Equal(t, 0, len(service.Attributes))
+}
+
+func TestGetServiceWithFailedAttributesCall(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusInternalServerError),
+		))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	_, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	require.Error(t, err)
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
+}
+
+func TestGetServiceWithMultipleOpsGenieAttribute(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes_multiple_opsgenie.rsp.json"),
+		))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	_, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	require.Error(t, err)
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 }
 
 func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress string, asap pkiutil.ASAP) *Client {
