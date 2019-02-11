@@ -302,8 +302,7 @@ func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, service
 	}
 	ogTeamAttr, found, err := findOpsGenieTeamServiceAttribute(resp)
 	if err != nil {
-		// We do not return an error here as OpsGenie team is currently optional, likely to change when we remove PagerDuty
-		c.logger.Debug("Failed to find OpsGenie team in service attributes", zap.Error(err))
+		return nil, errors.Wrap(err, "failed to get OpsGenie attributes for service")
 	}
 
 	if found {
@@ -448,6 +447,9 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceDataRead {
 
 func findOpsGenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (ServiceAttribute, bool /*found*/, error) {
 	const opsGenieSchemaName = "opsgenie"
+	count := 0
+	found := false
+	ogTeamAttr := ServiceAttribute{}
 	for _, attr := range attributes {
 		if attr.Schema.Name != opsGenieSchemaName {
 			continue
@@ -455,10 +457,15 @@ func findOpsGenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (Se
 
 		team, ok := attr.Value["team"]
 		if !ok {
-			return ServiceAttribute{}, false, errors.Errorf("expected to find team name within schema of name %q", opsGenieSchemaName)
+			return ogTeamAttr, found, errors.Errorf("expected to find team name within schema of name %q", opsGenieSchemaName)
 		}
 
-		return ServiceAttribute{Team: team}, true, nil
+		ogTeamAttr = ServiceAttribute{Team: team}
+		found = true
+		count++
 	}
-	return ServiceAttribute{}, false, nil
+	if count > 1 {
+		return ogTeamAttr, found, errors.New("found more than one OpsGenie service attribute")
+	}
+	return ogTeamAttr, found, nil
 }

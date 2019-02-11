@@ -27,16 +27,16 @@
     "modifiedOn": "2019-01-29T04:08:15.810104Z",
     "schema": {
       "id": 6,
-      "name": "DEFS_NOT_OPSGENIE",
+      "name": "opsgenie",
       "ref": "/api/v2/schemas/attributes/6"
     },
     "service": {
-      "name": "banana",
+      "name": "slime",
       "ref": "/api/v2/services/175096a2-6b18-4df4-8bd0-65fe6e0c56b4",
       "uuid": "175096a2-6b18-4df4-8bd0-65fe6e0c56b4"
     },
     "value": {
-      "team": "Fake News"
+      "team": "Voyager"
     }
   }
 ]

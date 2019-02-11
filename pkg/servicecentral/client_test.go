@@ -393,6 +393,34 @@ func TestGetServiceWithFailedAttributesCall(t *testing.T) {
 	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 }
 
+func TestGetServiceWithMultipleOpsGenieAttribute(t *testing.T) {
+	t.Parallel()
+	// given
+	handler := MockHandler(Match(
+		Method(http.MethodGet),
+		Path(fmt.Sprintf("%s/%s", v1ServicesPath, testServiceName)),
+	).Respond(
+		Status(http.StatusOK),
+		JSONFromFile(t, "get_service.rsp.json"),
+	),
+		Match(
+			Method(http.MethodGet),
+			Path(fmt.Sprintf("%s/%s/attributes", v2ServicesPath, testServiceName)),
+		).Respond(
+			Status(http.StatusOK),
+			JSONFromFile(t, "get_service_attributes_multiple_opsgenie.rsp.json"),
+		))
+	serviceCentralServerMock := httptest.NewServer(handler)
+	defer serviceCentralServerMock.Close()
+	// when
+	serviceCentralClient := testServiceCentralClient(t, serviceCentralServerMock.URL, pkitest.MockASAPClientConfig(t))
+	_, err := serviceCentralClient.GetService(context.Background(), optionalUser, string(testServiceName))
+
+	// then
+	require.Error(t, err)
+	require.Equal(t, 2, handler.RequestSnapshots.Calls())
+}
+
 func testServiceCentralClient(t *testing.T, serviceCentralServerMockAddress string, asap pkiutil.ASAP) *Client {
 	serviceCentralURL, err := url.Parse(serviceCentralServerMockAddress)
 	require.NoError(t, err)
