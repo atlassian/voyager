@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	asapAudience     = "opsgenie-integration-manager" // micros-server does not yet validate ASAP audience
+	asapAudience     = "micros-server"
 	asapSubject      = ""
 	integrationsPath = "/api/v1/opsgenie/integrations"
 )
