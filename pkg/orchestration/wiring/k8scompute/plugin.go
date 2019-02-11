@@ -47,9 +47,11 @@ const (
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
 	// Default environment variable names
-	awsRegionKey   = "MICROS_AWS_REGION"
-	envTypeKey     = "MICROS_ENVTYPE"
-	serviceNameKey = "MICROS_SERVICE"
+	awsRegionKey     = "MICROS_AWS_REGION"
+	businessUnitKey  = "MICROS_BUSINESS_UNIT"
+	envTypeKey       = "MICROS_ENVTYPE"
+	resourceOwnerKey = "MICROS_RESOURCE_OWNER"
+	serviceNameKey   = "MICROS_SERVICE"
 )
 
 var (
@@ -472,12 +474,20 @@ func buildDefaultEnvVars(context wiringplugin.StateContext) []core_v1.EnvVar {
 			Value: string(context.Location.Region),
 		},
 		{
+			Name:  businessUnitKey,
+			Value: context.ServiceProperties.BusinessUnit,
+		},
+		{
 			Name:  envTypeKey,
 			Value: string(context.Location.EnvType),
 		},
 		{
 			Name:  serviceNameKey,
 			Value: string(context.ServiceName),
+		},
+		{
+			Name:  resourceOwnerKey,
+			Value: context.ServiceProperties.ResourceOwner,
 		},
 	}
 }
