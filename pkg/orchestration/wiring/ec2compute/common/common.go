@@ -93,12 +93,6 @@ func calculateServiceName(serviceName voyager.ServiceName, resourceName voyager.
 	return microsServiceName, nil
 }
 
-func constructComputeSpec(spec *runtime.RawExtension) (StateComputeSpec, error) {
-	var computeSpec StateComputeSpec
-	err := json.Unmarshal(spec.Raw, &computeSpec)
-	return computeSpec, err
-}
-
 func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) wiringplugin.WiringResult {
 	dependencies := context.Dependencies
 
