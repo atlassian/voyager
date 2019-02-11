@@ -35,15 +35,15 @@ const (
 // All osb-aws-provider resources are 'almost' the same, differing only in the service/plan names,
 // what they need passed in the ServiceEnvironment.
 var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	DynamoDB: wiringutil.TemporaryNewWiringMigrationAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes).WireUp),
-	S3:       wiringutil.TemporaryNewWiringMigrationAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes).WireUp),
-	Cfn:      wiringutil.TemporaryNewWiringMigrationAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
+	DynamoDB: wiringutil.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes).WireUp),
+	S3:       wiringutil.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes).WireUp),
+	Cfn:      wiringutil.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
 }
 
-func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
-	templateName, err := oap.TemplateName(resource.Spec)
+func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
+	templateName, external, retriable, err := oap.TemplateName(resource.Spec)
 	if err != nil {
-		return nil, err
+		return nil, external, retriable, err
 	}
 	// The AWS broker also returns things like "template-name", "creation-timestamp",
 	// and "iamPolicySnippet" which we do not return as environment variables.
@@ -57,7 +57,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"TOPICREGION": "data.TopicRegion",
 			}),
 			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-		}, nil
+		}, false, false, nil
 	case "kinesis-v1":
 		return []wiringplugin.Shape{
 			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
@@ -66,7 +66,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"STREAMREGION": "data.StreamRegion",
 			}),
 			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-		}, nil
+		}, false, false, nil
 	case "elasticsearch-v5":
 		fallthrough
 	case "elasticsearch-v4":
@@ -79,7 +79,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"DOMAINREGION":   "data.DomainRegion",
 			}),
 			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-		}, nil
+		}, false, false, nil
 	case "firehose-v1":
 		return []wiringplugin.Shape{
 			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
@@ -89,7 +89,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"STREAMARN":             "data.StreamArn",
 			}),
 			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-		}, nil
+		}, false, false, nil
 	case "simple-workflow-service-v1":
 		return []wiringplugin.Shape{
 			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
@@ -97,7 +97,7 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 				"DOMAINREGION": "data.DomainRegion",
 			}),
 			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-		}, nil
+		}, false, false, nil
 	default:
 		// There's only a small set of supported Voyager resources in the
 		// rps-user-cloudformation repository anyway. All other template types
@@ -122,11 +122,11 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 		//  - run either podsecretenvvar or secretenvvar also passing through a
 		//    renameMap and ignoreKeyRegex, and just dump everything into the
 		//    environment variables that don't match ignoreKeyRegex.
-		return nil, errors.Errorf("cloudformation template %q is not supported", templateName)
+		return nil, true, false, errors.Errorf("cloudformation template %q is not supported", templateName)
 	}
 }
 
-func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
 	// resource has iamPolicySnippet, creation-timestamp and "table-role",
 	// none of which we document or should expose to the user
 	return []wiringplugin.Shape{
@@ -135,10 +135,10 @@ func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Res
 			"TABLE_REGION": "data.table-region",
 		}),
 		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-	}, nil
+	}, false, false, nil
 }
 
-func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
 	// resource has creation-timestamp, iamPolicySnippet. These are not exposed.
 	return []wiringplugin.Shape{
 		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, S3Prefix, map[string]string{
@@ -147,7 +147,7 @@ func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource,
 			"BUCKET_REGION": "data.bucket-region",
 		}),
 		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
-	}, nil
+	}, false, false, nil
 }
 
 func dynamoDbServiceEnvironment(env *oap.ServiceEnvironment) *oap.ServiceEnvironment {
