@@ -39,7 +39,7 @@ func NewExternalClusterRegistry(url string, resyncPeriod time.Duration) (*Extern
 }
 
 func (e *ExternalClusterRegistry) GetClusters() ([]*cr_v1a1.Cluster, error) {
-	if time.Now().Sub(e.lastRun) > e.resyncPeriod {
+	if time.Since(e.lastRun) > e.resyncPeriod {
 		clusterList, err := e.rest.Clusters(e.namespace).List(v1.ListOptions{})
 
 		if err != nil {
