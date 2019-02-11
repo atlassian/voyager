@@ -38,31 +38,24 @@ spec:
         MaxReceiveCount: 10
 status:
   conditions:
-  conditions:
   - lastTransitionTime: "2015-10-15T13:30:00Z"
-    lastUpdateTime: "2015-10-15T13:30:00Z"
     status: "False"
     type: InProgress
   - lastTransitionTime: "2015-10-15T13:30:00Z"
-    lastUpdateTime: "2015-10-15T13:30:00Z"
     status: "True"
     type: Ready
   - lastTransitionTime: "2015-10-15T13:30:00Z"
-    lastUpdateTime: "2015-10-15T13:30:00Z"
     status: "False"
     type: Error
   locationStatuses:
   - conditions:
     - lastTransitionTime: 2017-07-11T08:49:10Z
-      lastUpdateTime: 2018-07-11T08:49:10Z
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-02-11T08:49:10Z
-      lastUpdateTime: 2018-07-11T08:49:10Z
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-07-11T08:32:01Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     descriptorName: basic
@@ -73,15 +66,12 @@ status:
       envType: "prod"
   - conditions:
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:18:49Z
-      lastUpdateTime: 2018-06-27T07:18:49Z
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: 2018-06-27T07:18:49Z
       status: "False"
       type: Error
     descriptorName: basic--pdev

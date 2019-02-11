@@ -1350,7 +1350,7 @@ spec:
         metadata:
           name: kc--pdb
         spec:
-          minAvailable: 30%
+          minAvailable: 0%
           selector:
             matchLabels:
               resourceName: kc
@@ -1436,10 +1436,14 @@ spec:
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 - name: MICROS_AWS_REGION
                   value: testregion
+                - name: MICROS_BUSINESS_UNIT
+                  value: some_unit
                 - name: MICROS_ENVTYPE
                   value: testenv
                 - name: MICROS_SERVICE
                   value: test-servicename
+                - name: MICROS_RESOURCE_OWNER
+                  value: an_owner
                 envFrom:
                 - secretRef:
                     name: '!{kc--secret-metadata-name}'

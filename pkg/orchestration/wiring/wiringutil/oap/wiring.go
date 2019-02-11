@@ -23,10 +23,10 @@ func MakeServiceEnvironmentFromContext(context *wiringplugin.WiringContext) *Ser
 			SSLCertificateID:      config.CertificateID,
 			PrivateDNSZone:        config.Private,
 			PrivatePaasDNSZone:    config.PrivatePaas,
-			Label:                 string(location.Label),
+			Label:                 location.Label,
 			AppSubnets:            config.AppSubnets,
 			Zones:                 config.Zones,
-			Region:                string(location.Region),
+			Region:                location.Region,
 			EMRSubnet:             config.EMRSubnet,
 		},
 	}

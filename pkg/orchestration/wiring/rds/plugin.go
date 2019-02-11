@@ -86,35 +86,36 @@ func New() *WiringPlugin {
 	}
 }
 
-func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
 	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
 	var finalSpec FinalSpec
 	err := json.Unmarshal(si.Spec.Parameters.Raw, &finalSpec)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	var readReplicaParam ReadReplicaParam
 	err = json.Unmarshal(finalSpec.Parameters, &readReplicaParam)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	return []wiringplugin.Shape{
 		knownshapes.NewSharedDbShape(smithResource.Name, readReplicaParam.ReadReplica),
-	}, nil
+	}, false, false, nil
 }
 
-func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
+func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* external */, bool /* retriable */, error) {
 
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
 		var autoWiredOnly AutowiredOnlySpec
 		if err := json.Unmarshal(resource.Spec.Raw, &autoWiredOnly); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, false, false, errors.WithStack(err)
 		}
 		if !reflect.DeepEqual(autoWiredOnly, AutowiredOnlySpec{}) {
-			return nil, errors.Errorf("at least one autowired value not empty: %+v", autoWiredOnly)
+			// this is a user error caused by an invalid spec
+			return nil, true, false, errors.Errorf("at least one autowired value not empty: %+v", autoWiredOnly)
 		}
 	}
 
@@ -164,13 +165,14 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		// Try to unmarshal to do transformation later
 		var userSpec map[string]interface{}
 		if err := json.Unmarshal(resource.Spec.Raw, &userSpec); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, false, false, errors.WithStack(err)
 		}
 
 		if userServiceName := userSpec["serviceName"]; userServiceName != nil {
 			userServiceNameStr, ok := userServiceName.(string)
 			if !ok {
-				return nil, errors.Errorf(`cannot unmarshal "serviceName" field: expected string got %T`, userServiceName)
+				// this is user error caused by an invalid spec
+				return nil, true, false, errors.Errorf(`cannot unmarshal "serviceName" field: expected string got %T`, userServiceName)
 			}
 			delete(userSpec, "serviceName")
 			finalSpec.Misc.Lessee = userServiceNameStr
@@ -179,16 +181,17 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		// Marshall userSpec back to raw type
 		raw, err := json.Marshal(userSpec)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, false, false, errors.WithStack(err)
 		}
 		finalSpec.Parameters = raw
 	} else {
 		finalSpec.Parameters = []byte("{}")
 	}
 
-	return json.Marshal(finalSpec)
+	bytes, err := json.Marshal(finalSpec)
+	return bytes, false, false, err
 }
 
-func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error) {
-	return meta_v1.ObjectMeta{}, nil
+func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool, bool, error) {
+	return meta_v1.ObjectMeta{}, false, false, nil
 }

@@ -46,12 +46,12 @@ const (
 	hpaPostfix              = "hpa"
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
-	defaultPodDisruptionBudget = "30%"
-
 	// Default environment variable names
-	awsRegionKey   = "MICROS_AWS_REGION"
-	envTypeKey     = "MICROS_ENVTYPE"
-	serviceNameKey = "MICROS_SERVICE"
+	awsRegionKey     = "MICROS_AWS_REGION"
+	businessUnitKey  = "MICROS_BUSINESS_UNIT"
+	envTypeKey       = "MICROS_ENVTYPE"
+	resourceOwnerKey = "MICROS_RESOURCE_OWNER"
+	serviceNameKey   = "MICROS_SERVICE"
 )
 
 var (
@@ -99,7 +99,7 @@ func validateScaling(s Scaling) error {
 }
 
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool /*retriable*/, error) {
 	if resource.Type != apik8scompute.ResourceType {
 		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
 	}
@@ -283,7 +283,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
 	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
 	pdb := smith_v1.Resource{
 		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
 		Spec: smith_v1.ResourceSpec{
@@ -355,7 +355,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, hpa)
 	}
 
-	result := &wiringplugin.WiringResult{
+	result := &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),
@@ -475,12 +475,20 @@ func buildDefaultEnvVars(context wiringplugin.StateContext) []core_v1.EnvVar {
 			Value: string(context.Location.Region),
 		},
 		{
+			Name:  businessUnitKey,
+			Value: context.ServiceProperties.BusinessUnit,
+		},
+		{
 			Name:  envTypeKey,
 			Value: string(context.Location.EnvType),
 		},
 		{
 			Name:  serviceNameKey,
 			Value: string(context.ServiceName),
+		},
+		{
+			Name:  resourceOwnerKey,
+			Value: context.ServiceProperties.ResourceOwner,
 		},
 	}
 }
@@ -540,11 +548,22 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	}
 }
 
-func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
+func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) policy_v1.PodDisruptionBudgetSpec {
+	// Make sure we can drain nodes if the minReplicas is < 3
+	var minAvailable string
+	switch minReplicas {
+	case 0, 1:
+		minAvailable = "0%"
+	case 2:
+		minAvailable = "50%"
+	default:
+		minAvailable = "66%"
+	}
+
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
 			Type:   intstr.String,
-			StrVal: defaultPodDisruptionBudget,
+			StrVal: minAvailable,
 		},
 		Selector: &meta_v1.LabelSelector{
 			MatchLabels: labelMap,

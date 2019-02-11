@@ -9,7 +9,7 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
-	internaldns_api "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
+	platformdns_api "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -44,29 +44,38 @@ const (
 )
 
 // WireUp is the main autowiring function for KubeIngress
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 
 	// Fail if the resource type is wrong
 	if resource.Type != ResourceType {
-		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
 	}
 
-	deploymentResourceName, deploymentLabels, err := extractKubeComputeDetails(context)
-
+	deploymentResourceName, deploymentLabels, external, retriable, err := extractKubeComputeDetails(context)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
 	}
 
 	// Build the Service
 	serviceResource := buildServiceResource(deploymentResourceName, deploymentLabels, resource.Name)
 
 	// Build the Ingress
-	ingressResource, err := buildIngressResource(serviceResource.Name, resource, context)
+	ingressResource, external, retriable, err := buildIngressResource(serviceResource.Name, resource, context)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "failed building ingress resource")
+		return &wiringplugin.WiringResultFailure{
+			Error:            errors.Wrap(err, "failed building ingress resource"),
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
 	}
 
-	result := &wiringplugin.WiringResult{
+	return &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewIngressEndpoint(ingressResource.Name),
@@ -74,8 +83,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		},
 		Resources: []smith_v1.Resource{serviceResource, ingressResource},
 	}
-
-	return result, false, nil
 }
 
 // buildServiceResource constructs the Kube Service object
@@ -118,7 +125,7 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 	return serviceResource
 }
 
-func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (smith_v1.Resource, error) {
+func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceName voyager.ResourceName, timeout int, context *wiringplugin.WiringContext) (smith_v1.Resource, bool /* external */, bool /* retriable */, error) {
 	var ingressRules []ext_v1b1.IngressRule
 	ingressRuleValue := ext_v1b1.IngressRuleValue{
 		HTTP: &ext_v1b1.HTTPIngressRuleValue{
@@ -143,10 +150,10 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 
 	// internalDNS rules
 	for _, dependency := range context.Dependants {
-		if dependency.Type == internaldns_api.ResourceType {
-			var internalDNSSpec internaldns_api.Spec
+		if dependency.Type == platformdns_api.ResourceType {
+			var internalDNSSpec platformdns_api.Spec
 			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
-				return smith_v1.Resource{}, err
+				return smith_v1.Resource{}, false, false, err
 			}
 			for _, alias := range internalDNSSpec.Aliases {
 				ingressRules = append(ingressRules, ext_v1b1.IngressRule{
@@ -188,18 +195,18 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 		},
 	}
 
-	return ingressResource, nil
+	return ingressResource, false, false, nil
 }
 
 // buildIngressResource constructs the Kube / KITT Ingress object
 // with a default rule, plus all alias rules from dependant internalDNS resources
-func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (smith_v1.Resource, error) {
+func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (smith_v1.Resource, bool /* external */, bool /* retriable */, error) {
 	var timeout = defaultContourTimeout
 
 	if resource.Defaults != nil {
 		var rawDefaultsSpec Spec
 		if err := json.Unmarshal(resource.Defaults.Raw, &rawDefaultsSpec); err != nil {
-			return smith_v1.Resource{}, errors.WithStack(err)
+			return smith_v1.Resource{}, false, false, errors.WithStack(err)
 		}
 		if rawDefaultsSpec.TimeoutSeconds != nil {
 			timeout = *rawDefaultsSpec.TimeoutSeconds
@@ -209,14 +216,14 @@ func buildIngressResource(serviceResourceName smith_v1.ResourceName, resource *o
 	if resource.Spec != nil {
 		var rawIngressSpec Spec
 		if err := json.Unmarshal(resource.Spec.Raw, &rawIngressSpec); err != nil {
-			return smith_v1.Resource{}, errors.WithStack(err)
+			return smith_v1.Resource{}, false, false, errors.WithStack(err)
 		}
 
 		if rawIngressSpec.TimeoutSeconds != nil {
 			timeout = *rawIngressSpec.TimeoutSeconds
 
 			if timeout < 1 || timeout > 300 {
-				return smith_v1.Resource{}, errors.Errorf(
+				return smith_v1.Resource{}, true, false, errors.Errorf(
 					"ingress timeout must be between one second and five minutes (was given %d seconds)", timeout)
 			}
 		}
@@ -254,18 +261,18 @@ func buildIngressHostName(resourceName voyager.ResourceName, sc wiringplugin.Sta
 		clusterHostPath)
 }
 
-func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, map[string]string, error) {
+func extractKubeComputeDetails(context *wiringplugin.WiringContext) (smith_v1.ResourceName, map[string]string, bool /* external */, bool /* retriable */, error) {
 	// Require exactly one KubeCompute dependency
 	kubeComputeDependency, err := context.TheOnlyDependency()
 	if err != nil {
-		return "", nil, err
+		return "", nil, true, false, err
 	}
 	setOfPodsSelectableByLabelsShape, found, err := knownshapes.FindSetOfPodsSelectableByLabelsShape(kubeComputeDependency.Contract.Shapes)
 	if err != nil {
-		return "", nil, err
+		return "", nil, false, false, err
 	}
 	if !found {
-		return "", nil, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfPodsSelectableByLabelsShape, kubeComputeDependency.Name)
+		return "", nil, true, false, errors.Errorf("failed to find shape %q in contract of %q", knownshapes.SetOfPodsSelectableByLabelsShape, kubeComputeDependency.Name)
 	}
-	return setOfPodsSelectableByLabelsShape.Data.DeploymentResourceName, setOfPodsSelectableByLabelsShape.Data.Labels, nil
+	return setOfPodsSelectableByLabelsShape.Data.DeploymentResourceName, setOfPodsSelectableByLabelsShape.Data.Labels, false, false, nil
 }

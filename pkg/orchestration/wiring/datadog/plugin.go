@@ -29,7 +29,7 @@ type WiringPlugin struct {
 	svccatentangler.SvcCatEntangler
 }
 
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error) {
 	err := validateRequest(stateResource, context)
 	if err != nil {
 		return nil, false, errors.WithStack(err)
@@ -38,7 +38,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	if err != nil {
 		return nil, false, errors.WithStack(err)
 	}
-	setOfScalingShape, found, err := knownshapes.FindSetOfDatadogShape(kubeComputeDependency.Contract.Shapes)
+	setOfDatadogShape, found, err := knownshapes.FindSetOfDatadogShape(kubeComputeDependency.Contract.Shapes)
 	if err != nil {
 		return nil, false, errors.WithStack(err)
 	}
@@ -48,7 +48,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 
 	var wiredResources []smith_v1.Resource
 
-	deploymentResourceName := setOfScalingShape.Data.DeploymentResourceName
+	deploymentResourceName := setOfDatadogShape.Data.DeploymentResourceName
 	cpuServiceInstance, err := constructServiceInstance(stateResource, context, deploymentResourceName, CPU)
 	if err != nil {
 		return nil, false, errors.WithStack(err)
@@ -61,11 +61,13 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	}
 	wiredResources = append(wiredResources, memoryServiceInstance)
 
-	result := &wiringplugin.WiringResult{
+	wiringResult := &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: []wiringplugin.Shape{},
+		},
 		Resources: wiredResources,
 	}
-
-	return result, false, nil
+	return wiringResult, false, nil
 }
 
 func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, deploymentResourceName smith_v1.ResourceName, alarmType AlarmType) (smith_v1.Resource, error) {

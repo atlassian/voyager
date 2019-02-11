@@ -78,6 +78,10 @@
 
 [[projects]]
   branch = "master"
+<<<<<<< HEAD
+=======
+  digest = "1:e4ab0ee33017b8b824973767dec64736ddc16d29b314cd97d453a75ba003c038"
+>>>>>>> master
   name = "github.com/atlassian/ctrl"
   packages = [
     ".",
@@ -89,10 +93,19 @@
     "options",
     "process"
   ]
+<<<<<<< HEAD
   revision = "1a7f22f42ffb7fb8e1cf4f77eb3628071d552c16"
 
 [[projects]]
   branch = "master"
+=======
+  pruneopts = "NT"
+  revision = "7919fa10836ba0e66970e34226c2b0eedb5d9485"
+
+[[projects]]
+  branch = "master"
+  digest = "1:071053113adfe25aa9ed7ade7112ce82401fbeac3714d56e3b9b7ada7f2db230"
+>>>>>>> master
   name = "github.com/atlassian/smith"
   packages = [
     ".",
@@ -118,7 +131,12 @@
     "pkg/util/graph",
     "pkg/util/logz"
   ]
+<<<<<<< HEAD
   revision = "25ca425e3b6b06c67c355948f0478bd23047bcab"
+=======
+  pruneopts = "NT"
+  revision = "e367e27c0d09db8c88715fd76122be086bacd15a"
+>>>>>>> master
 
 [[projects]]
   name = "github.com/beorn7/perks"

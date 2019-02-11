@@ -46,32 +46,32 @@ func New() *WiringPlugin {
 	}
 }
 
-func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error) {
+func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
 	// UPS outputs all of its inputs
 	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
 	parameters := map[string]json.RawMessage{}
 	if si.Spec.Parameters == nil {
 		return []wiringplugin.Shape{
 			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, defaultUpsEnvVars),
-		}, nil
+		}, false, false, nil
 	}
 
 	err := json.Unmarshal(si.Spec.Parameters.Raw, &parameters)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	credentials, ok := parameters["credentials"]
 	if !ok {
 		return []wiringplugin.Shape{
 			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, defaultUpsEnvVars),
-		}, nil
+		}, false, false, nil
 	}
 
 	credentialsMap := map[string]string{}
 	err = json.Unmarshal(credentials, &credentialsMap)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	envVars := map[string]string{}
@@ -80,7 +80,7 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, c
 	}
 	return []wiringplugin.Shape{
 		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, envVars),
-	}, nil
+	}, false, false, nil
 }
 
 func makeEnvVarName(elements ...string) string {
@@ -90,10 +90,10 @@ func makeEnvVarName(elements ...string) string {
 // Just a straight passthrough...
 // (should probably just implement a default autowiring function similar to how RPS OSB works, which
 // takes the class/plan names as arguments?)
-func InstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
+func InstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool, bool, error) {
 	if resource.Spec == nil {
-		return nil, nil
+		return nil, false, false, nil
 	}
 
-	return resource.Spec.Raw, nil
+	return resource.Spec.Raw, false, false, nil
 }

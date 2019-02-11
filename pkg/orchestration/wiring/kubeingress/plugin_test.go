@@ -73,13 +73,13 @@ func TestBuildingIngressResource(t *testing.T) {
 	}
 
 	t.Run("E2E no ingress", func(t *testing.T) {
-		var res, err = buildIngressResource(serviceResourceName, &emptyStateResource, &wiringplugin.WiringContext{})
+		var res, _, _, err = buildIngressResource(serviceResourceName, &emptyStateResource, &wiringplugin.WiringContext{})
 		assert.NoError(t, err)
 		assert.Equal(t, getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name), res)
 	})
 
 	t.Run("from-spec no ingress", func(t *testing.T) {
-		var res, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 60, &wiringplugin.WiringContext{})
+		var res, _, _, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 60, &wiringplugin.WiringContext{})
 		assert.NoError(t, err)
 		assert.Equal(t, getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name), res)
 	})
@@ -87,7 +87,7 @@ func TestBuildingIngressResource(t *testing.T) {
 	t.Run("from-spec timeout override", func(t *testing.T) {
 		var expectedOutput = getExpectedResourceOutput(serviceResourceName, emptyStateResource.Name)
 		expectedOutput.Spec.Object.(*ext_v1b1.Ingress).ObjectMeta.Annotations[contourTimeoutAnnotation] = "140s"
-		var res, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 140, &wiringplugin.WiringContext{})
+		var res, _, _, err = buildIngressResourceFromSpec(serviceResourceName, emptyStateResource.Name, 140, &wiringplugin.WiringContext{})
 		assert.NoError(t, err)
 		assert.Equal(t, expectedOutput, res)
 	})
@@ -124,7 +124,7 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 			Dependencies: []wiringplugin.WiredDependency{computeDep},
 		}
 
-		resName, labels, err := extractKubeComputeDetails(&context)
+		resName, labels, _, _, err := extractKubeComputeDetails(&context)
 		assert.NoError(t, err)
 		assert.Equal(t, deploymentObj.Name, string(resName))
 		assert.Equal(t, deploymentObj.Labels, labels)
@@ -135,9 +135,10 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 			Dependencies: []wiringplugin.WiredDependency{},
 		}
 
-		_, _, err := extractKubeComputeDetails(&context)
-
+		_, _, external, retriable, err := extractKubeComputeDetails(&context)
 		assert.Error(t, err)
+		assert.True(t, external)
+		assert.False(t, retriable)
 	})
 
 	t.Run("invalid: multiple dependencies", func(t *testing.T) {
@@ -145,9 +146,10 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 			Dependencies: []wiringplugin.WiredDependency{computeDep, computeDep},
 		}
 
-		_, _, err := extractKubeComputeDetails(&context)
-
+		_, _, external, retriable, err := extractKubeComputeDetails(&context)
 		assert.Error(t, err)
+		assert.True(t, external)
+		assert.False(t, retriable)
 	})
 
 	t.Run("invalid: non-kubecompute dependency", func(t *testing.T) {
@@ -155,9 +157,10 @@ func TestExtractKubeComputeDependency(t *testing.T) {
 			Dependencies: []wiringplugin.WiredDependency{nonComputeDep},
 		}
 
-		_, _, err := extractKubeComputeDetails(&context)
-
+		_, _, external, retriable, err := extractKubeComputeDetails(&context)
 		assert.Error(t, err)
+		assert.True(t, external)
+		assert.False(t, retriable)
 	})
 }
 

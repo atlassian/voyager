@@ -19,7 +19,7 @@ import (
 // of shapes for the resource to be used as input to the wiring functions of the dependants.
 //
 // The `resource` is the orchestration level resource that was transformed into `smithResource`.
-type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, error)
+type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error)
 
 // SvcCatEntagler aims to abstract some of the work involved in writing a WiringPlugin functions. It assumes that every
 // WiringPlugin will provide a bundle spec through InstanceSpec(), the metadata for that spec through ObjectMeta() and a
@@ -37,16 +37,22 @@ type SvcCatEntangler struct {
 
 	// InstanceSpec will return the JSON marshaled form of the bundle resource's spec. this
 	// service instance, service binding, deployment, ingress, or other resource.
-	InstanceSpec func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]byte, error)
+	// In the case of an error, the error is returned as well as a booleans retriable and external
+	// for if the error is retriable and if the error represents an external error (or user error).
+	InstanceSpec func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriable */, error)
 
 	// ObjectMeta will return the ObjectMeta for the ServiceInstance.
 	// If nil, it's skipped.
-	ObjectMeta func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, error)
+	// In the case of an error, the error is returned as well as a booleans retriable and external
+	// for if the error is retriable and if the error represents an external error (or user error).
+	ObjectMeta func(*orch_v1.StateResource, *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool /* externalError */, bool /* retriable */, error)
 
 	// References will return a list of Smith references used by the any part of the resulting Smith resource. A Smith
 	// reference looks something like "!{refname}" and require a smith reference entry with the same name to work.
 	// If nil, it's skipped.
-	References func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, error)
+	// In the case of an error, the error is returned as well as a booleans retriable and external
+	// for if the error is retriable and if the error represents an external error (or user error).
+	References func(*orch_v1.StateResource, *wiringplugin.WiringContext) ([]smith_v1.Reference, bool /* externalError */, bool /* retriable */, error)
 
 	// See documentation for ShapesFunc
 	// If nil, it's skipped.
@@ -73,14 +79,14 @@ func InstanceID(resourceSpec *runtime.RawExtension) (string, error) {
 	return spec.InstanceID, nil
 }
 
-func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (smith_v1.Resource, error) {
+func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (smith_v1.Resource, bool /* externalError */, bool /* retriable */, error) {
 	serviceInstanceExternalID, err := InstanceID(resource.Spec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, false, false, err
 	}
-	serviceInstanceSpecBytes, err := e.InstanceSpec(resource, context)
+	serviceInstanceSpecBytes, external, retriable, err := e.InstanceSpec(resource, context)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, external, retriable, err
 	}
 	var parameters *runtime.RawExtension
 	if serviceInstanceSpecBytes != nil {
@@ -91,9 +97,9 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 
 	var objectMeta meta_v1.ObjectMeta
 	if e.ObjectMeta != nil {
-		objectMeta, err = e.ObjectMeta(resource, context)
+		objectMeta, external, retriable, err = e.ObjectMeta(resource, context)
 		if err != nil {
-			return smith_v1.Resource{}, err
+			return smith_v1.Resource{}, external, retriable, err
 		}
 	}
 
@@ -103,9 +109,9 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 
 	var references []smith_v1.Reference
 	if e.References != nil {
-		references, err = e.References(resource, context)
+		references, external, retriable, err = e.References(resource, context)
 		if err != nil {
-			return smith_v1.Resource{}, err
+			return smith_v1.Resource{}, external, retriable, err
 		}
 	}
 
@@ -129,43 +135,51 @@ func (e *SvcCatEntangler) constructServiceInstance(resource *orch_v1.StateResour
 				},
 			},
 		},
-	}, nil
+	}, false, false, nil
 }
 
-func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, error) {
+func (e *SvcCatEntangler) constructResourceContract(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) (*wiringplugin.ResourceContract, bool /*externalError*/, bool /*retriable*/, error) {
 	supportedShapes := []wiringplugin.Shape{}
 
 	if e.Shapes != nil {
-		shapes, err := e.Shapes(resource, smithResource, context)
+		shapes, external, retriable, err := e.Shapes(resource, smithResource, context)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to compute shapes for resource %q of type %q", resource.Name, resource.Type)
+			return nil, external, retriable, errors.Wrapf(err, "failed to compute shapes for resource %q of type %q", resource.Name, resource.Type)
 		}
 		supportedShapes = append(supportedShapes, shapes...)
 	}
 	return &wiringplugin.ResourceContract{
 		Shapes: supportedShapes,
-	}, nil
+	}, false, false, nil
 }
 
-func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func (e *SvcCatEntangler) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if resource.Type != e.ResourceType {
-		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
 	}
 
-	serviceInstance, err := e.constructServiceInstance(resource, context)
+	serviceInstance, external, retriable, err := e.constructServiceInstance(resource, context)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
 	}
 
-	resourceContract, err := e.constructResourceContract(resource, &serviceInstance, context)
+	resourceContract, external, retriable, err := e.constructResourceContract(resource, &serviceInstance, context)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
 	}
 
-	result := &wiringplugin.WiringResult{
+	return &wiringplugin.WiringResultSuccess{
 		Contract:  *resourceContract,
 		Resources: []smith_v1.Resource{serviceInstance},
 	}
-
-	return result, false, nil
 }

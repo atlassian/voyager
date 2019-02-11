@@ -53,7 +53,7 @@ func NewGeneric(config *ctrl.Config, queue workqueue.RateLimitingInterface, work
 		readyForWork := make(chan struct{})
 		queueGvk := wq.newQueueForGvk(descr.Gvk)
 		groupKind := descr.Gvk.GroupKind()
-		controllerLogger := config.Logger.With(logz.ControllerGk(groupKind))
+		controllerLogger := config.Logger
 		constructorConfig := config
 		constructorConfig.Logger = controllerLogger
 
