@@ -21,7 +21,8 @@ type Options struct {
 	APILocation string `json:"apiLocation"`
 	ASAPConfig  pkiutil.ASAP
 
-	EnvironmentWhitelist []string `json:"envWhitelist"`
+	EnvironmentWhitelist    []string `json:"envWhitelist"`
+	ExternalClusterRegistry string   `json:"externalClusterRegistry"`
 }
 
 func (o *Options) DefaultAndValidate() []error {

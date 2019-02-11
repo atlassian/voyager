@@ -17,6 +17,7 @@ import (
 	agg_v1 "github.com/atlassian/voyager/pkg/apis/aggregator/v1"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/apiservice"
+	"github.com/atlassian/voyager/pkg/util/clusterregistry"
 	"github.com/atlassian/voyager/pkg/util/crash"
 	"github.com/atlassian/voyager/pkg/util/httputil"
 	"github.com/atlassian/voyager/pkg/util/logz"
@@ -28,7 +29,6 @@ import (
 	"go.uber.org/zap"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/endpoints/request"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/transport"
 	cr_v1a1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 )
@@ -53,7 +53,7 @@ type API struct {
 	logger *zap.Logger
 
 	router      *chi.Mux
-	informer    cache.SharedIndexInformer
+	registry    clusterregistry.ClusterRegistry
 	location    voyager.Location
 	apiSpecFile string
 
@@ -90,7 +90,7 @@ func (r *API) apiResourceList(w http.ResponseWriter, req *http.Request) {
 	httputil.WriteOkResponse(log, w, buf)
 }
 
-func NewAPI(logger *zap.Logger, router *chi.Mux, clusterInformer cache.SharedIndexInformer,
+func NewAPI(logger *zap.Logger, router *chi.Mux, clusterRegistry clusterregistry.ClusterRegistry,
 	ASAPConfig pkiutil.ASAP, location voyager.Location, apiFile string, registry prometheus.Registerer, envWhitelist []string) (*API, error) {
 
 	labels := []string{"status", "method", "region", "environment", "path"}
@@ -123,7 +123,7 @@ func NewAPI(logger *zap.Logger, router *chi.Mux, clusterInformer cache.SharedInd
 
 	r := &API{
 		logger:      logger,
-		informer:    clusterInformer,
+		registry:    clusterRegistry,
 		router:      router,
 		location:    location,
 		apiSpecFile: apiFile,
@@ -218,15 +218,14 @@ func (r *API) parseFilters(req *http.Request) (RequestFilter, error) {
 }
 
 func (r *API) getClusters(filter RequestFilter, log *zap.Logger) ([]*cr_v1a1.Cluster, error) {
-	clusters, err := r.informer.GetIndexer().ByIndex(ByClusterLabelIndexName, "paas")
+	clusters, err := r.registry.GetClusters()
 	if err != nil {
 		return nil, err
 	}
 
 	var matching []*cr_v1a1.Cluster
 
-	for _, cluster := range clusters {
-		c := cluster.(*cr_v1a1.Cluster)
+	for _, c := range clusters {
 		if (filter.Region == "" || filter.Region == c.ObjectMeta.Labels["region"]) &&
 			(filter.Environment == "" || filter.Environment == c.ObjectMeta.Labels["paas-env"]) &&
 			isEnvWhitelisted(c.Labels["paas-env"], r.envWhitelist) {

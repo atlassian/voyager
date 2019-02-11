@@ -314,6 +314,24 @@ run-smith: validate-cluster
 
 #===============================================================================
 
+.PHONY: run-aggregator
+run-aggregator:
+	KUBE_PATCH_CONVERSION_DETECTOR=true \
+	KUBE_CACHE_MUTATION_DETECTOR=true \
+	bazel run $(BAZEL_OPTIONS) \
+		//cmd/aggregator:aggregator_race \
+		-- \
+		--config "$(CURDIR)/build/local/aggregator/config.yaml" \
+		--client-config-from=file \
+		--client-config-file-name="$$HOME/.kube/config" \
+		--kubeconfig="$$HOME/.kube/config" \
+		--client-config-context=$(VALIDATED_KUBE_CONTEXT) \
+		--secure-port=6443 \
+		--local=true \
+		-v=5
+
+#===============================================================================
+
 .PHONY: generate
 generate: \
 	generate-clients \
