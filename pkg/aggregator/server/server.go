@@ -24,6 +24,7 @@ func NewServerCommand(o *options.AggregatorServerOptions, stopCh <-chan struct{}
 	}
 
 	fs := cmd.Flags()
+
 	o.AddFlags(fs)
 	return cmd
 }

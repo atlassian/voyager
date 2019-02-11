@@ -8,12 +8,9 @@ import (
 	"github.com/atlassian/voyager/pkg/aggregator"
 	agg_v1 "github.com/atlassian/voyager/pkg/apis/aggregator/v1"
 	"github.com/atlassian/voyager/pkg/util"
+	"github.com/atlassian/voyager/pkg/util/clusterregistry"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
-	cr_v1a1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	clientset "k8s.io/cluster-registry/pkg/client/clientset/versioned"
-	informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 )
 
 type ReadyServer struct {
@@ -69,7 +66,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 		return nil, err
 	}
 
-	clusterInformer, err := createClusterInformer(config, cctx)
+	clusterInformer, err := createClusterInformer(config, cctx, opts.ExternalClusterRegistry)
 
 	if err != nil {
 		return nil, err
@@ -106,23 +103,11 @@ func (cc *ControllerConstructor) Describe() ctrl.Descriptor {
 	}
 }
 
-func createClusterInformer(config *ctrl.Config, cctx *ctrl.Context) (cache.SharedIndexInformer, error) {
-	clusterGVK := cr_v1a1.SchemeGroupVersion.WithKind("clusters")
-	clusterClient, err := clientset.NewForConfig(config.RestConfig)
-	if err != nil {
-		return nil, err
+func createClusterInformer(config *ctrl.Config, cctx *ctrl.Context, externalRegistry string) (clusterregistry.ClusterRegistry, error) {
+
+	if externalRegistry != "" {
+		return clusterregistry.NewExternalClusterRegistry(externalRegistry, config.ResyncPeriod)
 	}
 
-	clusterInformer := informers.NewSharedInformerFactory(clusterClient, config.ResyncPeriod).Clusterregistry().V1alpha1().Clusters().Informer()
-
-	err = clusterInformer.AddIndexers(cache.Indexers{
-		aggregator.ByClusterLabelIndexName: aggregator.ByClusterLabelIndex,
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = cctx.RegisterInformer(clusterGVK, clusterInformer)
-	return clusterInformer, err
+	return clusterregistry.NewClusterInformer(config, cctx)
 }

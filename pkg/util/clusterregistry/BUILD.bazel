@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "external.go",
+        "informer.go",
+        "registry.go",
+    ],
+    importpath = "github.com/atlassian/voyager/pkg/util/clusterregistry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/atlassian/ctrl:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/k8s.io/client-go/tools/clientcmd:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/client/clientset/versioned:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/client/clientset/versioned/typed/clusterregistry/v1alpha1:go_default_library",
+        "//vendor/k8s.io/cluster-registry/pkg/client/informers/externalversions:go_default_library",
+    ],
+)

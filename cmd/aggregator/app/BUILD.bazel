@@ -20,6 +20,7 @@ go_library(
         "//pkg/options:go_default_library",
         "//pkg/util:go_default_library",
         "//pkg/util/apiserver:go_default_library",
+        "//pkg/util/clusterregistry:go_default_library",
         "//pkg/util/crash:go_default_library",
         "//pkg/util/pkiutil:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",
@@ -30,10 +31,6 @@ go_library(
         "//vendor/k8s.io/apiserver/pkg/server:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/server/options:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/logs:go_default_library",
-        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
-        "//vendor/k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1:go_default_library",
-        "//vendor/k8s.io/cluster-registry/pkg/client/clientset/versioned:go_default_library",
-        "//vendor/k8s.io/cluster-registry/pkg/client/informers/externalversions:go_default_library",
         "//vendor/sigs.k8s.io/yaml:go_default_library",
     ],
 )

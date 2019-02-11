@@ -8,10 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/SermoDigital/jose/jws"
-	"github.com/ash2k/stager"
 	"github.com/atlassian/voyager"
 	agg_v1 "github.com/atlassian/voyager/pkg/apis/aggregator/v1"
 	. "github.com/atlassian/voyager/pkg/util/httputil/httptest"
@@ -26,10 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/endpoints/request"
-	"k8s.io/client-go/tools/cache"
 	cr_v1a1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	crclient_fake "k8s.io/cluster-registry/pkg/client/clientset/versioned/fake"
-	informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 )
 
 type MockASAPConfig struct{}
@@ -44,6 +39,14 @@ func (*MockASAPConfig) GenerateTokenWithClaims(audience string, subject string, 
 
 func (*MockASAPConfig) KeyID() string     { return "" }
 func (*MockASAPConfig) KeyIssuer() string { return "" }
+
+type MockClusterInformer struct {
+	clusters []*cr_v1a1.Cluster
+}
+
+func (m *MockClusterInformer) GetClusters() ([]*cr_v1a1.Cluster, error) {
+	return m.clusters, nil
+}
 
 func TestAggregate(t *testing.T) {
 	t.Parallel()
@@ -282,6 +285,7 @@ type testCase struct {
 func (tc *testCase) run(t *testing.T) {
 
 	var clusterObjs []runtime.Object
+	var clusters []*cr_v1a1.Cluster
 	var servers []*httptest.Server
 
 	defer func() {
@@ -315,26 +319,10 @@ func (tc *testCase) run(t *testing.T) {
 		}
 
 		clusterObjs = append(clusterObjs, cluster)
+		clusters = append(clusters, cluster)
 	}
 
-	crclient := crclient_fake.NewSimpleClientset(clusterObjs...)
-
-	clusterInformer := informers.NewSharedInformerFactory(crclient, 0).Clusterregistry().V1alpha1().Clusters().Informer()
-
-	err := clusterInformer.AddIndexers(cache.Indexers{
-		ByClusterLabelIndexName: ByClusterLabelIndex,
-	})
-	require.NoError(t, err)
-
-	stgr := stager.New()
-	defer stgr.Shutdown()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
-	stage := stgr.NextStage()
-
-	stage.StartWithChannel(clusterInformer.Run)
-	require.True(t, cache.WaitForCacheSync(ctx.Done(), clusterInformer.HasSynced))
+	clusterInformer := &MockClusterInformer{clusters}
 
 	handler := chi.NewRouter()
 	api, err := NewAPI(tc.logger, handler, clusterInformer, &MockASAPConfig{}, voyager.Location{
