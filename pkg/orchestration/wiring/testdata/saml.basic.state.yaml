@@ -1,0 +1,23 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - name: saml
+    type: SAML
+    spec:
+      url: 'https://my-service.prod'
+  - name: kubecompute-simple
+    type: KubeCompute
+    dependsOn:
+    - saml
+    spec:
+      containers:
+      - name: microservice
+        image: "docker.example.com/atlassian/micros-analytics:0.1"
+        tag: "0.1.8"
+        ports:
+        - containerPort: 8080

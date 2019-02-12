@@ -9,6 +9,7 @@ go_library(
         "//:go_default_library",
         "//pkg/orchestration/wiring/asapkey:go_default_library",
         "//pkg/orchestration/wiring/aws:go_default_library",
+        "//pkg/orchestration/wiring/saml:go_default_library",
         "//pkg/orchestration/wiring/ec2compute/v2:go_default_library",
         "//pkg/orchestration/wiring/k8scompute:go_default_library",
         "//pkg/orchestration/wiring/k8scompute/api:go_default_library",
