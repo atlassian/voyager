@@ -88,7 +88,7 @@ func (r *report) sendData(ctx context.Context, requestData RequestData) (retriab
 		return false, errors.Wrap(err, "error occured during request to slurper")
 
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint: errcheck
 
 	// We don't need to check if resp is nil; it won't be if err is nil
 	if resp.StatusCode == http.StatusOK {
@@ -99,7 +99,7 @@ func (r *report) sendData(ctx context.Context, requestData RequestData) (retriab
 }
 
 func IsServiceNamespace(namespace core_v1.Namespace) bool {
-	for k, _ := range namespace.Labels {
+	for k := range namespace.Labels {
 		if k == "voyager.atl-paas.net/serviceName" {
 			return true
 		}
