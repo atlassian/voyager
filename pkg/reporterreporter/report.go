@@ -13,7 +13,9 @@ import (
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -99,16 +101,27 @@ func (r *report) sendData(requestData RequestData) (retriable bool, err error) {
 	return isRetriableError(resp.StatusCode), errors.Errorf("sending data to slurper failed")
 }
 
-func (r *report) sendNamespaceReportToSlurper(namespaceName string) (notRetriableError error) {
+func IsServiceNamespace(namespace core_v1.Namespace) bool {
+	for k, _ := range namespace.Labels {
+		if k == "voyager.atl-paas.net/serviceName" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// All errors are logged internally, we want to survive errors and log them instead
+func (r *report) sendNamespaceReportToSlurper(namespaceName string) {
 	reports, err := r.reporterClient.ReporterV1().Reports(namespaceName).List(meta_v1.ListOptions{})
 	if err != nil {
 		r.logger.Error("Could not list reports in namespace", zap.String("namespace", namespaceName), zap.Error(err))
-		return nil
+		return
 	}
 
 	if len(reports.Items) == 0 {
 		r.logger.Info("Report for namespace is empty", zap.String("namespace", namespaceName))
-		return nil
+		return
 	}
 
 	now := time.Now().Unix()
@@ -125,29 +138,24 @@ func (r *report) sendNamespaceReportToSlurper(namespaceName string) (notRetriabl
 		}
 		countReportsAttempted++
 
-		for i := 1; i <= retryAttemptsPerReport; i++ {
-			retriable, err := r.sendData(requestData)
-			if err == nil {
-				countReportsSent++
-				break
-			}
+		err := util.RetryConditionally(
+			wait.Backoff{
+				Duration: retryDelay,
+				Factor:   1.5,
+				Jitter:   0,
+				Steps:    retryAttemptsPerReport,
+			}, func() (retry bool, err error) {
+				return r.sendData(requestData)
+			})
 
-			if !retriable {
-				// If the request can not be retried, then we shouldn't try continue trying requests
-				r.logger.Info("Sent namespace reports to slurper",
-					zap.String("namespace_name", namespaceName),
-					zap.Int("reports_sent", countReportsSent),
-					zap.Int("reports_attempted", countReportsAttempted),
-					zap.Int("reports_size", len(reports.Items)))
-				return err
-			}
-
-			r.logger.Warn("Failed to send report to slurper",
-				zap.Int("attempt", i),
-				zap.Int("max_attempts", retryAttemptsPerReport),
-				zap.Error(err))
-			time.Sleep(retryDelay)
+		if err != nil {
+			r.logger.Error("Failed sending report to slurper",
+				zap.String("report_name", report.Name),
+				zap.String("namespace_name", namespaceName))
+			continue
 		}
+
+		countReportsSent++
 	}
 
 	r.logger.Info("Sent namespace reports to slurper",
@@ -155,8 +163,6 @@ func (r *report) sendNamespaceReportToSlurper(namespaceName string) (notRetriabl
 		zap.Int("reports_sent", countReportsSent),
 		zap.Int("reports_attempted", countReportsAttempted),
 		zap.Int("reports_size", len(reports.Items)))
-
-	return nil
 }
 
 func (r *report) Run(_ context.Context) error {
@@ -166,9 +172,11 @@ func (r *report) Run(_ context.Context) error {
 	}
 
 	for _, namespace := range namespaces.Items {
-		if err := r.sendNamespaceReportToSlurper(namespace.Name); err != nil {
-			return errors.Wrap(err, "non-retriable error encountered while talking to slurper, stopping all reports")
+		if !IsServiceNamespace(namespace) {
+			continue
 		}
+
+		r.sendNamespaceReportToSlurper(namespace.Name)
 	}
 
 	return nil
