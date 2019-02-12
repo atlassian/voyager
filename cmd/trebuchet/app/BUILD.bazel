@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/atlassian/voyager/cmd/trebuchet/app",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd:go_default_library",
+        "//pkg/trebuchet/server:go_default_library",
+        "//pkg/trebuchet/server/options:go_default_library",
+        "//pkg/util/apiserver:go_default_library",
+        "//pkg/util/crash:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/server/options:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/util/logs:go_default_library",
+    ],
+)
