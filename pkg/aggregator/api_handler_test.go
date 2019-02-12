@@ -18,7 +18,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/go-chi/chi"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_model/go"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"

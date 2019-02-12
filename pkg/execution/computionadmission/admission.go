@@ -11,7 +11,7 @@ import (
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/synchronization/api"
+	apisynchronization "github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/go-chi/chi"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"

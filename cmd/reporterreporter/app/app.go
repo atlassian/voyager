@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/atlassian/ctrl"
-	rep_v1 "github.com/atlassian/voyager/pkg/apis/reporter/v1"
+	reporter_v1 "github.com/atlassian/voyager/pkg/apis/reporter/v1"
 	reporterClient "github.com/atlassian/voyager/pkg/reporter/client"
 	"github.com/atlassian/voyager/pkg/reporterreporter"
 	"github.com/atlassian/voyager/pkg/util"
@@ -43,6 +43,6 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 
 func (cc *ControllerConstructor) Describe() ctrl.Descriptor {
 	return ctrl.Descriptor{
-		Gvk: rep_v1.ReportGvk,
+		Gvk: reporter_v1.ReportGvk,
 	}
 }

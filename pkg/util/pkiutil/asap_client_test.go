@@ -13,7 +13,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -172,7 +172,7 @@ func TestNewASAPClientConfigFromKubernetesSecret(t *testing.T) {
 	data, loadErr := testutil.LoadFileFromTestData("voyager-creator.yaml")
 	require.NoError(t, loadErr)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	fakeSecret := &v1.Secret{}
+	fakeSecret := &core_v1.Secret{}
 	_, _, decodeErr := decode(data, nil, fakeSecret)
 	require.NoError(t, decodeErr)
 

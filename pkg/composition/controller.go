@@ -18,7 +18,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s/updater"
 	"github.com/atlassian/voyager/pkg/options"
 	"github.com/atlassian/voyager/pkg/releases"
-	"github.com/atlassian/voyager/pkg/synchronization/api"
+	apisynchronization "github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

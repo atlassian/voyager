@@ -68,14 +68,14 @@ pkgs.mkShell {
         # manually edit workspace (select doesn't work with bazel macros)
         # possibly could be done with some sort of wrapper macro instead
         git update-index --assume-unchanged WORKSPACE
-        sed -i -e 's/go_register_toolchains()/go_register_toolchains(go_version = "host")/g' WORKSPACE
+        sed -i -e 's/go_register_toolchains(nogo = "@//:nogo")/go_register_toolchains(nogo = "@//:nogo", go_version = "host")/g' WORKSPACE
     }
 
     function teardown() {
         sed -i '/build --python_path=*/d' user.bazelrc
         sed -i '/test --python_path=*/d' user.bazelrc
 
-        sed -i -e 's/go_register_toolchains(go_version = "host")/go_register_toolchains()/g' WORKSPACE
+        sed -i -e 's/go_register_toolchains(nogo = "@//:nogo", go_version = "host")/go_register_toolchains(nogo = "@//:nogo")/g' WORKSPACE
         git update-index --no-assume-unchanged WORKSPACE
 
         if [ ! -s user.bazelrc ] ; then
