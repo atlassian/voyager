@@ -377,9 +377,8 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo11.staging.atl-paas.net
-              type: Simple
+            name: foo11.staging.atl-paas.net
+            type: Simple
             environmentType: testenv
             serviceName: test-servicename
             target: '!{ingress1-metadata-endpoint}'
@@ -399,9 +398,8 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo12.staging.atl-paas.net
-              type: Simple
+            name: foo12.staging.atl-paas.net
+            type: Simple
             environmentType: testenv
             serviceName: test-servicename
             target: '!{ingress1-metadata-endpoint}'
@@ -421,9 +419,8 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo21.staging.atl-paas.net
-              type: Simple
+            name: foo21.staging.atl-paas.net
+            type: Simple
             environmentType: testenv
             serviceName: test-servicename
             target: '!{ingress2-metadata-endpoint}'
@@ -443,9 +440,8 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo22.staging.atl-paas.net
-              type: Simple
+            name: foo22.staging.atl-paas.net
+            type: Simple
             environmentType: testenv
             serviceName: test-servicename
             target: '!{ingress2-metadata-endpoint}'

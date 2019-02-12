@@ -12,11 +12,7 @@ const (
 	ClusterServicePlanExternalID  servicecatalog.PlanExternalID  = "0a7b1d18-cf8d-461e-ad24-ee16d3da36d3"
 )
 
-type Alias struct {
+type Spec struct {
 	AliasType string `json:"type"`
 	Name      string `json:"name"`
-}
-
-type Spec struct {
-	Aliases []Alias `json:"aliases"`
 }
