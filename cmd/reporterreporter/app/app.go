@@ -8,13 +8,13 @@ import (
 )
 
 type ControllerConstructor struct {
-	ConfigFile  string
-	SplitterURI string
+	ConfigFile string
+	SpitterURI string
 }
 
 func (cc *ControllerConstructor) AddFlags(flagset ctrl.FlagSet) {
 	flagset.StringVar(&cc.ConfigFile, "config", "config.yaml", "config file")
-	flagset.StringVar(&cc.SplitterURI, "spitter-uri", "https://micros2-analytics-slurper.us-east-1.prod.atl-paas.net/", "Remote data endpoint")
+	flagset.StringVar(&cc.SpitterURI, "spitter-uri", "https://micros2-analytics-slurper.us-east-1.prod.atl-paas.net/", "Remote data endpoint")
 }
 
 func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*ctrl.Constructed, error) {
@@ -29,7 +29,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 	}
 	return &ctrl.Constructed{
 		Server: reporterreporter.NewReport(
-			cc.SplitterURI,
+			cc.SpitterURI,
 			opts.Cluster,
 			reporter,
 			config.MainClient,
