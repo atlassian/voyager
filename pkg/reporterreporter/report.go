@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/atlassian/voyager/pkg/util/sets"
+
 	"bitbucket.org/atlassianlabs/restclient"
 	"github.com/atlassian/ctrl"
 	reporter_v1 "github.com/atlassian/voyager/pkg/apis/reporter/v1"
@@ -61,16 +63,11 @@ func NewReport(slurperURI string, cluster string, reporterClient client.Interfac
 }
 
 func isRetriableError(statusCode int) bool {
-	_, ok := map[int]bool{
-		http.StatusRequestTimeout:  true,
-		http.StatusTooManyRequests: true,
-	}[statusCode]
-
-	if ok {
-		return true
-	}
-
-	return statusCode >= 500 && statusCode <= 599
+	return sets.NewInt(
+		http.StatusRequestTimeout,
+		http.StatusTooManyRequests,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout).Has(statusCode)
 }
 
 // sendData will send the requestData containing the report to slurper
