@@ -71,8 +71,8 @@ func isRetriableError(statusCode int) bool {
 }
 
 // sendData will send the requestData containing the report to slurper
-func (r *report) sendData(requestData RequestData) (retriable bool, err error) {
-	req, err := r.mutator.NewRequest(restclient.BodyFromJSON(requestData))
+func (r *report) sendData(ctx context.Context, requestData RequestData) (retriable bool, err error) {
+	req, err := r.mutator.NewRequest(restclient.Context(ctx), restclient.BodyFromJSON(requestData))
 	if err != nil {
 		return false, errors.Wrap(err, "unable to craft a HTTP request for slurper")
 	}
@@ -109,15 +109,16 @@ func IsServiceNamespace(namespace core_v1.Namespace) bool {
 }
 
 // All errors are logged internally, we want to survive errors and log them instead
-func (r *report) sendNamespaceReportToSlurper(namespaceName string) {
+func (r *report) sendNamespaceReportToSlurper(ctx context.Context, namespaceName string) {
+	logger := r.logger.With(zap.String("namespace_name", namespaceName))
 	reports, err := r.reporterClient.ReporterV1().Reports(namespaceName).List(meta_v1.ListOptions{})
 	if err != nil {
-		r.logger.Error("Could not list reports in namespace", zap.String("namespace", namespaceName), zap.Error(err))
+		logger.Error("Could not list reports in namespace", zap.Error(err))
 		return
 	}
 
 	if len(reports.Items) == 0 {
-		r.logger.Info("Report for namespace is empty", zap.String("namespace", namespaceName))
+		logger.Info("Report for namespace is empty")
 		return
 	}
 
@@ -142,13 +143,12 @@ func (r *report) sendNamespaceReportToSlurper(namespaceName string) {
 				Jitter:   0,
 				Steps:    retryAttemptsPerReport,
 			}, func() (retry bool, err error) {
-				return r.sendData(requestData)
+				return r.sendData(ctx, requestData)
 			})
 
 		if err != nil {
-			r.logger.Error("Failed sending report to slurper",
-				zap.String("report_name", report.Name),
-				zap.String("namespace_name", namespaceName))
+			logger.Error("Failed sending report to slurper",
+				zap.String("report_name", report.Name))
 			continue
 		}
 
@@ -156,13 +156,12 @@ func (r *report) sendNamespaceReportToSlurper(namespaceName string) {
 	}
 
 	r.logger.Info("Sent namespace reports to slurper",
-		zap.String("namespace_name", namespaceName),
 		zap.Int("reports_sent", countReportsSent),
 		zap.Int("reports_attempted", countReportsAttempted),
 		zap.Int("reports_size", len(reports.Items)))
 }
 
-func (r *report) Run(_ context.Context) error {
+func (r *report) Run(ctx context.Context) error {
 	namespaces, err := r.kubernetesClient.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list namespaces")
@@ -173,7 +172,7 @@ func (r *report) Run(_ context.Context) error {
 			continue
 		}
 
-		r.sendNamespaceReportToSlurper(namespace.Name)
+		r.sendNamespaceReportToSlurper(ctx, namespace.Name)
 	}
 
 	return nil
