@@ -44,10 +44,10 @@ spec:
           secretName: compute--ups
   - name: compute--secret
     references:
-    - name: compute--ups--binding-ec77961a2a5d37c885fc880a40c624d07d8d3aa9
+    - modifier: bindsecret
+      name: compute--ups--binding-ec77961a2a5d37c885fc880a40c624d07d8d3aa9
       path: data.my-thing
       resource: compute--ups--binding
-      modifier: bindsecret
     spec:
       plugin:
         name: secret
@@ -71,17 +71,18 @@ spec:
           - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
+          policySnippets: {}
           serviceEnvironment:
-            notificationEmail: an_owner@example.com
             alarmEndpoints:
-            - consumer: "pagerduty"
-              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
-              priority: "high"
-              type: "CloudWatch"
-            - consumer: "pagerduty"
-              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
-              priority: "low"
-              type: "CloudWatch"
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
+            notificationEmail: an_owner@example.com
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
@@ -104,7 +105,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
-          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name
@@ -145,6 +145,15 @@ spec:
           clusterServiceClassExternalName: micros
           clusterServicePlanExternalName: v2
           parameters:
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             autoScalingGroup:
               maxSize: 2
               minSize: 1
@@ -168,15 +177,6 @@ spec:
               envType: testenv
               region: testregion
             meaninglesskey: used as an example
-            alarmEndpoints:
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: high
-                type: CloudWatch
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: low
-                type: CloudWatch
             notifications:
               email: notification@email.com
             service:
