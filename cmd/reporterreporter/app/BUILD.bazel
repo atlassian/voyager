@@ -14,7 +14,6 @@ go_library(
         "//pkg/apis/reporter/v1:go_default_library",
         "//pkg/reporter/client:go_default_library",
         "//pkg/reporterreporter:go_default_library",
-        "//pkg/util:go_default_library",
         "//pkg/util/crash:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",
         "//vendor/github.com/atlassian/ctrl/app:go_default_library",
