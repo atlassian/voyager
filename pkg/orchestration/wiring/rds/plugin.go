@@ -28,7 +28,7 @@ type MainParametersSpec struct {
 	MicrosAlarmEndpoints        []oap.MicrosAlarmSpec `json:"MicrosAlarmEndpoints"`
 	MicrosAppSubnets            []string              `json:"MicrosAppSubnets"`
 	MicrosEnv                   string                `json:"MicrosEnv"`
-	MicrosEnvironmentLabel      string                `json:"MicrosEnvironmentLabel,omitempty"`
+	MicrosEnvironmentLabel      voyager.Label         `json:"MicrosEnvironmentLabel,omitempty"`
 	MicrosInstanceSecurityGroup string                `json:"MicrosInstanceSecurityGroup"`
 	MicrosJumpboxSecurityGroup  string                `json:"MicrosJumpboxSecurityGroup"`
 	MicrosPagerdutyEndpoint     string                `json:"MicrosPagerdutyEndpoint,omitempty"`
@@ -36,7 +36,7 @@ type MainParametersSpec struct {
 	MicrosPagerdutyEndpointLow  string                `json:"MicrosPagerdutyEndpointLow,omitempty"`
 	MicrosPrivateDNSZone        string                `json:"MicrosPrivateDnsZone"`
 	MicrosPrivatePaaSDNSZone    string                `json:"MicrosPrivatePaasDnsZone"`
-	MicrosResourceName          string                `json:"MicrosResourceName"`
+	MicrosResourceName          voyager.ResourceName  `json:"MicrosResourceName"`
 	MicrosServiceName           voyager.ServiceName   `json:"MicrosServiceName"`
 	MicrosVPCId                 string                `json:"MicrosVpcId"`
 }
@@ -44,8 +44,8 @@ type MainParametersSpec struct {
 type MiscParametersSpec struct {
 	RDSType      string                 `json:"rds_type"`
 	Tags         map[voyager.Tag]string `json:"tags"`
-	Lessee       string                 `json:"lessee"`
-	ResourceName string                 `json:"resource_name"`
+	Lessee       voyager.ServiceName    `json:"lessee"`
+	ResourceName voyager.ResourceName   `json:"resource_name"`
 }
 
 type LocationSpec struct {
@@ -130,7 +130,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		MicrosAlarmEndpoints:        microsAlarmEndpoints,
 		MicrosAppSubnets:            context.StateContext.LegacyConfig.AppSubnets,
 		MicrosEnv:                   context.StateContext.LegacyConfig.MicrosEnv,
-		MicrosEnvironmentLabel:      string(context.StateContext.Location.Label),
+		MicrosEnvironmentLabel:      context.StateContext.Location.Label,
 		MicrosInstanceSecurityGroup: context.StateContext.LegacyConfig.InstanceSecurityGroup,
 		MicrosJumpboxSecurityGroup:  context.StateContext.LegacyConfig.JumpboxSecurityGroup,
 		MicrosPagerdutyEndpoint:     context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
@@ -139,15 +139,15 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 		MicrosPrivateDNSZone:        context.StateContext.LegacyConfig.Private,
 		MicrosPrivatePaaSDNSZone:    context.StateContext.LegacyConfig.PrivatePaas,
 		MicrosServiceName:           context.StateContext.ServiceName,
-		MicrosResourceName:          string(resource.Name),
+		MicrosResourceName:          resource.Name,
 		MicrosVPCId:                 context.StateContext.LegacyConfig.Vpc,
 	}
 
 	miscParameters := MiscParametersSpec{
 		RDSType:      "dedicated",
 		Tags:         context.StateContext.Tags,
-		Lessee:       string(context.StateContext.ServiceName),
-		ResourceName: string(resource.Name),
+		Lessee:       context.StateContext.ServiceName,
+		ResourceName: resource.Name,
 	}
 
 	location := LocationSpec{
@@ -175,7 +175,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 				return nil, true, false, errors.Errorf(`cannot unmarshal "serviceName" field: expected string got %T`, userServiceName)
 			}
 			delete(userSpec, "serviceName")
-			finalSpec.Misc.Lessee = userServiceNameStr
+			finalSpec.Misc.Lessee = voyager.ServiceName(userServiceNameStr)
 		}
 
 		// Marshall userSpec back to raw type

@@ -13,7 +13,7 @@ metadata:
     uid: 411c0040-617e-11e7-9b57-427d691976d7
 spec:
   resources:
-  - name: kubecompute-simple--svcacc
+  - name: c1--svcacc
     spec:
       object:
         apiVersion: v1
@@ -21,38 +21,38 @@ spec:
         - name: kubecompute-docker-atl-paas
         kind: ServiceAccount
         metadata:
-          name: kubecompute-simple--svcacc
-  - name: kubecompute-simple--pdb
+          name: c1--svcacc
+  - name: c1--pdb
     spec:
       object:
         apiVersion: policy/v1beta1
         kind: PodDisruptionBudget
         metadata:
-          name: kubecompute-simple--pdb
+          name: c1--pdb
         spec:
-          minAvailable: 0%
+          minAvailable: 66%
           selector:
             matchLabels:
-              resourceName: kubecompute-simple
+              resourceName: c1
               stateName: state1
-  - name: kubecompute-simple
+  - name: c1
     references:
-    - name: kubecompute-simple--svcacc-metadata-name
+    - name: c1--svcacc-metadata-name
       path: metadata.name
-      resource: kubecompute-simple--svcacc
+      resource: c1--svcacc
     spec:
       object:
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: kubecompute-simple
+          name: c1
         spec:
           progressDeadlineSeconds: 600
-          replicas: 1
+          replicas: 5
           revisionHistoryLimit: 0
           selector:
             matchLabels:
-              resourceName: kubecompute-simple
+              resourceName: c1
               stateName: state1
           strategy:
             rollingUpdate:
@@ -67,7 +67,7 @@ spec:
                 atlassian.com/resource_owner: an_owner
               creationTimestamp: null
               labels:
-                resourceName: kubecompute-simple
+                resourceName: c1
                 stateName: state1
             spec:
               affinity:
@@ -79,7 +79,7 @@ spec:
                         - key: resourceName
                           operator: In
                           values:
-                          - kubecompute-simple
+                          - c1
                         - key: stateName
                           operator: In
                           values:
@@ -92,7 +92,7 @@ spec:
                         - key: resourceName
                           operator: In
                           values:
-                          - kubecompute-simple
+                          - c1
                         - key: stateName
                           operator: In
                           values:
@@ -121,30 +121,10 @@ spec:
                     optional: true
                 image: docker.example.com/atlassian/micros-analytics:0.1
                 imagePullPolicy: IfNotPresent
-                livenessProbe:
-                  failureThreshold: 3
-                  httpGet:
-                    path: /healthcheck
-                    port: 8080
-                    scheme: HTTP
-                  initialDelaySeconds: 5
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 1
                 name: microservice
                 ports:
                 - containerPort: 8080
                   protocol: TCP
-                readinessProbe:
-                  failureThreshold: 3
-                  httpGet:
-                    path: /readiness
-                    port: 8080
-                    scheme: HTTP
-                  initialDelaySeconds: 10
-                  periodSeconds: 10
-                  successThreshold: 1
-                  timeoutSeconds: 5
                 resources:
                   limits:
                     cpu: 500m
@@ -175,14 +155,6 @@ spec:
                     optional: true
                 image: docker.example.com/my_pgbouncer:abcxyz
                 imagePullPolicy: IfNotPresent
-                livenessProbe:
-                  failureThreshold: 3
-                  initialDelaySeconds: 5
-                  periodSeconds: 30
-                  successThreshold: 1
-                  tcpSocket:
-                    port: 5432
-                  timeoutSeconds: 1
                 name: pgbouncer
                 ports:
                 - containerPort: 5432
@@ -194,6 +166,160 @@ spec:
                   requests:
                     cpu: 50m
                     memory: 50Mi
+                terminationMessagePath: /dev/termination-log
+                terminationMessagePolicy: File
+              dnsPolicy: ClusterFirst
+              restartPolicy: Always
+              schedulerName: default-scheduler
+              securityContext: {}
+              serviceAccountName: '!{c1--svcacc-metadata-name}'
+              terminationGracePeriodSeconds: 30
+  - name: c1--hpa
+    references:
+    - name: c1-metadata-name
+      path: metadata.name
+      resource: c1
+    spec:
+      object:
+        apiVersion: autoscaling/v2beta1
+        kind: HorizontalPodAutoscaler
+        metadata:
+          name: c1--hpa
+        spec:
+          maxReplicas: 10
+          metrics:
+          - resource:
+              name: cpu
+              targetAverageUtilization: 50
+            type: Resource
+          - resource:
+              name: memory
+              targetAverageValue: 50Mi
+            type: Resource
+          minReplicas: 5
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: '!{c1-metadata-name}'
+  - name: c2--svcacc
+    spec:
+      object:
+        apiVersion: v1
+        imagePullSecrets:
+        - name: kubecompute-docker-atl-paas
+        kind: ServiceAccount
+        metadata:
+          name: c2--svcacc
+  - name: c2--pdb
+    spec:
+      object:
+        apiVersion: policy/v1beta1
+        kind: PodDisruptionBudget
+        metadata:
+          name: c2--pdb
+        spec:
+          minAvailable: 50%
+          selector:
+            matchLabels:
+              resourceName: c2
+              stateName: state1
+  - name: c2
+    references:
+    - name: c2--svcacc-metadata-name
+      path: metadata.name
+      resource: c2--svcacc
+    spec:
+      object:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: c2
+        spec:
+          progressDeadlineSeconds: 600
+          replicas: 2
+          revisionHistoryLimit: 0
+          selector:
+            matchLabels:
+              resourceName: c2
+              stateName: state1
+          strategy:
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 25%
+            type: RollingUpdate
+          template:
+            metadata:
+              annotations:
+                atlassian.com/business_unit: some_unit
+                atlassian.com/logging_id: logging-id-from-configmap
+                atlassian.com/resource_owner: an_owner
+              creationTimestamp: null
+              labels:
+                resourceName: c2
+                stateName: state1
+            spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - c2
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                    weight: 75
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: resourceName
+                          operator: In
+                          values:
+                          - c2
+                        - key: stateName
+                          operator: In
+                          values:
+                          - state1
+                      topologyKey: kubernetes.io/hostname
+                    weight: 50
+              containers:
+              - env:
+                - name: ASAP_PUBLIC_KEY_REPOSITORY_URL
+                  value: https://asap-distribution.us-west-1.staging.paas-inf.net/
+                - name: ASAP_PUBLIC_KEY_FALLBACK_REPOSITORY_URL
+                  value: https://asap-distribution.us-east-1.staging.paas-inf.net/
+                - name: MICROS_AWS_REGION
+                  value: testregion
+                - name: MICROS_BUSINESS_UNIT
+                  value: some_unit
+                - name: MICROS_ENVTYPE
+                  value: testenv
+                - name: MICROS_SERVICE
+                  value: test-servicename
+                - name: MICROS_RESOURCE_OWNER
+                  value: an_owner
+                envFrom:
+                - secretRef:
+                    name: common-secrets
+                    optional: true
+                image: docker.example.com/atlassian/micros-analytics:0.1
+                imagePullPolicy: IfNotPresent
+                name: microservice
+                ports:
+                - containerPort: 8080
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 250m
+                    memory: 64Mi
                 terminationMessagePath: /dev/termination-log
                 terminationMessagePolicy: File
               - env:
@@ -215,22 +341,12 @@ spec:
                 - secretRef:
                     name: common-secrets
                     optional: true
-                image: docker.example.com/my_sidecar:abcxyz
+                image: docker.example.com/my_pgbouncer:abcxyz
                 imagePullPolicy: IfNotPresent
-                livenessProbe:
-                  exec:
-                    command:
-                    - cat
-                    - /tmp/healthy
-                  failureThreshold: 3
-                  initialDelaySeconds: 5
-                  periodSeconds: 10
-                  successThreshold: 1
-                  timeoutSeconds: 1
-                name: sidecar
+                name: pgbouncer
                 ports:
-                - containerPort: 8080
-                  protocol: TCP
+                - containerPort: 5432
+                  protocol: UDP
                 resources:
                   limits:
                     cpu: 250m
@@ -244,29 +360,33 @@ spec:
               restartPolicy: Always
               schedulerName: default-scheduler
               securityContext: {}
-              serviceAccountName: '!{kubecompute-simple--svcacc-metadata-name}'
+              serviceAccountName: '!{c2--svcacc-metadata-name}'
               terminationGracePeriodSeconds: 30
-  - name: kubecompute-simple--hpa
+  - name: c2--hpa
     references:
-    - name: kubecompute-simple-metadata-name
+    - name: c2-metadata-name
       path: metadata.name
-      resource: kubecompute-simple
+      resource: c2
     spec:
       object:
         apiVersion: autoscaling/v2beta1
         kind: HorizontalPodAutoscaler
         metadata:
-          name: kubecompute-simple--hpa
+          name: c2--hpa
         spec:
-          maxReplicas: 5
+          maxReplicas: 10
           metrics:
           - resource:
               name: cpu
-              targetAverageUtilization: 80
+              targetAverageUtilization: 50
             type: Resource
-          minReplicas: 1
+          - resource:
+              name: memory
+              targetAverageValue: 50Mi
+            type: Resource
+          minReplicas: 2
           scaleTargetRef:
             apiVersion: apps/v1
             kind: Deployment
-            name: '!{kubecompute-simple-metadata-name}'
+            name: '!{c2-metadata-name}'
 status: {}

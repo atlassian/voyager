@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/atlassian/voyager"
-	composition_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
+	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	"github.com/atlassian/voyager/pkg/replication"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +27,7 @@ const (
 	serviceDescriptorDeletionTimeout = 1 * time.Minute
 )
 
-func buildServiceDescriptor(name string, location voyager.Location, version string) (*composition_v1.ServiceDescriptor, error) {
+func buildServiceDescriptor(name string, location voyager.Location, version string) (*comp_v1.ServiceDescriptor, error) {
 	bytes, err := json.Marshal(map[string]string{
 		versionParameter: version,
 		timeParameter:    time.Now().Format(time.RFC3339),
@@ -40,10 +40,10 @@ func buildServiceDescriptor(name string, location voyager.Location, version stri
 		Raw: bytes,
 	}
 
-	return &composition_v1.ServiceDescriptor{
+	return &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: composition_v1.ServiceDescriptorResourceVersion,
-			Kind:       composition_v1.ServiceDescriptorResourceKind,
+			APIVersion: comp_v1.ServiceDescriptorResourceVersion,
+			Kind:       comp_v1.ServiceDescriptorResourceKind,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: name,
@@ -51,23 +51,23 @@ func buildServiceDescriptor(name string, location voyager.Location, version stri
 				replication.ReplicateKey: strconv.FormatBool(false),
 			},
 		},
-		Spec: composition_v1.ServiceDescriptorSpec{
-			Locations: []composition_v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				{
-					Name:    composition_v1.ServiceDescriptorLocationName(locationName),
+					Name:    comp_v1.ServiceDescriptorLocationName(locationName),
 					Account: location.Account,
 					Region:  location.Region,
 					EnvType: location.EnvType,
 					Label:   location.Label,
 				},
 			},
-			ResourceGroups: []composition_v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				{
-					Name: composition_v1.ServiceDescriptorResourceGroupName(stackName),
-					Locations: []composition_v1.ServiceDescriptorLocationName{
-						composition_v1.ServiceDescriptorLocationName(locationName),
+					Name: comp_v1.ServiceDescriptorResourceGroupName(stackName),
+					Locations: []comp_v1.ServiceDescriptorLocationName{
+						comp_v1.ServiceDescriptorLocationName(locationName),
 					},
-					Resources: []composition_v1.ServiceDescriptorResource{
+					Resources: []comp_v1.ServiceDescriptorResource{
 						{
 							Name: resourceName,
 							Type: resourceType,

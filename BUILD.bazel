@@ -14,11 +14,11 @@ load("@com_github_atlassian_bazel_tools//buildozer:def.bzl", "buildozer")
 load("@com_github_atlassian_bazel_tools//goimports:def.bzl", "goimports")
 load("@com_github_atlassian_bazel_tools//gometalinter:def.bzl", "gometalinter")
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
 
 gometalinter(
     name = "gometalinter",
-    config = "//:.gometalinter.json",
+    config = "build/gometalinter.json",
     paths = [
         "./...",
     ],
@@ -27,7 +27,7 @@ gometalinter(
 
 gometalinter(
     name = "gometalinterfast",
-    config = "//:.gometalinter.json",
+    config = "build/gometalinter.json",
     paths = [],
     prefix = "github.com/atlassian/voyager",
 )
@@ -68,7 +68,7 @@ buildifier(
 
 buildozer(
     name = "buildozer",
-    commands = "//build/bazel:buildozer_commands.txt",
+    commands = "build/buildozer_commands.txt",
 )
 
 goimports(
@@ -89,5 +89,12 @@ go_library(
     name = "go_default_library",
     srcs = ["types.go"],
     importpath = "github.com/atlassian/voyager",
+    visibility = ["//visibility:public"],
+)
+
+nogo(
+    name = "nogo",
+    config = "build/nogo-config.json",
+    vet = True,
     visibility = ["//visibility:public"],
 )

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
+	apiplatformdns "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
