@@ -99,29 +99,42 @@ func validateScaling(s Scaling) error {
 }
 
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool /*retriable*/, error) {
+func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if resource.Type != apik8scompute.ResourceType {
-		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
 	}
 
 	if err := compute.ValidateASAPDependencies(context); err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:           err,
+			IsExternalError: true,
+		}
 	}
 
 	// Parse spec and apply defaults
 	spec := &Spec{}
 	if err := resource.SpecIntoTyped(spec); err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	// Apply the defaults from the resource state
 	// Defaults are defined in the formation layer
 	if err := spec.ApplyDefaults(resource.Defaults); err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	if err := validateSpec(spec); err != nil {
-		return nil, false, err
+		// completely a user error
+		return &wiringplugin.WiringResultFailure{
+			Error:           err,
+			IsExternalError: true,
+		}
 	}
 	// Prepare environment variables
 	var envDefault []core_v1.EnvVar
@@ -134,10 +147,16 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	for _, dep := range context.Dependencies {
 		bindableEnvVarShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			// this error is because the wiring return an invalid shape or had duplicate shapes - this is an internal error (code issue)
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
+			return &wiringplugin.WiringResultFailure{
+				Error:           errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape),
+				IsExternalError: true,
+			}
 		}
 
 		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
@@ -152,7 +171,10 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		// We also depend on BindableIamAccessible shape
 		bindableIamAccessibleShape, iamFound, err := knownshapes.FindBindableIamAccessibleShape(dep.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			// this error is because the wiring return an invalid shape or had duplicate shapes - this is an internal error (code issue)
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 		if iamFound {
 			var iamBindingResource smith_v1.Resource
@@ -179,12 +201,18 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	if len(resourceWithEnvVarBindings) > 0 {
 		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, resourceWithEnvVarBindings)
 		if err != nil {
-			return nil, false, err
+			// any errors in generating environment variables is more likely to be a user error
+			return &wiringplugin.WiringResultFailure{
+				Error:           err,
+				IsExternalError: true,
+			}
 		}
 
 		secretResource, err := generateSecretResource(resource.Name, envVars, secretRefs)
 		if err != nil {
-			return nil, false, err
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 
 		secretRef := smith_v1.Reference{
@@ -209,7 +237,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
 			context.StateContext.ServiceName, false, resourcesWithIamAccessibleBindings, context, []string{}, buildKube2iamRoles(context))
 		if err != nil {
-			return nil, false, err
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 
 		iamPluginBindingSmithResource := iam.ServiceBinding(resource.Name, iamPluginInstanceSmithResource.Name)
@@ -355,7 +385,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, hpa)
 	}
 
-	result := &wiringplugin.WiringResultSuccess{
+	return &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),
@@ -363,8 +393,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		},
 		Resources: smithResources,
 	}
-
-	return result, false, nil
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {

@@ -244,8 +244,10 @@ func TestPrometheusInstrumentation(t *testing.T) {
 			require.Equal(t, http.StatusOK, recorder.Code)
 
 			var outputMetric io_prometheus_client.Metric
-			api.requestDuration.WithLabelValues("200", "GET", "ap-southeast-2", "", "/apis/aggregator.voyager.atl-paas.net/v1/aggregate").(prometheus.Histogram).Write(&outputMetric)
-			api.requestCounter.WithLabelValues("200", "GET", "ap-southeast-2", "", "/apis/aggregator.voyager.atl-paas.net/v1/aggregate").Write(&outputMetric)
+			err := api.requestDuration.WithLabelValues("200", "GET", "ap-southeast-2", "", "/apis/aggregator.voyager.atl-paas.net/v1/aggregate").(prometheus.Histogram).Write(&outputMetric)
+			require.NoError(t, err)
+			err = api.requestCounter.WithLabelValues("200", "GET", "ap-southeast-2", "", "/apis/aggregator.voyager.atl-paas.net/v1/aggregate").Write(&outputMetric)
+			require.NoError(t, err)
 
 			require.Equal(t, uint64(0), *outputMetric.Histogram.Bucket[0].CumulativeCount)
 			require.Equal(t, float64(0), *outputMetric.Histogram.Bucket[0].UpperBound)
@@ -280,19 +282,18 @@ type testCase struct {
 }
 
 func (tc *testCase) run(t *testing.T) {
-
-	var clusterObjs []runtime.Object
 	var servers []*httptest.Server
-
 	defer func() {
 		for _, server := range servers {
 			server.Close()
 		}
 	}()
 
+	var clusterObjs []runtime.Object
 	for _, c := range tc.clusters {
 		handler := createMockServer(t, tc.uri, c.response)
 		server := httptest.NewServer(handler)
+		servers = append(servers, server)
 
 		cluster := &cr_v1a1.Cluster{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -374,13 +375,10 @@ func (tc *testCase) run(t *testing.T) {
 }
 
 func createMockServer(t *testing.T, uri string, response map[string]interface{}) *HTTPMock {
-	blob, err := json.Marshal(response)
-	require.NoError(t, err)
-
 	return MockHandler(
 		Match(Get, Path(uri)).Respond(
 			Status(http.StatusOK),
-			BytesBody(blob),
+			JSON(t, response),
 		),
 	)
 }
