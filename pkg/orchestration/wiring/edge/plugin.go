@@ -15,8 +15,8 @@ import (
 
 const (
 	ResourceType voyager.ResourceType = "GlobalEdge"
-	ServiceId                         = "10e5a402-45df-5afd-ae86-11377ce2bbb2"
-	PlanId                            = "7d57270a-0348-58d3-829d-447a98fe98d5"
+	serviceID                         = "10e5a402-45df-5afd-ae86-11377ce2bbb2"
+	planID                            = "7d57270a-0348-58d3-829d-447a98fe98d5"
 )
 
 type WiringPlugin struct {
@@ -32,7 +32,7 @@ func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wi
 		return nil, false, err
 	}
 
-	serviceInstance, err := osb.ConstructServiceInstance(resource, ServiceId, PlanId)
+	serviceInstance, err := osb.ConstructServiceInstance(resource, serviceID, planID)
 	if err != nil {
 		return nil, false, err
 	}
