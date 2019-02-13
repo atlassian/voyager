@@ -8,10 +8,11 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	"github.com/pkg/errors"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -30,23 +31,66 @@ type finalSpec struct {
 	autowiringOnlySpec
 }
 type WiringPlugin struct {
-	svccatentangler.SvcCatEntangler
 }
 
 func New() *WiringPlugin {
-	return &WiringPlugin{
-		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: clusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
-			InstanceSpec:                  instanceSpec,
-			ObjectMeta:                    objectMeta,
-			ResourceType:                  ResourceType,
-			Shapes:                        shapes,
+	return &WiringPlugin{}
+}
+
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+	if resource.Type != ResourceType {
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
+	}
+
+	serviceInstance, err := osb.ConstructServiceInstance(resource, clusterServiceClassExternalID, clusterServicePlanExternalID)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
+	}
+
+	instanceParameters, external, retriable, err := instanceParameters(resource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+	serviceInstance.Spec.Parameters = &runtime.RawExtension{
+		Raw: instanceParameters,
+	}
+
+	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
+
+	smithResource := smith_v1.Resource{
+		Name:       instanceResourceName,
+		References: nil,
+		Spec: smith_v1.ResourceSpec{
+			Object: serviceInstance,
 		},
+	}
+
+	shapes, external, retriable, err := instanceShapes(&smithResource)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+
+	return &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: shapes,
+		},
+		Resources: []smith_v1.Resource{smithResource},
 	}
 }
 
-func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool, bool, error) {
+func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, bool, bool, error) {
 	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
 		"SAML_IDP_METADATA_URL": "data.saml_idp_metadata_url",
 		"IDP_METADATA_URL":      "data.idp_metadata_url",
@@ -56,7 +100,7 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _
 	}, false, false, nil
 }
 
-func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool, bool, error) {
+func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
 	if len(context.Dependencies) > 0 {
 		return nil, false, false, errors.New("saml resource should not have any dependencies")
 	}
@@ -90,8 +134,4 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	out, err := json.Marshal(&spec)
 	return out, false, false, err
-}
-
-func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool /* externalErr */, bool /* retriableErr */, error) {
-	return meta_v1.ObjectMeta{}, false, false, nil
 }
