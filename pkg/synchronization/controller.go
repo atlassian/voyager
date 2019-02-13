@@ -59,15 +59,14 @@ const (
 )
 
 const (
-	serviceCentralPollPeriod                               = 30 * time.Second
-	serviceCentralListAllPeriod                            = 30 * time.Minute
-	serviceCentralListDriftCompensation                    = 5 * time.Second
-	releaseManagementPollPeriod                            = 5 * time.Second
-	releaseManagementSyncAllPeriod                         = 30 * time.Minute
-	baseDelayProcSec                                       = 15
-	rmsPollJitterFactor                                    = 1.2
-	secretTypeOpsGenie                  core_v1.SecretType = voyager.Domain + "/opsgenie"
-	secretNameOpsGenie                                     = "opsgenie-integrations"
+	serviceCentralPollPeriod            = 30 * time.Second
+	serviceCentralListAllPeriod         = 30 * time.Minute
+	serviceCentralListDriftCompensation = 5 * time.Second
+	releaseManagementPollPeriod         = 5 * time.Second
+	releaseManagementSyncAllPeriod      = 30 * time.Minute
+	baseDelayProcSec                    = 15
+	rmsPollJitterFactor                 = 1.2
+	secretNameOpsGenie                  = "opsgenie-integrations"
 )
 
 type ServiceMetadataStore interface {
@@ -498,7 +497,7 @@ func createOpsGenieSecretSpec(ogInt *opsgenie.IntegrationsResponse, ns string) (
 		Data: map[string][]byte{
 			secretNameOpsGenie: jData,
 		},
-		Type: secretTypeOpsGenie,
+		Type: core_v1.SecretTypeOpaque,
 	}, nil
 }
 
