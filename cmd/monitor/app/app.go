@@ -18,9 +18,10 @@ import (
 )
 
 type App struct {
-	RestConfig *rest.Config
-	Logger     *zap.Logger
-	Options    Options
+	RestConfig        *rest.Config
+	Logger            *zap.Logger
+	Options           Options
+	ServiceDescriptor string
 }
 
 func NewFromFlags(flagset *flag.FlagSet, arguments []string) (*App, error) {
@@ -32,6 +33,7 @@ func NewFromFlags(flagset *flag.FlagSet, arguments []string) (*App, error) {
 	options.BindRestClientFlags(&restClientOpts, flagset)
 
 	configFile := flagset.String("config", "config.yaml", "Configuration file")
+	sd := flagset.String("service-descriptor", "{}", "JSON encoded ServiceDescriptor to use in test")
 
 	err := flagset.Parse(arguments)
 	if err != nil {
@@ -49,9 +51,10 @@ func NewFromFlags(flagset *flag.FlagSet, arguments []string) (*App, error) {
 	}
 
 	return &App{
-		Logger:     options.LoggerFromOptions(logOpts),
-		RestConfig: restConfig,
-		Options:    *opts,
+		Logger:            options.LoggerFromOptions(logOpts),
+		RestConfig:        restConfig,
+		Options:           *opts,
+		ServiceDescriptor: *sd,
 	}, nil
 }
 
@@ -84,7 +87,7 @@ func (a *App) Run(ctx context.Context) error {
 		ServiceDescriptorName:  a.Options.ServiceDescriptorName,
 		ExpectedProcessingTime: a.Options.ExpectedProcessingTime,
 		ServiceSpec:            a.Options.ServiceSpec,
-		Version:                runID,
+		ServiceDescriptor:      a.ServiceDescriptor,
 
 		ServiceDescriptorClient: composition.CompositionV1().ServiceDescriptors(),
 		ServiceCatalogClient:    sc,
