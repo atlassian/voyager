@@ -109,7 +109,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	}
 }
 
-func (awp *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriableError */, error) {
+func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriableError */, error) {
 	rawAttributes, external, retriable, err := oap.BuildAttributes(resource.Spec, resource.Defaults)
 	if err != nil {
 		return nil, external, retriable, err
@@ -143,8 +143,8 @@ func (awp *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, con
 	}
 
 	serviceName := serviceName(userServiceName, context)
-	environment := awp.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context))
-	return instanceSpec(serviceName, resourceName, awp.OAPResourceTypeName, *environment, attributes, alarms)
+	environment := p.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context))
+	return instanceSpec(serviceName, resourceName, p.OAPResourceTypeName, *environment, attributes, alarms)
 }
 
 func serviceName(userServiceName voyager.ServiceName, context *wiringplugin.WiringContext) voyager.ServiceName {
