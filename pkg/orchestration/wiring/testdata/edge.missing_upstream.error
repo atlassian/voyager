@@ -1,0 +1,1 @@
+failed to wire up resource "ingress" of type "GlobalEdge": error invoking plugin: UpstreamAddress is required

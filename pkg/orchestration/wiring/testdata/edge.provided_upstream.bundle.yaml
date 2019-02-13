@@ -24,9 +24,10 @@ spec:
           clusterServiceClassExternalID: 10e5a402-45df-5afd-ae86-11377ce2bbb2
           clusterServicePlanExternalID: 7d57270a-0348-58d3-829d-447a98fe98d5
           parameters:
-            serviceName: test-servicename
             resource:
               attributes:
                 upstream_address:
                 - address: foobar.com
                   region: ap-southeast-2
+            serviceName: test-servicename
+status: {}
