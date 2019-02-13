@@ -160,7 +160,7 @@ spec:
             apiVersion: apps/v1
             kind: Deployment
             name: '!{kubecompute-simple-metadata-name}'
-  - name: alarms--kubecompute-simple--cpu--instance
+  - name: alarms--kubecompute-simple--cpu
     references:
     - resource: kubecompute-simple
     spec:
@@ -168,7 +168,7 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: alarms--cpu
+          name: alarms--kubecompute-simple--cpu
         spec:
           clusterServiceClassExternalID: 875d4a87-e887-4838-a0b5-b64491dbf9cb
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
@@ -180,7 +180,7 @@ spec:
                 [[/is_warning_recovery]] [[#is_alert]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
                 [[/is_alert]][[#is_alert_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
                 [[/is_alert_recovery]]
-              name: test-servicename-alarms-cpu-testenv-
+              name: test-servicename-testenv-alarms-cpu
               options:
                 escalation_message: High CPU usage for deployment kubecompute-simple
                   in testregion testenv [[#is_warning]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
@@ -199,7 +199,7 @@ spec:
             environment: testenv
             region: testregion
             serviceName: test-servicename
-  - name: alarms--kubecompute-simple--memory--instance
+  - name: alarms--kubecompute-simple--memory
     references:
     - resource: kubecompute-simple
     spec:
@@ -207,7 +207,7 @@ spec:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: alarms--memory
+          name: alarms--kubecompute-simple--memory
         spec:
           clusterServiceClassExternalID: 875d4a87-e887-4838-a0b5-b64491dbf9cb
           clusterServicePlanExternalID: d8048a2d-49de-4fda-b7ef-328de171cd32
@@ -219,7 +219,7 @@ spec:
                 [[/is_warning_recovery]] [[#is_alert]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
                 [[/is_alert]][[#is_alert_recovery]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}
                 [[/is_alert_recovery]]
-              name: test-servicename-alarms-memory-testenv-
+              name: test-servicename-testenv-alarms-memory
               options:
                 escalation_message: High MEMORY usage for deployment kubecompute-simple
                   in testregion testenv [[#is_warning]] @{123123123123123 https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312}

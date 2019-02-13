@@ -43,11 +43,11 @@ func ReferenceName(producer smith_v1.ResourceName, nameElems ...string) smith_v1
 }
 
 func ConsumerProducerResourceName(consumer, producer voyager.ResourceName) smith_v1.ResourceName {
-	return smith_v1.ResourceName(JoinResourceNameParts(string(consumer), string(producer)))
+	return smith_v1.ResourceName(joinResourceNameParts(string(consumer), string(producer)))
 }
 
 func ConsumerProducerResourceNameWithPostfix(consumer, producer voyager.ResourceName, postfix string) smith_v1.ResourceName {
-	return smith_v1.ResourceName(JoinResourceNameParts(string(consumer), string(producer), postfix))
+	return smith_v1.ResourceName(joinResourceNameParts(string(consumer), string(producer), postfix))
 }
 
 func ResourceName(resource voyager.ResourceName) smith_v1.ResourceName {
@@ -55,15 +55,15 @@ func ResourceName(resource voyager.ResourceName) smith_v1.ResourceName {
 }
 
 func ResourceNameWithPostfix(resource voyager.ResourceName, postfix string) smith_v1.ResourceName {
-	return smith_v1.ResourceName(JoinResourceNameParts(string(resource), postfix))
+	return smith_v1.ResourceName(joinResourceNameParts(string(resource), postfix))
 }
 
 func ConsumerProducerMetaName(consumer, producer voyager.ResourceName) string {
-	return JoinResourceNameParts(string(consumer), string(producer))
+	return joinResourceNameParts(string(consumer), string(producer))
 }
 
 func ConsumerProducerMetaNameWithPostfix(consumer, producer voyager.ResourceName, postfix string) string {
-	return JoinResourceNameParts(string(consumer), string(producer), postfix)
+	return joinResourceNameParts(string(consumer), string(producer), postfix)
 }
 
 func MetaName(resource voyager.ResourceName) string {
@@ -71,13 +71,13 @@ func MetaName(resource voyager.ResourceName) string {
 }
 
 func MetaNameWithPostfix(resource voyager.ResourceName, postfix string) string {
-	return JoinResourceNameParts(string(resource), postfix)
+	return joinResourceNameParts(string(resource), postfix)
 }
 
-// JoinResourceNameParts joins pieces of a name.
+// joinResourceNameParts joins pieces of a name.
 // voyager.ResourceName cannot contain more than one `-` in a row so it is safe to construct
 // smith_v1.ResourceName and meta names for Kubernetes objects using `--` as a delimiter as long as one or more
 // starting parts of the name provide namespacing to avoid clashes.
-func JoinResourceNameParts(parts ...string) string {
+func joinResourceNameParts(parts ...string) string {
 	return strings.Join(parts, "--")
 }

@@ -16,18 +16,19 @@ const (
 )
 
 type AlarmAttributes struct {
-	Name    string       `json:"name"`
-	Type    string       `json:"type"`
-	Query   string       `json:"query"`
-	Options AlarmOptions `json:"options"`
-	Message string       `json:"message"`
+	Name    string        `json:"name"`
+	Type    AlarmSpecType `json:"type"`
+	Query   string        `json:"query"`
+	Options AlarmOptions  `json:"options"`
+	Message string        `json:"message"`
 }
 
 type OSBInstanceParameters struct {
 	ServiceName voyager.ServiceName `json:"serviceName"`
-	Attributes  AlarmAttributes     `json:"attributes"`
 	Environment voyager.EnvType     `json:"environment"`
 	Region      voyager.Region      `json:"region"`
+	Label       voyager.Label       `json:"label,omitempty"`
+	Attributes  AlarmAttributes     `json:"attributes"`
 }
 type AlarmOptions struct {
 	Thresholds        *AlarmThresholds `json:"thresholds,omitempty"`
