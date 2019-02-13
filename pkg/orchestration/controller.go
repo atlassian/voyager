@@ -276,7 +276,8 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 	}
 	resourceStatuses := state.Status.ResourceStatuses
 
-	if err != nil {
+	switch {
+	case err != nil:
 		errorCond.Status = cond_v1.ConditionTrue
 		errorCond.Message = err.Error()
 		if retriable {
@@ -292,13 +293,15 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, state *orch_v1.Stat
 				resourceStatuses = c.calculateResourceStatuses(state.Spec.Resources, bundle)
 			}
 		}
-	} else if len(bundle.Status.Conditions) == 0 {
+
+	case len(bundle.Status.Conditions) == 0:
 		// smith is not currently reporting any Conditions;
 		// presumably we've just created something.
 		inProgressCond.Status = cond_v1.ConditionTrue
 		inProgressCond.Reason = "WaitingOnSmithConditions"
 		inProgressCond.Message = "Waiting for Smith to report Conditions (initial creation?)"
-	} else {
+
+	default:
 		copyCondition(bundle, smith_v1.BundleInProgress, &inProgressCond)
 		copyCondition(bundle, smith_v1.BundleReady, &readyCond)
 		copyCondition(bundle, smith_v1.BundleError, &errorCond)

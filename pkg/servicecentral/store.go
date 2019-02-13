@@ -255,7 +255,7 @@ func prepareServiceToWrite(existingData ServiceDataRead, service *creator_v1.Ser
 		// and our new set of platform tags, converted into the correct format
 		nonPlatformTags := nonPlatformTags(existingData.Tags)
 		platformTags := convertPlatformTags(service.Spec.ResourceTags)
-		sd.Tags = append(nonPlatformTags, platformTags...)
+		sd.Tags = append(nonPlatformTags, platformTags...) // nolint: gocritic
 	}
 
 	return &sd, nil
