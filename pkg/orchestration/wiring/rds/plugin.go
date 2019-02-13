@@ -2,10 +2,11 @@ package rds
 
 import (
 	"encoding/json"
+	"reflect"
+
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
@@ -106,11 +107,11 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
 
 	smithResource := smith_v1.Resource{
-			Name:       instanceResourceName,
-			References: nil, // No references
-			Spec: smith_v1.ResourceSpec{
-				Object: serviceInstance,
-			},
+		Name:       instanceResourceName,
+		References: nil, // No references
+		Spec: smith_v1.ResourceSpec{
+			Object: serviceInstance,
+		},
 	}
 
 	shapes, external, retriable, err := instanceShapes(resource, &smithResource, context)
@@ -126,7 +127,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		Contract: wiringplugin.ResourceContract{
 			Shapes: shapes,
 		},
-		Resources: []smith_v1.Resource{ smithResource },
+		Resources: []smith_v1.Resource{smithResource},
 	}
 
 }
