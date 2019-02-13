@@ -3,7 +3,7 @@ package apiserver
 import (
 	apis_trebuchet "github.com/atlassian/voyager/pkg/apis/trebuchet"
 	"github.com/atlassian/voyager/pkg/apis/trebuchet/install"
-	"github.com/atlassian/voyager/pkg/apis/trebuchet/v1"
+	v1 "github.com/atlassian/voyager/pkg/apis/trebuchet/v1"
 	"github.com/atlassian/voyager/pkg/trebuchet"
 	trebuchetrest "github.com/atlassian/voyager/pkg/trebuchet/server/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
