@@ -23,7 +23,6 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	orchclient_fake "github.com/atlassian/voyager/pkg/orchestration/client/fake"
 	orchInf "github.com/atlassian/voyager/pkg/orchestration/informer"
-	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -220,7 +219,29 @@ func TestCreatesStateMissingConfigMapName(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			_, err := cntrlr.Process(ctx)
 
-			require.EqualError(t, err, "configMapName is missing")
+			require.NoError(t, err)
+
+			formActions := tc.formFake.Actions()
+			assert.Len(t, formActions, 3) // 0:list,1:watch,2:update
+
+			assert.Equal(t, "update", formActions[2].GetVerb())
+			assert.Equal(t, "parent-namespace", formActions[2].GetNamespace())
+			assert.Equal(t, form_v1.SchemeGroupVersion.WithResource(form_v1.LocationDescriptorResourcePlural), formActions[2].GetResource())
+
+			updatedLd := formActions[2].(kube_testing.UpdateAction).GetObject().(*form_v1.LocationDescriptor)
+			require.NotNil(t, updatedLd)
+			assert.Equal(t, "test-ld", updatedLd.GetName())
+
+			var errorCondition *cond_v1.Condition
+			for _, cond := range updatedLd.Status.Conditions {
+				if cond.Type == cond_v1.ConditionError {
+					errorCondition = &cond
+					break
+				}
+			}
+			require.NotNil(t, errorCondition)
+			assert.Equal(t, cond_v1.ConditionTrue, errorCondition.Status)
+			assert.Equal(t, "configMapName is missing", errorCondition.Message)
 		},
 	}
 
@@ -457,12 +478,33 @@ func TestLocationDescriptorWithReleaseTemplatingUsingInvalidKey(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			_, err := cntrlr.Process(ctx)
 
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "variable not defined")
+			require.NoError(t, err)
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
 			// 0:list,1:watch,<FAILS>
+
+			formActions := tc.formFake.Actions()
+			assert.Len(t, formActions, 3) // 0:list,1:watch,2:update
+
+			assert.Equal(t, "update", formActions[2].GetVerb())
+			assert.Equal(t, "testNamespace", formActions[2].GetNamespace())
+			assert.Equal(t, form_v1.SchemeGroupVersion.WithResource(form_v1.LocationDescriptorResourcePlural), formActions[2].GetResource())
+
+			updatedLd := formActions[2].(kube_testing.UpdateAction).GetObject().(*form_v1.LocationDescriptor)
+			require.NotNil(t, updatedLd)
+			assert.Equal(t, "test-ld", updatedLd.GetName())
+
+			var errorCondition *cond_v1.Condition
+			for _, cond := range updatedLd.Status.Conditions {
+				if cond.Type == cond_v1.ConditionError {
+					errorCondition = &cond
+					break
+				}
+			}
+			require.NotNil(t, errorCondition)
+			assert.Equal(t, cond_v1.ConditionTrue, errorCondition.Status)
+			assert.Equal(t, "variable not defined: \"INVALID.foobar\"", errorCondition.Message)
 		},
 	}
 
@@ -491,8 +533,8 @@ func TestLocationDescriptorErrorPropagation(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			_, err := cntrlr.Process(ctx)
 
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "variable not defined")
+			// This is a user error and is not bubbled up to ctrl
+			require.NoError(t, err)
 
 			actions := tc.formFake.Actions()
 			assert.Len(t, actions, 3) // 0:list,1:watch,2:update
@@ -552,16 +594,38 @@ func TestProcessLocationDescriptorWithMultipleTemplatingErrorsReturnsErrorList(t
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			_, err := cntrlr.Process(ctx)
 
-			require.Error(t, err)
-			numErrors := len(err.(*util.ErrorList).ErrorList)
-			require.Equal(t, 3, numErrors) // One error per resource
-			for _, e := range err.(*util.ErrorList).ErrorList {
-				assert.Contains(t, e.Error(), "variable not defined")
-			}
+			require.NoError(t, err)
+			// numErrors := len(err.(*util.ErrorList).ErrorList)
+			// require.Equal(t, 3, numErrors) // One error per resource
+			// for _, e := range err.(*util.ErrorList).ErrorList {
+			// 	assert.Contains(t, e.Error(), "variable not defined")
+			// }
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
 			// 0:list,1:watch,<FAILS>
+
+			formActions := tc.formFake.Actions()
+			assert.Len(t, formActions, 3) // 0:list,1:watch,2:update
+
+			assert.Equal(t, "update", formActions[2].GetVerb())
+			assert.Equal(t, "testNamespace", formActions[2].GetNamespace())
+			assert.Equal(t, form_v1.SchemeGroupVersion.WithResource(form_v1.LocationDescriptorResourcePlural), formActions[2].GetResource())
+
+			updatedLd := formActions[2].(kube_testing.UpdateAction).GetObject().(*form_v1.LocationDescriptor)
+			require.NotNil(t, updatedLd)
+			assert.Equal(t, "test-ld", updatedLd.GetName())
+
+			var errorCondition *cond_v1.Condition
+			for _, cond := range updatedLd.Status.Conditions {
+				if cond.Type == cond_v1.ConditionError {
+					errorCondition = &cond
+					break
+				}
+			}
+			require.NotNil(t, errorCondition)
+			assert.Equal(t, cond_v1.ConditionTrue, errorCondition.Status)
+			assert.Equal(t, "variable not defined: \"INVALID.foobar\", variable not defined: \"INVALID.foobar\", variable not defined: \"INVALID.foobar\"", errorCondition.Message)
 		},
 	}
 
@@ -590,12 +654,34 @@ func TestMissingConfigMapWithTemplatingKeysPresentErrorIsHandled(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			_, err := cntrlr.Process(ctx)
 
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "no release data was available")
+			// Missing configMap is an external error
+			require.NoError(t, err)
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
 			// 0:list,1:watch,<FAILS>
+
+			formActions := tc.formFake.Actions()
+			assert.Len(t, formActions, 3) // 0:list,1:watch,2:update
+
+			assert.Equal(t, "update", formActions[2].GetVerb())
+			assert.Equal(t, "testNamespace", formActions[2].GetNamespace())
+			assert.Equal(t, form_v1.SchemeGroupVersion.WithResource(form_v1.LocationDescriptorResourcePlural), formActions[2].GetResource())
+
+			updatedLd := formActions[2].(kube_testing.UpdateAction).GetObject().(*form_v1.LocationDescriptor)
+			require.NotNil(t, updatedLd)
+			assert.Equal(t, "test-ld", updatedLd.GetName())
+
+			var errorCondition *cond_v1.Condition
+			for _, cond := range updatedLd.Status.Conditions {
+				if cond.Type == cond_v1.ConditionError {
+					errorCondition = &cond
+					break
+				}
+			}
+			require.NotNil(t, errorCondition)
+			assert.Equal(t, cond_v1.ConditionTrue, errorCondition.Status)
+			assert.Equal(t, "no release data was available, but variable deep.foobar was templated in LD", errorCondition.Message)
 		},
 	}
 
