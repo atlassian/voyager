@@ -12,7 +12,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
