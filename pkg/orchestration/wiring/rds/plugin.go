@@ -4,18 +4,17 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
