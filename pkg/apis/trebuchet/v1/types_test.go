@@ -10,3 +10,6 @@ var _ meta_v1.ObjectMetaAccessor = &Release{}
 
 var _ runtime.Object = &ReleaseList{}
 var _ meta_v1.ListMetaAccessor = &ReleaseList{}
+
+var _ runtime.Object = &ReleaseGroup{}
+var _ meta_v1.ObjectMetaAccessor = &ReleaseGroup{}

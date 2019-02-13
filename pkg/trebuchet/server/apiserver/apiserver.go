@@ -82,13 +82,27 @@ func (c completedConfig) New() (*TrebuchetServer, error) {
 		GenericAPIServer: genericServer,
 	}
 
+	releaseHandler, err := trebuchet.NewReleaseHandler(c.ExtraConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	releaseGroupHandler, err := trebuchet.NewReleaseGroupHandler(c.ExtraConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(apis_trebuchet.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
-	// TODO: inject a custom Store or HTTP handler to proxy request to underlying service
-
 	v1Storage := map[string]rest.Storage{}
-	v1Storage["releases"] = &trebuchetrest.REST{
+	v1Storage["releases"] = &trebuchetrest.ReleaseREST{
 		Logger: c.ExtraConfig.Logger,
+		Handler: releaseHandler,
+	}
+
+	v1Storage["releaseGroups"] = &trebuchetrest.ReleaseGroupREST{
+		Logger: c.ExtraConfig.Logger,
+		Handler: releaseGroupHandler,
 	}
 
 	apiGroupInfo.VersionedResourcesStorageMap[v1.ReleaseResourceVersion] = v1Storage
