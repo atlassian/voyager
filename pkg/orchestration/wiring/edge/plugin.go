@@ -2,6 +2,7 @@ package edge
 
 import (
 	"encoding/json"
+
 	smith "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orchestration "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
@@ -76,7 +77,6 @@ func instanceParameters(resource *orchestration.StateResource, context *wiring.W
 		Resource: ResourceParameters{
 			Attributes: attributes,
 		},
-
 	}
 
 	if len(parameters.Resource.Attributes.UpstreamAddress) == 0 {
