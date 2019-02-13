@@ -7,7 +7,6 @@ import (
 
 	"github.com/ash2k/stager"
 	"github.com/atlassian/ctrl"
-	"github.com/atlassian/voyager/pkg/apis/composition/v1"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	compclient_fake "github.com/atlassian/voyager/pkg/composition/client/fake"
 	compInf "github.com/atlassian/voyager/pkg/composition/informer"
@@ -26,16 +25,16 @@ func TestCreateServiceDescriptor(t *testing.T) {
 
 	tc := testCase{
 		test: func(t *testing.T, cntrlr *Controller, pctx *ctrl.ProcessContext, tc *testCase) {
-			desiredSD := &v1.ServiceDescriptor{
+			desiredSD := &comp_v1.ServiceDescriptor{
 				TypeMeta: meta_v1.TypeMeta{
-					Kind:       v1.ServiceDescriptorResourceKind,
-					APIVersion: v1.ServiceDescriptorResourceVersion,
+					Kind:       comp_v1.ServiceDescriptorResourceKind,
+					APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:            "test-sd",
 					ResourceVersion: "123",
 				},
-				Spec: v1.ServiceDescriptorSpec{
+				Spec: comp_v1.ServiceDescriptorSpec{
 					Version: "1",
 				},
 			}
@@ -56,14 +55,14 @@ func TestCreateServiceDescriptor(t *testing.T) {
 func TestUpdateServiceDescriptor(t *testing.T) {
 	t.Parallel()
 
-	existingSD := &v1.ServiceDescriptor{
+	existingSD := &comp_v1.ServiceDescriptor{
 		// we explicitly exclude the typemeta to mimic the behavior
 		// we see with typed objects having their Type meta removed
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-sd",
 			UID:  "the-sd-uid",
 		},
-		Spec: v1.ServiceDescriptorSpec{
+		Spec: comp_v1.ServiceDescriptorSpec{
 			Version: "1",
 		},
 	}
@@ -71,16 +70,16 @@ func TestUpdateServiceDescriptor(t *testing.T) {
 	tc := testCase{
 		sdObjects: []runtime.Object{existingSD},
 		test: func(t *testing.T, cntrlr *Controller, pctx *ctrl.ProcessContext, tc *testCase) {
-			desiredSD := &v1.ServiceDescriptor{
+			desiredSD := &comp_v1.ServiceDescriptor{
 				TypeMeta: meta_v1.TypeMeta{
-					Kind:       v1.ServiceDescriptorResourceKind,
-					APIVersion: v1.ServiceDescriptorResourceVersion,
+					Kind:       comp_v1.ServiceDescriptorResourceKind,
+					APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "test-sd",
 					UID:  "the-sd-uid",
 				},
-				Spec: v1.ServiceDescriptorSpec{
+				Spec: comp_v1.ServiceDescriptorSpec{
 					Version: "2",
 				},
 			}
@@ -102,14 +101,14 @@ func TestUpdateServiceDescriptor(t *testing.T) {
 func TestUpdateServiceDescriptorNoOp(t *testing.T) {
 	t.Parallel()
 
-	existingSD := &v1.ServiceDescriptor{
+	existingSD := &comp_v1.ServiceDescriptor{
 		// we explicitly exclude the typemeta to mimic the behavior
 		// we see with typed objects having their Type meta removed
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-sd",
 			UID:  "the-sd-uid",
 		},
-		Spec: v1.ServiceDescriptorSpec{
+		Spec: comp_v1.ServiceDescriptorSpec{
 			Version: "1",
 		},
 	}
@@ -139,7 +138,7 @@ func TestUpdateServiceDescriptorNoOp(t *testing.T) {
 func TestSkipReplicationOfExisting(t *testing.T) {
 	t.Parallel()
 
-	existingSD := &v1.ServiceDescriptor{
+	existingSD := &comp_v1.ServiceDescriptor{
 		// we explicitly exclude the typemeta to mimic the behavior
 		// we see with typed objects having their Type meta removed
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -149,7 +148,7 @@ func TestSkipReplicationOfExisting(t *testing.T) {
 				ReplicateKey: "false",
 			},
 		},
-		Spec: v1.ServiceDescriptorSpec{
+		Spec: comp_v1.ServiceDescriptorSpec{
 			Version: "1",
 		},
 	}
@@ -157,16 +156,16 @@ func TestSkipReplicationOfExisting(t *testing.T) {
 	tc := testCase{
 		sdObjects: []runtime.Object{existingSD},
 		test: func(t *testing.T, cntrlr *Controller, pctx *ctrl.ProcessContext, tc *testCase) {
-			desiredSD := &v1.ServiceDescriptor{
+			desiredSD := &comp_v1.ServiceDescriptor{
 				TypeMeta: meta_v1.TypeMeta{
-					Kind:       v1.ServiceDescriptorResourceKind,
-					APIVersion: v1.ServiceDescriptorResourceVersion,
+					Kind:       comp_v1.ServiceDescriptorResourceKind,
+					APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "test-sd",
 					UID:  "the-sd-uid",
 				},
-				Spec: v1.ServiceDescriptorSpec{
+				Spec: comp_v1.ServiceDescriptorSpec{
 					Version: "2",
 				},
 			}
@@ -190,14 +189,14 @@ func TestSkipReplicationOfExisting(t *testing.T) {
 func TestSkipReplicationOfDesired(t *testing.T) {
 	t.Parallel()
 
-	existingSD := &v1.ServiceDescriptor{
+	existingSD := &comp_v1.ServiceDescriptor{
 		// we explicitly exclude the typemeta to mimic the behavior
 		// we see with typed objects having their Type meta removed
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-sd",
 			UID:  "the-sd-uid",
 		},
-		Spec: v1.ServiceDescriptorSpec{
+		Spec: comp_v1.ServiceDescriptorSpec{
 			Version: "1",
 		},
 	}
@@ -205,10 +204,10 @@ func TestSkipReplicationOfDesired(t *testing.T) {
 	tc := testCase{
 		sdObjects: []runtime.Object{existingSD},
 		test: func(t *testing.T, cntrlr *Controller, pctx *ctrl.ProcessContext, tc *testCase) {
-			desiredSD := &v1.ServiceDescriptor{
+			desiredSD := &comp_v1.ServiceDescriptor{
 				TypeMeta: meta_v1.TypeMeta{
-					Kind:       v1.ServiceDescriptorResourceKind,
-					APIVersion: v1.ServiceDescriptorResourceVersion,
+					Kind:       comp_v1.ServiceDescriptorResourceKind,
+					APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "test-sd",
@@ -217,7 +216,7 @@ func TestSkipReplicationOfDesired(t *testing.T) {
 						ReplicateKey: "false",
 					},
 				},
-				Spec: v1.ServiceDescriptorSpec{
+				Spec: comp_v1.ServiceDescriptorSpec{
 					Version: "2",
 				},
 			}

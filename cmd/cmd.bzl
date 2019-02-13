@@ -1,3 +1,7 @@
+"""
+Macros for cmd.
+"""
+
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 

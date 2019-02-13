@@ -67,10 +67,10 @@ spec:
         objectName: kubecompute-simple--secret
         spec:
           data:
-            ASAP_PRIVATE_KEY: '!{kubecompute-simple--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
-            ASAP_KEY_ID: '!{kubecompute-simple--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
-            ASAP_ISSUER: '!{kubecompute-simple--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
             ASAP_AUDIENCE: '!{kubecompute-simple--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
+            ASAP_ISSUER: '!{kubecompute-simple--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+            ASAP_KEY_ID: '!{kubecompute-simple--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+            ASAP_PRIVATE_KEY: '!{kubecompute-simple--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
   - name: kubecompute-simple---iamrole
     spec:
       plugin:
@@ -82,6 +82,7 @@ spec:
           - arn:aws:iam::test:role/controller-role-testregion.paas-test
           computeType: kubeCompute
           oapResourceName: kubecompute-simple-iamrole
+          policySnippets: {}
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty
@@ -115,7 +116,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
-          policySnippets: {}
   - name: kubecompute-simple---iamrole-binding
     references:
     - name: kubecompute-simple---iamrole-metadata-name
