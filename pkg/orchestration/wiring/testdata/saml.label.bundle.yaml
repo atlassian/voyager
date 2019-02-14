@@ -24,7 +24,7 @@ spec:
           clusterServiceClassExternalID: 277d87d1-4cf6-4d96-8bd6-3affb551f21c
           clusterServicePlanExternalID: 55beb5f4-16f0-4fe5-abcb-95e077271bde
           parameters:
-            name: test-servicename--testaccount.testenv.testregion.my-label--saml
+            name: test-servicename--testenv.testaccount.testregion.my-label--saml
             description: ""
             url: 'https://my-service.prod'
   - name: kubecompute-simple--saml--binding

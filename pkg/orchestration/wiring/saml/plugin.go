@@ -102,18 +102,17 @@ func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, boo
 
 func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
 	if len(context.Dependencies) > 0 {
-		return nil, false, false, errors.New("saml resource should not have any dependencies")
+		return nil, true, false, errors.New("saml resource should not have any dependencies")
 	}
 	if resource.Spec == nil {
-		// Don't allow user to set anything they shouldn't
-		return nil, false, false, errors.New("saml resource is missing user parameters")
+		return nil, true, false, errors.New("saml resource is missing user parameters")
 	}
 
 	var spec finalSpec
 
 	err := json.Unmarshal(resource.Spec.Raw, &spec)
 	if err != nil {
-		return nil, false, false, errors.WithStack(err)
+		return nil, true, false, errors.WithStack(err)
 	}
 
 	// Set default name service--location--resource
@@ -124,8 +123,8 @@ func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.W
 		}
 		spec.Name = fmt.Sprintf("%s--%s.%s.%s%s--%s",
 			context.StateContext.ServiceName,
-			context.StateContext.Location.Account,
 			context.StateContext.Location.EnvType,
+			context.StateContext.Location.Account,
 			context.StateContext.Location.Region,
 			label,
 			resource.Name,
