@@ -26,6 +26,8 @@ type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Re
 // list of smith references through References().
 //
 // This is for WiringPlugins that will create a ServiceInstance.
+
+// DEPRECATED: Use helper functions from 'osb' package instead.
 type SvcCatEntangler struct {
 
 	// This identifies what resource types can be processed.
