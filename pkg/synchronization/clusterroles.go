@@ -84,7 +84,7 @@ func crSpecServiceDescriptorAccess(svc *creator_v1.Service) *rbac_v1.ClusterRole
 			},
 		},
 		Rules: []rbac_v1.PolicyRule{
-			rbac_v1.PolicyRule{
+			{
 				APIGroups:     []string{composition.GroupName},
 				Resources:     []string{comp_v1.ServiceDescriptorResourcePlural},
 				ResourceNames: []string{svc.GetName()},
@@ -115,7 +115,7 @@ func crSpecServiceModifyAccess(svc *creator_v1.Service) *rbac_v1.ClusterRole {
 			},
 		},
 		Rules: []rbac_v1.PolicyRule{
-			rbac_v1.PolicyRule{
+			{
 				APIGroups:     []string{creator.GroupName},
 				Resources:     []string{creator_v1.ServiceResourcePlural},
 				ResourceNames: []string{svc.GetName()},

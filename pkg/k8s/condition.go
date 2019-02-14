@@ -36,11 +36,9 @@ func FillCondition(clk clock.Clock, oldCondition, cond *cond_v1.Condition) bool 
 				cond.LastTransitionTime = meta_v1.Time{Time: now}
 			}
 		}
-	} else {
+	} else if (cond.LastTransitionTime == meta_v1.Time{}) {
 		// New condition
-		if (cond.LastTransitionTime == meta_v1.Time{}) {
-			cond.LastTransitionTime = meta_v1.NewTime(clk.Now())
-		}
+		cond.LastTransitionTime = meta_v1.NewTime(clk.Now())
 	}
 
 	return needsUpdate

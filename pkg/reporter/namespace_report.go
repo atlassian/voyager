@@ -247,7 +247,7 @@ func (n *NamespaceReportHandler) getResourceFromProvider(ctx context.Context, pr
 		Name:         providerOpsResp.Result.Name,
 		ResourceType: getClassName(obj.Spec.(sc_v1b1.ServiceInstanceSpec)),
 		References: []reporter_v1.Reference{
-			reporter_v1.Reference{
+			{
 				Name:  obj.Name,
 				Layer: reporter_v1.LayerObject,
 			},
@@ -402,7 +402,7 @@ func (n *NamespaceReportHandler) HandleComposition(obj *comp_v1.ServiceDescripto
 	status := mapConditions(obj.Status.Conditions)
 	n.Composition = reporter_v1.ReportLayer{
 		Resources: []reporter_v1.Resource{
-			reporter_v1.Resource{
+			{
 				Name:         obj.Name,
 				ResourceType: comp_v1.ServiceDescriptorResourceKind,
 				Spec:         spec,
