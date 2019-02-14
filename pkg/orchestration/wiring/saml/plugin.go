@@ -112,7 +112,7 @@ func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.W
 
 	err := json.Unmarshal(resource.Spec.Raw, &spec)
 	if err != nil {
-		return nil, true, false, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	// Set default name service--location--resource
