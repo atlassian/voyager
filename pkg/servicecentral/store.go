@@ -181,7 +181,15 @@ func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser
 		if httputil.IsNotFound(err) {
 			return nil, NewNotFound("service with uuid %q was not found", uuid)
 		}
-		return nil, errors.Wrapf(err, "error getting service %q", data.ServiceName)
+
+		var serviceID string
+		if data != nil {
+			serviceID = fmt.Sprintf("name=%q", data.ServiceName)
+		} else {
+			serviceID = fmt.Sprintf("uuid=%q", uuid)
+		}
+
+		return nil, errors.Wrapf(err, "error getting service %q", serviceID)
 	}
 
 	return data, nil
