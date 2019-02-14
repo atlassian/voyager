@@ -194,17 +194,13 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 	return rawExtension, false, false, nil
 }
 
-func New() *WiringPlugin {
+func New(developerRole func(location voyager.Location) []string,
+	managedPolicies func(location voyager.Location) []string,
+	vpc func(location voyager.Location) *oap.VPCEnvironment) *WiringPlugin {
 	return &WiringPlugin{
-		DeveloperRole: func(_ voyager.Location) []string {
-			return []string{"arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC"} //example
-		},
-		ManagedPolicies: func(_ voyager.Location) []string {
-			return []string{"arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE", "arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC"} // example
-		},
-		VPC: func(location voyager.Location) *oap.VPCEnvironment {
-			return oap.ExampleVPC(location.Label, location.Region)
-		},
+		DeveloperRole:   developerRole,
+		ManagedPolicies: managedPolicies,
+		VPC:             vpc,
 	}
 }
 

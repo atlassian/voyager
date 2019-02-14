@@ -35,14 +35,17 @@ const (
 // All osb-aws-provider resources are 'almost' the same, differing only in the service/plan names,
 // what they need passed in the ServiceEnvironment.
 var (
-	emptyVPC = func(location voyager.Location) *oap.VPCEnvironment {
-		return oap.ExampleVPC(location.Label, location.Region)
+	DynamoDBPlugin = func(vpc func(voyager.Location) *oap.VPCEnvironment) wiringutil.StatusAdapter {
+		return wiringutil.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes, vpc).WireUp)
 	}
-	DynamoDBPlugin = wiringutil.StatusAdapter(Resource(DynamoDB, DynamoDBName, DynamoDBClass, DynamoDBPlan, dynamoDbServiceEnvironment, dynamoDbShapes, emptyVPC).WireUp)
 
-	S3Plugin = wiringutil.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes, emptyVPC).WireUp)
+	S3Plugin = func(vpc func(voyager.Location) *oap.VPCEnvironment) wiringutil.StatusAdapter {
+		return wiringutil.StatusAdapter(Resource(S3, S3Name, S3Class, S3Plan, s3ServiceEnvironment, s3Shapes, vpc).WireUp)
+	}
 
-	CfnPlugin = wiringutil.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes, emptyVPC).WireUp)
+	CfnPlugin = func(vpc func(voyager.Location) *oap.VPCEnvironment) wiringutil.StatusAdapter {
+		return wiringutil.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes, vpc).WireUp)
+	}
 )
 
 func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {

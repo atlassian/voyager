@@ -16,6 +16,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
@@ -316,7 +317,12 @@ func entangleTestFileState(t *testing.T, filePrefix string) EntangleResult {
 	err := testutil.LoadIntoStructFromTestData(filePrefix+fixtureStateYamlSuffix, state)
 	require.NoError(t, err)
 
-	return entangleTestState(t, state, registry.KnownWiringPlugins)
+	return entangleTestState(t, state, registry.KnownWiringPlugins(
+		testDeveloperRole,
+		testManagedPolicies,
+		testVPC,
+		testEnvironment,
+	))
 }
 
 // In order to replace all expected bundles with actual bundles:
@@ -397,4 +403,20 @@ func testingTags(
 	tags["platform"] = "voyager"
 	tags["environment"] = "microstestenv"
 	return tags
+}
+
+func testDeveloperRole(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC"}
+}
+
+func testManagedPolicies(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE", "arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC"}
+}
+
+func testVPC(location voyager.Location) *oap.VPCEnvironment {
+	return oap.ExampleVPC(location.Label, location.Region)
+}
+
+func testEnvironment(_ voyager.Location) string {
+	return "microstestenv"
 }

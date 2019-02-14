@@ -75,14 +75,10 @@ type ReadReplicaParam struct {
 	ReadReplica bool `json:"ReadReplica"`
 }
 
-func New() *WiringPlugin {
+func New(environment func(location voyager.Location) string, vpc func(location voyager.Location) *oap.VPCEnvironment) *WiringPlugin {
 	return &WiringPlugin{
-		VPC: func(location voyager.Location) *oap.VPCEnvironment {
-			return oap.ExampleVPC(location.Label, location.Region)
-		},
-		Environment: func(_ voyager.Location) string {
-			return "microstestenv"
-		},
+		VPC:         vpc,
+		Environment: environment,
 	}
 }
 

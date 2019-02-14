@@ -23,6 +23,7 @@ go_library(
         "//pkg/orchestration/wiring:go_default_library",
         "//pkg/orchestration/wiring/registry:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
         "//pkg/util/crash:go_default_library",
         "//pkg/util/prometheus:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",

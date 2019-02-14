@@ -14,6 +14,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -194,7 +195,12 @@ func TestStateResourceName(t *testing.T) {
 
 func entanglerForTests() *wiring.Entangler {
 	return &wiring.Entangler{
-		Plugins: registry.KnownWiringPlugins,
+		Plugins: registry.KnownWiringPlugins(
+			testDeveloperRole,
+			testManagedPolicies,
+			testVPC,
+			testEnvironment,
+		),
 		ClusterLocation: voyager.ClusterLocation{
 			Account: testAccount,
 			Region:  testRegion,
@@ -207,6 +213,22 @@ func entanglerForTests() *wiring.Entangler {
 		},
 		Tags: testingTags,
 	}
+}
+
+func testDeveloperRole(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC"}
+}
+
+func testManagedPolicies(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE", "arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC"} // example
+}
+
+func testVPC(location voyager.Location) *oap.VPCEnvironment {
+	return oap.ExampleVPC(location.Label, location.Region)
+}
+
+func testEnvironment(_ voyager.Location) string {
+	return "microstestenv"
 }
 
 func testingTags(

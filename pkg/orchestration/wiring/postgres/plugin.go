@@ -57,11 +57,9 @@ type WiringPlugin struct {
 	Environment func(location voyager.Location) string
 }
 
-func New() *WiringPlugin {
+func New(environment func(location voyager.Location) string) *WiringPlugin {
 	return &WiringPlugin{
-		Environment: func(_ voyager.Location) string {
-			return "microstestenv"
-		},
+		Environment: environment,
 	}
 }
 

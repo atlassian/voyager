@@ -99,11 +99,9 @@ func validateScaling(s Scaling) error {
 	return nil
 }
 
-func New() *WiringPlugin {
+func New(vpc func(location voyager.Location) *oap.VPCEnvironment) *WiringPlugin {
 	return &WiringPlugin{
-		VPC: func(location voyager.Location) *oap.VPCEnvironment {
-			return oap.ExampleVPC(location.Label, location.Region)
-		},
+		VPC: vpc,
 	}
 }
 
