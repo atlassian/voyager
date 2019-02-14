@@ -144,7 +144,7 @@
     "pkg/util/logz",
   ]
   pruneopts = "NT"
-  revision = "2c87e12999d3cc921c8d06ff0a44b2d3de45fc78"
+  revision = "813433be016108f582d59114d2547a6929c03d36"
 
 [[projects]]
   digest = "1:07918ac16957399fa68bf94b3ab26dccccc6992f1ccbcf589896734569a0a7e7"
