@@ -19,10 +19,9 @@ import (
 )
 
 type App struct {
-	RestConfig        *rest.Config
-	Logger            *zap.Logger
-	Options           Options
-	ServiceDescriptor string
+	RestConfig *rest.Config
+	Logger     *zap.Logger
+	Options    Options
 }
 
 func NewFromFlags(flagset *flag.FlagSet, arguments []string) (*App, error) {
