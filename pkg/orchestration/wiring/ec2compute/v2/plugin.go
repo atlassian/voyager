@@ -77,15 +77,16 @@ type restrictedParameters struct {
 	EC2           ec2Iam             `json:"ec2"`
 }
 
-func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamInstProfRef smith_v1.Reference, microsServiceName string, stateContext wiringplugin.StateContext) (*runtime.RawExtension, error) {
+func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamInstProfRef smith_v1.Reference, microsServiceName string, stateContext wiringplugin.StateContext) (*runtime.RawExtension, bool /* external */, bool /* retriable */, error) {
 	// The user shouldn't be setting anything in our 'restrictedParameters', since
 	// _we_ control it. So let's make sure they're not and fail ASAP.
 	var parametersCheck restrictedParameters
 	if err := json.Unmarshal(origSpec.Raw, &parametersCheck); err != nil {
-		return nil, errors.Wrap(err, "can't unmarshal state spec into JSON object")
+		return nil, false, false, errors.Wrap(err, "can't unmarshal state spec into JSON object")
 	}
 	if parametersCheck != (restrictedParameters{}) {
-		return nil, errors.Errorf("at least one autowired value not empty: %+v", parametersCheck)
+		// User provided something weird in the spec
+		return nil, true, false, errors.Errorf("at least one autowired value not empty: %+v", parametersCheck)
 	}
 
 	// generate partialSpec
@@ -134,12 +135,12 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 	var partialSpecMap map[string]interface{}
 	partialSpecMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&partialSpecData)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, false, false, errors.WithStack(err)
 	}
 
 	var finalSpec map[string]interface{}
 	if err = json.Unmarshal(origSpec.Raw, &finalSpec); err != nil {
-		return nil, errors.Wrap(err, "failed to parse user spec")
+		return nil, false, false, errors.Wrap(err, "failed to parse user spec")
 	}
 
 	wiringutil.StripJSONFields(finalSpec, common.StateComputeSpec{})
@@ -147,24 +148,35 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 	// merge user spec and partial spec
 	finalSpec, err = wiringutil.Merge(finalSpec, partialSpecMap)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 
-	return util.ToRawExtension(finalSpec)
+	rawExtension, err := util.ToRawExtension(finalSpec)
+	if err != nil {
+		return nil, false, false, err
+	}
+
+	return rawExtension, false, false, nil
 }
 
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if stateResource.Type != ResourceType {
-		return nil, false, errors.Errorf("invalid resource type: %q", stateResource.Type)
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", stateResource.Type),
+		}
 	}
 
 	if stateResource.Spec == nil {
-		return nil, false, errors.New("resource spec must be provided")
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.New("resource spec must be provided"),
+		}
 	}
 
 	userInput := userInputSpec{}
 	if err := json.Unmarshal(stateResource.Spec.Raw, &userInput); err != nil {
-		return nil, false, errors.Wrap(err, "failed to parse user spec")
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Wrap(err, "failed to parse user spec"),
+		}
 	}
 
 	return common.WireUp(userInput.Service.ID, ec2ComputePlanName, stateResource, context, constructComputeParameters)

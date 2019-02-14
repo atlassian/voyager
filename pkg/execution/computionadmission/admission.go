@@ -11,7 +11,7 @@ import (
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	"github.com/atlassian/voyager/pkg/execution/svccatadmission"
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/synchronization/api"
+	apisynchronization "github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/go-chi/chi"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -219,6 +219,9 @@ func (ac *AdmissionContext) checkPRGBRequired(ar *admission_v1beta1.AdmissionReq
 
 	data := cfgMap.Data[orch_meta.ConfigMapConfigKey]
 	var config orch_meta.ServiceProperties
+	// If we introduce new fields in the contents of that key in the ConfigMap we still want
+	// it to be parseable by old versions of the webhook to avoid breaking it.
+	// That is why we don't use UnmarshalStrict() here.
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
 		return false, rejectWithReason(reasonWrongFormatServiceMetaData), nil

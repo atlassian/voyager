@@ -13,26 +13,61 @@ type ServiceOwner struct {
 	Username string `json:"username"`
 }
 
-type ServiceData struct {
-	ServiceUUID        *string      `json:"service_uuid,omitempty"`
-	CreationTimestamp  *string      `json:"creation_timestamp,omitempty"`
-	ServiceName        ServiceName  `json:"service_name,omitempty"`
-	ServiceOwner       ServiceOwner `json:"service_owner,omitempty"`
-	ServiceTier        int          `json:"service_tier,omitempty"`
-	Tags               []string     `json:"tags,omitempty"`
-	Platform           string       `json:"platform,omitempty"`
-	Misc               []miscData   `json:"misc,omitempty"`
-	PagerDutyServiceID string       `json:"pagerduty_service_id,omitempty"`
-	LoggingID          string       `json:"logging_id,omitempty"`
-	SSAMContainerName  string       `json:"ssam_container_name,omitempty"`
+type ServiceDataWrite struct {
+	ServiceUUID        *string     `json:"service_uuid,omitempty"`
+	ServiceName        ServiceName `json:"service_name,omitempty"`
+	ServiceTier        int         `json:"service_tier,omitempty"`
+	Tags               []string    `json:"tags,omitempty"`
+	Platform           string      `json:"platform,omitempty"`
+	Misc               []miscData  `json:"misc,omitempty"`
+	PagerDutyServiceID string      `json:"pagerduty_service_id,omitempty"`
+	LoggingID          string      `json:"logging_id,omitempty"`
+	SSAMContainerName  string      `json:"ssam_container_name,omitempty"`
 
 	ZeroDowntimeUpgrades bool   `json:"zero_downtime_upgrades,omitempty"`
 	Stateless            bool   `json:"stateless,omitempty"`
 	BusinessUnit         string `json:"business_unit,omitempty"`
+}
+
+type ServiceDataRead struct {
+	ServiceDataWrite
+	CreationTimestamp *string `json:"creation_timestamp,omitempty"`
+	// ServiceOwner is a read only field
+	// see: VYGR-425
+	ServiceOwner ServiceOwner `json:"service_owner,omitempty"`
+
+	Attributes []ServiceAttribute `json:"service_attributes,omitempty"`
 
 	// Compliance is a read-only field. It can be nil, in which case it means
 	// they have not completed their compliance questions yet
 	Compliance *ServiceComplianceConf `json:"compliance,omitempty"`
+}
+
+type ServiceAttribute struct {
+	Team string `json:"team,omitempty"`
+}
+
+type ServiceAttributeResponse struct {
+	ID         int                     `json:"id"`
+	Service    ServiceAttributeService `json:"service"`
+	Schema     ServiceAttributeSchema  `json:"schema"`
+	Value      map[string]string       `json:"value"`
+	CreatedOn  time.Time               `json:"createdOn"`
+	CreatedBy  string                  `json:"createdBy"`
+	ModifiedOn time.Time               `json:"modifiedOn"`
+	ModifiedBy string                  `json:"modifiedBy"`
+}
+
+type ServiceAttributeService struct {
+	Ref  string `json:"ref"`
+	UUID string `json:"uuid"`
+	Name string `json:"name"`
+}
+
+type ServiceAttributeSchema struct {
+	Ref  string `json:"ref"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 // ServiceComplianceConf includes all service compliance related data
@@ -55,9 +90,9 @@ type metaResult struct {
 
 // Return value representing service and associated arbitrary metadata
 type serviceTypeResponse struct {
-	Data       []ServiceData `json:"data"`
-	Message    string        `json:"message"`
-	StatusCode int           `json:"status_code"`
+	Data       []ServiceDataRead `json:"data"`
+	Message    string            `json:"message"`
+	StatusCode int               `json:"status_code"`
 
 	// only useful for search list results
 	Meta metaResult `json:"meta"`
@@ -83,6 +118,7 @@ type V2Service struct {
 	Name string `json:"name" sql:"service_name,unique"`
 
 	// Owner of the service, must be an a valid staff ID of a person
+	// Owner is READ ONLY it cannot be set when talking to service central
 	Owner string `json:"owner" sql:"service_owner"`
 
 	// Name of the team who owns the service

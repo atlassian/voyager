@@ -20,7 +20,7 @@ func loadTestServiceDescriptor(t *testing.T, filename string) *comp_v1.ServiceDe
 	srcFile, err := testutil.LoadFileFromTestData(filename)
 	require.NoError(t, err)
 
-	err = yaml.Unmarshal(srcFile, &sd.Spec)
+	err = yaml.UnmarshalStrict(srcFile, &sd.Spec)
 	require.NoError(t, err)
 
 	return &sd

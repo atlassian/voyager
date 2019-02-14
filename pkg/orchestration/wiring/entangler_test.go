@@ -66,15 +66,15 @@ func TestEntanglerWithBadWiringFunction(t *testing.T) {
 	// Given: this set of plugins
 	plugins := map[voyager.ResourceType]wiringplugin.WiringPlugin{
 		"DoubleASAP": &delegatingPlugin{
-			wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
-				return &wiringplugin.WiringResult{
+			wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+				return &wiringplugin.WiringResultSuccess{
 					Contract: wiringplugin.ResourceContract{
 						Shapes: []wiringplugin.Shape{
 							knownshapes.NewASAPKey(),
 							knownshapes.NewASAPKey(),
 						},
 					},
-				}, false, nil
+				}
 			},
 			status: emptyStatus,
 		},
@@ -101,10 +101,11 @@ func TestEntanglerWithBadWiringFunction(t *testing.T) {
 	}
 
 	// When: we build an entangler and run it with those plugins against this state
-	_, _, err := entangleTestState(t, state, plugins)
+	result := entangleTestState(t, state, plugins)
 
 	// Then: we expect an error as we can't have an auto-wiring function return >1 shape of the same type
-	assert.EqualError(t, err, `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
+	require.IsType(t, &EntangleResultFailure{}, result)
+	assert.EqualError(t, (result.(*EntangleResultFailure)).Error, `failed to wire up resource "resource1" of type "DoubleASAP": internal error in wiring plugin - duplicate shapes received from plugin: voyager.atl-paas.net/ASAPKey`)
 }
 
 func TestDependants(t *testing.T) {
@@ -125,7 +126,7 @@ func TestDependants(t *testing.T) {
 
 	// Build the parent func, which will need to be able to access the child spec
 	parentPlugin := delegatingPlugin{
-		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 			// ensure that the dependents slice is not empty
 			require.Len(t, context.Dependants, 1)
 			dependantResource := context.Dependants[0]
@@ -144,15 +145,15 @@ func TestDependants(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, childFieldValue, value)
 
-			return &wiringplugin.WiringResult{}, false, nil
+			return &wiringplugin.WiringResultSuccess{}
 		},
 		status: emptyStatus,
 	}
 
 	// Child spec, does nothing
 	childPlugin := delegatingPlugin{
-		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
-			return &wiringplugin.WiringResult{}, false, nil
+		wireUp: func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+			return &wiringplugin.WiringResultSuccess{}
 		},
 		status: emptyStatus,
 	}
@@ -190,9 +191,8 @@ func TestDependants(t *testing.T) {
 		},
 	}
 
-	_, retriable, err := entangleTestState(t, state, wiringPlugins)
-	require.NoError(t, err)
-	assert.False(t, retriable)
+	result := entangleTestState(t, state, wiringPlugins)
+	require.IsType(t, &EntangleResultSuccess{}, result)
 }
 
 func testFixture(t *testing.T, filePrefix string) {
@@ -204,23 +204,24 @@ func testFixture(t *testing.T, filePrefix string) {
 		validateBundle(t, fileName, bundleExpected)
 	}
 
-	bundleActual, retriable, err := entangleTestFileState(t, filePrefix)
+	entangleResult := entangleTestFileState(t, filePrefix)
 
 	// Compare the output
 	if errSuccess == nil {
-		require.NoError(t, err)
-		assert.False(t, retriable)
-		testutil.BundleCompareContext(t, testutil.FileName(fileName), bundleExpected, bundleActual)
+		require.IsType(t, &EntangleResultSuccess{}, entangleResult)
+		testutil.BundleCompareContext(t, testutil.FileName(fileName), bundleExpected, (entangleResult.(*EntangleResultSuccess)).Bundle)
 	}
 
 	data, errFailure := testutil.LoadFileFromTestData(filePrefix + fixtureErrorYamlSuffix)
 	if errFailure == nil {
-		require.EqualError(t, err, strings.TrimSpace(string(data)))
+		require.IsType(t, &EntangleResultFailure{}, entangleResult)
+		require.EqualError(t, (entangleResult.(*EntangleResultFailure)).Error, strings.TrimSpace(string(data)))
 	}
 
 	rawRegex, errRegexFailure := testutil.LoadFileFromTestData(filePrefix + fixtureErrorRegexYamlSuffix)
 	if errRegexFailure == nil {
-		require.Regexp(t, rawRegex, err)
+		require.IsType(t, &EntangleResultFailure{}, entangleResult)
+		require.Regexp(t, rawRegex, (entangleResult.(*EntangleResultFailure)))
 	}
 
 	if errFailure != nil && errRegexFailure != nil && errSuccess != nil {
@@ -252,7 +253,7 @@ func makePluginContainers(t *testing.T) map[smith_v1.PluginName]smith_plugin.Con
 	return containers
 }
 
-func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voyager.ResourceType]wiringplugin.WiringPlugin) (*smith_v1.Bundle, bool, error) {
+func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voyager.ResourceType]wiringplugin.WiringPlugin) EntangleResult {
 	// Run the entangle
 	ent := Entangler{
 		Plugins: wiringPlugins,
@@ -289,7 +290,7 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 	state.SetLabels(labels)
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	require.NoError(t, err)
-	bundle, retriable, err := ent.Entangle(state, &EntangleContext{
+	return ent.Entangle(state, &EntangleContext{
 		ServiceName: serviceName,
 		Label:       layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: orch_meta.ServiceProperties{
@@ -310,10 +311,9 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 			LoggingID:       "logging-id-from-configmap",
 		},
 	})
-	return bundle, retriable, err
 }
 
-func entangleTestFileState(t *testing.T, filePrefix string) (*smith_v1.Bundle, bool, error) {
+func entangleTestFileState(t *testing.T, filePrefix string) EntangleResult {
 	t.Logf("testFixture prefix: %q\n", filePrefix)
 
 	state := &orch_v1.State{}
@@ -355,12 +355,13 @@ func _TestDumpActualBundleToFixtures(t *testing.T) {
 }
 
 func writeFixture(t *testing.T, filePrefix string) {
-	bundleActual, _, err := entangleTestFileState(t, filePrefix)
+	result := entangleTestFileState(t, filePrefix)
 
 	// Compare the output
 	fileName := filePrefix + fixtureBundleYamlSuffix
-	if err == nil {
-		writeBundleToTestData(t, fileName, bundleActual)
+	successResult, isSuccess := result.(*EntangleResultSuccess)
+	if isSuccess {
+		writeBundleToTestData(t, fileName, successResult.Bundle)
 	}
 }
 
@@ -373,18 +374,18 @@ func writeBundleToTestData(t *testing.T, filename string, bundle *smith_v1.Bundl
 }
 
 type delegatingPlugin struct {
-	wireUp func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error)
-	status func(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error)
+	wireUp func(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult
+	status func(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult
 }
 
-func (p delegatingPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func (p delegatingPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	return p.wireUp(resource, context)
 }
 
-func (p delegatingPlugin) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
+func (p delegatingPlugin) Status(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult {
 	return p.status(resource, context)
 }
 
-func emptyStatus(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) (*wiringplugin.StatusResult, bool /*retriable*/, error) {
-	return &wiringplugin.StatusResult{}, false, nil
+func emptyStatus(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult {
+	return &wiringplugin.StatusResultSuccess{}
 }

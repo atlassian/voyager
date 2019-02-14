@@ -20,11 +20,11 @@ const (
 )
 
 type serviceCentralClient interface {
-	CreateService(ctx context.Context, user auth.User, data *ServiceData) (*ServiceData, error)
-	ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]ServiceData, error)
-	ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceData, error)
-	GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceData, error)
-	PatchService(ctx context.Context, user auth.User, data *ServiceData) error
+	CreateService(ctx context.Context, user auth.User, data *ServiceDataWrite) (*ServiceDataRead, error)
+	ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]ServiceDataRead, error)
+	ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceDataRead, error)
+	GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceDataRead, error)
+	PatchService(ctx context.Context, user auth.User, data *ServiceDataWrite) error
 	DeleteService(ctx context.Context, user auth.User, serviceUUID string) error
 }
 
@@ -42,7 +42,7 @@ func NewStore(logger *zap.Logger, client serviceCentralClient) *Store {
 }
 
 func (c *Store) FindOrCreateService(ctx context.Context, user auth.User, service *creator_v1.Service) (*creator_v1.Service, error) {
-	data, err := serviceToServiceData(ServiceData{}, service)
+	data, err := prepareServiceToWrite(ServiceDataRead{}, service)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *Store) FindOrCreateService(ctx context.Context, user auth.User, service
 	}
 
 	if httputil.IsConflict(err) {
-		actual, err = c.validateExistingService(ctx, auth.ToOptionalUser(user), data)
+		actual, err = c.validateExistingService(ctx, auth.ToOptionalUser(user), service.Spec.ResourceOwner, data)
 		if err != nil {
 			return nil, errors.Wrapf(err, "conflicting service %q already exists", data.ServiceName)
 		}
@@ -98,6 +98,11 @@ func (c *Store) ListModifiedServices(ctx context.Context, user auth.OptionalUser
 			// Feature request: https://sdog.jira-dev.com/browse/MICROSCOPE-280
 			continue
 		}
+		if serviceData.ServiceName == "" {
+			// Central can contain broken data
+			// https://sdog.jira-dev.com/projects/MICROSHELP/queues/issue/MICROSHELP-5863
+			continue
+		}
 		svc, err := serviceDataToService(&serviceData)
 		if err != nil {
 			return nil, err
@@ -112,7 +117,7 @@ func (c *Store) PatchService(ctx context.Context, user auth.User, service *creat
 	if err != nil {
 		return err
 	}
-	updatedData, err := serviceToServiceData(*existingData, service)
+	updatedData, err := prepareServiceToWrite(*existingData, service)
 	if err != nil {
 		return err
 	}
@@ -150,7 +155,7 @@ func (c *Store) DeleteService(ctx context.Context, user auth.User, name ServiceN
 	return nil
 }
 
-func (c *Store) getServiceDataByName(ctx context.Context, user auth.OptionalUser, name ServiceName) (*ServiceData, error) {
+func (c *Store) getServiceDataByName(ctx context.Context, user auth.OptionalUser, name ServiceName) (*ServiceDataRead, error) {
 	search := fmt.Sprintf("service_name='%s' AND platform='%s'", name, voyagerPlatform)
 	listData, err := c.client.ListServices(ctx, user, search)
 
@@ -169,7 +174,7 @@ func (c *Store) getServiceDataByName(ctx context.Context, user auth.OptionalUser
 	return nil, NewNotFound("service %q was not found", name)
 }
 
-func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser, uuid string) (*ServiceData, error) {
+func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser, uuid string) (*ServiceDataRead, error) {
 	data, err := c.client.GetService(ctx, user, uuid)
 
 	if err != nil {
@@ -182,7 +187,7 @@ func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser
 	return data, nil
 }
 
-func (c *Store) validateExistingService(ctx context.Context, user auth.OptionalUser, data *ServiceData) (*ServiceData, error) {
+func (c *Store) validateExistingService(ctx context.Context, user auth.OptionalUser, originalOwner string, data *ServiceDataWrite) (*ServiceDataRead, error) {
 	search := fmt.Sprintf("service_name='%s'", data.ServiceName)
 	result, err := c.client.ListServices(ctx, user, search)
 	if err != nil {
@@ -197,8 +202,8 @@ func (c *Store) validateExistingService(ctx context.Context, user auth.OptionalU
 	if existingService.ServiceName != data.ServiceName {
 		return nil, errors.Errorf("searching for %q returned %q", data.ServiceName, existingService.ServiceName)
 	}
-	if existingService.ServiceOwner.Username != data.ServiceOwner.Username {
-		return nil, errors.Errorf("%q not allowed to use service owned by %q", data.ServiceOwner.Username, existingService.ServiceOwner.Username)
+	if existingService.ServiceOwner.Username != originalOwner {
+		return nil, errors.Errorf("%q not allowed to use service owned by %q", originalOwner, existingService.ServiceOwner.Username)
 	}
 	if existingService.Platform != voyagerPlatform {
 		return nil, errors.Errorf("invalid service platform: expected=%q, actual=%q", voyagerPlatform, existingService.Platform)
@@ -207,7 +212,7 @@ func (c *Store) validateExistingService(ctx context.Context, user auth.OptionalU
 	return c.getServiceDataByUUID(ctx, user, *existingService.ServiceUUID)
 }
 
-func fillServiceDataDefaults(data *ServiceData) {
+func fillServiceDataDefaults(data *ServiceDataWrite) {
 	if data.ServiceTier == 0 {
 		data.ServiceTier = defaultServiceTier
 	}
@@ -216,17 +221,18 @@ func fillServiceDataDefaults(data *ServiceData) {
 	data.Platform = voyagerPlatform
 }
 
-func serviceToServiceData(existingData ServiceData, service *creator_v1.Service) (*ServiceData, error) {
+// prepareServiceToWrite creates a valid service data for writing to Service Central
+// Note: It cannot set Service Owner see: VYGR-425
+func prepareServiceToWrite(existingData ServiceDataRead, service *creator_v1.Service) (*ServiceDataWrite, error) {
 	serviceUID := string(service.GetUID())
 	var serviceUUID *string
 	if len(serviceUID) != 0 {
 		serviceUUID = &serviceUID
 	}
 
-	sd := ServiceData{
+	sd := ServiceDataWrite{
 		ServiceUUID:        serviceUUID,
 		ServiceName:        ServiceName(service.Name),
-		ServiceOwner:       ServiceOwner{Username: service.Spec.ResourceOwner},
 		BusinessUnit:       service.Spec.BusinessUnit,
 		SSAMContainerName:  service.Spec.SSAMContainerName,
 		LoggingID:          service.Spec.LoggingID,
@@ -260,7 +266,7 @@ func serviceToServiceData(existingData ServiceData, service *creator_v1.Service)
 	return &sd, nil
 }
 
-func serviceDataToService(data *ServiceData) (*creator_v1.Service, error) {
+func serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
 	var serviceUID string
 	if data.ServiceUUID != nil {
 		serviceUID = *data.ServiceUUID
@@ -292,7 +298,7 @@ func serviceDataToService(data *ServiceData) (*creator_v1.Service, error) {
 		}
 	}
 
-	pagerDutyMetadata, err := GetPagerDutyMetadata(data)
+	pagerDutyMetadata, err := GetPagerDutyMetadata(&data.ServiceDataWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +306,7 @@ func serviceDataToService(data *ServiceData) (*creator_v1.Service, error) {
 		service.Spec.Metadata.PagerDuty = pagerDutyMetadata
 	}
 
-	bambooMetadata, err := GetBambooMetadata(data)
+	bambooMetadata, err := GetBambooMetadata(&data.ServiceDataWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +324,7 @@ func serviceDataToService(data *ServiceData) (*creator_v1.Service, error) {
 	return service, nil
 }
 
-func GetMiscData(data *ServiceData, key string) (string, error) {
+func GetMiscData(data *ServiceDataWrite, key string) (string, error) {
 	for _, miscData := range data.Misc {
 		if miscData.Key == key {
 			return miscData.Value, nil
@@ -327,7 +333,7 @@ func GetMiscData(data *ServiceData, key string) (string, error) {
 	return "", nil
 }
 
-func SetMiscData(data *ServiceData, key string, value string) error {
+func SetMiscData(data *ServiceDataWrite, key string, value string) error {
 	result := make([]miscData, 0, len(data.Misc))
 	for _, miscData := range data.Misc {
 		if miscData.Key == key {

@@ -7,14 +7,15 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
+	apiplatformdns "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/util/logz"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestInternalDNSAdmitFunc(t *testing.T) {
+func TestPlatformDNSAdmitFunc(t *testing.T) {
 	t.Parallel()
 	ctx := logz.CreateContextWithLogger(context.Background(), zap.NewNop())
 	microsServerMock := setupMicrosServerMock()
@@ -27,7 +28,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			"internaldns new.domain",
+			"platformdns new.domain",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
 					Aliases: []apiplatformdns.Alias{
@@ -42,7 +43,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"internaldns multiple new.domain",
+			"platformdns multiple new.domain",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
 					Aliases: []apiplatformdns.Alias{
@@ -77,7 +78,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"internaldns registered domain same user",
+			"platformdns registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
 					Aliases: []apiplatformdns.Alias{
@@ -92,7 +93,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"internaldns multiple with one registered domain same user",
+			"platformdns multiple with one registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
 					Aliases: []apiplatformdns.Alias{
@@ -127,7 +128,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"internaldns registered domain different user",
+			"platformdns registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
 					Aliases: []apiplatformdns.Alias{
@@ -142,7 +143,7 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"internaldns multiple with one registered domain different user",
+			"platformdns multiple with one registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
 					Aliases: []apiplatformdns.Alias{
@@ -177,19 +178,19 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 			false,
 		},
 		{
-			"not internaldns create",
+			"not platformdns create",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested ServiceInstance is not "PlatformDNS" type`),
 			false,
 		},
 		{
-			"not internaldns update",
+			"not platformdns update",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Update, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested ServiceInstance is not "PlatformDNS" type`),
 			false,
 		},
 		{
@@ -253,12 +254,12 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := InternalDNSAdmitFunc(ctx, microsServerMock, serviceCentralMock, tc.admissionReview)
+			got, err := PlatformDNSAdmitFunc(ctx, microsServerMock, serviceCentralMock, tc.admissionReview)
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("InternalDNSAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
+				require.Equal(t, tc.wantErr, err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("InternalDNSAdmitFunc() = %v, want %v", got, tc.want)
+				require.Equal(t, tc.want, got)
 			}
 		})
 	}

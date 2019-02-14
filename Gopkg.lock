@@ -100,7 +100,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2a04cca822cad03308a7ac2e99c6a2fcf9526dbb70331f881e876fc49f4ab510"
+  digest = "1:3b68cf4e03d5b40a7d4aa40f3ce9c48d34ef4bcef9e255fc7fe37df0be1c9bb4"
   name = "github.com/atlassian/ctrl"
   packages = [
     ".",
@@ -113,11 +113,11 @@
     "process",
   ]
   pruneopts = "NT"
-  revision = "1a7f22f42ffb7fb8e1cf4f77eb3628071d552c16"
+  revision = "30152a801242bb7aa023702c184d4aa919dab4bc"
 
 [[projects]]
   branch = "master"
-  digest = "1:c301de2309e2971613d8ac458b16401c9778e5cfe60826aa041c9817ec7a5df0"
+  digest = "1:0a1edeb7561af0a96c51797d7d57db9093416798f70875b2ee853950792c4148"
   name = "github.com/atlassian/smith"
   packages = [
     ".",
@@ -144,7 +144,7 @@
     "pkg/util/logz",
   ]
   pruneopts = "NT"
-  revision = "25ca425e3b6b06c67c355948f0478bd23047bcab"
+  revision = "594308ea8bd0dc104b7234335e934b9d53036d06"
 
 [[projects]]
   digest = "1:07918ac16957399fa68bf94b3ab26dccccc6992f1ccbcf589896734569a0a7e7"

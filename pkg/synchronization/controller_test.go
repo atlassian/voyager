@@ -22,7 +22,7 @@ import (
 	"github.com/atlassian/voyager/pkg/releases"
 	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/ssam"
-	"github.com/atlassian/voyager/pkg/synchronization/api"
+	apisynchronization "github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -189,7 +189,7 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 			data := cm.Data[orch_meta.ConfigMapConfigKey]
 
 			var actual orch_meta.ServiceProperties
-			err = yaml.Unmarshal([]byte(data), &actual)
+			err = yaml.UnmarshalStrict([]byte(data), &actual)
 			require.NoError(t, err)
 
 			assert.Equal(t, expected, actual)
@@ -204,7 +204,7 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 			relData := relCM.Data[releases.DataKey]
 
 			var actualRelResponse releases.ResolvedReleaseData
-			err = yaml.Unmarshal([]byte(relData), &actualRelResponse)
+			err = yaml.UnmarshalStrict([]byte(relData), &actualRelResponse)
 			require.NoError(t, err)
 
 			assert.Equal(t, defaultReleaseResolveResponse(serviceNameVoy).ResolvedData, actualRelResponse)
@@ -300,7 +300,7 @@ func TestIncludesPagerDutyForClusterEnvironment(t *testing.T) {
 					data := cm.Data[orch_meta.ConfigMapConfigKey]
 
 					var actual orch_meta.ServiceProperties
-					err = yaml.Unmarshal([]byte(data), &actual)
+					err = yaml.UnmarshalStrict([]byte(data), &actual)
 					require.NoError(t, err)
 
 					assert.Equal(t, expected, actual)
@@ -490,7 +490,7 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			data := cm.Data[orch_meta.ConfigMapConfigKey]
 
 			var actual orch_meta.ServiceProperties
-			err = yaml.Unmarshal([]byte(data), &actual)
+			err = yaml.UnmarshalStrict([]byte(data), &actual)
 			require.NoError(t, err)
 
 			assert.Equal(t, expected, actual)
@@ -507,7 +507,7 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			data = relCM.Data[releases.DataKey]
 
 			var actualRelResponse releases.ResolvedReleaseData
-			err = yaml.Unmarshal([]byte(data), &actualRelResponse)
+			err = yaml.UnmarshalStrict([]byte(data), &actualRelResponse)
 			require.NoError(t, err)
 
 			assert.Equal(t, defaultReleaseResolveResponse(serviceNameVoy).ResolvedData, actualRelResponse)

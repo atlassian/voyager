@@ -54,7 +54,7 @@ func NewServiceCentralClient(logger *zap.Logger, httpClient *http.Client, asap p
 // - 400: Bad request
 // - 409: The service UUID or service name already exists
 // - 500: Internal server error
-func (c *Client) CreateService(ctx context.Context, user auth.User, data *ServiceData) (*ServiceData, error) {
+func (c *Client) CreateService(ctx context.Context, user auth.User, data *ServiceDataWrite) (*ServiceDataRead, error) {
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.Name()),
 		restclient.Method(http.MethodPost),
@@ -98,7 +98,7 @@ func (c *Client) CreateService(ctx context.Context, user auth.User, data *Servic
 // Patch an existing service with the attached specification
 // return codes:
 // - 200: The service was successfully updated
-func (c *Client) PatchService(ctx context.Context, user auth.User, data *ServiceData) error {
+func (c *Client) PatchService(ctx context.Context, user auth.User, data *ServiceDataWrite) error {
 	updateData := *data
 	updateData.ServiceUUID = nil
 	updateData.ServiceName = ""
@@ -141,8 +141,8 @@ func (c *Client) PatchService(ctx context.Context, user auth.User, data *Service
 // return codes:
 // - 200: OK
 // - 400: Bad request
-func (c *Client) ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]ServiceData, error) {
-	var results []ServiceData
+func (c *Client) ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]ServiceDataRead, error) {
+	var results []ServiceDataRead
 
 	offset := "0"
 	for {
@@ -169,7 +169,7 @@ func (c *Client) ListServices(ctx context.Context, user auth.OptionalUser, searc
 }
 
 // List recently modified services
-func (c *Client) ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceData, error) {
+func (c *Client) ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceDataRead, error) {
 	// The wrapper function is useless at the moment, but hopefully the endpoint will support paging functionality in the future...
 	return c.listModifiedServices(ctx, user, modifiedSince)
 }
@@ -220,7 +220,7 @@ func (c *Client) listServices(ctx context.Context, user auth.OptionalUser, searc
 	return parsedBody, nil
 }
 
-func (c *Client) listModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceData, error) {
+func (c *Client) listModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceDataRead, error) {
 	modifiedOnStr := modifiedSince.UTC().Format(time.RFC3339)
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
@@ -258,7 +258,7 @@ func (c *Client) listModifiedServices(ctx context.Context, user auth.OptionalUse
 	return convertV2ServicesToV1(parsedBody), nil
 }
 
-func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceData, error) {
+func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceDataRead, error) {
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),
@@ -294,7 +294,22 @@ func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, service
 	if len(parsedBody.Data) == 0 {
 		return nil, errors.New("data is empty")
 	}
-	return &parsedBody.Data[0], nil
+	service := &parsedBody.Data[0]
+
+	resp, err := c.GetServiceAttributes(ctx, user, serviceUUID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get attributes for service")
+	}
+	ogTeamAttr, found, err := findOpsGenieTeamServiceAttribute(resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get OpsGenie attributes for service")
+	}
+
+	if found {
+		service.Attributes = append(service.Attributes, ogTeamAttr)
+	}
+
+	return service, nil
 }
 
 func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID string) error {
@@ -328,6 +343,44 @@ func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID 
 	return nil
 }
 
+// GetServiceAttributes queries service central for the attributes of a given service. Can return an empty array if no attributes were found
+func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]ServiceAttributeResponse, error) {
+	req, err := c.rm.NewRequest(
+		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
+		restclient.Method(http.MethodGet),
+		restclient.JoinPath(fmt.Sprintf(v2ServicesPath+"/%s/attributes", url.PathEscape(serviceUUID))),
+		restclient.Context(ctx),
+		restclient.Header("Accept", "application/json"),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create get service attributes request")
+	}
+
+	response, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute get service attributes request")
+	}
+
+	defer util.CloseSilently(response.Body)
+	respBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	if response.StatusCode != http.StatusOK {
+		message := fmt.Sprintf("failed to get attributes for service %q. Response: %s", serviceUUID, respBody)
+		return nil, clientError(response.StatusCode, message)
+	}
+
+	var parsedBody []ServiceAttributeResponse
+	err = json.Unmarshal(respBody, &parsedBody)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal response body")
+	}
+
+	return parsedBody, nil
+}
+
 func clientError(statusCode int, message string) error {
 	switch statusCode {
 	case http.StatusNotFound:
@@ -341,17 +394,19 @@ func clientError(statusCode int, message string) error {
 	}
 }
 
-func convertV2ServicesToV1(v2Services []V2Service) []ServiceData {
-	services := make([]ServiceData, 0, len(v2Services))
+func convertV2ServicesToV1(v2Services []V2Service) []ServiceDataRead {
+	services := make([]ServiceDataRead, 0, len(v2Services))
 	for _, v2Service := range v2Services {
 		services = append(services, convertV2ServiceToV1(v2Service))
 	}
 	return services
 }
 
-func convertV2ServiceToV1(v2Service V2Service) ServiceData {
-	service := ServiceData{
-		ServiceName: ServiceName(v2Service.Name),
+func convertV2ServiceToV1(v2Service V2Service) ServiceDataRead {
+	service := ServiceDataRead{
+		ServiceDataWrite: ServiceDataWrite{
+			ServiceName: ServiceName(v2Service.Name),
+		},
 		ServiceOwner: ServiceOwner{
 			Username: v2Service.Owner,
 		},
@@ -388,4 +443,29 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceData {
 	creationTimestamp := v2Service.CreatedOn.UTC().Format(time.RFC3339)
 	service.CreationTimestamp = &creationTimestamp
 	return service
+}
+
+func findOpsGenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (ServiceAttribute, bool /*found*/, error) {
+	const opsGenieSchemaName = "opsgenie"
+	count := 0
+	found := false
+	ogTeamAttr := ServiceAttribute{}
+	for _, attr := range attributes {
+		if attr.Schema.Name != opsGenieSchemaName {
+			continue
+		}
+
+		team, ok := attr.Value["team"]
+		if !ok {
+			return ogTeamAttr, found, errors.Errorf("expected to find team name within schema of name %q", opsGenieSchemaName)
+		}
+
+		ogTeamAttr = ServiceAttribute{Team: team}
+		found = true
+		count++
+	}
+	if count > 1 {
+		return ogTeamAttr, found, errors.New("found more than one OpsGenie service attribute")
+	}
+	return ogTeamAttr, found, nil
 }

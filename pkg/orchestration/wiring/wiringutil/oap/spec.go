@@ -46,20 +46,22 @@ func ResourceName(resourceSpec *runtime.RawExtension) (string, error) {
 	return spec.ResourceName, nil
 }
 
-func TemplateName(resourceSpec *runtime.RawExtension) (string, error) {
+func TemplateName(resourceSpec *runtime.RawExtension) (string, bool /* external */, bool /* retriable */, error) {
 	attributes, err := FilterAttributes(resourceSpec)
 	if err != nil {
-		return "", err
+		return "", false, false, err
 	}
 	templateAttribute, ok := attributes["template"]
 	if !ok {
-		return "", errors.Errorf("attribute template not found in the spec")
+		// this is a user error - the template is missing
+		return "", true, false, errors.Errorf("attribute template not found in the spec")
 	}
 	templateName, ok := templateAttribute.(string)
 	if !ok {
-		return "", errors.Errorf("attribute template must be string")
+		// this is a user errror - the template is not a string
+		return "", true, false, errors.Errorf("attribute template must be string")
 	}
-	return templateName, nil
+	return templateName, false, false, nil
 }
 
 func Alarms(resourceSpec *runtime.RawExtension) (json.RawMessage, error) {
@@ -92,20 +94,20 @@ func FilterAttributes(resourceSpec *runtime.RawExtension) (map[string]interface{
 }
 
 // From a resource spec, performs FilterAttributes() and  then applies defaults.
-func BuildAttributes(resourceSpec *runtime.RawExtension, resourceDefaults *runtime.RawExtension) (map[string]interface{}, error) {
+func BuildAttributes(resourceSpec *runtime.RawExtension, resourceDefaults *runtime.RawExtension) (map[string]interface{}, bool /* external */, bool /* retriable */, error) {
 	attributes, err := FilterAttributes(resourceSpec)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
 	if resourceDefaults != nil {
 		var defaults map[string]interface{}
 		if err = json.Unmarshal(resourceDefaults.Raw, &defaults); err != nil {
-			return nil, errors.Wrap(err, "failed to unpack defaults as map[string]interface{}")
+			return nil, false, false, errors.Wrap(err, "failed to unpack defaults as map[string]interface{}")
 		}
 		attributes, err = wiringutil.Merge(attributes, defaults)
 		if err != nil {
-			return nil, err
+			return nil, false, false, err
 		}
 	}
-	return attributes, nil
+	return attributes, false, false, nil
 }

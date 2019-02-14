@@ -198,7 +198,7 @@ func (n *NamespaceReportHandler) getResourceFromProvider(ctx context.Context, pr
 
 	req, err := http.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
-		return handleProviderError(logger, obj, err, "setup request")
+		return handleProviderError(logger, obj, provider, err, "setup request")
 	}
 	newReq := req.WithContext(ctx)
 
@@ -206,40 +206,40 @@ func (n *NamespaceReportHandler) getResourceFromProvider(ctx context.Context, pr
 
 	reporterAction := provider.ReportAction()
 	if reporterAction == "" {
-		return handleProviderError(logger, obj, errors.Errorf("provider spec isn't tagged with reporting api"), "parse spec")
+		return handleProviderError(logger, obj, provider, errors.New("provider spec isn't tagged with reporting api for provider"), "parse spec")
 	}
 
 	userInfo, ok := request.UserFrom(ctx)
 	if !ok {
-		return handleProviderError(logger, obj, errors.New("missing user from context"), "parse user request")
+		return handleProviderError(logger, obj, provider, errors.New("missing user from context"), "parse user request")
 	}
 
 	resp, err := provider.Request(asapConfig, newReq, fmt.Sprintf(infoURI, externalID, reporterAction), userInfo.GetName())
 	if err != nil {
-		return handleProviderError(logger, obj, err, "get")
+		return handleProviderError(logger, obj, provider, err, "get")
 	}
 	defer util.CloseSilently(resp.Body)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return handleProviderError(logger, obj, err, "parse body")
+		return handleProviderError(logger, obj, provider, err, "parse body")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return handleProviderError(logger, obj, errors.Errorf("Failed request responded with status %d body %s", resp.StatusCode, string(body)), "request")
+		return handleProviderError(logger, obj, provider, errors.Errorf("Failed request responded with status %d body %s", resp.StatusCode, string(body)), "request")
 	}
 
 	providerOpsResp := ProviderOpsResponse{}
 	err = json.Unmarshal(body, &providerOpsResp)
 	if err != nil {
-		return handleProviderError(logger, obj, err, "unmarshal new reporter response json")
+		return handleProviderError(logger, obj, provider, err, "unmarshal new reporter response json")
 	} else if providerOpsResp.Result == nil {
 		// Support migration from report model to ops api spec
 		logger.Warn("Provider using old report spec", zap.String("provider", provider.Name()), zap.Error(err))
 		providerOpsResp.Result = &ProviderResponse{}
 		err = json.Unmarshal(body, providerOpsResp.Result)
 		if err != nil {
-			return handleProviderError(logger, obj, err, "unmarshal json")
+			return handleProviderError(logger, obj, provider, err, "unmarshal json")
 		}
 	}
 
@@ -834,9 +834,12 @@ func mapOwnerReferences(refs []meta_v1.OwnerReference) []reporter_v1.Reference {
 	return result
 }
 
-func handleProviderError(logger *zap.Logger, obj reporter_v1.Resource, err error, action string) reporter_v1.Resource {
+func handleProviderError(logger *zap.Logger, obj reporter_v1.Resource, provider ops.ProviderInterface, err error, action string) reporter_v1.Resource {
 	msg := fmt.Sprintf("Failed attempting to get provider information during %s", action)
-	logger.Error(msg, zap.Error(err))
+	logger.Error(msg,
+		zap.String("p_name", provider.Name()),
+		zap.Error(err),
+	)
 	return reporter_v1.Resource{
 		Name:         obj.Name,
 		ResourceType: getClassName(obj.Spec.(sc_v1b1.ServiceInstanceSpec)),

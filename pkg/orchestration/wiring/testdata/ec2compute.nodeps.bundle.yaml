@@ -27,6 +27,7 @@ spec:
           - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
+          policySnippets: {}
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty
@@ -60,7 +61,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
-          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name
@@ -98,6 +98,15 @@ spec:
           clusterServiceClassExternalName: micros
           clusterServicePlanExternalName: v2
           parameters:
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             autoScalingGroup:
               maxSize: 2
               minSize: 1
@@ -121,15 +130,6 @@ spec:
               envType: testenv
               region: testregion
             meaninglesskey: used as an example
-            alarmEndpoints:
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: high
-                type: CloudWatch
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: low
-                type: CloudWatch
             notifications:
               email: an_owner@example.com
             service:

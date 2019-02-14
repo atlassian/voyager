@@ -33,7 +33,7 @@ func readAndValidateOptions(configFile string) (*Options, error) {
 		ServiceDescriptor      *comp_v1.ServiceDescriptor `json:"service_descriptor"`
 	}
 
-	err = yaml.Unmarshal(doc, &rawOptions)
+	err = yaml.UnmarshalStrict(doc, &rawOptions)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

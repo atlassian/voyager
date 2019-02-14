@@ -31,32 +31,32 @@ type serviceCentralClientMock struct {
 // Making sure that mock implements the interface
 var _ serviceCentralClient = &serviceCentralClientMock{}
 
-func (m *serviceCentralClientMock) CreateService(ctx context.Context, user auth.User, data *ServiceData) (*ServiceData, error) {
+func (m *serviceCentralClientMock) CreateService(ctx context.Context, user auth.User, data *ServiceDataWrite) (*ServiceDataRead, error) {
 	args := m.Called(ctx, user, data)
 	result := args.Get(0)
 	if result == nil {
 		return nil, args.Error(1)
 	}
-	return result.(*ServiceData), args.Error(1)
+	return result.(*ServiceDataRead), args.Error(1)
 }
 
-func (m *serviceCentralClientMock) ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]ServiceData, error) {
+func (m *serviceCentralClientMock) ListServices(ctx context.Context, user auth.OptionalUser, search string) ([]ServiceDataRead, error) {
 	args := m.Called(ctx, user, search)
-	return args.Get(0).([]ServiceData), args.Error(1)
+	return args.Get(0).([]ServiceDataRead), args.Error(1)
 }
 
-func (m *serviceCentralClientMock) ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceData, error) {
+func (m *serviceCentralClientMock) ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]ServiceDataRead, error) {
 	args := m.Called(ctx, user, modifiedSince)
-	return args.Get(0).([]ServiceData), args.Error(1)
+	return args.Get(0).([]ServiceDataRead), args.Error(1)
 }
 
-func (m *serviceCentralClientMock) GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceData, error) {
+func (m *serviceCentralClientMock) GetService(ctx context.Context, user auth.OptionalUser, serviceUUID string) (*ServiceDataRead, error) {
 	args := m.Called(ctx, user, serviceUUID)
-	ret1, _ := args.Get(0).(*ServiceData)
+	ret1, _ := args.Get(0).(*ServiceDataRead)
 	return ret1, args.Error(1)
 }
 
-func (m *serviceCentralClientMock) PatchService(ctx context.Context, user auth.User, data *ServiceData) error {
+func (m *serviceCentralClientMock) PatchService(ctx context.Context, user auth.User, data *ServiceDataWrite) error {
 	args := m.Called(ctx, user, data)
 	return args.Error(0)
 }
@@ -70,7 +70,7 @@ func TestCreateService(t *testing.T) {
 	t.Parallel()
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	serviceCentralClient.On("CreateService", mock.Anything, testUser, newServiceServiceCentralData(false)).Return(newServiceServiceCentralData(true), nil)
+	serviceCentralClient.On("CreateService", mock.Anything, testUser, newServiceWriteData(false)).Return(newServiceServiceCentralDataRead(true), nil)
 	store := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 	// when
 	result, err := store.FindOrCreateService(context.Background(), testUser, newService(false))
@@ -82,10 +82,10 @@ func TestCreateService(t *testing.T) {
 func TestCreateServiceSucceedsIfServiceWithTheSameDataExistsStore(t *testing.T) {
 	t.Parallel()
 	// given
-	existingServiceData := newServiceServiceCentralData(true)
+	existingServiceData := newServiceServiceCentralDataRead(true)
 	serviceCentralClient := new(serviceCentralClientMock)
-	serviceCentralClient.On("CreateService", mock.Anything, mock.Anything, mock.Anything).Return((*ServiceData)(nil), httputil.NewConflict("already exists"))
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, "service_name='test-service'").Return([]ServiceData{*existingServiceData}, nil)
+	serviceCentralClient.On("CreateService", mock.Anything, mock.Anything, mock.Anything).Return((*ServiceDataRead)(nil), httputil.NewConflict("already exists"))
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, "service_name='test-service'").Return([]ServiceDataRead{*existingServiceData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, *existingServiceData.ServiceUUID).Return(existingServiceData, nil)
 	store := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 	// when
@@ -98,11 +98,11 @@ func TestCreateServiceSucceedsIfServiceWithTheSameDataExistsStore(t *testing.T) 
 func TestCreateServiceFailsIfServiceWithTheSameNameButDifferentOwnerExistsStore(t *testing.T) {
 	t.Parallel()
 	// given
-	existingServiceData := newServiceServiceCentralData(true)
+	existingServiceData := newServiceServiceCentralDataRead(true)
 	existingServiceData.ServiceOwner.Username = "somebody-else"
 	serviceCentralClient := new(serviceCentralClientMock)
-	serviceCentralClient.On("CreateService", mock.Anything, mock.Anything, mock.Anything).Return((*ServiceData)(nil), httputil.NewConflict("already exists"))
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, "service_name='test-service'").Return([]ServiceData{*existingServiceData}, nil)
+	serviceCentralClient.On("CreateService", mock.Anything, mock.Anything, mock.Anything).Return((*ServiceDataRead)(nil), httputil.NewConflict("already exists"))
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, "service_name='test-service'").Return([]ServiceDataRead{*existingServiceData}, nil)
 	store := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 	// when
 	_, err := store.FindOrCreateService(context.Background(), testUser, newService(false))
@@ -115,8 +115,8 @@ func TestCreateServiceFailsIfServiceExistsButCouldNotBeFound(t *testing.T) {
 	t.Parallel()
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	serviceCentralClient.On("CreateService", mock.Anything, mock.Anything, mock.Anything).Return((*ServiceData)(nil), httputil.NewConflict("already exists"))
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, "service_name='test-service'").Return([]ServiceData{}, nil)
+	serviceCentralClient.On("CreateService", mock.Anything, mock.Anything, mock.Anything).Return((*ServiceDataRead)(nil), httputil.NewConflict("already exists"))
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, "service_name='test-service'").Return([]ServiceDataRead{}, nil)
 	store := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 	// when
 	_, err := store.FindOrCreateService(context.Background(), testUser, newService(false))
@@ -129,8 +129,8 @@ func TestGetServiceSearchesByNameAndPlatform(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	expectedData := newTestServiceData(true)
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+	expectedData := newReadData(true)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, mock.Anything).Return(expectedData, nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
@@ -149,8 +149,8 @@ func TestGetServiceReturnsResult(t *testing.T) {
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
 	expectedService := newService(true)
-	expectedData := newTestServiceData(true)
-	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+	expectedData := newReadData(true)
+	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, optionalUser, mock.Anything).Return(expectedData, nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
@@ -177,12 +177,12 @@ func TestGetServiceWithComplianceReturnsResult(t *testing.T) {
 		t.Run(fmt.Sprintf("PRGB=%v", tc.expectedVal), func(t *testing.T) {
 			serviceCentralClient := new(serviceCentralClientMock)
 			expectedService := newServiceWithCompliance(true, tc.expectedVal)
-			expectedData := newTestServiceData(true)
+			expectedData := newReadData(true)
 			expectedData.Compliance = &ServiceComplianceConf{
 				PRGBControl: &tc.expectedVal,
 			}
 
-			serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+			serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 			serviceCentralClient.On("GetService", mock.Anything, optionalUser, mock.Anything).Return(expectedData, nil)
 			lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
@@ -202,12 +202,12 @@ func TestGetServiceReturnsSingleServiceIfMultiple(t *testing.T) {
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
 	expectedService := newService(true)
-	expectedData := newTestServiceData(true)
-	expectedData2 := newTestServiceData(true)
+	expectedData := newReadData(true)
+	expectedData2 := newReadData(true)
 	otherUuid := "some-uuid"
 	expectedData2.ServiceUUID = &otherUuid
 	expectedData2.ServiceName = "other-name"
-	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceData{*expectedData2, *expectedData}, nil)
+	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceDataRead{*expectedData2, *expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, optionalUser, testServiceUUID).Return(expectedData, nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
@@ -226,13 +226,13 @@ func TestGetServiceIncludesTags(t *testing.T) {
 	const serviceName = "some-service"
 	serviceCentralClient := new(serviceCentralClientMock)
 
-	sd := newTestServiceData(true)
+	sd := newReadData(true)
 	sd.Tags = []string{"will be discarded", "micros2:first=some=value", "micros2:second=space in value"}
 	sd.ServiceName = serviceName
 
 	expectedService := newService(true)
 	expectedService.Spec.ResourceTags = parsePlatformTags(sd.Tags)
-	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceData{*sd}, nil)
+	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceDataRead{*sd}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, optionalUser, *sd.ServiceUUID).Return(sd, nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
@@ -249,7 +249,7 @@ func TestGetServiceReturnsErrorWhenServiceNotFound(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceData{}, nil)
+	serviceCentralClient.On("ListServices", mock.Anything, optionalUser, mock.Anything).Return([]ServiceDataRead{}, nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
 	// when
@@ -281,14 +281,16 @@ func TestPatchServiceUpdatesTagsRetainsPreviousValues(t *testing.T) {
 	}
 
 	serviceUUID := "some-uuid"
-	oldService := ServiceData{
-		ServiceUUID: &serviceUUID,
-		ServiceName: serviceName,
-		Tags:        []string{"random tag"},
+	oldService := ServiceDataRead{
+		ServiceDataWrite: ServiceDataWrite{
+			ServiceUUID: &serviceUUID,
+			ServiceName: serviceName,
+			Tags:        []string{"random tag"},
+		},
 	}
 	expectedTags := append(oldService.Tags, convertPlatformTags(updatedService.Spec.ResourceTags)...)
 
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{oldService}, nil)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{oldService}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, serviceUUID).Return(&oldService, nil)
 	serviceCentralClient.On("PatchService", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	store := NewStore(zaptest.NewLogger(t), serviceCentralClient)
@@ -305,7 +307,7 @@ func TestPatchServiceUpdatesTagsRetainsPreviousValues(t *testing.T) {
 			continue
 		}
 
-		data, ok := call.Arguments[2].(*ServiceData)
+		data, ok := call.Arguments[2].(*ServiceDataWrite)
 		require.True(t, ok)
 
 		// we only care about the tags for this test, and order isn't guaranteed
@@ -349,13 +351,15 @@ func TestPatchServiceRetainsMiscValues(t *testing.T) {
 	require.NoError(t, err)
 
 	serviceUUID := "some-uuid"
-	oldService := ServiceData{
-		ServiceUUID: &serviceUUID,
-		ServiceName: serviceName,
-		Misc: []miscData{
-			{Key: "ExistingKey", Value: "ExistingValue"},
-			{Key: PagerDutyMetadataKey, Value: "ToBeReplaced"},
-			{Key: BambooMetadataKey, Value: "ToBeReplaced"},
+	oldService := ServiceDataRead{
+		ServiceDataWrite: ServiceDataWrite{
+			ServiceUUID: &serviceUUID,
+			ServiceName: serviceName,
+			Misc: []miscData{
+				{Key: "ExistingKey", Value: "ExistingValue"},
+				{Key: PagerDutyMetadataKey, Value: "ToBeReplaced"},
+				{Key: BambooMetadataKey, Value: "ToBeReplaced"},
+			},
 		},
 	}
 	expectedMisc := []miscData{
@@ -364,7 +368,7 @@ func TestPatchServiceRetainsMiscValues(t *testing.T) {
 		{Key: BambooMetadataKey, Value: string(bambooMeta)},
 	}
 
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{oldService}, nil)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{oldService}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, serviceUUID).Return(&oldService, nil)
 	serviceCentralClient.On("PatchService", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	store := NewStore(zaptest.NewLogger(t), serviceCentralClient)
@@ -381,7 +385,7 @@ func TestPatchServiceRetainsMiscValues(t *testing.T) {
 			continue
 		}
 
-		data, ok := call.Arguments[2].(*ServiceData)
+		data, ok := call.Arguments[2].(*ServiceDataWrite)
 		require.True(t, ok)
 
 		// we only check the misc fields to see if they match
@@ -395,8 +399,8 @@ func TestDeleteServiceDeletesCorrectUUID(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	expectedData := newTestServiceData(true)
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+	expectedData := newReadData(true)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, mock.Anything).Return(expectedData, nil)
 	serviceCentralClient.On("DeleteService", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
@@ -414,8 +418,8 @@ func TestDeleteServiceTwiceGives404(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	expectedData := newTestServiceData(true)
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+	expectedData := newReadData(true)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, mock.Anything).Return(expectedData, nil)
 	serviceCentralClient.On("DeleteService", mock.Anything, mock.Anything, mock.Anything).Return(httputil.NewNotFound("oh no"))
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
@@ -434,7 +438,7 @@ func TestDeleteServiceMissingList(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{}, nil)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{}, nil)
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
 	// when
@@ -451,8 +455,8 @@ func TestDeleteServiceMissingService(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	expectedData := newTestServiceData(true)
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+	expectedData := newReadData(true)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, mock.Anything).Return(nil, httputil.NewNotFound("oh no"))
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
 
@@ -470,8 +474,8 @@ func TestDeleteServiceWeirdResponse(t *testing.T) {
 
 	// given
 	serviceCentralClient := new(serviceCentralClientMock)
-	expectedData := newTestServiceData(true)
-	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceData{*expectedData}, nil)
+	expectedData := newReadData(true)
+	serviceCentralClient.On("ListServices", mock.Anything, mock.Anything, mock.Anything).Return([]ServiceDataRead{*expectedData}, nil)
 	serviceCentralClient.On("GetService", mock.Anything, mock.Anything, mock.Anything).Return(expectedData, nil)
 	serviceCentralClient.On("DeleteService", mock.Anything, mock.Anything, mock.Anything).Return(httputil.NewUnknown("oh no"))
 	lister := NewStore(zaptest.NewLogger(t), serviceCentralClient)
@@ -531,10 +535,21 @@ func newServiceWithCompliance(wasCreated bool, PRGBEnabled bool) *creator_v1.Ser
 	return &service
 }
 
-func newServiceServiceCentralData(setID bool) *ServiceData {
-	sd := ServiceData{
+func newServiceServiceCentralDataRead(setID bool) *ServiceDataRead {
+	sd := ServiceDataRead{
+		ServiceDataWrite: *newServiceServiceCentralDataWrite(setID),
+		ServiceOwner:     ServiceOwner{Username: testUser.Name()},
+	}
+	if setID {
+		creationTimestamp := testCreationTimestamp
+		sd.CreationTimestamp = &creationTimestamp
+	}
+	return &sd
+}
+
+func newServiceServiceCentralDataWrite(setID bool) *ServiceDataWrite {
+	sd := ServiceDataWrite{
 		ServiceName:          testServiceName,
-		ServiceOwner:         ServiceOwner{Username: testUser.Name()},
 		ServiceTier:          defaultServiceTier,
 		Platform:             voyagerPlatform,
 		ZeroDowntimeUpgrades: true,
@@ -544,8 +559,22 @@ func newServiceServiceCentralData(setID bool) *ServiceData {
 	if setID {
 		serviceUUID := testServiceUUID
 		sd.ServiceUUID = &serviceUUID
-		creationTimestamp := testCreationTimestamp
-		sd.CreationTimestamp = &creationTimestamp
+	}
+	return &sd
+}
+
+func newServiceWriteData(setID bool) *ServiceDataWrite {
+	sd := ServiceDataWrite{
+		ServiceName:          testServiceName,
+		ServiceTier:          defaultServiceTier,
+		Platform:             voyagerPlatform,
+		ZeroDowntimeUpgrades: true,
+		Stateless:            true,
+		BusinessUnit:         "some_unit",
+	}
+	if setID {
+		serviceUUID := testServiceUUID
+		sd.ServiceUUID = &serviceUUID
 	}
 	return &sd
 }

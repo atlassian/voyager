@@ -10,7 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/util/pkiutil"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -21,13 +21,13 @@ func parseURL(t *testing.T, urlstr string) *url.URL {
 }
 
 // data should be "kubectl -n voyager get secrets asap-creator -o yaml"
-func getSecret(t *testing.T) *v1.Secret {
+func getSecret(t *testing.T) *core_v1.Secret {
 	data := `
 <INSERT YOUR YAML HERE>
 `
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	destination := &v1.Secret{}
+	destination := &core_v1.Secret{}
 	_, _, err := decode([]byte(data), nil, destination)
 	require.NoError(t, err)
 	return destination

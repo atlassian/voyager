@@ -16,7 +16,6 @@ import (
 	"github.com/atlassian/smith/pkg/specchecker"
 	"github.com/atlassian/smith/pkg/store"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/apis/composition/v1"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	form_v1 "github.com/atlassian/voyager/pkg/apis/formation/v1"
 	compclient_fake "github.com/atlassian/voyager/pkg/composition/client/fake"
@@ -27,7 +26,7 @@ import (
 	k8s_testing "github.com/atlassian/voyager/pkg/k8s/testing"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
 	"github.com/atlassian/voyager/pkg/options"
-	"github.com/atlassian/voyager/pkg/synchronization/api"
+	apisynchronization "github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -144,15 +143,15 @@ func TestCreatesNamespaceNoLabel(t *testing.T) {
 	t.Parallel()
 
 	tc := testCase{
-		sd: &v1.ServiceDescriptor{
+		sd: &comp_v1.ServiceDescriptor{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test-sd",
 				UID:        "the-sd-uid",
 				Finalizers: []string{FinalizerServiceDescriptorComposition},
 			},
-			Spec: v1.ServiceDescriptorSpec{
-				Locations: []v1.ServiceDescriptorLocation{
+			Spec: comp_v1.ServiceDescriptorSpec{
+				Locations: []comp_v1.ServiceDescriptorLocation{
 					locationNoLabel(),
 				},
 			},
@@ -190,15 +189,15 @@ func TestCreatesNamespaceWithLabel(t *testing.T) {
 	t.Parallel()
 
 	tc := testCase{
-		sd: &v1.ServiceDescriptor{
+		sd: &comp_v1.ServiceDescriptor{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test-sd",
 				UID:        "the-sd-uid",
 				Finalizers: []string{FinalizerServiceDescriptorComposition},
 			},
-			Spec: v1.ServiceDescriptorSpec{
-				Locations: []v1.ServiceDescriptorLocation{
+			Spec: comp_v1.ServiceDescriptorSpec{
+				Locations: []comp_v1.ServiceDescriptorLocation{
 					locationWithLabel(),
 				},
 			},
@@ -237,17 +236,17 @@ func TestCreatesLocationDescriptorNoLabel(t *testing.T) {
 	t.Parallel()
 
 	tc := testCase{
-		sd: &v1.ServiceDescriptor{
+		sd: &comp_v1.ServiceDescriptor{
 			TypeMeta: meta_v1.TypeMeta{
-				Kind:       v1.ServiceDescriptorResourceKind,
-				APIVersion: v1.ServiceDescriptorResourceVersion,
+				Kind:       comp_v1.ServiceDescriptorResourceKind,
+				APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 			},
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test-sd",
 				Finalizers: []string{FinalizerServiceDescriptorComposition},
 			},
-			Spec: v1.ServiceDescriptorSpec{
-				Locations: []v1.ServiceDescriptorLocation{
+			Spec: comp_v1.ServiceDescriptorSpec{
+				Locations: []comp_v1.ServiceDescriptorLocation{
 					locationNoLabel(),
 				},
 			},
@@ -271,27 +270,27 @@ func TestCreatesLocationDescriptorWithTransformedResources(t *testing.T) {
 	t.Parallel()
 
 	location := locationNoLabel()
-	sdWithResources := &v1.ServiceDescriptor{
+	sdWithResources := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.ServiceDescriptorResourceKind,
-			APIVersion: v1.ServiceDescriptorResourceVersion,
+			Kind:       comp_v1.ServiceDescriptorResourceKind,
+			APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:       "test-sd",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				location,
 			},
 			// it doesn't matter what we put here
 			// because it gets the output of the transformer
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{},
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{},
 		},
 	}
 	tc := testCase{
 		sd: sdWithResources,
-		transformedResources: []v1.ServiceDescriptorResource{
+		transformedResources: []comp_v1.ServiceDescriptorResource{
 			{
 				Name: "first-resource",
 				Type: "first-type",
@@ -303,7 +302,7 @@ func TestCreatesLocationDescriptorWithTransformedResources(t *testing.T) {
 			{
 				Name: "third-resource",
 				Type: "third-type",
-				DependsOn: []v1.ServiceDescriptorResourceDependency{
+				DependsOn: []comp_v1.ServiceDescriptorResourceDependency{
 					{
 						Name: "second-resource",
 						Attributes: map[string]interface{}{
@@ -348,17 +347,17 @@ func TestCreatesLocationDescriptorWithTransformedResources(t *testing.T) {
 func TestCreatesLocationDescriptorWithLabel(t *testing.T) {
 	t.Parallel()
 
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.ServiceDescriptorResourceKind,
-			APIVersion: v1.ServiceDescriptorResourceVersion,
+			Kind:       comp_v1.ServiceDescriptorResourceKind,
+			APIVersion: comp_v1.ServiceDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:       "test-sd",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationWithLabel(),
 			},
 		},
@@ -386,9 +385,9 @@ func TestCreatesLocationDescriptorWithLabel(t *testing.T) {
 func TestUpdatesLocationDescriptorNoLabel(t *testing.T) {
 	t.Parallel()
 
-	existingSD := &v1.ServiceDescriptor{
+	existingSD := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.ServiceDescriptorResourceKind,
+			Kind:       comp_v1.ServiceDescriptorResourceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -396,12 +395,12 @@ func TestUpdatesLocationDescriptorNoLabel(t *testing.T) {
 			UID:        "the-sd-uid",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
 			// doesn't matter, since we get it from the transformer
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{},
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{},
 		},
 	}
 	trueVar := true
@@ -447,7 +446,7 @@ func TestUpdatesLocationDescriptorNoLabel(t *testing.T) {
 		formClientObjects: []runtime.Object{existingLocationDescriptor},
 		mainClientObjects: []runtime.Object{existingNamespace},
 		sd:                existingSD,
-		transformedResources: []v1.ServiceDescriptorResource{
+		transformedResources: []comp_v1.ServiceDescriptorResource{
 			{
 				Name: "first-resource",
 				Type: "first-type",
@@ -485,17 +484,17 @@ func TestDoesNotSkipLocationDescriptorUpdateWhenLocationDescriptorBeingDeleted(t
 	t.Parallel()
 
 	now := meta_v1.Now()
-	existingSD := &v1.ServiceDescriptor{
+	existingSD := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.ServiceDescriptorResourceKind,
+			Kind:       comp_v1.ServiceDescriptorResourceKind,
 			APIVersion: core_v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:       "test-sd",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
 		},
@@ -535,7 +534,7 @@ func TestDoesNotSkipLocationDescriptorUpdateWhenLocationDescriptorBeingDeleted(t
 		formClientObjects: []runtime.Object{existingLocationDescriptor},
 		mainClientObjects: []runtime.Object{existingNamespace},
 		sd:                existingSD,
-		transformedResources: []v1.ServiceDescriptorResource{
+		transformedResources: []comp_v1.ServiceDescriptorResource{
 			{
 				Name: "first-resource",
 				Type: "first-type",
@@ -586,17 +585,17 @@ func TestLocationDescriptorErrorsWhenDifferentOwnerReference(t *testing.T) {
 	tc := testCase{
 		formClientObjects: []runtime.Object{existingLocationDescriptor},
 		mainClientObjects: []runtime.Object{existingNamespace},
-		sd: &v1.ServiceDescriptor{
+		sd: &comp_v1.ServiceDescriptor{
 			TypeMeta: meta_v1.TypeMeta{
-				Kind:       v1.ServiceDescriptorResourceKind,
+				Kind:       comp_v1.ServiceDescriptorResourceKind,
 				APIVersion: core_v1.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test-sd",
 				Finalizers: []string{FinalizerServiceDescriptorComposition},
 			},
-			Spec: v1.ServiceDescriptorSpec{
-				Locations: []v1.ServiceDescriptorLocation{
+			Spec: comp_v1.ServiceDescriptorSpec{
+				Locations: []comp_v1.ServiceDescriptorLocation{
 					locationNoLabel(),
 				},
 			},
@@ -620,13 +619,13 @@ func TestSkipsLocationWhenControllerHasNamespace(t *testing.T) {
 	t.Parallel()
 
 	tc := testCase{
-		sd: &v1.ServiceDescriptor{
+		sd: &comp_v1.ServiceDescriptor{
 			TypeMeta: meta_v1.TypeMeta{},
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name: "test-sd",
 			},
-			Spec: v1.ServiceDescriptorSpec{
-				Locations: []v1.ServiceDescriptorLocation{
+			Spec: comp_v1.ServiceDescriptorSpec{
+				Locations: []comp_v1.ServiceDescriptorLocation{
 					locationNoLabel(),
 				},
 			},
@@ -647,17 +646,17 @@ func TestSkipsLocationWhenControllerHasNamespace(t *testing.T) {
 func TestServiceDescriptorUpdatedIfStatusChanges(t *testing.T) {
 	t.Parallel()
 
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:       "test-sd",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				simpleResourceGroup(),
 			},
 		},
@@ -685,16 +684,16 @@ func TestServiceDescriptorUpdatedIfStatusChanges(t *testing.T) {
 func TestServiceDescriptorFinalizerAdded(t *testing.T) {
 	t.Parallel()
 
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-sd",
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				simpleResourceGroup(),
 			},
 		},
@@ -723,7 +722,7 @@ func TestDeleteServiceDescriptorFinalizerRemoved(t *testing.T) {
 	deletionTimestamp := meta_v1.NewTime(ts)
 	// emulate extra finalizer added by some third party, should be left untouched
 	thirdPartyFinalizer := "thirdParty/Finalizer"
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:              "test-sd",
@@ -733,11 +732,11 @@ func TestDeleteServiceDescriptorFinalizerRemoved(t *testing.T) {
 				thirdPartyFinalizer,
 			},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				simpleResourceGroup(),
 			},
 		},
@@ -766,22 +765,22 @@ func TestServiceDescriptorNotUpdatedIfStatusNotChanged(t *testing.T) {
 	t.Parallel()
 	voyagerLocation := locationNoLabel().VoyagerLocation()
 
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:       "test-sd",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				simpleResourceGroup(),
 			},
 		},
 		// Yeah I'm going to fake this entire thing
-		Status: v1.ServiceDescriptorStatus{
+		Status: comp_v1.ServiceDescriptorStatus{
 			Conditions: []cond_v1.Condition{
 				{
 					LastTransitionTime: meta_v1.Now(), // timestamp doesn't matter
@@ -799,8 +798,8 @@ func TestServiceDescriptorNotUpdatedIfStatusNotChanged(t *testing.T) {
 					Status:             cond_v1.ConditionFalse,
 				},
 			},
-			LocationStatuses: []v1.LocationStatus{
-				v1.LocationStatus{
+			LocationStatuses: []comp_v1.LocationStatus{
+				comp_v1.LocationStatus{
 					DescriptorName:      "test-sd",
 					DescriptorNamespace: "test-sd",
 					Location:            voyagerLocation,
@@ -845,21 +844,21 @@ func TestServiceDescriptorCopiesLdStatus(t *testing.T) {
 	ts3 := meta_v1.Time{time.Now().Add(3 * time.Second)}
 	voyagerLocation := locationNoLabel().VoyagerLocation()
 
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:       "test-sd",
 			Finalizers: []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				simpleResourceGroup(),
 			},
 		},
-		Status: v1.ServiceDescriptorStatus{
+		Status: comp_v1.ServiceDescriptorStatus{
 			Conditions: []cond_v1.Condition{
 				{
 					LastTransitionTime: meta_v1.Now(),
@@ -877,7 +876,7 @@ func TestServiceDescriptorCopiesLdStatus(t *testing.T) {
 					Status:             cond_v1.ConditionFalse,
 				},
 			},
-			LocationStatuses: []v1.LocationStatus{
+			LocationStatuses: []comp_v1.LocationStatus{
 				{
 					DescriptorName:      "test-sd",
 					DescriptorNamespace: "test-sd",
@@ -1080,22 +1079,22 @@ func TestServiceDescriptorCopiesLdStatusWhenDeleting(t *testing.T) {
 	ts3 := meta_v1.Time{time.Now().Add(3 * time.Second)}
 	voyagerLocation := locationNoLabel().VoyagerLocation()
 
-	sd := &v1.ServiceDescriptor{
+	sd := &comp_v1.ServiceDescriptor{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:              "test-sd",
 			DeletionTimestamp: &ts1,
 			Finalizers:        []string{FinalizerServiceDescriptorComposition},
 		},
-		Spec: v1.ServiceDescriptorSpec{
-			Locations: []v1.ServiceDescriptorLocation{
+		Spec: comp_v1.ServiceDescriptorSpec{
+			Locations: []comp_v1.ServiceDescriptorLocation{
 				locationNoLabel(),
 			},
-			ResourceGroups: []v1.ServiceDescriptorResourceGroup{
+			ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
 				simpleResourceGroup(),
 			},
 		},
-		Status: v1.ServiceDescriptorStatus{
+		Status: comp_v1.ServiceDescriptorStatus{
 			Conditions: []cond_v1.Condition{
 				{
 					LastTransitionTime: meta_v1.Now(),
@@ -1113,7 +1112,7 @@ func TestServiceDescriptorCopiesLdStatusWhenDeleting(t *testing.T) {
 					Status:             cond_v1.ConditionFalse,
 				},
 			},
-			LocationStatuses: []v1.LocationStatus{
+			LocationStatuses: []comp_v1.LocationStatus{
 				{
 					DescriptorName:      "test-sd",
 					DescriptorNamespace: "test-sd",
@@ -1243,12 +1242,12 @@ func TestServiceDescriptorCopiesLdStatusWhenDeleting(t *testing.T) {
 	tc.run(t)
 }
 
-func simpleResourceGroup() v1.ServiceDescriptorResourceGroup {
-	return v1.ServiceDescriptorResourceGroup{
-		Locations: []v1.ServiceDescriptorLocationName{"some-location"},
+func simpleResourceGroup() comp_v1.ServiceDescriptorResourceGroup {
+	return comp_v1.ServiceDescriptorResourceGroup{
+		Locations: []comp_v1.ServiceDescriptorLocationName{"some-location"},
 		Name:      "some-resource-group",
-		Resources: []v1.ServiceDescriptorResource{
-			v1.ServiceDescriptorResource{
+		Resources: []comp_v1.ServiceDescriptorResource{
+			comp_v1.ServiceDescriptorResource{
 				Name: "resource1",
 				Type: "EC2Compute",
 			},
@@ -1256,8 +1255,8 @@ func simpleResourceGroup() v1.ServiceDescriptorResourceGroup {
 	}
 }
 
-func locationNoLabel() v1.ServiceDescriptorLocation {
-	return v1.ServiceDescriptorLocation{
+func locationNoLabel() comp_v1.ServiceDescriptorLocation {
+	return comp_v1.ServiceDescriptorLocation{
 		Name:    "some-location",
 		Account: "12345",
 		Region:  "ap-eastwest-1",
@@ -1265,7 +1264,7 @@ func locationNoLabel() v1.ServiceDescriptorLocation {
 	}
 }
 
-func locationWithLabel() v1.ServiceDescriptorLocation {
+func locationWithLabel() comp_v1.ServiceDescriptorLocation {
 	location := locationNoLabel()
 	location.Label = "my-expected-label"
 	return location
@@ -1279,8 +1278,8 @@ type testCase struct {
 	formClientObjects []runtime.Object
 	compClientObjects []runtime.Object
 
-	sd                   *v1.ServiceDescriptor
-	transformedResources []v1.ServiceDescriptorResource
+	sd                   *comp_v1.ServiceDescriptor
+	transformedResources []comp_v1.ServiceDescriptorResource
 
 	test func(*testing.T, *Controller, *ctrl.ProcessContext, *testCase)
 
@@ -1347,7 +1346,7 @@ func (tc *testCase) run(t *testing.T) {
 	objectInfos := make([]FormationObjectInfo, 0, len(tc.sd.Spec.Locations))
 
 	for i := range tc.sd.Spec.Locations {
-		serviceLocation := v1.ServiceDescriptorLocation{
+		serviceLocation := comp_v1.ServiceDescriptorLocation{
 			Region:  tc.sd.Spec.Locations[i].Region,
 			EnvType: tc.sd.Spec.Locations[i].EnvType,
 			Account: tc.sd.Spec.Locations[i].Account,
@@ -1415,7 +1414,7 @@ type fakeSdTransformer struct {
 	mock.Mock
 }
 
-func (m *fakeSdTransformer) CreateFormationObjectDef(serviceDescriptor *v1.ServiceDescriptor) ([]FormationObjectInfo, error) {
+func (m *fakeSdTransformer) CreateFormationObjectDef(serviceDescriptor *comp_v1.ServiceDescriptor) ([]FormationObjectInfo, error) {
 	args := m.Called(serviceDescriptor)
 	return args.Get(0).([]FormationObjectInfo), args.Error(1)
 }
