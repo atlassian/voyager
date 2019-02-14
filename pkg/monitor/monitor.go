@@ -8,9 +8,10 @@ import (
 	"github.com/atlassian/voyager"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
+	form_v1 "github.com/atlassian/voyager/pkg/apis/formation/v1"
 	comp_v1_client "github.com/atlassian/voyager/pkg/composition/client/typed/composition/v1"
 	creator_v1_client "github.com/atlassian/voyager/pkg/creator/client/typed/creator/v1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	form_v1_client "github.com/atlassian/voyager/pkg/formation/client/typed/formation/v1"
 	sc_v1b1_client "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -31,9 +32,10 @@ type Monitor struct {
 	ServiceSpec            creator_v1.ServiceSpec
 	ServiceDescriptor      *comp_v1.ServiceDescriptor
 
-	ServiceDescriptorClient comp_v1_client.ServiceDescriptorInterface
-	ServiceCatalogClient    sc_v1b1_client.Interface
-	CreatorServiceClient    creator_v1_client.ServiceInterface
+	ServiceDescriptorClient  comp_v1_client.ServiceDescriptorInterface
+	ServiceCatalogClient     sc_v1b1_client.Interface
+	CreatorServiceClient     creator_v1_client.ServiceInterface
+	LocationDescriptorClient form_v1_client.LocationDescriptorInterface
 }
 
 func (m *Monitor) Run(ctx context.Context) (retErr error) {
@@ -178,6 +180,14 @@ func (m *Monitor) logFailureDetails(ctx context.Context, retErr error) {
 		serviceDescriptor = ServiceDescriptor(sd)
 	}
 
+	var locationDescriptor zap.Field
+	ld, err := m.locationDescriptor(ctx, m.ServiceDescriptorName)
+	if err != nil {
+		locationDescriptor = LocationDescriptorError(errors.Wrap(err, "ld"))
+	} else {
+		locationDescriptor = LocationDescriptor(ld)
+	}
+
 	var service zap.Field
 	srv, err := m.service(ctx, m.ServiceDescriptorName)
 	if err != nil {
@@ -186,12 +196,7 @@ func (m *Monitor) logFailureDetails(ctx context.Context, retErr error) {
 		service = Service(srv)
 	}
 
-	m.Logger.Error("monitor job failure", serviceDescriptor, service, zap.Error(retErr))
-}
-
-func (m *Monitor) serviceInstance(ctx context.Context, name, namespace string) (*v1beta1.ServiceInstance, error) {
-	client := m.ServiceCatalogClient.ServicecatalogV1beta1().ServiceInstances(namespace)
-	return client.Get(name, meta_v1.GetOptions{})
+	m.Logger.Error("monitor job failure", serviceDescriptor, locationDescriptor, service, zap.Error(retErr))
 }
 
 func (m *Monitor) serviceDescriptor(ctx context.Context, name string) (*comp_v1.ServiceDescriptor, error) {
@@ -199,17 +204,12 @@ func (m *Monitor) serviceDescriptor(ctx context.Context, name string) (*comp_v1.
 	return client.Get(name, meta_v1.GetOptions{})
 }
 
-func (m *Monitor) service(ctx context.Context, name string) (*creator_v1.Service, error) {
-	client := m.CreatorServiceClient
+func (m *Monitor) locationDescriptor(ctx context.Context, name string) (*form_v1.LocationDescriptor, error) {
+	client := m.LocationDescriptorClient
 	return client.Get(name, meta_v1.GetOptions{})
 }
 
-// Right now a ServiceInstance always has only a single ServiceInstanceCondition, but that might change in the future
-func findCondition(conditions []v1beta1.ServiceInstanceCondition, conditionType v1beta1.ServiceInstanceConditionType) (int /* index */, *v1beta1.ServiceInstanceCondition) {
-	for i, condition := range conditions {
-		if condition.Type == conditionType {
-			return i, &condition
-		}
-	}
-	return -1, nil
+func (m *Monitor) service(ctx context.Context, name string) (*creator_v1.Service, error) {
+	client := m.CreatorServiceClient
+	return client.Get(name, meta_v1.GetOptions{})
 }
