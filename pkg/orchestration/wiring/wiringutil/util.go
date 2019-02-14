@@ -1,7 +1,6 @@
 package wiringutil
 
 import (
-	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"strings"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Merge two maps, only use loser's fields if those fields are missing in winner
