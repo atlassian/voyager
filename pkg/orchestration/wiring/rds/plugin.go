@@ -105,15 +105,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
 
-	smithResource := smith_v1.Resource{
-		Name:       instanceResourceName,
-		References: nil, // No references
-		Spec: smith_v1.ResourceSpec{
-			Object: serviceInstance,
-		},
-	}
-
-	shapes, external, retriable, err := instanceShapes(resource, &smithResource, context)
+	shapes, external, retriable, err := instanceShapes(instanceResourceName, serviceInstance)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{
 			Error:            err,
@@ -122,17 +114,10 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 	}
 
-	return &wiringplugin.WiringResultSuccess{
-		Contract: wiringplugin.ResourceContract{
-			Shapes: shapes,
-		},
-		Resources: []smith_v1.Resource{smithResource},
-	}
-
+	return wiringutil.SingleWiringResult(instanceResourceName, serviceInstance, shapes, nil)
 }
 
-func instanceShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
-	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
+func instanceShapes(smithResourceName smith_v1.ResourceName, si *sc_v1b1.ServiceInstance) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
 	var finalSpec FinalSpec
 	err := json.Unmarshal(si.Spec.Parameters.Raw, &finalSpec)
 	if err != nil {
@@ -146,7 +131,7 @@ func instanceShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Res
 	}
 
 	return []wiringplugin.Shape{
-		knownshapes.NewSharedDbShape(smithResource.Name, readReplicaParam.ReadReplica),
+		knownshapes.NewSharedDbShape(smithResourceName, readReplicaParam.ReadReplica),
 	}, false, false, nil
 }
 

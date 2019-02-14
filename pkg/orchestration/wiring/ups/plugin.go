@@ -70,15 +70,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
 
-	smithResource := smith_v1.Resource{
-		Name:       instanceResourceName,
-		References: nil, // No references
-		Spec: smith_v1.ResourceSpec{
-			Object: serviceInstance,
-		},
-	}
-
-	shapes, external, retriable, err := instanceShapes(&smithResource)
+	shapes, external, retriable, err := instanceShapes(instanceResourceName, serviceInstance)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{
 			Error:            err,
@@ -87,21 +79,15 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 	}
 
-	return &wiringplugin.WiringResultSuccess{
-		Contract: wiringplugin.ResourceContract{
-			Shapes: shapes,
-		},
-		Resources: []smith_v1.Resource{smithResource},
-	}
+	return wiringutil.SingleWiringResult(instanceResourceName, serviceInstance, shapes, nil)
 }
 
-func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
+func instanceShapes(smithResourceName smith_v1.ResourceName, si *sc_v1b1.ServiceInstance) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
 	// UPS outputs all of its inputs
-	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
 	parameters := map[string]json.RawMessage{}
 	if si.Spec.Parameters == nil {
 		return []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, defaultUpsEnvVars),
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, ResourcePrefix, defaultUpsEnvVars),
 		}, false, false, nil
 	}
 
@@ -113,7 +99,7 @@ func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, boo
 	credentials, ok := parameters["credentials"]
 	if !ok {
 		return []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, defaultUpsEnvVars),
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, ResourcePrefix, defaultUpsEnvVars),
 		}, false, false, nil
 	}
 
@@ -128,7 +114,7 @@ func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, boo
 		envVars[makeEnvVarName(k)] = "data." + k
 	}
 	return []wiringplugin.Shape{
-		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, ResourcePrefix, envVars),
+		knownshapes.NewBindableEnvironmentVariables(smithResourceName, ResourcePrefix, envVars),
 	}, false, false, nil
 }
 

@@ -29,7 +29,7 @@ type ServiceEnvironmentGenerator func(env *oap.ServiceEnvironment) *oap.ServiceE
 // input to the wiring functions of the dependants.
 //
 // The `resource` is the orchestration level resource that was transformed into `smithResource`.
-type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error)
+type ShapesFunc func(resource *orch_v1.StateResource, smithResourceName smith_v1.ResourceName, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error)
 
 type WiringPlugin struct {
 	clusterServiceClassExternalID servicecatalog.ClassExternalID
@@ -89,15 +89,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
 
-	smithResource := smith_v1.Resource{
-		Name:       instanceResourceName,
-		References: nil, // no references
-		Spec: smith_v1.ResourceSpec{
-			Object: serviceInstance,
-		},
-	}
-
-	shapes, external, retriable, err := p.shapes(resource, &smithResource, context)
+	shapes, external, retriable, err := p.shapes(resource, instanceResourceName, context)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{
 			Error:            err,
@@ -106,12 +98,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 	}
 
-	return &wiringplugin.WiringResultSuccess{
-		Contract: wiringplugin.ResourceContract{
-			Shapes: shapes,
-		},
-		Resources: []smith_v1.Resource{smithResource},
-	}
+	return wiringutil.SingleWiringResult(instanceResourceName, serviceInstance, shapes, nil)
 }
 
 func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriableError */, error) {

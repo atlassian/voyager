@@ -71,20 +71,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
 
-	smithResource := smith_v1.Resource{
-		Name:       instanceResourceName,
-		References: references,
-		Spec: smith_v1.ResourceSpec{
-			Object: serviceInstance,
-		},
-	}
-
-	return &wiringplugin.WiringResultSuccess{
-		Contract: wiringplugin.ResourceContract{
-			Shapes: nil, // no shapes
-		},
-		Resources: []smith_v1.Resource{smithResource},
-	}
+	return wiringutil.SingleWiringResult(instanceResourceName, serviceInstance, nil, references)
 }
 
 func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {

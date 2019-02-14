@@ -40,7 +40,7 @@ var ResourceTypes = map[voyager.ResourceType]wiringplugin.WiringPlugin{
 	Cfn:      wiringutil.StatusAdapter(Resource(Cfn, CfnName, CfnClass, CfnPlan, CfnServiceEnvironment, cfnShapes).WireUp),
 }
 
-func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
+func cfnShapes(resource *orch_v1.StateResource, smithResourceName smith_v1.ResourceName, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
 	templateName, external, retriable, err := oap.TemplateName(resource.Spec)
 	if err != nil {
 		return nil, external, retriable, err
@@ -50,22 +50,22 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 	switch templateName {
 	case "sns-v1":
 		return []wiringplugin.Shape{
-			knownshapes.NewSnsSubscribable(smithResource.Name),
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
+			knownshapes.NewSnsSubscribable(smithResourceName),
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, CfnPrefix, map[string]string{
 				"TOPICNAME":   "data.TopicName",
 				"TOPICARN":    "data.TopicArn",
 				"TOPICREGION": "data.TopicRegion",
 			}),
-			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+			knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 		}, false, false, nil
 	case "kinesis-v1":
 		return []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, CfnPrefix, map[string]string{
 				"STREAMNAME":   "data.StreamName",
 				"STREAMARN":    "data.StreamArn",
 				"STREAMREGION": "data.StreamRegion",
 			}),
-			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+			knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 		}, false, false, nil
 	case "elasticsearch-v5":
 		fallthrough
@@ -73,30 +73,30 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 		fallthrough
 	case "elasticsearch-v3":
 		return []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, CfnPrefix, map[string]string{
 				"DOMAINARN":      "data.DomainArn",
 				"DOMAINENDPOINT": "data.DomainEndpoint",
 				"DOMAINREGION":   "data.DomainRegion",
 			}),
-			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+			knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 		}, false, false, nil
 	case "firehose-v1":
 		return []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, CfnPrefix, map[string]string{
 				"WRITEREXTERNALROLEARN": "data.WriterExternalRoleArn",
 				"DELIVERYROLEARN":       "data.DeliveryRoleArn",
 				"S3BUCKETARN":           "data.S3BucketArn",
 				"STREAMARN":             "data.StreamArn",
 			}),
-			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+			knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 		}, false, false, nil
 	case "simple-workflow-service-v1":
 		return []wiringplugin.Shape{
-			knownshapes.NewBindableEnvironmentVariables(smithResource.Name, CfnPrefix, map[string]string{
+			knownshapes.NewBindableEnvironmentVariables(smithResourceName, CfnPrefix, map[string]string{
 				"DOMAINPREFIX": "data.DomainPrefix",
 				"DOMAINREGION": "data.DomainRegion",
 			}),
-			knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+			knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 		}, false, false, nil
 	default:
 		// There's only a small set of supported Voyager resources in the
@@ -126,27 +126,27 @@ func cfnShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource
 	}
 }
 
-func dynamoDbShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
+func dynamoDbShapes(resource *orch_v1.StateResource, smithResourceName smith_v1.ResourceName, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
 	// resource has iamPolicySnippet, creation-timestamp and "table-role",
 	// none of which we document or should expose to the user
 	return []wiringplugin.Shape{
-		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, DynamoPrefix, map[string]string{
+		knownshapes.NewBindableEnvironmentVariables(smithResourceName, DynamoPrefix, map[string]string{
 			"TABLE_NAME":   "data.table-name",
 			"TABLE_REGION": "data.table-region",
 		}),
-		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+		knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 	}, false, false, nil
 }
 
-func s3Shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
+func s3Shapes(resource *orch_v1.StateResource, smithResourceName smith_v1.ResourceName, _ *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
 	// resource has creation-timestamp, iamPolicySnippet. These are not exposed.
 	return []wiringplugin.Shape{
-		knownshapes.NewBindableEnvironmentVariables(smithResource.Name, S3Prefix, map[string]string{
+		knownshapes.NewBindableEnvironmentVariables(smithResourceName, S3Prefix, map[string]string{
 			"BUCKET_NAME":   "data.bucket-name",
 			"BUCKET_PATH":   "data.bucket-path",
 			"BUCKET_REGION": "data.bucket-region",
 		}),
-		knownshapes.NewBindableIamAccessible(smithResource.Name, "data.IamPolicySnippet"),
+		knownshapes.NewBindableIamAccessible(smithResourceName, "data.IamPolicySnippet"),
 	}, false, false, nil
 }
 

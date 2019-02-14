@@ -137,23 +137,11 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	}
 
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
-
-	return &wiringplugin.WiringResultSuccess{
-		Contract: wiringplugin.ResourceContract{
-			Shapes: []wiringplugin.Shape{
-				knownshapes.NewBindableEnvironmentVariables(instanceResourceName, postgresEnvResourcePrefix, envVars),
-			},
-		},
-		Resources: []smith_v1.Resource{
-			{
-				Name:       instanceResourceName,
-				References: references,
-				Spec: smith_v1.ResourceSpec{
-					Object: serviceInstance,
-				},
-			},
-		},
+	shapes := []wiringplugin.Shape{
+		knownshapes.NewBindableEnvironmentVariables(instanceResourceName, postgresEnvResourcePrefix, envVars),
 	}
+
+	return wiringutil.SingleWiringResult(instanceResourceName, serviceInstance, shapes, references)
 }
 
 // instanceParameters constructs ServiceInstance parameters.

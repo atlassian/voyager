@@ -1,9 +1,12 @@
 package wiringutil
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"strings"
 
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 )
@@ -41,5 +44,23 @@ func StripJSONFields(obj map[string]interface{}, badStruct interface{}) {
 		if len(jsonAnnotations) > 0 && jsonAnnotations[0] != "" {
 			delete(obj, jsonAnnotations[0])
 		}
+	}
+}
+
+// Return wiring result with a single object
+func SingleWiringResult(name smith_v1.ResourceName, obj runtime.Object, shapes []wiringplugin.Shape, references []smith_v1.Reference) *wiringplugin.WiringResultSuccess {
+	smithResource := smith_v1.Resource{
+		Name:       name,
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: obj,
+		},
+	}
+
+	return &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: shapes,
+		},
+		Resources: []smith_v1.Resource{smithResource},
 	}
 }

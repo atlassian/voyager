@@ -73,15 +73,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
 
-	smithResource := smith_v1.Resource{
-		Name:       instanceResourceName,
-		References: nil, // No references
-		Spec: smith_v1.ResourceSpec{
-			Object: serviceInstance,
-		},
-	}
-
-	shapes, external, retriable, err := instanceShapes(&smithResource)
+	shapes, external, retriable, err := instanceShapes(instanceResourceName)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{
 			Error:            err,
@@ -90,16 +82,11 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 	}
 
-	return &wiringplugin.WiringResultSuccess{
-		Contract: wiringplugin.ResourceContract{
-			Shapes: shapes,
-		},
-		Resources: []smith_v1.Resource{smithResource},
-	}
+	return wiringutil.SingleWiringResult(instanceResourceName, serviceInstance, shapes, nil)
 }
 
-func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
-	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
+func instanceShapes(smithResourceName smith_v1.ResourceName) ([]wiringplugin.Shape, bool /* externalErr */, bool /* retriableErr */, error) {
+	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResourceName, ResourcePrefix, map[string]string{
 		"PRIVATE_KEY": "data.private_key",
 		"ISSUER":      "data.issuer",
 		"KEY_ID":      "data.key_id",
