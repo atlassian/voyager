@@ -19,13 +19,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const (
+	pollDelay = 5 * time.Second
+)
+
 type Monitor struct {
 	ServiceDescriptorName  string
 	Logger                 *zap.Logger
 	Location               voyager.Location
 	ExpectedProcessingTime time.Duration
 	ServiceSpec            creator_v1.ServiceSpec
-	ServiceDescriptor      string
+	ServiceDescriptor      *comp_v1.ServiceDescriptor
 
 	ServiceDescriptorClient comp_v1_client.ServiceDescriptorInterface
 	ServiceCatalogClient    sc_v1b1_client.Interface
@@ -61,20 +65,14 @@ func (m *Monitor) Run(ctx context.Context) (retErr error) {
 		}
 	}
 
-	var sd *comp_v1.ServiceDescriptor
-	sd, err = buildServiceDescriptor(m.ServiceDescriptor)
-	if err != nil {
-		return err
-	}
-
-	err = m.createServiceDescriptor(ctx, sd)
+	err = m.createServiceDescriptor(ctx, m.ServiceDescriptor)
 	if err != nil {
 		return err
 	}
 
 	m.Logger.Info("Initialized ServiceDescriptor for synthetic checks")
 
-	err = wait.PollImmediate(pollDelay, m.ExpectedProcessingTime, m.verifyServiceDescriptorStatus(sd.ObjectMeta.Name))
+	err = wait.PollImmediate(pollDelay, m.ExpectedProcessingTime, m.verifyServiceDescriptorStatus(m.ServiceDescriptorName))
 	if err != nil {
 		return err
 	}
