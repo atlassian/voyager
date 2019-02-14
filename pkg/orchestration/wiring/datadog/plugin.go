@@ -26,7 +26,6 @@ const (
 )
 
 type WiringPlugin struct {
-	svccatentangler.SvcCatEntangler
 }
 
 func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResultSuccess, bool, error) {
