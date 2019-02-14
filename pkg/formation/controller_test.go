@@ -595,11 +595,6 @@ func TestProcessLocationDescriptorWithMultipleTemplatingErrorsReturnsErrorList(t
 			_, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
-			// numErrors := len(err.(*util.ErrorList).ErrorList)
-			// require.Equal(t, 3, numErrors) // One error per resource
-			// for _, e := range err.(*util.ErrorList).ErrorList {
-			// 	assert.Contains(t, e.Error(), "variable not defined")
-			// }
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
