@@ -2,7 +2,6 @@ package sqs
 
 import (
 	"encoding/json"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
@@ -11,6 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
