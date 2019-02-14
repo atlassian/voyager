@@ -19,13 +19,13 @@ import (
 )
 
 var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	apik8scompute.ResourceType:  wiringutil.StatusAdapter(k8scompute.WireUp),
+	apik8scompute.ResourceType:  wiringutil.StatusAdapter(k8scompute.New().WireUp),
 	kubeingress.ResourceType:    wiringutil.StatusAdapter(kubeingress.WireUp),
-	ec2compute_v2.ResourceType:  wiringutil.StatusAdapter(ec2compute_v2.WireUp),
+	ec2compute_v2.ResourceType:  wiringutil.StatusAdapter(ec2compute_v2.New().WireUp),
 	ups.ResourceType:            wiringutil.StatusAdapter(ups.New().WireUp),
-	aws.Cfn:                     aws.ResourceTypes[aws.Cfn],
-	aws.DynamoDB:                aws.ResourceTypes[aws.DynamoDB],
-	aws.S3:                      aws.ResourceTypes[aws.S3],
+	aws.Cfn:                     aws.CfnPlugin,
+	aws.DynamoDB:                aws.DynamoDBPlugin,
+	aws.S3:                      aws.S3Plugin,
 	postgres.ResourceType:       wiringutil.StatusAdapter(postgres.New().WireUp),
 	rds.ResourceType:            wiringutil.StatusAdapter(rds.New().WireUp),
 	sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),

@@ -28,7 +28,6 @@ type VPCEnvironment struct {
 	VPCID                 string         `json:"vpcId,omitempty"`
 	PrivateDNSZone        string         `json:"privateDnsZone,omitempty"`
 	PrivatePaasDNSZone    string         `json:"privatePaasDnsZone,omitempty"`
-	ServiceSecurityGroup  string         `json:"serviceSecurityGroup,omitempty"`
 	InstanceSecurityGroup string         `json:"instanceSecurityGroup,omitempty"`
 	JumpboxSecurityGroup  string         `json:"jumpboxSecurityGroup,omitempty"`
 	SSLCertificateID      string         `json:"sslCertificateId,omitempty"`
@@ -37,6 +36,22 @@ type VPCEnvironment struct {
 	Zones                 []string       `json:"zones,omitempty"`
 	Region                voyager.Region `json:"region,omitempty"`
 	EMRSubnet             string         `json:"emrSubnet,omitempty"`
+}
+
+var ExampleVPC = func(label voyager.Label, region voyager.Region) *VPCEnvironment {
+	return &VPCEnvironment{
+		VPCID:                 "vpc-1",
+		PrivateDNSZone:        "testregion.atl-inf.io",
+		PrivatePaasDNSZone:    "testregion.dev.paas-inf.net",
+		InstanceSecurityGroup: "sg-2",
+		JumpboxSecurityGroup:  "sg-1",
+		SSLCertificateID:      "arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777",
+		Label:                 label,
+		AppSubnets:            []string{"subnet-1", "subnet-2"},
+		Zones:                 []string{"testregiona", "testregionb"},
+		Region:                region,
+		EMRSubnet:             "subnet-1a",
+	}
 }
 
 type RPSResource struct {

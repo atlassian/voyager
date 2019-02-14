@@ -28,6 +28,8 @@ type WiringPlugin struct {
 
 	OAPResourceTypeName        oap.ResourceType
 	generateServiceEnvironment ServiceEnvironmentGenerator
+
+	VPC func(location voyager.Location) *oap.VPCEnvironment
 }
 
 func Resource(resourceType voyager.ResourceType,
@@ -36,6 +38,7 @@ func Resource(resourceType voyager.ResourceType,
 	clusterServicePlanExternalID servicecatalog.PlanExternalID,
 	generateServiceEnvironment ServiceEnvironmentGenerator,
 	shapes svccatentangler.ShapesFunc,
+	vpc func(voyager.Location) *oap.VPCEnvironment,
 ) *WiringPlugin {
 	wiringPlugin := &WiringPlugin{
 		SvcCatEntangler: svccatentangler.SvcCatEntangler{
@@ -46,6 +49,7 @@ func Resource(resourceType voyager.ResourceType,
 		},
 		OAPResourceTypeName:        oapResourceTypeName,
 		generateServiceEnvironment: generateServiceEnvironment,
+		VPC:                        vpc,
 	}
 	wiringPlugin.SvcCatEntangler.InstanceSpec = wiringPlugin.instanceSpec
 	wiringPlugin.SvcCatEntangler.ObjectMeta = wiringPlugin.objectMeta
@@ -86,7 +90,8 @@ func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *
 	}
 
 	serviceName := serviceName(userServiceName, context)
-	environment := awp.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context))
+	vpc := awp.VPC(context.StateContext.Location)
+	environment := awp.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc))
 	return instanceSpec(serviceName, resourceName, awp.OAPResourceTypeName, *environment, attributes, alarms)
 }
 

@@ -54,10 +54,15 @@ type LocationSpec struct {
 }
 
 type WiringPlugin struct {
+	Environment func(location voyager.Location) string
 }
 
 func New() *WiringPlugin {
-	return &WiringPlugin{}
+	return &WiringPlugin{
+		Environment: func(_ voyager.Location) string {
+			return "microstestenv"
+		},
+	}
 }
 
 func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
@@ -124,7 +129,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 	}
 
-	instanceParameters, external, retriable, err := instanceParameters(resource, context, sharedDbDep)
+	instanceParameters, external, retriable, err := p.instanceParameters(resource, context, sharedDbDep)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{
 			Error:            err,
@@ -158,7 +163,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 // instanceParameters constructs ServiceInstance parameters.
 // sharedDbDep may be nil
-func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, sharedDbDep *wiringplugin.WiredDependency) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
+func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, sharedDbDep *wiringplugin.WiredDependency) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
 		var ourSpec autowiredOnlySpec
@@ -178,7 +183,7 @@ func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.W
 		Lessee:       context.StateContext.ServiceName,
 		ResourceName: resource.Name,
 		Location: LocationSpec{
-			Environment: context.StateContext.LegacyConfig.MicrosEnv,
+			Environment: p.Environment(context.StateContext.Location),
 		},
 	})
 	if err != nil {

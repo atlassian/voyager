@@ -195,13 +195,26 @@ func constructComputeParameters(origSpec *runtime.RawExtension, iamRoleRef, iamI
 }
 
 func New() *WiringPlugin {
-	return &WiringPlugin{}
+	return &WiringPlugin{
+		DeveloperRole: func(_ voyager.Location) []string {
+			return []string{"arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC"} //example
+		},
+		ManagedPolicies: func(_ voyager.Location) []string {
+			return []string{"arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE", "arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC"} // example
+		},
+		VPC: func(location voyager.Location) *oap.VPCEnvironment {
+			return oap.ExampleVPC(location.Label, location.Region)
+		},
+	}
 }
 
 type WiringPlugin struct {
+	DeveloperRole   func(location voyager.Location) []string
+	ManagedPolicies func(location voyager.Location) []string
+	VPC             func(location voyager.Location) *oap.VPCEnvironment
 }
 
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+func (p *WiringPlugin) WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if stateResource.Type != ResourceType {
 		return &wiringplugin.WiringResultFailure{
 			Error: errors.Errorf("invalid resource type: %q", stateResource.Type),
@@ -221,7 +234,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		}
 	}
 
-	return wireUp(userInput.Service.ID, ec2ComputePlanName, stateResource, context, constructComputeParameters)
+	return p.wireUp(userInput.Service.ID, ec2ComputePlanName, stateResource, context, constructComputeParameters)
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
@@ -264,7 +277,7 @@ func calculateServiceName(serviceName voyager.ServiceName, resourceName voyager.
 	return microsServiceName, nil
 }
 
-func wireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) wiringplugin.WiringResult {
+func (p *WiringPlugin) wireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) wiringplugin.WiringResult {
 	dependencies := context.Dependencies
 
 	if err := compute.ValidateASAPDependencies(context); err != nil {
@@ -387,8 +400,8 @@ func wireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		bindingResources = append(bindingResources, secretResource)
 	}
 
-	assumeRoles := []string{context.StateContext.LegacyConfig.DeployerRole}
-	managedPolicies := context.StateContext.LegacyConfig.ManagedPolicies
+	assumeRoles := p.DeveloperRole(context.StateContext.Location)
+	managedPolicies := p.ManagedPolicies(context.StateContext.Location)
 
 	// The only things that generate IamSnippets are the things that have the correct shape
 	iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(
@@ -400,6 +413,7 @@ func wireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		context,
 		managedPolicies,
 		assumeRoles,
+		p.VPC(context.StateContext.Location),
 	)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{

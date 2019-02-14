@@ -17,6 +17,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -98,8 +99,20 @@ func validateScaling(s Scaling) error {
 	return nil
 }
 
+func New() *WiringPlugin {
+	return &WiringPlugin{
+		VPC: func(location voyager.Location) *oap.VPCEnvironment {
+			return oap.ExampleVPC(location.Label, location.Region)
+		},
+	}
+}
+
+type WiringPlugin struct {
+	VPC func(location voyager.Location) *oap.VPCEnvironment
+}
+
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if resource.Type != apik8scompute.ResourceType {
 		return &wiringplugin.WiringResultFailure{
 			Error: errors.Errorf("invalid resource type: %q", resource.Type),
@@ -234,8 +247,17 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		references = append(references, secretRef)
 		smithResources = append(smithResources, secretResource)
 
-		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
-			context.StateContext.ServiceName, false, resourcesWithIamAccessibleBindings, context, []string{}, buildKube2iamRoles(context))
+		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(
+			iam.KubeComputeType,
+			resource.Name,
+			context.StateContext.ServiceName,
+			false,
+			resourcesWithIamAccessibleBindings,
+			context,
+			[]string{},
+			buildKube2iamRoles(context),
+			p.VPC(context.StateContext.Location),
+		)
 		if err != nil {
 			return &wiringplugin.WiringResultFailure{
 				Error: err,

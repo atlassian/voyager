@@ -7,6 +7,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/libshapes"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,7 @@ func TestNames(t *testing.T) {
 
 	var computeName voyager.ResourceName = "compute"
 
-	iamInst, err := PluginServiceInstance(EC2ComputeType, computeName, "", false, nil, &wiringplugin.WiringContext{}, []string{}, []string{})
+	iamInst, err := PluginServiceInstance(EC2ComputeType, computeName, "", false, nil, &wiringplugin.WiringContext{}, []string{}, []string{}, oap.ExampleVPC(voyager.Label(""), voyager.Region("")))
 	require.NoError(t, err)
 
 	iamBinding := ServiceBinding(computeName, iamInst.Name)

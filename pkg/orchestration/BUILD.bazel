@@ -46,10 +46,10 @@ go_test(
     race = "on",
     deps = [
         "//:go_default_library",
+        "//pkg/apis/orchestration/meta:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/orchestration/client/fake:go_default_library",
         "//pkg/orchestration/wiring:go_default_library",
-        "//pkg/orchestration/wiring/legacy:go_default_library",
         "//pkg/orchestration/wiring/registry:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/util/testutil:go_default_library",

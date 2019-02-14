@@ -11,7 +11,7 @@ import (
 	ctrlApp "github.com/atlassian/ctrl/app"
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/cmd"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
+	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/util/crash"
@@ -23,18 +23,18 @@ const (
 )
 
 func Main() {
-	CustomMain(emptyLegacyConfigFunc, registry.KnownWiringPlugins)
+	CustomMain(registry.KnownWiringPlugins)
 }
 
-func CustomMain(getLegacyConfigFunc func(voyager.Location) *legacy.Config, plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
+func CustomMain(plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
 	rand.Seed(time.Now().UnixNano())
 	klog.InitFlags(nil)
 	cmd.RunInterruptably(func(ctx context.Context) error {
 		crash.InstallAPIMachineryLoggers()
 		controllers := []ctrl.Constructor{
 			&ControllerConstructor{
-				GetLegacyConfigFunc: getLegacyConfigFunc,
-				Plugins:             plugins,
+				Plugins: plugins,
+				Tags:    ExampleTags,
 			},
 		}
 
@@ -48,6 +48,12 @@ func CustomMain(getLegacyConfigFunc func(voyager.Location) *legacy.Config, plugi
 	})
 }
 
-func emptyLegacyConfigFunc(location voyager.Location) *legacy.Config {
-	return &legacy.Config{}
+func ExampleTags(
+	_ voyager.ClusterLocation,
+	_ wiringplugin.ClusterConfig,
+	_ voyager.Location,
+	_ voyager.ServiceName,
+	_ orch_meta.ServiceProperties,
+) map[voyager.Tag]string {
+	return make(map[voyager.Tag]string)
 }

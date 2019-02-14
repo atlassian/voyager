@@ -8,10 +8,10 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
+	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	stateclient_fake "github.com/atlassian/voyager/pkg/orchestration/client/fake"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/util/testutil"
@@ -27,6 +27,10 @@ const (
 	fixtureBundleOutputSuffix = ".bundle.output.yaml"
 	fixtureStateOutputSuffix  = ".state.output.yaml"
 	fixtureGlob               = "*" + fixtureStateInputSuffix
+
+	testAccount = "testaccount"
+	testEnv     = "testenv"
+	testRegion  = "testregion"
 )
 
 func testHandleProcessResult(t *testing.T, filePrefix string) {
@@ -192,26 +196,26 @@ func entanglerForTests() *wiring.Entangler {
 	return &wiring.Entangler{
 		Plugins: registry.KnownWiringPlugins,
 		ClusterLocation: voyager.ClusterLocation{
-			Account: legacy.TestAccountName,
-			Region:  legacy.TestRegion,
-			EnvType: legacy.TestEnvironment,
+			Account: testAccount,
+			Region:  testRegion,
+			EnvType: testEnv,
 		},
 		ClusterConfig: wiringplugin.ClusterConfig{
 			ClusterDomainName: "internal.ap-southeast-2.kitt-integration.kitt-inf.net",
 			KittClusterEnv:    "test",
 			Kube2iamAccount:   "test",
 		},
-		TagNames: wiring.TagNames{
-			ServiceNameTag:     "service_name",
-			BusinessUnitTag:    "business_unit",
-			ResourceOwnerTag:   "resource_owner",
-			PlatformTag:        "platform",
-			EnvironmentTypeTag: "environment_type",
-		},
-		GetLegacyConfigFunc: getTestLegacyConfig,
+		Tags: testingTags,
 	}
 }
 
-func getTestLegacyConfig(location voyager.Location) *legacy.Config {
-	return legacy.GetLegacyConfigFromMap(legacy.TestLegacyConfigs, location)
+func testingTags(
+	_ voyager.ClusterLocation,
+	_ wiringplugin.ClusterConfig,
+	_ voyager.Location,
+	_ voyager.ServiceName,
+	_ orch_meta.ServiceProperties,
+) map[voyager.Tag]string {
+	tags := make(map[voyager.Tag]string)
+	return tags
 }

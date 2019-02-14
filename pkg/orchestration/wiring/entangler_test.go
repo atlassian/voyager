@@ -13,7 +13,6 @@ import (
 	smith_config "github.com/atlassian/voyager/cmd/smith/config"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
@@ -33,6 +32,10 @@ const (
 	fixtureErrorYamlSuffix      = ".error"
 	fixtureErrorRegexYamlSuffix = ".errorregex"
 	fixtureGlob                 = "*" + fixtureStateYamlSuffix
+
+	testAccount = "testaccount"
+	testEnv     = "testenv"
+	testRegion  = "testregion"
 )
 
 func TestEntangler(t *testing.T) {
@@ -258,23 +261,16 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 	ent := Entangler{
 		Plugins: wiringPlugins,
 		ClusterLocation: voyager.ClusterLocation{
-			Account: legacy.TestAccountName,
-			Region:  legacy.TestRegion,
-			EnvType: legacy.TestEnvironment,
+			Account: testAccount,
+			Region:  testRegion,
+			EnvType: testEnv,
 		},
 		ClusterConfig: wiringplugin.ClusterConfig{
 			ClusterDomainName: "internal.ap-southeast-2.kitt-integration.kitt-inf.net",
 			KittClusterEnv:    "test",
 			Kube2iamAccount:   "test",
 		},
-		TagNames: TagNames{
-			ServiceNameTag:     "service_name",
-			BusinessUnitTag:    "business_unit",
-			ResourceOwnerTag:   "resource_owner",
-			PlatformTag:        "platform",
-			EnvironmentTypeTag: "environment_type",
-		},
-		GetLegacyConfigFunc: getTestLegacyConfig,
+		Tags: testingTags,
 	}
 	labels := state.GetLabels()
 	namespace := core_v1.Namespace{
@@ -321,10 +317,6 @@ func entangleTestFileState(t *testing.T, filePrefix string) EntangleResult {
 	require.NoError(t, err)
 
 	return entangleTestState(t, state, registry.KnownWiringPlugins)
-}
-
-func getTestLegacyConfig(location voyager.Location) *legacy.Config {
-	return legacy.GetLegacyConfigFromMap(legacy.TestLegacyConfigs, location)
 }
 
 // In order to replace all expected bundles with actual bundles:
@@ -388,4 +380,21 @@ func (p delegatingPlugin) Status(resource *orch_v1.StateResource, context *wirin
 
 func emptyStatus(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult {
 	return &wiringplugin.StatusResultSuccess{}
+}
+
+func testingTags(
+	_ voyager.ClusterLocation,
+	_ wiringplugin.ClusterConfig,
+	location voyager.Location,
+	serviceName voyager.ServiceName,
+	properties orch_meta.ServiceProperties,
+) map[voyager.Tag]string {
+	tags := make(map[voyager.Tag]string)
+	tags["service_name"] = string(serviceName)
+	tags["business_unit"] = properties.BusinessUnit
+	tags["resource_owner"] = properties.ResourceOwner
+	tags["environment_type"] = string(location.EnvType)
+	tags["platform"] = "voyager"
+	tags["environment"] = "microstestenv"
+	return tags
 }
