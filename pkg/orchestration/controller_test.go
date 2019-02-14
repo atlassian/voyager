@@ -224,7 +224,19 @@ func testManagedPolicies(_ voyager.Location) []string {
 }
 
 func testVPC(location voyager.Location) *oap.VPCEnvironment {
-	return oap.ExampleVPC(location.Label, location.Region)
+	return &oap.VPCEnvironment{
+		VPCID:                 "vpc-1",
+		PrivateDNSZone:        "testregion.atl-inf.io",
+		PrivatePaasDNSZone:    "testregion.dev.paas-inf.net",
+		InstanceSecurityGroup: "sg-2",
+		JumpboxSecurityGroup:  "sg-1",
+		SSLCertificateID:      "arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777",
+		Label:                 location.Label,
+		AppSubnets:            []string{"subnet-1", "subnet-2"},
+		Zones:                 []string{"testregiona", "testregionb"},
+		Region:                location.Region,
+		EMRSubnet:             "subnet-1a",
+	}
 }
 
 func testEnvironment(_ voyager.Location) string {

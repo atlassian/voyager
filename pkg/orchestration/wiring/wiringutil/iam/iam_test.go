@@ -18,7 +18,7 @@ func TestNames(t *testing.T) {
 
 	var computeName voyager.ResourceName = "compute"
 
-	iamInst, err := PluginServiceInstance(EC2ComputeType, computeName, "", false, nil, &wiringplugin.WiringContext{}, []string{}, []string{}, oap.ExampleVPC(voyager.Label(""), voyager.Region("")))
+	iamInst, err := PluginServiceInstance(EC2ComputeType, computeName, "", false, nil, &wiringplugin.WiringContext{}, []string{}, []string{}, &oap.VPCEnvironment{})
 	require.NoError(t, err)
 
 	iamBinding := ServiceBinding(computeName, iamInst.Name)
