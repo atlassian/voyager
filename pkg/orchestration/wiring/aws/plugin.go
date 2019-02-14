@@ -11,20 +11,26 @@ package aws
 import (
 	"encoding/json"
 
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
 	"github.com/pkg/errors"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ServiceEnvironmentGenerator func(env *oap.ServiceEnvironment) *oap.ServiceEnvironment
 
 type WiringPlugin struct {
-	svccatentangler.SvcCatEntangler
+	clusterServiceClassExternalID servicecatalog.ClassExternalID
+	clusterServicePlanExternalID  servicecatalog.PlanExternalID
+	resourceType                  voyager.ResourceType
+	shapes                        svccatentangler.ShapesFunc // TODO move from svccatentangler package to this package
 
 	OAPResourceTypeName        oap.ResourceType
 	generateServiceEnvironment ServiceEnvironmentGenerator
@@ -41,22 +47,73 @@ func Resource(resourceType voyager.ResourceType,
 	vpc func(voyager.Location) *oap.VPCEnvironment,
 ) *WiringPlugin {
 	wiringPlugin := &WiringPlugin{
-		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: clusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
-			ResourceType:                  resourceType,
-			Shapes:                        shapes,
-		},
-		OAPResourceTypeName:        oapResourceTypeName,
-		generateServiceEnvironment: generateServiceEnvironment,
-		VPC:                        vpc,
+		clusterServiceClassExternalID: clusterServiceClassExternalID,
+		clusterServicePlanExternalID:  clusterServicePlanExternalID,
+		resourceType:                  resourceType,
+		shapes:                        shapes,
+		OAPResourceTypeName:           oapResourceTypeName,
+		generateServiceEnvironment:    generateServiceEnvironment,
+		VPC:                           vpc,
 	}
-	wiringPlugin.SvcCatEntangler.InstanceSpec = wiringPlugin.instanceSpec
-	wiringPlugin.SvcCatEntangler.ObjectMeta = wiringPlugin.objectMeta
 	return wiringPlugin
 }
 
-func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriableError */, error) {
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+	if resource.Type != p.resourceType {
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
+	}
+
+	serviceInstance, err := osb.ConstructServiceInstance(resource, p.clusterServiceClassExternalID, p.clusterServicePlanExternalID)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
+	}
+
+	instanceParameters, external, retriable, err := p.instanceParameters(resource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+	if instanceParameters != nil {
+		serviceInstance.Spec.Parameters = &runtime.RawExtension{
+			Raw: instanceParameters,
+		}
+	}
+
+	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
+
+	smithResource := smith_v1.Resource{
+		Name:       instanceResourceName,
+		References: nil, // no references
+		Spec: smith_v1.ResourceSpec{
+			Object: serviceInstance,
+		},
+	}
+
+	shapes, external, retriable, err := p.shapes(resource, &smithResource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+
+	return &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: shapes,
+		},
+		Resources: []smith_v1.Resource{smithResource},
+	}
+}
+
+func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalError */, bool /* retriableError */, error) {
 	rawAttributes, external, retriable, err := oap.BuildAttributes(resource.Spec, resource.Defaults)
 	if err != nil {
 		return nil, external, retriable, err
@@ -90,13 +147,9 @@ func (awp *WiringPlugin) instanceSpec(resource *orch_v1.StateResource, context *
 	}
 
 	serviceName := serviceName(userServiceName, context)
-	vpc := awp.VPC(context.StateContext.Location)
-	environment := awp.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc))
-	return instanceSpec(serviceName, resourceName, awp.OAPResourceTypeName, *environment, attributes, alarms)
-}
-
-func (awp *WiringPlugin) objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool /* externalErr */, bool /* retriableErr */, error) {
-	return meta_v1.ObjectMeta{}, false, false, nil
+	vpc := p.VPC(context.StateContext.Location)
+	environment := p.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc))
+	return instanceSpec(serviceName, resourceName, p.OAPResourceTypeName, *environment, attributes, alarms)
 }
 
 func serviceName(userServiceName voyager.ServiceName, context *wiringplugin.WiringContext) voyager.ServiceName {

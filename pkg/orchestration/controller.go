@@ -120,9 +120,9 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 // process processes the given State object performing autowiring for it.
 // It tries to return a Bundle even if there was an error.
 func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (*smith_v1.Bundle, bool /* external */, bool /* conflict */, bool /* retriable */, error) {
-	entanglerContext, err := c.constructEntanglerContext(state)
+	entanglerContext, external, retriable, err := c.constructEntanglerContext(state)
 	if err != nil {
-		return nil, false, false, false, err
+		return nil, external, false, retriable, err
 	}
 
 	bundle, external, retriable, err := c.entangle(state, entanglerContext)
@@ -135,33 +135,39 @@ func (c *Controller) process(logger *zap.Logger, state *orch_v1.State) (*smith_v
 
 }
 
-func (c *Controller) constructEntanglerContext(state *orch_v1.State) (*wiring.EntangleContext, error) {
+func (c *Controller) constructEntanglerContext(state *orch_v1.State) (*wiring.EntangleContext, bool /* externalErr */, bool /* retriable */, error) {
 	// Grab the namespace
 	namespaceObj, exists, err := c.NamespaceInformer.GetIndexer().GetByKey(state.Namespace)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		// Should not happen
+		return nil, false, false, errors.WithStack(err)
 	}
 	if !exists {
-		return nil, errors.Errorf("missing Namespace %q in informer", state.Namespace)
+		// Namespace was deleted while we are processing. Should not happen.
+		return nil, false, false, errors.Errorf("missing Namespace %q in informer", state.Namespace)
 	}
 	namespace := namespaceObj.(*core_v1.Namespace)
 
 	key := ByConfigMapNameIndexKey(state.Namespace, state.Spec.ConfigMapName)
 	configMapInterface, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		// Should not happen
+		return nil, false, false, errors.WithStack(err)
 	}
 	if !exists {
-		return nil, errors.Errorf("missing ConfigMap %q (key: %q) in informer", state.Spec.ConfigMapName, key)
+		// This indicates an external error because this means the metadata configmap
+		// is missing (the user or layer above has not provided the configmap).
+		return nil, true, false, errors.Errorf("missing ConfigMap %q (key: %q) in informer", state.Spec.ConfigMapName, key)
 	}
 	serviceProperties, err := parseConfigMap(configMapInterface.(*core_v1.ConfigMap))
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, true, false, errors.WithStack(err)
 	}
 
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(namespace.Labels)
 	if err != nil {
-		return nil, err
+		// User error too, we expect the namespace to contain the service name label.
+		return nil, true, false, err
 	}
 
 	// Entangle the State
@@ -169,7 +175,7 @@ func (c *Controller) constructEntanglerContext(state *orch_v1.State) (*wiring.En
 		ServiceName:       serviceName,
 		Label:             layers.ServiceLabelFromNamespaceLabels(namespace.Labels),
 		ServiceProperties: *serviceProperties,
-	}, nil
+	}, false, false, nil
 }
 
 func (c *Controller) entangle(state *orch_v1.State, entangleContext *wiring.EntangleContext) (*smith_v1.Bundle, bool /* external */, bool /* retriable */, error) {

@@ -98,6 +98,11 @@ func (c *Store) ListModifiedServices(ctx context.Context, user auth.OptionalUser
 			// Feature request: https://sdog.jira-dev.com/browse/MICROSCOPE-280
 			continue
 		}
+		if serviceData.ServiceName == "" {
+			// Central can contain broken data
+			// https://sdog.jira-dev.com/projects/MICROSHELP/queues/issue/MICROSHELP-5863
+			continue
+		}
 		svc, err := serviceDataToService(&serviceData)
 		if err != nil {
 			return nil, err
