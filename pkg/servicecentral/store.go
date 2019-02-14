@@ -181,7 +181,7 @@ func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser
 		if httputil.IsNotFound(err) {
 			return nil, NewNotFound("service with uuid %q was not found", uuid)
 		}
-		return nil, errors.Wrapf(err, "error getting service %q", data.ServiceName)
+		return nil, errors.Wrapf(err, "error getting service %q", uuid)
 	}
 
 	return data, nil
