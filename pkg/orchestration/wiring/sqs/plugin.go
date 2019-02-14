@@ -10,7 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,7 +128,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 }
 
 func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, references []smith_v1.Reference, snsSubscriptions []snsSubscription) (smith_v1.Resource, bool /* external */, bool /* retriable */, error) {
-	instanceID, err := svccatentangler.InstanceID(resource.Spec)
+	instanceID, err := osb.InstanceID(resource.Spec)
 	if err != nil {
 		return smith_v1.Resource{}, false, false, err
 	}

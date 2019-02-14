@@ -98,6 +98,11 @@ func (c *Store) ListModifiedServices(ctx context.Context, user auth.OptionalUser
 			// Feature request: https://sdog.jira-dev.com/browse/MICROSCOPE-280
 			continue
 		}
+		if serviceData.ServiceName == "" {
+			// Central can contain broken data
+			// https://sdog.jira-dev.com/projects/MICROSHELP/queues/issue/MICROSHELP-5863
+			continue
+		}
 		svc, err := serviceDataToService(&serviceData)
 		if err != nil {
 			return nil, err
@@ -176,7 +181,7 @@ func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser
 		if httputil.IsNotFound(err) {
 			return nil, NewNotFound("service with uuid %q was not found", uuid)
 		}
-		return nil, errors.Wrapf(err, "error getting service %q", data.ServiceName)
+		return nil, errors.Wrapf(err, "error getting service %q", uuid)
 	}
 
 	return data, nil
@@ -255,7 +260,7 @@ func prepareServiceToWrite(existingData ServiceDataRead, service *creator_v1.Ser
 		// and our new set of platform tags, converted into the correct format
 		nonPlatformTags := nonPlatformTags(existingData.Tags)
 		platformTags := convertPlatformTags(service.Spec.ResourceTags)
-		sd.Tags = append(nonPlatformTags, platformTags...)
+		sd.Tags = append(nonPlatformTags, platformTags...) // nolint: gocritic
 	}
 
 	return &sd, nil

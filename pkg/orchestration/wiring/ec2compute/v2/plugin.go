@@ -27,9 +27,9 @@ const (
 // We only really worry about the tags that we're likely to set here
 // (it's ok if the user errors out from the provider).
 var forbiddenTags = map[string]struct{}{
-	"environment":      struct{}{},
-	"environment_type": struct{}{},
-	"service_name":     struct{}{},
+	"environment":      {},
+	"environment_type": {},
+	"service_name":     {},
 }
 
 type userInputSpec struct {

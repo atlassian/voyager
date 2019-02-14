@@ -18,7 +18,7 @@ type partialSpec struct {
 
 // Gets instanceId from resource's spec if present or "" otherwise
 // If the spec is empty or does not contain instance ID, then this returns the empty string.
-func instanceID(resourceSpec *runtime.RawExtension) (string, error) {
+func InstanceID(resourceSpec *runtime.RawExtension) (string, error) {
 	if resourceSpec == nil {
 		return "", nil
 	}
@@ -33,7 +33,7 @@ func instanceID(resourceSpec *runtime.RawExtension) (string, error) {
 }
 
 func ConstructServiceInstance(resource *orch_v1.StateResource, classID servicecatalog.ClassExternalID, planID servicecatalog.PlanExternalID) (*sc_v1b1.ServiceInstance, error) {
-	serviceInstanceExternalID, err := instanceID(resource.Spec)
+	serviceInstanceExternalID, err := InstanceID(resource.Spec)
 	if err != nil {
 		return nil, err
 	}

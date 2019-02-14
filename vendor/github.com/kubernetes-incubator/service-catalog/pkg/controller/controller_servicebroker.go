@@ -127,7 +127,6 @@ func (c *controller) updateServiceBrokerClient(broker *v1beta1.ServiceBroker) (o
 		return nil, err
 	}
 
-	// clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
 
 	brokerClient, err := c.brokerClientManager.UpdateBrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name), clientConfig)
@@ -151,11 +150,6 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	klog.V(4).Infof(pcb.Message("Processing"))
 
-	brokerClient, err := c.updateServiceBrokerClient(broker)
-	if err != nil {
-		return err
-	}
-
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
@@ -166,6 +160,11 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 
 	if broker.DeletionTimestamp == nil { // Add or update
 		klog.V(4).Info(pcb.Message("Processing adding/update event"))
+
+		brokerClient, err := c.updateServiceBrokerClient(broker)
+		if err != nil {
+			return err
+		}
 
 		// get the broker's catalog
 		now := metav1.Now()
@@ -212,10 +211,21 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			}
 		}
 
+		// get the existing services and plans for this broker so that we can
+		// detect when services and plans are removed from the broker's
+		// catalog
+		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForNamespacedBroker(broker)
+		if err != nil {
+			return err
+		}
+
+		existingServiceClassMap := convertServiceClassListToMap(existingServiceClasses)
+		existingServicePlanMap := convertServicePlanListToMap(existingServicePlans)
+
 		// convert the broker's catalog payload into our API objects
 		klog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
 
-		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalogToNamespacedTypes(broker.Namespace, brokerCatalog, broker.Spec.CatalogRestrictions)
+		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalogToNamespacedTypes(broker.Namespace, brokerCatalog, broker.Spec.CatalogRestrictions, existingServiceClassMap, existingServicePlanMap)
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			klog.Warning(pcb.Message(s))
@@ -228,22 +238,15 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 
 		klog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
 
-		// get the existing services and plans for this broker so that we can
-		// detect when services and plans are removed from the broker's
-		// catalog
-		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForNamespacedBroker(broker)
-		if err != nil {
-			return err
-		}
-
-		existingServiceClassMap := convertServiceClassListToMap(existingServiceClasses)
-		existingServicePlanMap := convertServicePlanListToMap(existingServicePlans)
-
 		// reconcile the serviceClasses that were part of the broker's catalog
 		// payload
 		for _, payloadServiceClass := range payloadServiceClasses {
 			existingServiceClass, _ := existingServiceClassMap[payloadServiceClass.Name]
 			delete(existingServiceClassMap, payloadServiceClass.Name)
+			if existingServiceClass == nil {
+				existingServiceClass, _ = existingServiceClassMap[payloadServiceClass.Spec.ExternalID]
+				delete(existingServiceClassMap, payloadServiceClass.Spec.ExternalID)
+			}
 
 			klog.V(4).Info(pcb.Messagef("Reconciling %s", pretty.ServiceClassName(payloadServiceClass)))
 			if err := c.reconcileServiceClassFromServiceBrokerCatalog(broker, payloadServiceClass, existingServiceClass); err != nil {
@@ -292,6 +295,10 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		for _, payloadServicePlan := range payloadServicePlans {
 			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
 			delete(existingServicePlanMap, payloadServicePlan.Name)
+			if existingServicePlan == nil {
+				existingServicePlan, _ = existingServicePlanMap[payloadServicePlan.Spec.ExternalID]
+				delete(existingServicePlanMap, payloadServicePlan.Spec.ExternalID)
+			}
 
 			klog.V(4).Infof(
 				"ServiceBroker %q: reconciling %s",
@@ -571,8 +578,8 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 	toUpdate.Spec.Free = servicePlan.Spec.Free
 	toUpdate.Spec.ExternalName = servicePlan.Spec.ExternalName
 	toUpdate.Spec.ExternalMetadata = servicePlan.Spec.ExternalMetadata
-	toUpdate.Spec.ServiceInstanceCreateParameterSchema = servicePlan.Spec.ServiceInstanceCreateParameterSchema
-	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
+	toUpdate.Spec.InstanceCreateParameterSchema = servicePlan.Spec.InstanceCreateParameterSchema
+	toUpdate.Spec.InstanceUpdateParameterSchema = servicePlan.Spec.InstanceUpdateParameterSchema
 	toUpdate.Spec.ServiceBindingCreateParameterSchema = servicePlan.Spec.ServiceBindingCreateParameterSchema
 
 	updatedPlan, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Update(toUpdate)

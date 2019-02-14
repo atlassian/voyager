@@ -102,7 +102,7 @@ func renameEnvironmentVariables(renameMap map[string]string, environmentVariable
 		newEnvVars[keyToUse] = v
 	}
 
-	// check environment variable existance for renames
+	// check environment variable existence for renames
 	if len(copiedRenameMap) != 0 {
 		keys := make([]string, 0, len(copiedRenameMap))
 		for k := range copiedRenameMap {
