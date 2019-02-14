@@ -19,8 +19,8 @@ type SharedDb struct {
 
 // +k8s:deepcopy-gen=true
 type SharedDbData struct {
-	SharedDbResourceName     libshapes.ProtoReference `json:"sharedDbResourceName"`
-	HasSameRegionReadReplica bool                     `json:"hasSameRegionReadReplica"`
+	ResourceName             smith_v1.ResourceName `json:"resourceName"`
+	HasSameRegionReadReplica bool                  `json:"hasSameRegionReadReplica"`
 }
 
 func NewSharedDbShape(resourceName smith_v1.ResourceName, hasSameRegionReadReplica bool) *SharedDb {
@@ -29,11 +29,7 @@ func NewSharedDbShape(resourceName smith_v1.ResourceName, hasSameRegionReadRepli
 			ShapeName: SharedDbShape,
 		},
 		Data: SharedDbData{
-			SharedDbResourceName: libshapes.ProtoReference{
-				Resource: resourceName,
-				Path:     "metadata.name",
-				Example:  "myownrds",
-			},
+			ResourceName:             resourceName,
 			HasSameRegionReadReplica: hasSameRegionReadReplica,
 		},
 	}

@@ -15,8 +15,9 @@ APIS_FORMATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/formation/v1
 APIS_OPS_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/ops/v1
 APIS_ORCHESTRATION_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/orchestration/v1
 APIS_REPORTER_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/reporter/v1
+APIS_TREBUCHET_DIR = $(MAIN_PACKAGE_DIR)/pkg/apis/trebuchet/v1
 SHAPES_API_DIRS = $(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringplugin,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/knownshapes,$(MAIN_PACKAGE_DIR)/pkg/orchestration/wiring/wiringutil/libshapes
-ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_FORMATION_DIR),$(APIS_OPS_DIR),$(APIS_ORCHESTRATION_DIR),$(APIS_REPORTER_DIR)
+ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(APIS_FORMATION_DIR),$(APIS_OPS_DIR),$(APIS_ORCHESTRATION_DIR),$(APIS_REPORTER_DIR),$(APIS_TREBUCHET_DIR)
 
 #===============================================================================
 
@@ -327,6 +328,7 @@ generate: \
 .PHONY: generate-clients
 generate-clients: \
 	generate-deployinator-client \
+	generate-trebuchet-client \
 	generate-composition-client \
 	generate-creator-client \
 	generate-formation-client \
@@ -338,7 +340,8 @@ generate-clients: \
 
 .PHONY: update-deployinator-spec
 update-deployinator-spec:
-	curl -s https://deployinator-trebuchet.prod.atl-paas.net/api/swagger.json | jq '.' > pkg/releases/deployinator-trebuchet.json
+	curl -Ss https://contract-testing-broker.us-east-1.prod.atl-paas.net/providers/deployinator-trebuchet/spec \
+	 | jq -r '.content' | python -m base64 -d | jq -S > pkg/releases/generated/deployinator-trebuchet.json
 
 #===============================================================================
 
@@ -365,6 +368,18 @@ generate-composition-client:
 	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
 	--input "composition/v1" \
 	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/composition" \
+	--clientset-name "client" \
+	--go-header-file "build/code-generator/boilerplate.go.txt"
+
+#===============================================================================
+
+.PHONY: generate-trebuchet-client
+generate-trebuchet-client:
+	bazel build $(BAZEL_OPTIONS) //vendor/k8s.io/code-generator/cmd/client-gen
+	./bazel-bin/vendor/k8s.io/code-generator/cmd/client-gen/$(BINARY_PREFIX_DIRECTORY)/client-gen $(VERIFY_CODE) \
+	--input-base "$(MAIN_PACKAGE_DIR)/pkg/apis" \
+	--input "trebuchet/v1" \
+	--clientset-path "$(MAIN_PACKAGE_DIR)/pkg/trebuchet" \
 	--clientset-name "client" \
 	--go-header-file "build/code-generator/boilerplate.go.txt"
 

@@ -676,76 +676,76 @@ spec:
           jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
-                ASAP_PRIVATE_KEY: '!{ec2--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
-                ASAP_KEY_ID: '!{ec2--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
-                ASAP_ISSUER: '!{ec2--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
                 ASAP_AUDIENCE: '!{ec2--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
-                SQS_BASIC_DEAD_QUEUE_NAME: '!{ec2--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
-                SQS_BASIC_DEAD_QUEUE_URL: '!{ec2--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
-                SQS_BASIC_DEAD_QUEUE_ARN: '!{ec2--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
-                SQS_BASIC_QUEUE_NAME: '!{ec2--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
-                SQS_BASIC_QUEUE_URL: '!{ec2--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-                SQS_BASIC_QUEUE_REGION: '!{ec2--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
-                SQS_BASIC_QUEUE_ARN: '!{ec2--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
-                PG_DATASTORE_ROLE: '!{ec2--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
-                PG_DATASTORE_PORT: '!{ec2--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
-                PG_DATASTORE_READROLE: '!{ec2--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
-                PG_DATASTORE_READPASSWORD: '!{ec2--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
-                PG_DATASTORE_URL: '!{ec2--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
-                PG_DATASTORE_PASSWORD: '!{ec2--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
-                PG_DATASTORE_SCHEMA: '!{ec2--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57}'
-                PG_DATASTORE_READURL: '!{ec2--datastore--binding-e930af844b37ad97808978a6444baa240e919b44}'
-                PG_DATASTORE_HOST: '!{ec2--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
-                DYNAMO_BASIC_TABLE_NAME: '!{ec2--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
-                DYNAMO_BASIC_TABLE_REGION: '!{ec2--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
-                DYNAMO_COMPLEX_TABLE_REGION: '!{ec2--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
-                DYNAMO_COMPLEX_TABLE_NAME: '!{ec2--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
-                S3_FILES_BUCKET_NAME: '!{ec2--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac}'
-                S3_FILES_BUCKET_REGION: '!{ec2--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939}'
-                S3_FILES_BUCKET_PATH: '!{ec2--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158}'
-                LIFECYCLE_SNS_TOPICNAME: '!{ec2--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506}'
-                CF_NOTIFICATION_SNS_TOPICREGION: '!{ec2--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
+                ASAP_ISSUER: '!{ec2--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+                ASAP_KEY_ID: '!{ec2--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+                ASAP_PRIVATE_KEY: '!{ec2--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
                 CF_NOTIFICATION_SNS_TOPICNAME: '!{ec2--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
-                SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{ec2--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
-                SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{ec2--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
-                SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{ec2--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
-                LIFECYCLE_SQS_QUEUE_NAME: '!{ec2--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
-                LIFECYCLE_SQS_QUEUE_URL: '!{ec2--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-                LIFECYCLE_SQS_QUEUE_REGION: '!{ec2--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
-                SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{ec2--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
-                CF_STREAM_STREAMREGION: '!{ec2--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
+                CF_NOTIFICATION_SNS_TOPICREGION: '!{ec2--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
                 CF_STREAM_STREAMARN: '!{ec2--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
                 CF_STREAM_STREAMNAME: '!{ec2--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
+                CF_STREAM_STREAMREGION: '!{ec2--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
+                DYNAMO_BASIC_TABLE_NAME: '!{ec2--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
+                DYNAMO_BASIC_TABLE_REGION: '!{ec2--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
+                DYNAMO_COMPLEX_TABLE_NAME: '!{ec2--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
+                DYNAMO_COMPLEX_TABLE_REGION: '!{ec2--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
+                LIFECYCLE_SNS_TOPICNAME: '!{ec2--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506}'
+                LIFECYCLE_SQS_QUEUE_NAME: '!{ec2--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+                LIFECYCLE_SQS_QUEUE_REGION: '!{ec2--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                LIFECYCLE_SQS_QUEUE_URL: '!{ec2--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+                PG_DATASTORE_HOST: '!{ec2--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
+                PG_DATASTORE_PASSWORD: '!{ec2--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
+                PG_DATASTORE_PORT: '!{ec2--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
+                PG_DATASTORE_READPASSWORD: '!{ec2--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
+                PG_DATASTORE_READROLE: '!{ec2--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
+                PG_DATASTORE_READURL: '!{ec2--datastore--binding-e930af844b37ad97808978a6444baa240e919b44}'
+                PG_DATASTORE_ROLE: '!{ec2--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
+                PG_DATASTORE_SCHEMA: '!{ec2--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57}'
+                PG_DATASTORE_URL: '!{ec2--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
+                S3_FILES_BUCKET_NAME: '!{ec2--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac}'
+                S3_FILES_BUCKET_PATH: '!{ec2--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158}'
+                S3_FILES_BUCKET_REGION: '!{ec2--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939}'
+                SQS_BASIC_DEAD_QUEUE_ARN: '!{ec2--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+                SQS_BASIC_DEAD_QUEUE_NAME: '!{ec2--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+                SQS_BASIC_DEAD_QUEUE_URL: '!{ec2--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+                SQS_BASIC_QUEUE_ARN: '!{ec2--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+                SQS_BASIC_QUEUE_NAME: '!{ec2--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+                SQS_BASIC_QUEUE_REGION: '!{ec2--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+                SQS_BASIC_QUEUE_URL: '!{ec2--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{ec2--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{ec2--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+                SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{ec2--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+                SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{ec2--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
   - name: ec2---iamrole
     references:
-    - resource: ec2--basic--binding
+    - modifier: bindsecret
       name: ec2--basic--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: ec2--files--binding
+      resource: ec2--basic--binding
+    - modifier: bindsecret
       name: ec2--files--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: ec2--stream--binding
+      resource: ec2--files--binding
+    - modifier: bindsecret
       name: ec2--stream--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: ec2--dynamo-basic--binding
+      resource: ec2--stream--binding
+    - modifier: bindsecret
       name: ec2--dynamo-basic--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: ec2--dynamo-complex--binding
+      resource: ec2--dynamo-basic--binding
+    - modifier: bindsecret
       name: ec2--dynamo-complex--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: ec2--notification-sns--binding
+      resource: ec2--dynamo-complex--binding
+    - modifier: bindsecret
       name: ec2--notification-sns--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: ec2--notification-sqs--binding
+      resource: ec2--notification-sns--binding
+    - modifier: bindsecret
       name: ec2--notification-sqs--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
+      resource: ec2--notification-sqs--binding
     spec:
       plugin:
         name: iamrole
@@ -759,6 +759,14 @@ spec:
           - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: ec2-iamrole
+          policySnippets:
+            basic: '!{ec2--basic--binding-iamrole}'
+            dynamo-basic: '!{ec2--dynamo-basic--binding-iamrole}'
+            dynamo-complex: '!{ec2--dynamo-complex--binding-iamrole}'
+            files: '!{ec2--files--binding-iamrole}'
+            notification-sns: '!{ec2--notification-sns--binding-iamrole}'
+            notification-sqs: '!{ec2--notification-sqs--binding-iamrole}'
+            stream: '!{ec2--stream--binding-iamrole}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty
@@ -792,14 +800,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-ec2
-          policySnippets:
-            basic: '!{ec2--basic--binding-iamrole}'
-            files: '!{ec2--files--binding-iamrole}'
-            stream: '!{ec2--stream--binding-iamrole}'
-            dynamo-basic: '!{ec2--dynamo-basic--binding-iamrole}'
-            dynamo-complex: '!{ec2--dynamo-complex--binding-iamrole}'
-            notification-sqs: '!{ec2--notification-sqs--binding-iamrole}'
-            notification-sns: '!{ec2--notification-sns--binding-iamrole}'
   - name: ec2---iamrole-binding
     references:
     - name: ec2---iamrole-metadata-name
@@ -840,6 +840,15 @@ spec:
           clusterServiceClassExternalName: micros
           clusterServicePlanExternalName: v2
           parameters:
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             autoScalingGroup:
               maxSize: 2
               minSize: 1
@@ -862,15 +871,6 @@ spec:
               account: testaccount
               envType: testenv
               region: testregion
-            alarmEndpoints:
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: high
-                type: CloudWatch
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: low
-                type: CloudWatch
             notifications:
               email: micros@atlassian.com
             service:
@@ -1197,76 +1197,76 @@ spec:
         objectName: kc--secret
         spec:
           data:
-            ASAP_PRIVATE_KEY: '!{kc--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
-            ASAP_KEY_ID: '!{kc--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
-            ASAP_ISSUER: '!{kc--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
             ASAP_AUDIENCE: '!{kc--asap--binding-9d7fecc046fad26fb9a275793832408c361faaf1}'
-            SQS_BASIC_DEAD_QUEUE_NAME: '!{kc--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
-            SQS_BASIC_DEAD_QUEUE_URL: '!{kc--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
-            SQS_BASIC_DEAD_QUEUE_ARN: '!{kc--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
-            SQS_BASIC_QUEUE_NAME: '!{kc--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
-            SQS_BASIC_QUEUE_URL: '!{kc--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-            SQS_BASIC_QUEUE_REGION: '!{kc--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
-            SQS_BASIC_QUEUE_ARN: '!{kc--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
-            PG_DATASTORE_ROLE: '!{kc--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
-            PG_DATASTORE_PORT: '!{kc--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
-            PG_DATASTORE_READROLE: '!{kc--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
-            PG_DATASTORE_READPASSWORD: '!{kc--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
-            PG_DATASTORE_URL: '!{kc--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
-            PG_DATASTORE_PASSWORD: '!{kc--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
-            PG_DATASTORE_SCHEMA: '!{kc--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57}'
-            PG_DATASTORE_READURL: '!{kc--datastore--binding-e930af844b37ad97808978a6444baa240e919b44}'
-            PG_DATASTORE_HOST: '!{kc--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
+            ASAP_ISSUER: '!{kc--asap--binding-9cdc79137395cfa1d989ff2563e44028cc3994dc}'
+            ASAP_KEY_ID: '!{kc--asap--binding-926da7248fdf789de0d2598fa71f897e24b5553e}'
+            ASAP_PRIVATE_KEY: '!{kc--asap--binding-18313a2efa47666a53600f95ffd81f85ae26dc70}'
+            CF_NOTIFICATION_SNS_TOPICNAME: '!{kc--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
+            CF_NOTIFICATION_SNS_TOPICREGION: '!{kc--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
+            CF_STREAM_STREAMARN: '!{kc--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
+            CF_STREAM_STREAMNAME: '!{kc--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
+            CF_STREAM_STREAMREGION: '!{kc--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
             DYNAMO_BASIC_TABLE_NAME: '!{kc--dynamo-basic--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
             DYNAMO_BASIC_TABLE_REGION: '!{kc--dynamo-basic--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
-            DYNAMO_COMPLEX_TABLE_REGION: '!{kc--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
             DYNAMO_COMPLEX_TABLE_NAME: '!{kc--dynamo-complex--binding-efaf6e319066897903d3ad43bceaa641cec36037}'
-            S3_FILES_BUCKET_NAME: '!{kc--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac}'
-            S3_FILES_BUCKET_REGION: '!{kc--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939}'
-            S3_FILES_BUCKET_PATH: '!{kc--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158}'
+            DYNAMO_COMPLEX_TABLE_REGION: '!{kc--dynamo-complex--binding-a4fcf3d3adf89cc33d0e52252eb097330b0c4c22}'
             LIFECYCLE_SNS_TOPICNAME: '!{kc--notification-sns--binding-0b314438ad04598d648cb767cb11470a2191d506}'
-            CF_NOTIFICATION_SNS_TOPICREGION: '!{kc--notification-sns--binding-45edfb319512f4d14a8b0d215b03b850fa3e698a}'
-            CF_NOTIFICATION_SNS_TOPICNAME: '!{kc--notification-sns--binding-892acaca1568d45d7c13e8c9711da0ec01e5d772}'
+            LIFECYCLE_SQS_QUEUE_NAME: '!{kc--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+            LIFECYCLE_SQS_QUEUE_REGION: '!{kc--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            LIFECYCLE_SQS_QUEUE_URL: '!{kc--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
+            PG_DATASTORE_HOST: '!{kc--datastore--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
+            PG_DATASTORE_PASSWORD: '!{kc--datastore--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
+            PG_DATASTORE_PORT: '!{kc--datastore--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
+            PG_DATASTORE_READPASSWORD: '!{kc--datastore--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
+            PG_DATASTORE_READROLE: '!{kc--datastore--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
+            PG_DATASTORE_READURL: '!{kc--datastore--binding-e930af844b37ad97808978a6444baa240e919b44}'
+            PG_DATASTORE_ROLE: '!{kc--datastore--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
+            PG_DATASTORE_SCHEMA: '!{kc--datastore--binding-d7d5e3462d005fab392535635e72832ee729af57}'
+            PG_DATASTORE_URL: '!{kc--datastore--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
+            S3_FILES_BUCKET_NAME: '!{kc--files--binding-77faf6436e50393bf24d27cefca8ea47b87b23ac}'
+            S3_FILES_BUCKET_PATH: '!{kc--files--binding-a00a20fbceab2adf8878a31b2ca4bc6120b67158}'
+            S3_FILES_BUCKET_REGION: '!{kc--files--binding-8b4c11ad9d71f6785dceec4383e861d436371939}'
+            SQS_BASIC_DEAD_QUEUE_ARN: '!{kc--basic--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
+            SQS_BASIC_DEAD_QUEUE_NAME: '!{kc--basic--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
+            SQS_BASIC_DEAD_QUEUE_URL: '!{kc--basic--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
+            SQS_BASIC_QUEUE_ARN: '!{kc--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+            SQS_BASIC_QUEUE_NAME: '!{kc--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
+            SQS_BASIC_QUEUE_REGION: '!{kc--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
+            SQS_BASIC_QUEUE_URL: '!{kc--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
             SQS_NOTIFICATION_SQS_DEAD_QUEUE_ARN: '!{kc--notification-sqs--binding-39ff2ffcc06d31daf1d58e43a22b9466e55c2c04}'
             SQS_NOTIFICATION_SQS_DEAD_QUEUE_NAME: '!{kc--notification-sqs--binding-0e9f041d5030b61b2499c6a46b9d4cbc8de90231}'
             SQS_NOTIFICATION_SQS_DEAD_QUEUE_URL: '!{kc--notification-sqs--binding-5c07b3fcac0d1679ef8cfed826c1a87e76dc1ec8}'
-            LIFECYCLE_SQS_QUEUE_NAME: '!{kc--notification-sqs--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
-            LIFECYCLE_SQS_QUEUE_URL: '!{kc--notification-sqs--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-            LIFECYCLE_SQS_QUEUE_REGION: '!{kc--notification-sqs--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
             SQS_NOTIFICATION_SQS_QUEUE_ARN: '!{kc--notification-sqs--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
-            CF_STREAM_STREAMREGION: '!{kc--stream--binding-542bab2043f59b53aa57c50cf93ec354c59ac3c7}'
-            CF_STREAM_STREAMARN: '!{kc--stream--binding-baa3eb68cb07c2a5b33b237c692c478651f7d124}'
-            CF_STREAM_STREAMNAME: '!{kc--stream--binding-cdf0ed1ff84876678997ec7738fdd4d223b5d04c}'
   - name: kc---iamrole
     references:
-    - resource: kc--basic--binding
+    - modifier: bindsecret
       name: kc--basic--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: kc--files--binding
+      resource: kc--basic--binding
+    - modifier: bindsecret
       name: kc--files--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: kc--stream--binding
+      resource: kc--files--binding
+    - modifier: bindsecret
       name: kc--stream--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: kc--dynamo-basic--binding
+      resource: kc--stream--binding
+    - modifier: bindsecret
       name: kc--dynamo-basic--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: kc--dynamo-complex--binding
+      resource: kc--dynamo-basic--binding
+    - modifier: bindsecret
       name: kc--dynamo-complex--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: kc--notification-sns--binding
+      resource: kc--dynamo-complex--binding
+    - modifier: bindsecret
       name: kc--notification-sns--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
-    - resource: kc--notification-sqs--binding
+      resource: kc--notification-sns--binding
+    - modifier: bindsecret
       name: kc--notification-sqs--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
+      resource: kc--notification-sqs--binding
     spec:
       plugin:
         name: iamrole
@@ -1277,8 +1277,15 @@ spec:
           - arn:aws:iam::test:role/controller-role-testregion.paas-test
           computeType: kubeCompute
           oapResourceName: kc-iamrole
+          policySnippets:
+            basic: '!{kc--basic--binding-iamrole}'
+            dynamo-basic: '!{kc--dynamo-basic--binding-iamrole}'
+            dynamo-complex: '!{kc--dynamo-complex--binding-iamrole}'
+            files: '!{kc--files--binding-iamrole}'
+            notification-sns: '!{kc--notification-sns--binding-iamrole}'
+            notification-sqs: '!{kc--notification-sqs--binding-iamrole}'
+            stream: '!{kc--stream--binding-iamrole}'
           serviceEnvironment:
-            notificationEmail: an_owner@example.com
             alarmEndpoints:
             - consumer: pagerduty
               endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
@@ -1288,6 +1295,7 @@ spec:
               endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
               priority: low
               type: CloudWatch
+            notificationEmail: an_owner@example.com
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
@@ -1310,14 +1318,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
-          policySnippets:
-            basic: '!{kc--basic--binding-iamrole}'
-            files: '!{kc--files--binding-iamrole}'
-            stream: '!{kc--stream--binding-iamrole}'
-            dynamo-basic: '!{kc--dynamo-basic--binding-iamrole}'
-            dynamo-complex: '!{kc--dynamo-complex--binding-iamrole}'
-            notification-sqs: '!{kc--notification-sqs--binding-iamrole}'
-            notification-sns: '!{kc--notification-sns--binding-iamrole}'
   - name: kc---iamrole-binding
     references:
     - name: kc---iamrole-metadata-name

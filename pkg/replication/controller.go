@@ -8,7 +8,7 @@ import (
 	"github.com/atlassian/ctrl"
 	"github.com/atlassian/smith/pkg/specchecker"
 	"github.com/atlassian/smith/pkg/store"
-	"github.com/atlassian/voyager/pkg/apis/composition/v1"
+	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	"github.com/atlassian/voyager/pkg/composition/client"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -44,7 +44,7 @@ func (c *Controller) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func shouldReplicate(sd *v1.ServiceDescriptor) (bool, error) {
+func shouldReplicate(sd *comp_v1.ServiceDescriptor) (bool, error) {
 	replicateStr, ok := sd.Annotations[ReplicateKey]
 	if !ok {
 		return true, nil
@@ -61,7 +61,7 @@ func shouldReplicate(sd *v1.ServiceDescriptor) (bool, error) {
 // TODO: We need to develop a way to reconcile clusters in the many error states we can get into
 func (c *Controller) Process(pctx *ctrl.ProcessContext) (bool /* retriable */, error) {
 	c.logger.Sugar().Debug("Fetching remote ServiceDescriptor")
-	desired := pctx.Object.(*v1.ServiceDescriptor)
+	desired := pctx.Object.(*comp_v1.ServiceDescriptor)
 
 	c.logger.Sugar().Debugf("Testing existance of local ServiceDescriptor", desired.GetName())
 	existing, exists, err := fetchServiceDescriptor(c.localInformer, desired)
@@ -107,18 +107,18 @@ func (c *Controller) Process(pctx *ctrl.ProcessContext) (bool /* retriable */, e
 	return c.createServiceDescriptor(pctx, desired)
 }
 
-func fetchServiceDescriptor(inf cache.SharedIndexInformer, item *v1.ServiceDescriptor) (*v1.ServiceDescriptor, bool, error) {
+func fetchServiceDescriptor(inf cache.SharedIndexInformer, item *comp_v1.ServiceDescriptor) (*comp_v1.ServiceDescriptor, bool, error) {
 	obj, exists, err := inf.GetIndexer().Get(item)
 	if exists {
-		sd := obj.(*v1.ServiceDescriptor).DeepCopy()
+		sd := obj.(*comp_v1.ServiceDescriptor).DeepCopy()
 		// Typed objects have their TypeMeta erased. Put it back.
-		sd.SetGroupVersionKind(v1.ServiceDescriptorGVK)
+		sd.SetGroupVersionKind(comp_v1.ServiceDescriptorGVK)
 		return sd, exists, err
 	}
 	return nil, exists, err
 }
 
-func (c *Controller) createServiceDescriptor(pctx *ctrl.ProcessContext, desired *v1.ServiceDescriptor) (bool, error) {
+func (c *Controller) createServiceDescriptor(pctx *ctrl.ProcessContext, desired *comp_v1.ServiceDescriptor) (bool, error) {
 	pctx.Logger.Sugar().Infof("Creating ServiceDescriptor %q", desired.GetName())
 	_, err := c.localClient.CompositionV1().ServiceDescriptors().Create(desired)
 	if err != nil {
@@ -127,7 +127,7 @@ func (c *Controller) createServiceDescriptor(pctx *ctrl.ProcessContext, desired 
 	return false, nil
 }
 
-func (c *Controller) updateServiceDescriptor(pctx *ctrl.ProcessContext, existing, desired *v1.ServiceDescriptor) (bool, error) {
+func (c *Controller) updateServiceDescriptor(pctx *ctrl.ProcessContext, existing, desired *comp_v1.ServiceDescriptor) (bool, error) {
 	store := store.NewMultiBasic()
 	sc := specchecker.New(store)
 
@@ -165,7 +165,7 @@ func (c *Controller) updateServiceDescriptor(pctx *ctrl.ProcessContext, existing
 	return false, nil
 }
 
-func validateHash(existing *v1.ServiceDescriptor) error {
+func validateHash(existing *comp_v1.ServiceDescriptor) error {
 	hash, exists := existing.Annotations[hashKey]
 	if !exists {
 		// Weird, but something has wiped the "dirty bit" hash or it never existed
@@ -185,7 +185,7 @@ func validateHash(existing *v1.ServiceDescriptor) error {
 }
 
 // This value is only valid within a cluster, it should not be used cross cluster for object creation
-func stripResourceVersion(existing *v1.ServiceDescriptor) *v1.ServiceDescriptor {
+func stripResourceVersion(existing *comp_v1.ServiceDescriptor) *comp_v1.ServiceDescriptor {
 	existing.ObjectMeta.ResourceVersion = ""
 	return existing
 }

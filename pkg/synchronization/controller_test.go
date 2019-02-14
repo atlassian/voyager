@@ -22,7 +22,7 @@ import (
 	"github.com/atlassian/voyager/pkg/releases"
 	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/ssam"
-	"github.com/atlassian/voyager/pkg/synchronization/api"
+	apisynchronization "github.com/atlassian/voyager/pkg/synchronization/api"
 	"github.com/atlassian/voyager/pkg/util/auth"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

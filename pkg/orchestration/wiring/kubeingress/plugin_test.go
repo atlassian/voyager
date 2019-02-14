@@ -5,7 +5,7 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
@@ -68,7 +68,7 @@ func TestBuildingIngressResource(t *testing.T) {
 
 	var serviceResourceName smith_v1.ResourceName = "myResource"
 
-	emptyStateResource := v1.StateResource{
+	emptyStateResource := orch_v1.StateResource{
 		Name: "somename",
 	}
 

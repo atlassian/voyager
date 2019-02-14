@@ -3,16 +3,16 @@ package platformdns
 import (
 	"encoding/json"
 
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
+
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
+	apiplatformdns "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/pkg/errors"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -28,24 +28,66 @@ type autowiringOnlySpec struct {
 }
 
 type WiringPlugin struct {
-	svccatentangler.SvcCatEntangler
 }
 
 func New() *WiringPlugin {
-	return &WiringPlugin{
-		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: apiplatformdns.ClusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  apiplatformdns.ClusterServicePlanExternalID,
-			InstanceSpec:                  getInstanceSpec,
-			ObjectMeta:                    getObjectMeta,
-			References:                    getReferences,
-			ResourceType:                  apiplatformdns.ResourceType,
+	return &WiringPlugin{}
+}
+
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+	if resource.Type != apiplatformdns.ResourceType {
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
+	}
+
+	serviceInstance, err := osb.ConstructServiceInstance(resource, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
+	}
+
+	instanceParameters, external, retriable, err := instanceParameters(resource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+	serviceInstance.Spec.Parameters = &runtime.RawExtension{
+		Raw: instanceParameters,
+	}
+
+	references, external, retriable, err := getReferences(resource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+
+	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
+
+	smithResource := smith_v1.Resource{
+		Name:       instanceResourceName,
+		References: references,
+		Spec: smith_v1.ResourceSpec{
+			Object: serviceInstance,
 		},
+	}
+
+	return &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: nil, // no shapes
+		},
+		Resources: []smith_v1.Resource{smithResource},
 	}
 }
 
-func getInstanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
-
+func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
 		var ourSpec autowiringOnlySpec
@@ -120,8 +162,4 @@ func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext
 	referenceName := wiringutil.ReferenceName(ingressEndpoint.Resource, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
 	references = append(references, ingressEndpoint.ToReference(referenceName))
 	return references, false, false, nil
-}
-
-func getObjectMeta(_ *orch_v1.StateResource, _ *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool, bool, error) {
-	return meta_v1.ObjectMeta{}, false, false, nil
 }
