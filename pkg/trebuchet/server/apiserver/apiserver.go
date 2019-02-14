@@ -3,7 +3,7 @@ package apiserver
 import (
 	apis_trebuchet "github.com/atlassian/voyager/pkg/apis/trebuchet"
 	"github.com/atlassian/voyager/pkg/apis/trebuchet/install"
-	"github.com/atlassian/voyager/pkg/apis/trebuchet/v1"
+	trebuchet_v1 "github.com/atlassian/voyager/pkg/apis/trebuchet/v1"
 	"github.com/atlassian/voyager/pkg/trebuchet"
 	trebuchetrest "github.com/atlassian/voyager/pkg/trebuchet/server/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,7 +91,7 @@ func (c completedConfig) New() (*TrebuchetServer, error) {
 		Logger: c.ExtraConfig.Logger,
 	}
 
-	apiGroupInfo.VersionedResourcesStorageMap[v1.ReleaseResourceVersion] = v1Storage
+	apiGroupInfo.VersionedResourcesStorageMap[trebuchet_v1.ReleaseResourceVersion] = v1Storage
 
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 		return nil, err

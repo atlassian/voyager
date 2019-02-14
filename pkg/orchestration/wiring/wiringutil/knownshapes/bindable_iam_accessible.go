@@ -26,7 +26,7 @@ type BindableIamAccessibleData struct {
 	IAMPolicySnippet libshapes.BindingSecretProtoReference
 }
 
-func NewBindableIamAccessible(resourceName smith_v1.ResourceName, iamPOlicySnippetPath string) *BindableIamAccessible {
+func NewBindableIamAccessible(resourceName smith_v1.ResourceName, iamPolicySnippetPath string) *BindableIamAccessible {
 	return &BindableIamAccessible{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: BindableIamAccessibleShape,
@@ -39,7 +39,7 @@ func NewBindableIamAccessible(resourceName smith_v1.ResourceName, iamPOlicySnipp
 					Example:  "aname",
 				}},
 			IAMPolicySnippet: libshapes.BindingSecretProtoReference{
-				Path: iamPOlicySnippetPath,
+				Path: iamPolicySnippetPath,
 			},
 		},
 	}
