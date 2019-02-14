@@ -158,11 +158,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 	klog.V(4).Infof(pcb.Message("Processing"))
 
-	brokerClient, err := c.updateClusterServiceBrokerClient(broker)
-	if err != nil {
-		return err
-	}
-
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
@@ -173,6 +168,11 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 	if broker.DeletionTimestamp == nil { // Add or update
 		klog.V(4).Info(pcb.Message("Processing adding/update event"))
+
+		brokerClient, err := c.updateClusterServiceBrokerClient(broker)
+		if err != nil {
+			return err
+		}
 
 		// get the broker's catalog
 		now := metav1.Now()
@@ -219,22 +219,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			}
 		}
 
-		// convert the broker's catalog payload into our API objects
-		klog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
-
-		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions)
-		if err != nil {
-			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
-			klog.Warning(pcb.Message(s))
-			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
-				return err
-			}
-			return err
-		}
-
-		klog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
-
 		// get the existing services and plans for this broker so that we can
 		// detect when services and plans are removed from the broker's
 		// catalog
@@ -246,11 +230,29 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		existingServiceClassMap := convertClusterServiceClassListToMap(existingServiceClasses)
 		existingServicePlanMap := convertClusterServicePlanListToMap(existingServicePlans)
 
+		// convert the broker's catalog payload into our API objects
+		klog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
+		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions, existingServiceClassMap, existingServicePlanMap)
+		if err != nil {
+			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
+			klog.Warning(pcb.Message(s))
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
+				return err
+			}
+			return err
+		}
+		klog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
+
 		// reconcile the serviceClasses that were part of the broker's catalog
 		// payload
 		for _, payloadServiceClass := range payloadServiceClasses {
 			existingServiceClass, _ := existingServiceClassMap[payloadServiceClass.Name]
 			delete(existingServiceClassMap, payloadServiceClass.Name)
+			if existingServiceClass == nil {
+				existingServiceClass, _ = existingServiceClassMap[payloadServiceClass.Spec.ExternalID]
+				delete(existingServiceClassMap, payloadServiceClass.Spec.ExternalID)
+			}
 
 			klog.V(4).Info(pcb.Messagef("Reconciling %s", pretty.ClusterServiceClassName(payloadServiceClass)))
 			if err := c.reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker, payloadServiceClass, existingServiceClass); err != nil {
@@ -304,6 +306,10 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		for _, payloadServicePlan := range payloadServicePlans {
 			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
 			delete(existingServicePlanMap, payloadServicePlan.Name)
+			if existingServicePlan == nil {
+				existingServicePlan, _ = existingServicePlanMap[payloadServicePlan.Spec.ExternalID]
+				delete(existingServicePlanMap, payloadServicePlan.Spec.ExternalID)
+			}
 
 			klog.V(4).Infof(
 				"ClusterServiceBroker %q: reconciling %s",
@@ -595,8 +601,8 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 	toUpdate.Spec.Free = servicePlan.Spec.Free
 	toUpdate.Spec.ExternalName = servicePlan.Spec.ExternalName
 	toUpdate.Spec.ExternalMetadata = servicePlan.Spec.ExternalMetadata
-	toUpdate.Spec.ServiceInstanceCreateParameterSchema = servicePlan.Spec.ServiceInstanceCreateParameterSchema
-	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
+	toUpdate.Spec.InstanceCreateParameterSchema = servicePlan.Spec.InstanceCreateParameterSchema
+	toUpdate.Spec.InstanceUpdateParameterSchema = servicePlan.Spec.InstanceUpdateParameterSchema
 	toUpdate.Spec.ServiceBindingCreateParameterSchema = servicePlan.Spec.ServiceBindingCreateParameterSchema
 
 	markAsServiceCatalogManagedResource(toUpdate, broker)
