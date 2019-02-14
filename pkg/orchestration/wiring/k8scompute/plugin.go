@@ -550,7 +550,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
 	// the app to different zones, and then nodes (where possible)
 	podAffinityTerms := []core_v1.WeightedPodAffinityTerm{
-		core_v1.WeightedPodAffinityTerm{
+		{
 			Weight: 75,
 			PodAffinityTerm: core_v1.PodAffinityTerm{
 				LabelSelector: &meta_v1.LabelSelector{
@@ -559,7 +559,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 				TopologyKey: k8s.LabelZoneFailureDomain,
 			},
 		},
-		core_v1.WeightedPodAffinityTerm{
+		{
 			Weight: 50,
 			PodAffinityTerm: core_v1.PodAffinityTerm{
 				LabelSelector: &meta_v1.LabelSelector{

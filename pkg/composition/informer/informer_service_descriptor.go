@@ -7,7 +7,6 @@ import (
 	"github.com/atlassian/voyager/pkg/composition/client"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -18,9 +17,7 @@ func ServiceDescriptorInformer(client client.Interface, resync time.Duration) ca
 			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
 				return sd.List(options)
 			},
-			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
-				return sd.Watch(options)
-			},
+			WatchFunc: sd.Watch,
 		},
 		&comp_v1.ServiceDescriptor{},
 		resync,
