@@ -66,7 +66,6 @@ const (
 	releaseManagementSyncAllPeriod      = 30 * time.Minute
 	baseDelayProcSec                    = 15
 	rmsPollJitterFactor                 = 1.2
-	secretNameOpsGenie                  = "opsgenie-integrations"
 )
 
 type ServiceMetadataStore interface {
@@ -75,7 +74,7 @@ type ServiceMetadataStore interface {
 	ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]creator_v1.Service, error)
 }
 
-type OpsGenieIntegrationManagerClient interface {
+type OpsgenieIntegrationManagerClient interface {
 	GetOrCreateIntegrations(ctx context.Context, teamName string) (*opsgenie.IntegrationsResponse, bool /* retriable */, error)
 }
 
@@ -91,7 +90,7 @@ type Controller struct {
 	ServiceCentral    ServiceMetadataStore
 	ReleaseManagement releases.ReleaseManagementStore
 	ClusterLocation   voyager.ClusterLocation
-	OpsGenie          OpsGenieIntegrationManagerClient
+	Opsgenie          OpsgenieIntegrationManagerClient
 
 	RoleBindingUpdater        updater.ObjectUpdater
 	ConfigMapUpdater          updater.ObjectUpdater
@@ -501,7 +500,7 @@ func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta
 			LowPriorityPagerdutyEndpoint: *lowPriPD,
 		}
 	}
-	integrations, retriable, err := c.getOpsgenieIntegrations(spec.Metadata.OpsGenie)
+	integrations, retriable, err := c.getOpsgenieIntegrations(spec.Metadata.Opsgenie)
 	if err != nil {
 		return nil, retriable, errors.Wrap(err, "failed to create opsgenie notifications")
 	}
@@ -513,13 +512,13 @@ func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta
 	return &notifications, true, nil
 }
 
-func (c *Controller) getOpsgenieIntegrations(metadata *creator_v1.OpsGenieMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
+func (c *Controller) getOpsgenieIntegrations(metadata *creator_v1.OpsgenieMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
 	// Opsgenie is optional
 	if metadata == nil {
 		return nil, true, nil
 	}
 
-	resp, retriable, err := c.OpsGenie.GetOrCreateIntegrations(context.TODO(), metadata.Team)
+	resp, retriable, err := c.Opsgenie.GetOrCreateIntegrations(context.TODO(), metadata.Team)
 	if err != nil {
 		return nil, retriable, err
 	}
@@ -699,7 +698,7 @@ func pagerDutyForEnvType(pagerduty *creator_v1.PagerDutyMetadata, envType voyage
 // buildOpsgenieNotifications filters a given list of integrations by the EnvType
 func buildOpsgenieNotifications(integrations []opsgenie.Integration, envType voyager.EnvType) ([]opsgenie.Integration, error) {
 	if len(integrations) == 0 {
-		return nil, nil // Not an error as OpsGenie is optional
+		return nil, nil // Not an error as Opsgenie is optional
 	}
 
 	filtered := make([]opsgenie.Integration, 0, 4)

@@ -80,7 +80,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 	scHTTPClient := util.HTTPClient()
 	scClient := servicecentral.NewServiceCentralClient(config.Logger, scHTTPClient, opts.ASAPClientConfig, opts.Providers.ServiceCentralURL)
 
-	// create a client for talking to OpsGenie Integration Manager
+	// create a client for talking to Opsgenie Integration Manager
 	ogHTTPClient := util.HTTPClient()
 	ogClient := opsgenie.New(config.Logger, ogHTTPClient, opts.ASAPClientConfig, opts.Providers.OpsgenieIntegrationsManagerURL)
 
@@ -138,7 +138,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 		ServiceCentral:    servicecentral.NewStore(config.Logger, scClient),
 		ReleaseManagement: releases.NewReleaseManagement(deployinatorHTTPClient, config.Logger),
 		ClusterLocation:   opts.Location.ClusterLocation(),
-		OpsGenie:          ogClient,
+		Opsgenie:          ogClient,
 
 		ConfigMapUpdater:          configMapObjectUpdater,
 		RoleBindingUpdater:        roleBindingObjectUpdater,

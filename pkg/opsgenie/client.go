@@ -41,7 +41,7 @@ func New(logger *zap.Logger, httpClient *http.Client, asap pkiutil.ASAP, baseURL
 	}
 }
 
-// Gets OpsGenie integrations
+// Gets Opsgenie integrations
 // return codes:
 // - 400: Bad request to Opsgenie
 // - 401: Unauthorized

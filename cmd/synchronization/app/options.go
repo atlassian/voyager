@@ -51,7 +51,7 @@ func (p *Providers) UnmarshalJSON(data []byte) error {
 
 	ogUrl, err := url.Parse(rawProviders.OpsgenieIntegrationsManager)
 	if err != nil {
-		return errors.Wrap(err, "unable to parse OpsGenie Integrations Manager URL")
+		return errors.Wrap(err, "unable to parse Opsgenie Integrations Manager URL")
 	}
 	p.OpsgenieIntegrationsManagerURL = ogUrl
 

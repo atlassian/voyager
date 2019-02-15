@@ -59,7 +59,7 @@ func (ss *ServiceSpec) EmailAddress() string {
 // +k8s:deepcopy-gen=true
 type ServiceMetadata struct {
 	PagerDuty *PagerDutyMetadata `json:"pagerDuty,omitempty"`
-	OpsGenie  *OpsGenieMetadata  `json:"opsGenie,omitempty"`
+	Opsgenie  *OpsgenieMetadata  `json:"opsgenie,omitempty"`
 	Bamboo    *BambooMetadata    `json:"bamboo,omitempty"`
 }
 
@@ -101,7 +101,7 @@ type PagerDutyIntegrationMetadata struct {
 	IntegrationKey string `json:"integrationKey,omitempty"`
 }
 
-type OpsGenieMetadata struct {
+type OpsgenieMetadata struct {
 	Team string `json:"team,omitempty"`
 }
 

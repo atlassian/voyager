@@ -275,7 +275,7 @@ func TestGetService(t *testing.T) {
 	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 }
 
-func TestGetServiceWithOpsGenieAttribute(t *testing.T) {
+func TestGetServiceWithOpsgenieAttribute(t *testing.T) {
 	t.Parallel()
 	// given
 	handler := MockHandler(Match(
@@ -306,7 +306,7 @@ func TestGetServiceWithOpsGenieAttribute(t *testing.T) {
 	require.Equal(t, "Platform SRE", service.Attributes[0].Team)
 }
 
-func TestGetServiceWithEmptyOpsGenieAttribute(t *testing.T) {
+func TestGetServiceWithEmptyOpsgenieAttribute(t *testing.T) {
 	t.Parallel()
 	// given
 	handler := MockHandler(Match(
@@ -337,7 +337,7 @@ func TestGetServiceWithEmptyOpsGenieAttribute(t *testing.T) {
 	require.Equal(t, "", service.Attributes[0].Team)
 }
 
-func TestGetServiceWithoutOpsGenieAttribute(t *testing.T) {
+func TestGetServiceWithoutOpsgenieAttribute(t *testing.T) {
 	t.Parallel()
 	// given
 	handler := MockHandler(Match(
@@ -393,7 +393,7 @@ func TestGetServiceWithFailedAttributesCall(t *testing.T) {
 	require.Equal(t, 2, handler.RequestSnapshots.Calls())
 }
 
-func TestGetServiceWithMultipleOpsGenieAttribute(t *testing.T) {
+func TestGetServiceWithMultipleOpsgenieAttribute(t *testing.T) {
 	t.Parallel()
 	// given
 	handler := MockHandler(Match(
