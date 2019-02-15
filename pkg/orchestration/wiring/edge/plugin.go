@@ -115,11 +115,7 @@ func specToParameters(spec *Spec, context *wiringplugin.WiringContext) *osbInsta
 func convertUpstreamAddresses(addresses []UpstreamAddress) []osbUpstreamAddress {
 	osbAddresses := make([]osbUpstreamAddress, 0, len(addresses))
 	for _, address := range addresses {
-		osbAddress := osbUpstreamAddress{ // nolint: gosimple
-			Address: address.Address,
-			Region:  address.Region,
-		}
-		osbAddresses = append(osbAddresses, osbAddress)
+		osbAddresses = append(osbAddresses, osbUpstreamAddress(address))
 	}
 	return osbAddresses
 }
