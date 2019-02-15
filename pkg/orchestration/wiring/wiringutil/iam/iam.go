@@ -42,7 +42,7 @@ type ResourceWithIamAccessibleBinding struct {
 
 func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName voyager.ResourceName,
 	serviceName voyager.ServiceName, createInstanceProfile bool, iamShapedResources []ResourceWithIamAccessibleBinding,
-	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (smith_v1.Resource, error) {
+	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string, vpc *oap.VPCEnvironment) (smith_v1.Resource, error) {
 
 	dependencyReferences := make([]smith_v1.Reference, 0, len(iamShapedResources))
 	iamPolicyDocumentRefs := make(map[string]string, len(iamShapedResources))
@@ -61,7 +61,7 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName
 		CreateInstanceProfile: createInstanceProfile,
 		ManagedPolicies:       managedPolicies,
 		AssumeRoles:           assumeRoles,
-		ServiceEnvironment:    *aws.CfnServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context)),
+		ServiceEnvironment:    *aws.CfnServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc)),
 		ComputeType:           computeType,
 		PolicySnippets:        iamPolicyDocumentRefs,
 	})

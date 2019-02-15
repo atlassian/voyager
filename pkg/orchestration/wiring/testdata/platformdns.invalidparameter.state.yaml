@@ -21,7 +21,7 @@ spec:
     spec:
       target: invalid-parameter.atl-paas.net
       aliases:
-        - type: Simple
-          name: foo.staging.atl-paas.net
+        type: Simple
+        name: foo.staging.atl-paas.net
     dependsOn:
       - ingress

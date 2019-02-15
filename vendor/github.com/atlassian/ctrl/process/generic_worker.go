@@ -44,23 +44,32 @@ func (g *Generic) processNextWorkItem() bool {
 		logz.Iteration(atomic.AddUint32(&g.iter, 1)))
 
 	retriable, err := g.processKey(logger, holder, key)
-	g.handleErr(logger, retriable, err, key)
+	g.handleErr(logger, holder, retriable, err, key)
 
 	return true
 }
 
-func (g *Generic) handleErr(logger *zap.Logger, retriable bool, err error, key gvkQueueKey) {
+func (g *Generic) handleErr(logger *zap.Logger, holder Holder, retriable bool, err error, key gvkQueueKey) {
+	groupKind := key.gvk.GroupKind()
+
 	if err == nil {
 		g.queue.forget(key)
 		return
 	}
+
 	if retriable && g.queue.numRequeues(key) < maxRetries {
-		logger.Info("Error syncing object", zap.Error(err))
+		logger.Info("Error syncing object, will retry", zap.Error(err))
 		g.queue.addRateLimited(key)
+		holder.objectProcessErrors.
+			WithLabelValues(holder.AppName, key.Namespace, key.Name, groupKind.String(), strconv.FormatBool(true)).
+			Inc()
 		return
 	}
 
-	logger.Info("Dropping object out of the queue", zap.Error(err))
+	holder.objectProcessErrors.
+		WithLabelValues(holder.AppName, key.Namespace, key.Name, groupKind.String(), strconv.FormatBool(false)).
+		Inc()
+	logger.Error("Dropping object out of the queue", zap.Error(err))
 	g.queue.forget(key)
 }
 
@@ -94,11 +103,6 @@ func (g *Generic) processKey(logger *zap.Logger, holder Holder, key gvkQueueKey)
 	if err != nil && api_errors.IsConflict(errors.Cause(err)) {
 		msg = " (conflict)"
 		err = nil
-	}
-	if err != nil {
-		holder.objectProcessErrors.
-			WithLabelValues(holder.AppName, key.Namespace, key.Name, groupKind.String(), strconv.FormatBool(retriable)).
-			Inc()
 	}
 	return retriable, err
 }

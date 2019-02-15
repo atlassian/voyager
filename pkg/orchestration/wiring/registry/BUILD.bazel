@@ -21,5 +21,6 @@ go_library(
         "//pkg/orchestration/wiring/ups:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
     ],
 )

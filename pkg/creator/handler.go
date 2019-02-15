@@ -13,7 +13,7 @@ import (
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
 	"github.com/atlassian/voyager/pkg/creator/luigi"
 	"github.com/atlassian/voyager/pkg/creator/ssam"
-	ec2compute_common "github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/common"
+	ec2compute_v2 "github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/v2"
 	"github.com/atlassian/voyager/pkg/pagerduty"
 	"github.com/atlassian/voyager/pkg/servicecentral"
 	"github.com/atlassian/voyager/pkg/util"
@@ -33,7 +33,7 @@ const (
 	ServiceNameMinimumLength    = 1
 	ServiceNameMaximumLength    = 24
 	ServiceNameExpr             = schema.ResourceNameSchemaPattern
-	EC2ComputeNameMaximumLength = ec2compute_common.MaximumServiceNameLength
+	EC2ComputeNameMaximumLength = ec2compute_v2.MaximumServiceNameLength
 )
 
 var (

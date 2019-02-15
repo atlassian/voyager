@@ -8,12 +8,13 @@ import (
 	"github.com/atlassian/voyager"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -66,27 +67,76 @@ type AutowiredOnlySpec struct {
 }
 
 type WiringPlugin struct {
-	svccatentangler.SvcCatEntangler
+	VPC         func(voyager.Location) *oap.VPCEnvironment
+	Environment func(voyager.Location) string
 }
 
 type ReadReplicaParam struct {
 	ReadReplica bool `json:"ReadReplica"`
 }
 
-func New() *WiringPlugin {
+func New(environment func(location voyager.Location) string, vpc func(location voyager.Location) *oap.VPCEnvironment) *WiringPlugin {
 	return &WiringPlugin{
-		SvcCatEntangler: svccatentangler.SvcCatEntangler{
-			ClusterServiceClassExternalID: clusterServiceClassExternalID,
-			ClusterServicePlanExternalID:  clusterServicePlanExternalID,
-			InstanceSpec:                  instanceSpec,
-			ObjectMeta:                    objectMeta,
-			ResourceType:                  ResourceType,
-			Shapes:                        shapes,
-		},
+		VPC:         vpc,
+		Environment: environment,
 	}
 }
 
-func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+	if resource.Type != ResourceType {
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
+	}
+
+	serviceInstance, err := osb.ConstructServiceInstance(resource, clusterServiceClassExternalID, clusterServicePlanExternalID)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
+	}
+
+	instanceParameters, external, retriable, err := p.instanceParameters(resource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+	serviceInstance.Spec.Parameters = &runtime.RawExtension{
+		Raw: instanceParameters,
+	}
+
+	instanceResourceName := wiringutil.ServiceInstanceResourceName(resource.Name)
+
+	smithResource := smith_v1.Resource{
+		Name:       instanceResourceName,
+		References: nil, // No references
+		Spec: smith_v1.ResourceSpec{
+			Object: serviceInstance,
+		},
+	}
+
+	shapes, external, retriable, err := instanceShapes(resource, &smithResource, context)
+	if err != nil {
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
+	}
+
+	return &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
+			Shapes: shapes,
+		},
+		Resources: []smith_v1.Resource{smithResource},
+	}
+
+}
+
+func instanceShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error) {
 	si := smithResource.Spec.Object.(*sc_v1b1.ServiceInstance)
 	var finalSpec FinalSpec
 	err := json.Unmarshal(si.Spec.Parameters.Raw, &finalSpec)
@@ -105,7 +155,7 @@ func shapes(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, c
 	}, false, false, nil
 }
 
-func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* external */, bool /* retriable */, error) {
+func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* external */, bool /* retriable */, error) {
 
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
@@ -128,19 +178,19 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	primaryParameters := MainParametersSpec{
 		MicrosAlarmEndpoints:        microsAlarmEndpoints,
-		MicrosAppSubnets:            context.StateContext.LegacyConfig.AppSubnets,
-		MicrosEnv:                   context.StateContext.LegacyConfig.MicrosEnv,
+		MicrosAppSubnets:            p.VPC(context.StateContext.Location).AppSubnets,
+		MicrosEnv:                   p.Environment(context.StateContext.Location),
 		MicrosEnvironmentLabel:      context.StateContext.Location.Label,
-		MicrosInstanceSecurityGroup: context.StateContext.LegacyConfig.InstanceSecurityGroup,
-		MicrosJumpboxSecurityGroup:  context.StateContext.LegacyConfig.JumpboxSecurityGroup,
+		MicrosInstanceSecurityGroup: p.VPC(context.StateContext.Location).InstanceSecurityGroup,
+		MicrosJumpboxSecurityGroup:  p.VPC(context.StateContext.Location).JumpboxSecurityGroup,
 		MicrosPagerdutyEndpoint:     context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
 		MicrosPagerdutyEndpointHigh: context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
 		MicrosPagerdutyEndpointLow:  context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
-		MicrosPrivateDNSZone:        context.StateContext.LegacyConfig.Private,
-		MicrosPrivatePaaSDNSZone:    context.StateContext.LegacyConfig.PrivatePaas,
+		MicrosPrivateDNSZone:        p.VPC(context.StateContext.Location).PrivateDNSZone,
+		MicrosPrivatePaaSDNSZone:    p.VPC(context.StateContext.Location).PrivatePaasDNSZone,
 		MicrosServiceName:           context.StateContext.ServiceName,
 		MicrosResourceName:          resource.Name,
-		MicrosVPCId:                 context.StateContext.LegacyConfig.Vpc,
+		MicrosVPCId:                 p.VPC(context.StateContext.Location).VPCID,
 	}
 
 	miscParameters := MiscParametersSpec{
@@ -151,7 +201,7 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 	}
 
 	location := LocationSpec{
-		Environment: context.StateContext.LegacyConfig.MicrosEnv,
+		Environment: p.Environment(context.StateContext.Location),
 	}
 
 	finalSpec := FinalSpec{
@@ -190,8 +240,4 @@ func instanceSpec(resource *orch_v1.StateResource, context *wiringplugin.WiringC
 
 	bytes, err := json.Marshal(finalSpec)
 	return bytes, false, false, err
-}
-
-func objectMeta(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (meta_v1.ObjectMeta, bool, bool, error) {
-	return meta_v1.ObjectMeta{}, false, false, nil
 }
