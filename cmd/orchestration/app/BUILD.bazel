@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//:go_default_library",
         "//cmd:go_default_library",
+        "//pkg/apis/orchestration/meta:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/k8s:go_default_library",
         "//pkg/options:go_default_library",
@@ -20,9 +21,9 @@ go_library(
         "//pkg/orchestration/informer:go_default_library",
         "//pkg/orchestration/updater:go_default_library",
         "//pkg/orchestration/wiring:go_default_library",
-        "//pkg/orchestration/wiring/legacy:go_default_library",
         "//pkg/orchestration/wiring/registry:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
         "//pkg/util/crash:go_default_library",
         "//pkg/util/prometheus:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",

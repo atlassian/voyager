@@ -16,19 +16,31 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 )
 
-var KnownWiringPlugins = map[voyager.ResourceType]wiringplugin.WiringPlugin{
-	apik8scompute.ResourceType:  wiringutil.StatusAdapter(k8scompute.WireUp),
-	kubeingress.ResourceType:    wiringutil.StatusAdapter(kubeingress.WireUp),
-	ec2compute_v2.ResourceType:  wiringutil.StatusAdapter(ec2compute_v2.WireUp),
-	ups.ResourceType:            wiringutil.StatusAdapter(ups.New().WireUp),
-	aws.Cfn:                     aws.ResourceTypes[aws.Cfn],
-	aws.DynamoDB:                aws.ResourceTypes[aws.DynamoDB],
-	aws.S3:                      aws.ResourceTypes[aws.S3],
-	postgres.ResourceType:       wiringutil.StatusAdapter(postgres.New().WireUp),
-	rds.ResourceType:            wiringutil.StatusAdapter(rds.New().WireUp),
-	sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
-	asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
-	apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
+func KnownWiringPlugins(
+	developerRole func(location voyager.Location) []string,
+	managedPolices func(location voyager.Location) []string,
+	vpc func(location voyager.Location) *oap.VPCEnvironment,
+	environment func(location voyager.Location) string,
+) map[voyager.ResourceType]wiringplugin.WiringPlugin {
+	return map[voyager.ResourceType]wiringplugin.WiringPlugin{
+		apik8scompute.ResourceType: wiringutil.StatusAdapter(k8scompute.New(vpc).WireUp),
+		kubeingress.ResourceType:   wiringutil.StatusAdapter(kubeingress.WireUp),
+		ec2compute_v2.ResourceType: wiringutil.StatusAdapter(ec2compute_v2.New(
+			developerRole,
+			managedPolices,
+			vpc,
+		).WireUp),
+		ups.ResourceType:            wiringutil.StatusAdapter(ups.New().WireUp),
+		aws.Cfn:                     aws.CfnPlugin(vpc),
+		aws.DynamoDB:                aws.DynamoDBPlugin(vpc),
+		aws.S3:                      aws.S3Plugin(vpc),
+		postgres.ResourceType:       wiringutil.StatusAdapter(postgres.New(environment).WireUp),
+		rds.ResourceType:            wiringutil.StatusAdapter(rds.New(environment, vpc).WireUp),
+		sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
+		asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
+		apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
+	}
 }

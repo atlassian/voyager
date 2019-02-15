@@ -67,14 +67,19 @@ type AutowiredOnlySpec struct {
 }
 
 type WiringPlugin struct {
+	VPC         func(voyager.Location) *oap.VPCEnvironment
+	Environment func(voyager.Location) string
 }
 
 type ReadReplicaParam struct {
 	ReadReplica bool `json:"ReadReplica"`
 }
 
-func New() *WiringPlugin {
-	return &WiringPlugin{}
+func New(environment func(location voyager.Location) string, vpc func(location voyager.Location) *oap.VPCEnvironment) *WiringPlugin {
+	return &WiringPlugin{
+		VPC:         vpc,
+		Environment: environment,
+	}
 }
 
 func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
@@ -91,7 +96,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 	}
 
-	instanceParameters, external, retriable, err := instanceParameters(resource, context)
+	instanceParameters, external, retriable, err := p.instanceParameters(resource, context)
 	if err != nil {
 		return &wiringplugin.WiringResultFailure{
 			Error:            err,
@@ -150,7 +155,7 @@ func instanceShapes(resource *orch_v1.StateResource, smithResource *smith_v1.Res
 	}, false, false, nil
 }
 
-func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* external */, bool /* retriable */, error) {
+func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* external */, bool /* retriable */, error) {
 
 	// Don't allow user to set anything they shouldn't
 	if resource.Spec != nil {
@@ -173,19 +178,19 @@ func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.W
 
 	primaryParameters := MainParametersSpec{
 		MicrosAlarmEndpoints:        microsAlarmEndpoints,
-		MicrosAppSubnets:            context.StateContext.LegacyConfig.AppSubnets,
-		MicrosEnv:                   context.StateContext.LegacyConfig.MicrosEnv,
+		MicrosAppSubnets:            p.VPC(context.StateContext.Location).AppSubnets,
+		MicrosEnv:                   p.Environment(context.StateContext.Location),
 		MicrosEnvironmentLabel:      context.StateContext.Location.Label,
-		MicrosInstanceSecurityGroup: context.StateContext.LegacyConfig.InstanceSecurityGroup,
-		MicrosJumpboxSecurityGroup:  context.StateContext.LegacyConfig.JumpboxSecurityGroup,
+		MicrosInstanceSecurityGroup: p.VPC(context.StateContext.Location).InstanceSecurityGroup,
+		MicrosJumpboxSecurityGroup:  p.VPC(context.StateContext.Location).JumpboxSecurityGroup,
 		MicrosPagerdutyEndpoint:     context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
 		MicrosPagerdutyEndpointHigh: context.StateContext.ServiceProperties.Notifications.PagerdutyEndpoint.CloudWatch,
 		MicrosPagerdutyEndpointLow:  context.StateContext.ServiceProperties.Notifications.LowPriorityPagerdutyEndpoint.CloudWatch,
-		MicrosPrivateDNSZone:        context.StateContext.LegacyConfig.Private,
-		MicrosPrivatePaaSDNSZone:    context.StateContext.LegacyConfig.PrivatePaas,
+		MicrosPrivateDNSZone:        p.VPC(context.StateContext.Location).PrivateDNSZone,
+		MicrosPrivatePaaSDNSZone:    p.VPC(context.StateContext.Location).PrivatePaasDNSZone,
 		MicrosServiceName:           context.StateContext.ServiceName,
 		MicrosResourceName:          resource.Name,
-		MicrosVPCId:                 context.StateContext.LegacyConfig.Vpc,
+		MicrosVPCId:                 p.VPC(context.StateContext.Location).VPCID,
 	}
 
 	miscParameters := MiscParametersSpec{
@@ -196,7 +201,7 @@ func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.W
 	}
 
 	location := LocationSpec{
-		Environment: context.StateContext.LegacyConfig.MicrosEnv,
+		Environment: p.Environment(context.StateContext.Location),
 	}
 
 	finalSpec := FinalSpec{
