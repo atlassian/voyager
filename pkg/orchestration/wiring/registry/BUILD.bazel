@@ -10,6 +10,7 @@ go_library(
         "//pkg/orchestration/wiring/asapkey:go_default_library",
         "//pkg/orchestration/wiring/aws:go_default_library",
         "//pkg/orchestration/wiring/ec2compute/v2:go_default_library",
+        "//pkg/orchestration/wiring/edge:go_default_library",
         "//pkg/orchestration/wiring/k8scompute:go_default_library",
         "//pkg/orchestration/wiring/k8scompute/api:go_default_library",
         "//pkg/orchestration/wiring/kubeingress:go_default_library",
@@ -22,5 +23,6 @@ go_library(
         "//pkg/orchestration/wiring/ups:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil:go_default_library",
+        "//pkg/orchestration/wiring/wiringutil/oap:go_default_library",
     ],
 )

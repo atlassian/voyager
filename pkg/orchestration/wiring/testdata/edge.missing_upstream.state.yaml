@@ -6,8 +6,7 @@ metadata:
   uid: 411c0040-617e-11e7-9b57-427d691976d7
 spec:
   resources:
-  - type: PlatformDNS
-    name: platformdns
+  - type: GlobalEdge
+    name: ingress
     spec:
-      type: Simple
-      name: foo.staging.atl-paas.net
+      upstreamPort: 8080

@@ -8,12 +8,13 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
+	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	stateclient_fake "github.com/atlassian/voyager/pkg/orchestration/client/fake"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -27,6 +28,10 @@ const (
 	fixtureBundleOutputSuffix = ".bundle.output.yaml"
 	fixtureStateOutputSuffix  = ".state.output.yaml"
 	fixtureGlob               = "*" + fixtureStateInputSuffix
+
+	testAccount = "testaccount"
+	testEnv     = "testenv"
+	testRegion  = "testregion"
 )
 
 func testHandleProcessResult(t *testing.T, filePrefix string) {
@@ -190,28 +195,61 @@ func TestStateResourceName(t *testing.T) {
 
 func entanglerForTests() *wiring.Entangler {
 	return &wiring.Entangler{
-		Plugins: registry.KnownWiringPlugins,
+		Plugins: registry.KnownWiringPlugins(
+			testDeveloperRole,
+			testManagedPolicies,
+			testVPC,
+			testEnvironment,
+		),
 		ClusterLocation: voyager.ClusterLocation{
-			Account: legacy.TestAccountName,
-			Region:  legacy.TestRegion,
-			EnvType: legacy.TestEnvironment,
+			Account: testAccount,
+			Region:  testRegion,
+			EnvType: testEnv,
 		},
 		ClusterConfig: wiringplugin.ClusterConfig{
 			ClusterDomainName: "internal.ap-southeast-2.kitt-integration.kitt-inf.net",
 			KittClusterEnv:    "test",
 			Kube2iamAccount:   "test",
 		},
-		TagNames: wiring.TagNames{
-			ServiceNameTag:     "service_name",
-			BusinessUnitTag:    "business_unit",
-			ResourceOwnerTag:   "resource_owner",
-			PlatformTag:        "platform",
-			EnvironmentTypeTag: "environment_type",
-		},
-		GetLegacyConfigFunc: getTestLegacyConfig,
+		Tags: testingTags,
 	}
 }
 
-func getTestLegacyConfig(location voyager.Location) *legacy.Config {
-	return legacy.GetLegacyConfigFromMap(legacy.TestLegacyConfigs, location)
+func testDeveloperRole(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC"}
+}
+
+func testManagedPolicies(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE", "arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC"} // example
+}
+
+func testVPC(location voyager.Location) *oap.VPCEnvironment {
+	return &oap.VPCEnvironment{
+		VPCID:                 "vpc-1",
+		PrivateDNSZone:        "testregion.atl-inf.io",
+		PrivatePaasDNSZone:    "testregion.dev.paas-inf.net",
+		InstanceSecurityGroup: "sg-2",
+		JumpboxSecurityGroup:  "sg-1",
+		SSLCertificateID:      "arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777",
+		Label:                 location.Label,
+		AppSubnets:            []string{"subnet-1", "subnet-2"},
+		Zones:                 []string{"testregiona", "testregionb"},
+		Region:                location.Region,
+		EMRSubnet:             "subnet-1a",
+	}
+}
+
+func testEnvironment(_ voyager.Location) string {
+	return "microstestenv"
+}
+
+func testingTags(
+	_ voyager.ClusterLocation,
+	_ wiringplugin.ClusterConfig,
+	_ voyager.Location,
+	_ voyager.ServiceName,
+	_ orch_meta.ServiceProperties,
+) map[voyager.Tag]string {
+	tags := make(map[voyager.Tag]string)
+	return tags
 }
