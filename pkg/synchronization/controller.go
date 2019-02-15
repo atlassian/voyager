@@ -496,11 +496,8 @@ func (c *Controller) buildNotifications(logger *zap.Logger, spec creator_v1.Serv
 			return nil, false, errors.Wrap(err, "cannot convert low priority pagerduty entry")
 		}
 
-		notifications = orch_meta.Notifications{
-			Email:                        spec.EmailAddress(),
-			PagerdutyEndpoint:            *mainPD,
-			LowPriorityPagerdutyEndpoint: *lowPriPD,
-		}
+		notifications.PagerdutyEndpoint = *mainPD
+		notifications.LowPriorityPagerdutyEndpoint = *lowPriPD
 	}
 	integrations, retriable, err := c.getOpsgenieIntegrations(spec.Metadata.Opsgenie)
 	if err != nil {
