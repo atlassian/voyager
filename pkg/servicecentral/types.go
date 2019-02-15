@@ -43,11 +43,11 @@ type ServiceDataRead struct {
 	Compliance *ServiceComplianceConf `json:"compliance,omitempty"`
 }
 
-type ServiceAttribute struct {
-	Team string `json:"team,omitempty"`
+type ServiceAttributeResponse struct {
+	Attributes []ServiceAttribute
 }
 
-type ServiceAttributeResponse struct {
+type ServiceAttribute struct {
 	ID         int                     `json:"id"`
 	Service    ServiceAttributeService `json:"service"`
 	Schema     ServiceAttributeSchema  `json:"schema"`
@@ -68,6 +68,10 @@ type ServiceAttributeSchema struct {
 	Ref  string `json:"ref"`
 	ID   int    `json:"id"`
 	Name string `json:"name"`
+}
+
+type OpsgenieAttribute struct {
+	Team string `json:"team,omitempty"`
 }
 
 // ServiceComplianceConf includes all service compliance related data

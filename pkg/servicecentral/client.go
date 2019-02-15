@@ -300,14 +300,8 @@ func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, service
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get attributes for service")
 	}
-	ogTeamAttr, found, err := findOpsgenieTeamServiceAttribute(resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get Opsgenie attributes for service")
-	}
 
-	if found {
-		service.Attributes = append(service.Attributes, ogTeamAttr)
-	}
+	service.Attributes = resp.Attributes
 
 	return service, nil
 }
@@ -344,7 +338,8 @@ func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID 
 }
 
 // GetServiceAttributes queries service central for the attributes of a given service. Can return an empty array if no attributes were found
-func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]ServiceAttributeResponse, error) {
+func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) (ServiceAttributeResponse, error) {
+	var svcAttrResp ServiceAttributeResponse
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),
@@ -353,32 +348,31 @@ func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUse
 		restclient.Header("Accept", "application/json"),
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create get service attributes request")
+		return svcAttrResp, errors.Wrap(err, "failed to create get service attributes request")
 	}
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute get service attributes request")
+		return svcAttrResp, errors.Wrap(err, "failed to execute get service attributes request")
 	}
 
 	defer util.CloseSilently(response.Body)
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+		return svcAttrResp, errors.Wrap(err, "failed to read response body")
 	}
 
 	if response.StatusCode != http.StatusOK {
 		message := fmt.Sprintf("failed to get attributes for service %q. Response: %s", serviceUUID, respBody)
-		return nil, clientError(response.StatusCode, message)
+		return svcAttrResp, clientError(response.StatusCode, message)
 	}
 
-	var parsedBody []ServiceAttributeResponse
-	err = json.Unmarshal(respBody, &parsedBody)
+	err = json.Unmarshal(respBody, &svcAttrResp)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal response body")
+		return svcAttrResp, errors.Wrap(err, "failed to unmarshal response body")
 	}
 
-	return parsedBody, nil
+	return svcAttrResp, nil
 }
 
 func clientError(statusCode int, message string) error {
@@ -445,11 +439,12 @@ func convertV2ServiceToV1(v2Service V2Service) ServiceDataRead {
 	return service
 }
 
-func findOpsgenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (ServiceAttribute, bool /*found*/, error) {
+// findOpsgenieAttribute searches a given list of ServiceAttributes for a single OpsgenieAttribute
+func findOpsgenieAttribute(attributes []ServiceAttribute) (OpsgenieAttribute, bool /*found*/, error) {
 	const opsgenieSchemaName = "opsgenie"
 	count := 0
 	found := false
-	ogTeamAttr := ServiceAttribute{}
+	ogTeamAttr := OpsgenieAttribute{}
 	for _, attr := range attributes {
 		if attr.Schema.Name != opsgenieSchemaName {
 			continue
@@ -460,7 +455,7 @@ func findOpsgenieTeamServiceAttribute(attributes []ServiceAttributeResponse) (Se
 			return ogTeamAttr, found, errors.Errorf("expected to find team name within schema of name %q", opsgenieSchemaName)
 		}
 
-		ogTeamAttr = ServiceAttribute{Team: team}
+		ogTeamAttr = OpsgenieAttribute{Team: team}
 		found = true
 		count++
 	}

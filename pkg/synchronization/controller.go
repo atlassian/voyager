@@ -512,6 +512,7 @@ func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta
 	return &notifications, true, nil
 }
 
+// getOpsgenieIntegrations attemps to get Opsgenie integrations from the opsgenie integration manager
 func (c *Controller) getOpsgenieIntegrations(metadata *creator_v1.OpsgenieMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
 	// Opsgenie is optional
 	if metadata == nil {
