@@ -3,10 +3,10 @@ package edge
 import (
 	"encoding/json"
 
-	smith "github.com/atlassian/smith/pkg/apis/smith/v1"
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
 	orchestration "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	wiring "github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	"github.com/pkg/errors"
@@ -26,43 +26,48 @@ func New() *WiringPlugin {
 	return &WiringPlugin{}
 }
 
-func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wiring.WiringContext) (result *wiring.WiringResult, retriable bool, err error) {
+func (p *WiringPlugin) WireUp(resource *orchestration.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if resource.Type != ResourceType {
-		err = errors.Errorf("invalid resource type: %q", resource.Type)
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
 	}
 
 	serviceInstance, err := osb.ConstructServiceInstance(resource, serviceID, planID)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	instanceParameters, err := instanceParameters(resource, context)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	serviceInstance.Spec.Parameters = &runtime.RawExtension{
 		Raw: instanceParameters,
 	}
 
-	serviceInstanceResource := smith.Resource{
-		Name: wiringutil.ServiceInstanceResourceName(resource.Name),
-		Spec: smith.ResourceSpec{
-			Object: serviceInstance,
-		},
-	}
-
-	result = &wiring.WiringResult{
-		Contract: wiring.ResourceContract{
+	return &wiringplugin.WiringResultSuccess{
+		Contract: wiringplugin.ResourceContract{
 			Shapes: nil, // Nothing will depend on GlobalEdge
 		},
-		Resources: []smith.Resource{serviceInstanceResource},
+		Resources: []smith_v1.Resource{
+			{
+				Name:       wiringutil.ServiceInstanceResourceName(resource.Name),
+				References: nil,
+				Spec: smith_v1.ResourceSpec{
+					Object: serviceInstance,
+				},
+			},
+		},
 	}
-	return result, false, nil
 }
 
-func instanceParameters(resource *orchestration.StateResource, context *wiring.WiringContext) ([]byte, error) {
+func instanceParameters(resource *orchestration.StateResource, context *wiringplugin.WiringContext) ([]byte, error) {
 	if resource.Spec == nil {
 		return nil, errors.New("empty spec is not allowed")
 	}
@@ -87,16 +92,16 @@ func instanceParameters(resource *orchestration.StateResource, context *wiring.W
 	return json.Marshal(parameters)
 }
 
-func specToParameters(spec *Spec, context *wiring.WiringContext) *OSBInstanceParameters {
+func specToParameters(spec *Spec, context *wiringplugin.WiringContext) *OSBInstanceParameters {
 	attributes := OSBAttributes{
 		UpstreamAddress: convertUpstreamAddresses(spec.UpstreamAddresses),
-		UpstreamPort: spec.UpstreamPort,
-		UpstreamSuffix: spec.UpstreamSuffix,
-		UpstreamOnly: spec.UpstreamOnly,
-		Domain: spec.Domains,
-		Healthcheck: spec.Healthcheck,
-		Rewrite: spec.Rewrite,
-		Routes: convertRoutes(spec.Routes),
+		UpstreamPort:    spec.UpstreamPort,
+		UpstreamSuffix:  spec.UpstreamSuffix,
+		UpstreamOnly:    spec.UpstreamOnly,
+		Domain:          spec.Domains,
+		Healthcheck:     spec.Healthcheck,
+		Rewrite:         spec.Rewrite,
+		Routes:          convertRoutes(spec.Routes),
 	}
 
 	return &OSBInstanceParameters{
@@ -112,7 +117,7 @@ func convertUpstreamAddresses(addresses []UpstreamAddress) []OSBUpstreamAddress 
 	for _, address := range addresses {
 		osbAddress := OSBUpstreamAddress{
 			Address: address.Address,
-			Region: address.Region,
+			Region:  address.Region,
 		}
 		osbAddresses = append(osbAddresses, osbAddress)
 	}
@@ -125,12 +130,12 @@ func convertRoutes(routes []Route) []OSBRoute {
 		osbRoute := OSBRoute{
 			Match: OSBRouteMatch{
 				Prefix: route.Match.Prefix,
-				Regex: route.Match.Regex,
-				Path: route.Match.Path,
-				Host: route.Match.Host,
+				Regex:  route.Match.Regex,
+				Path:   route.Match.Path,
+				Host:   route.Match.Host,
 			},
 			Route: OSBRouteAction{
-				Cluster: route.Route.Cluster,
+				Cluster:       route.Route.Cluster,
 				PrefixRewrite: route.Route.PrefixRewrite,
 			},
 		}

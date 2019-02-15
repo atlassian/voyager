@@ -6,13 +6,13 @@ import "github.com/atlassian/voyager"
 
 type Spec struct {
 	UpstreamAddresses []UpstreamAddress `json:"upstreamAddresses"`
-	UpstreamPort    int32                `json:"upstreamPort,omitempty"`
-	UpstreamSuffix  string               `json:"upstreamSuffix,omitempty"`
-	UpstreamOnly    string               `json:"upstreamOnly,omitempty"`
-	Domains          []string             `json:"domains,omitempty"`
-	Healthcheck     string               `json:"healthcheck,omitempty"`
-	Rewrite         string               `json:"rewrite,omitempty"`
-	Routes          []Route              `json:"routes,omitempty"`
+	UpstreamPort      int32             `json:"upstreamPort,omitempty"`
+	UpstreamSuffix    string            `json:"upstreamSuffix,omitempty"`
+	UpstreamOnly      string            `json:"upstreamOnly,omitempty"`
+	Domains           []string          `json:"domains,omitempty"`
+	Healthcheck       string            `json:"healthcheck,omitempty"`
+	Rewrite           string            `json:"rewrite,omitempty"`
+	Routes            []Route           `json:"routes,omitempty"`
 }
 
 type UpstreamAddress struct {
