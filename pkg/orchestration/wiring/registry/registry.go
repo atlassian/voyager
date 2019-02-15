@@ -44,7 +44,7 @@ func KnownWiringPlugins(
 		sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
 		asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
 		apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
-    saml.ResourceType:           wiringutil.StatusAdapter(saml.New().WireUp),
+		saml.ResourceType:           wiringutil.StatusAdapter(saml.New().WireUp),
 		edge.ResourceType:           wiringutil.StatusAdapter(edge.New().WireUp),
 	}
 }
