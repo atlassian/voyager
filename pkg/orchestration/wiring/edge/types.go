@@ -40,45 +40,45 @@ type RouteAction struct {
 
 // OSB parameters
 
-type OSBInstanceParameters struct {
+type osbInstanceParameters struct {
 	ServiceName voyager.ServiceName   `json:"serviceName"`
-	Resource    OSBResourceParameters `json:"resource"`
+	Resource    osbResourceParameters `json:"resource"`
 }
 
-type OSBResourceParameters struct {
-	Attributes OSBAttributes `json:"attributes"`
+type osbResourceParameters struct {
+	Attributes osbAttributes `json:"attributes"`
 }
 
-type OSBAttributes struct {
-	UpstreamAddress []OSBUpstreamAddress `json:"upstream_address"`
+type osbAttributes struct {
+	UpstreamAddress []osbUpstreamAddress `json:"upstream_address"`
 	UpstreamPort    int32                `json:"upstream_port,omitempty"`
 	UpstreamSuffix  string               `json:"upstream_suffix,omitempty"`
 	UpstreamOnly    string               `json:"upstream_only,omitempty"`
 	Domain          []string             `json:"domain,omitempty"`
 	Healthcheck     string               `json:"healthcheck,omitempty"`
 	Rewrite         string               `json:"rewrite,omitempty"`
-	Routes          []OSBRoute           `json:"routes,omitempty"`
+	Routes          []osbRoute           `json:"routes,omitempty"`
 }
 
-type OSBUpstreamAddress struct {
+type osbUpstreamAddress struct {
 	Address string         `json:"address"`
 	Region  voyager.Region `json:"region,omitempty"`
 }
 
-type OSBRoute struct {
-	Match    OSBRouteMatch  `json:"match,omitempty"`
-	Route    OSBRouteAction `json:"route,omitempty"`
+type osbRoute struct {
+	Match    osbRouteMatch  `json:"match,omitempty"`
+	Route    osbRouteAction `json:"route,omitempty"`
 	Redirect string         `json:"redirect,omitempty"`
 }
 
-type OSBRouteMatch struct {
+type osbRouteMatch struct {
 	Prefix string `json:"prefix,omitempty"`
 	Regex  string `json:"regex,omitempty"`
 	Path   string `json:"path,omitempty"`
 	Host   string `json:"host,omitempty"`
 }
 
-type OSBRouteAction struct {
+type osbRouteAction struct {
 	Cluster       string `json:"cluster"`
 	PrefixRewrite string `json:"prefix_rewrite,omitempty"`
 }
