@@ -412,7 +412,7 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 		tags[k] = v
 	}
 
-	notifications, retriable, err := c.buildNotifications(logger, serviceData.Spec)
+	notifications, retriable, err := c.buildNotifications(serviceData.Spec)
 	if err != nil {
 		return retriable, err
 	}
@@ -467,7 +467,7 @@ func (c *Controller) getServiceData(user auth.OptionalUser, name voyager.Service
 	return c.ServiceCentral.GetService(context.Background(), user, servicecentral.ServiceName(name))
 }
 
-func (c *Controller) buildNotifications(logger *zap.Logger, spec creator_v1.ServiceSpec) (*orch_meta.Notifications, bool /* retriable */, error) {
+func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta.Notifications, bool /* retriable */, error) {
 	// Default pagerduty values re-used from Micros config.js
 	notifications := orch_meta.Notifications{
 		Email: spec.EmailAddress(),
@@ -499,18 +499,26 @@ func (c *Controller) buildNotifications(logger *zap.Logger, spec creator_v1.Serv
 		notifications.PagerdutyEndpoint = *mainPD
 		notifications.LowPriorityPagerdutyEndpoint = *lowPriPD
 	}
-	integrations, retriable, err := c.getOpsgenieIntegrations(spec.Metadata.Opsgenie)
+
+	ogInts, retriable, err := c.buildOpsgenieNotifications(spec.Metadata)
 	if err != nil {
-		return nil, retriable, errors.Wrap(err, "failed to create opsgenie notifications")
+		return nil, retriable, err
 	}
-	ogNotifications, err := buildOpsgenieNotifications(integrations, c.ClusterLocation.EnvType)
-	if err != nil {
-		logger.Error("failed to build Opsgenie Notifications")
-	} else {
-		notifications.OpsgenieIntegrations = ogNotifications
-	}
+	notifications.OpsgenieIntegrations = ogInts
 
 	return &notifications, true, nil
+}
+
+func (c *Controller) buildOpsgenieNotifications(metadata creator_v1.ServiceMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
+	ogInts, retriable, err := c.getOpsgenieIntegrations(metadata.Opsgenie)
+	if err != nil {
+		return nil, retriable, errors.Wrap(err, "failed to get Opsgenie notifications")
+	}
+	envOgInts, err := filterOpsgenieIntegrationsByEnv(ogInts, c.ClusterLocation.EnvType)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to build Opsgenie notifications")
+	}
+	return envOgInts, true, nil
 }
 
 // getOpsgenieIntegrations attempts to get Opsgenie integrations from the opsgenie integration manager
@@ -697,8 +705,8 @@ func pagerDutyForEnvType(pagerduty *creator_v1.PagerDutyMetadata, envType voyage
 	}
 }
 
-// buildOpsgenieNotifications filters a given list of integrations by the EnvType
-func buildOpsgenieNotifications(integrations []opsgenie.Integration, envType voyager.EnvType) ([]opsgenie.Integration, error) {
+// filterOpsgenieIntegrationsByEnv filters a given list of integrations by the EnvType
+func filterOpsgenieIntegrationsByEnv(integrations []opsgenie.Integration, envType voyager.EnvType) ([]opsgenie.Integration, error) {
 	if len(integrations) == 0 {
 		return nil, nil // Not an error as Opsgenie is optional
 	}
