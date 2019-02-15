@@ -55,7 +55,9 @@ const (
 	// see https://github.com/jtblin/kube2iam#namespace-restrictions
 	allowedRolesAnnotation = "iam.amazonaws.com/allowed-roles"
 
-	maxSyncWorkers = 10
+	maxSyncWorkers             = 10
+	defaultPagerdutyGeneric    = "5d11612f25b840faaf77422edeff9c76"
+	defaultPagerdutyCloudwatch = "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/124e0f010f214a9b9f30b768e7b18e69"
 )
 
 const (
@@ -465,17 +467,17 @@ func (c *Controller) getServiceData(user auth.OptionalUser, name voyager.Service
 	return c.ServiceCentral.GetService(context.Background(), user, servicecentral.ServiceName(name))
 }
 
-func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta.Notifications, bool /* retriable */, error) {
+func (c *Controller) buildNotifications(logger *zap.Logger, spec creator_v1.ServiceSpec) (*orch_meta.Notifications, bool /* retriable */, error) {
 	// Default pagerduty values re-used from Micros config.js
 	notifications := orch_meta.Notifications{
 		Email: spec.EmailAddress(),
 		PagerdutyEndpoint: orch_meta.PagerDuty{
-			Generic:    "5d11612f25b840faaf77422edeff9c76",
-			CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/124e0f010f214a9b9f30b768e7b18e69",
+			Generic:    defaultPagerdutyGeneric,
+			CloudWatch: defaultPagerdutyCloudwatch,
 		},
 		LowPriorityPagerdutyEndpoint: orch_meta.PagerDuty{
-			Generic:    "5d11612f25b840faaf77422edeff9c76",
-			CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/124e0f010f214a9b9f30b768e7b18e69",
+			Generic:    defaultPagerdutyGeneric,
+			CloudWatch: defaultPagerdutyCloudwatch,
 		},
 	}
 
