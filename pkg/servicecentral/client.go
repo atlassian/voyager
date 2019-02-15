@@ -301,7 +301,7 @@ func (c *Client) GetService(ctx context.Context, user auth.OptionalUser, service
 		return nil, errors.Wrap(err, "failed to get attributes for service")
 	}
 
-	service.Attributes = resp.Attributes
+	service.Attributes = resp
 
 	return service, nil
 }
@@ -338,8 +338,8 @@ func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID 
 }
 
 // GetServiceAttributes queries service central for the attributes of a given service. Can return an empty array if no attributes were found
-func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) (ServiceAttributeResponse, error) {
-	var svcAttrResp ServiceAttributeResponse
+func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]ServiceAttribute, error) {
+	var svcAttrResp []ServiceAttribute
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),

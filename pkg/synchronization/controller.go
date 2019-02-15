@@ -410,7 +410,7 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 		tags[k] = v
 	}
 
-	notifications, retriable, err := c.buildNotifications(serviceData.Spec)
+	notifications, retriable, err := c.buildNotifications(logger, serviceData.Spec)
 	if err != nil {
 		return retriable, err
 	}
@@ -505,14 +505,16 @@ func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta
 		return nil, retriable, errors.Wrap(err, "failed to create opsgenie notifications")
 	}
 	ogNotifications, err := buildOpsgenieNotifications(integrations, c.ClusterLocation.EnvType)
-	if err == nil {
+	if err != nil {
+		logger.Error("failed to build Opsgenie Notifications")
+	} else {
 		notifications.OpsgenieIntegrations = ogNotifications
 	}
 
 	return &notifications, true, nil
 }
 
-// getOpsgenieIntegrations attemps to get Opsgenie integrations from the opsgenie integration manager
+// getOpsgenieIntegrations attempts to get Opsgenie integrations from the opsgenie integration manager
 func (c *Controller) getOpsgenieIntegrations(metadata *creator_v1.OpsgenieMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
 	// Opsgenie is optional
 	if metadata == nil {

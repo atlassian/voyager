@@ -43,10 +43,6 @@ type ServiceDataRead struct {
 	Compliance *ServiceComplianceConf `json:"compliance,omitempty"`
 }
 
-type ServiceAttributeResponse struct {
-	Attributes []ServiceAttribute
-}
-
 type ServiceAttribute struct {
 	ID         int                     `json:"id"`
 	Service    ServiceAttributeService `json:"service"`
