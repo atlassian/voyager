@@ -73,31 +73,17 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		},
 	}
 
-	shapes, external, retriable, err := instanceShapes(&smithResource)
-	if err != nil {
-		return &wiringplugin.WiringResultFailure{
-			Error:            err,
-			IsExternalError:  external,
-			IsRetriableError: retriable,
-		}
-	}
-
 	return &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
-			Shapes: shapes,
+			Shapes: []wiringplugin.Shape{
+				knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
+					"SAML_IDP_METADATA_URL": "data.saml_idp_metadata_url",
+					"IDP_METADATA_URL":      "data.idp_metadata_url",
+				}, true),
+			},
 		},
 		Resources: []smith_v1.Resource{smithResource},
 	}
-}
-
-func instanceShapes(smithResource *smith_v1.Resource) ([]wiringplugin.Shape, bool, bool, error) {
-	bindableEnvVarShape := knownshapes.NewBindableEnvironmentVariablesWithExcludeResourceName(smithResource.Name, ResourcePrefix, map[string]string{
-		"SAML_IDP_METADATA_URL": "data.saml_idp_metadata_url",
-		"IDP_METADATA_URL":      "data.idp_metadata_url",
-	}, true)
-	return []wiringplugin.Shape{
-		bindableEnvVarShape,
-	}, false, false, nil
 }
 
 func instanceParameters(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) ([]byte, bool /* externalErr */, bool /* retriable */, error) {
