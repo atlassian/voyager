@@ -29,32 +29,28 @@ spec:
   - type: PlatformDNS
     name: i11
     spec:
-      aliases:
-        - type: Simple
-          name: foo11.staging.atl-paas.net
+      type: Simple
+      name: foo11.staging.atl-paas.net
     dependsOn:
       - ingress1
   - type: PlatformDNS
     name: i12
     spec:
-      aliases:
-        - type: Simple
-          name: foo12.staging.atl-paas.net
+      type: Simple
+      name: foo12.staging.atl-paas.net
     dependsOn:
       - ingress1
   - type: PlatformDNS
     name: i21
     spec:
-      aliases:
-        - type: Simple
-          name: foo21.staging.atl-paas.net
+      type: Simple
+      name: foo21.staging.atl-paas.net
     dependsOn:
       - ingress2
   - type: PlatformDNS
     name: i22
     spec:
-      aliases:
-        - type: Simple
-          name: foo22.staging.atl-paas.net
+      type: Simple
+      name: foo22.staging.atl-paas.net
     dependsOn:
       - ingress2

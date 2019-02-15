@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/k8s"
+	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -69,11 +70,10 @@ func TestMicrosAdmitFunc(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := MicrosAdmitFunc(ctx, scStore, tc.admissionReview)
 			if (err != nil) != tc.wantErr {
-				t.Errorf("MicrosAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
-				return
+				require.Equal(t, tc.wantErr, err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("MicrosAdmitFunc() = %v, want %v", got, tc.want)
+				require.Equal(t, tc.want, got)
 			}
 		})
 	}

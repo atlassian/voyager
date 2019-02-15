@@ -46,12 +46,12 @@ const (
 	hpaPostfix              = "hpa"
 	bindingOutputRoleARNKey = "IAMRoleARN"
 
-	defaultPodDisruptionBudget = "30%"
-
 	// Default environment variable names
-	awsRegionKey   = "MICROS_AWS_REGION"
-	envTypeKey     = "MICROS_ENVTYPE"
-	serviceNameKey = "MICROS_SERVICE"
+	awsRegionKey     = "MICROS_AWS_REGION"
+	businessUnitKey  = "MICROS_BUSINESS_UNIT"
+	envTypeKey       = "MICROS_ENVTYPE"
+	resourceOwnerKey = "MICROS_RESOURCE_OWNER"
+	serviceNameKey   = "MICROS_SERVICE"
 )
 
 var (
@@ -99,29 +99,42 @@ func validateScaling(s Scaling) error {
 }
 
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool /*retriable*/, error) {
+func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if resource.Type != apik8scompute.ResourceType {
-		return nil, false, errors.Errorf("invalid resource type: %q", resource.Type)
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", resource.Type),
+		}
 	}
 
 	if err := compute.ValidateASAPDependencies(context); err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:           err,
+			IsExternalError: true,
+		}
 	}
 
 	// Parse spec and apply defaults
 	spec := &Spec{}
 	if err := resource.SpecIntoTyped(spec); err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	// Apply the defaults from the resource state
 	// Defaults are defined in the formation layer
 	if err := spec.ApplyDefaults(resource.Defaults); err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	if err := validateSpec(spec); err != nil {
-		return nil, false, err
+		// completely a user error
+		return &wiringplugin.WiringResultFailure{
+			Error:           err,
+			IsExternalError: true,
+		}
 	}
 	// Prepare environment variables
 	var envDefault []core_v1.EnvVar
@@ -134,10 +147,16 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	for _, dep := range context.Dependencies {
 		bindableEnvVarShape, found, err := knownshapes.FindBindableEnvironmentVariablesShape(dep.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			// this error is because the wiring return an invalid shape or had duplicate shapes - this is an internal error (code issue)
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 		if !found {
-			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape)
+			return &wiringplugin.WiringResultFailure{
+				Error:           errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dep.Name, knownshapes.BindableEnvironmentVariablesShape),
+				IsExternalError: true,
+			}
 		}
 
 		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
@@ -152,7 +171,10 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		// We also depend on BindableIamAccessible shape
 		bindableIamAccessibleShape, iamFound, err := knownshapes.FindBindableIamAccessibleShape(dep.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			// this error is because the wiring return an invalid shape or had duplicate shapes - this is an internal error (code issue)
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 		if iamFound {
 			var iamBindingResource smith_v1.Resource
@@ -179,12 +201,18 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	if len(resourceWithEnvVarBindings) > 0 {
 		secretRefs, envVars, err := compute.GenerateEnvVars(spec.RenameEnvVar, resourceWithEnvVarBindings)
 		if err != nil {
-			return nil, false, err
+			// any errors in generating environment variables is more likely to be a user error
+			return &wiringplugin.WiringResultFailure{
+				Error:           err,
+				IsExternalError: true,
+			}
 		}
 
 		secretResource, err := generateSecretResource(resource.Name, envVars, secretRefs)
 		if err != nil {
-			return nil, false, err
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 
 		secretRef := smith_v1.Reference{
@@ -209,7 +237,9 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
 			context.StateContext.ServiceName, false, resourcesWithIamAccessibleBindings, context, []string{}, buildKube2iamRoles(context))
 		if err != nil {
-			return nil, false, err
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 
 		iamPluginBindingSmithResource := iam.ServiceBinding(resource.Name, iamPluginInstanceSmithResource.Name)
@@ -283,7 +313,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
 	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(labelMap)
+	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
 	pdb := smith_v1.Resource{
 		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
 		Spec: smith_v1.ResourceSpec{
@@ -355,7 +385,7 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		smithResources = append(smithResources, hpa)
 	}
 
-	result := &wiringplugin.WiringResult{
+	return &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),
@@ -363,8 +393,6 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		},
 		Resources: smithResources,
 	}
-
-	return result, false, nil
 }
 
 func generateSecretResource(compute voyager.ResourceName, envVars map[string]string, dependencyReferences []smith_v1.Reference) (smith_v1.Resource, error) {
@@ -474,12 +502,20 @@ func buildDefaultEnvVars(context wiringplugin.StateContext) []core_v1.EnvVar {
 			Value: string(context.Location.Region),
 		},
 		{
+			Name:  businessUnitKey,
+			Value: context.ServiceProperties.BusinessUnit,
+		},
+		{
 			Name:  envTypeKey,
 			Value: string(context.Location.EnvType),
 		},
 		{
 			Name:  serviceNameKey,
 			Value: string(context.ServiceName),
+		},
+		{
+			Name:  resourceOwnerKey,
+			Value: context.ServiceProperties.ResourceOwner,
 		},
 	}
 }
@@ -514,7 +550,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
 	// the app to different zones, and then nodes (where possible)
 	podAffinityTerms := []core_v1.WeightedPodAffinityTerm{
-		core_v1.WeightedPodAffinityTerm{
+		{
 			Weight: 75,
 			PodAffinityTerm: core_v1.PodAffinityTerm{
 				LabelSelector: &meta_v1.LabelSelector{
@@ -523,7 +559,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 				TopologyKey: k8s.LabelZoneFailureDomain,
 			},
 		},
-		core_v1.WeightedPodAffinityTerm{
+		{
 			Weight: 50,
 			PodAffinityTerm: core_v1.PodAffinityTerm{
 				LabelSelector: &meta_v1.LabelSelector{
@@ -539,11 +575,22 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	}
 }
 
-func buildPodDisruptionBudgetSpec(labelMap map[string]string) policy_v1.PodDisruptionBudgetSpec {
+func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) policy_v1.PodDisruptionBudgetSpec {
+	// Make sure we can drain nodes if the minReplicas is < 3
+	var minAvailable string
+	switch minReplicas {
+	case 0, 1:
+		minAvailable = "0%"
+	case 2:
+		minAvailable = "50%"
+	default:
+		minAvailable = "66%"
+	}
+
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
 			Type:   intstr.String,
-			StrVal: defaultPodDisruptionBudget,
+			StrVal: minAvailable,
 		},
 		Selector: &meta_v1.LabelSelector{
 			MatchLabels: labelMap,

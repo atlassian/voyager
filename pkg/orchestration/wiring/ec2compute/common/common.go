@@ -47,7 +47,7 @@ const (
 type ConstructComputeParametersFunction func(
 	origSpec *runtime.RawExtension,
 	iamRoleRef, iamInstProfRef smith_v1.Reference,
-	microsServiceName string, stateContext wiringplugin.StateContext) (*runtime.RawExtension, error)
+	microsServiceName string, stateContext wiringplugin.StateContext) (*runtime.RawExtension, bool /* external */, bool /* retriable */, error)
 
 type StateComputeSpec struct {
 	RenameEnvVar map[string]string `json:"rename,omitempty"`
@@ -93,17 +93,15 @@ func calculateServiceName(serviceName voyager.ServiceName, resourceName voyager.
 	return microsServiceName, nil
 }
 
-func constructComputeSpec(spec *runtime.RawExtension) (StateComputeSpec, error) {
-	var computeSpec StateComputeSpec
-	err := json.Unmarshal(spec.Raw, &computeSpec)
-	return computeSpec, err
-}
-
-func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext, constructComputeParameters ConstructComputeParametersFunction) wiringplugin.WiringResult {
 	dependencies := context.Dependencies
 
 	if err := compute.ValidateASAPDependencies(context); err != nil {
-		return nil, false, err
+		// ASAP dependencies are wrong, user issue
+		return &wiringplugin.WiringResultFailure{
+			Error:           err,
+			IsExternalError: true,
+		}
 	}
 
 	// We shouldn't use ServiceName directly here, because we might deploy multiple ec2computes
@@ -111,7 +109,11 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	// NB Micros will blow up if this is moderately large.
 	microsServiceName, err := calculateServiceName(context.StateContext.ServiceName, stateResource.Name, microServiceNameInSpec)
 	if err != nil {
-		return nil, false, err
+		// Service Name invalid is because of spec issue
+		return &wiringplugin.WiringResultFailure{
+			IsExternalError: true,
+			Error:           err,
+		}
 	}
 
 	var bindingResources []smith_v1.Resource
@@ -122,10 +124,16 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	for _, dependency := range dependencies {
 		bindableEnvVarShape, envVarFound, err := knownshapes.FindBindableEnvironmentVariablesShape(dependency.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			// this error is because the wiring return an invalid shape or had duplicate shapes - this is an internal error (code issue)
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 		if !envVarFound {
-			return nil, false, errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dependency.Name, knownshapes.BindableEnvironmentVariablesShape)
+			return &wiringplugin.WiringResultFailure{
+				Error:           errors.Errorf("cannot depend on resource %q, only dependencies providing shape %q are supported", dependency.Name, knownshapes.BindableEnvironmentVariablesShape),
+				IsExternalError: true,
+			}
 		}
 
 		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
@@ -140,7 +148,11 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 		// We also depend on BindableIamAccessible shape
 		bindableIamAccessibleShape, iamFound, err := knownshapes.FindBindableIamAccessibleShape(dependency.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			// this error is because the wiring return an invalid shape or had duplicate shapes - this is an internal error (code issue)
+			return &wiringplugin.WiringResultFailure{
+				Error:           err,
+				IsExternalError: true,
+			}
 		}
 		if iamFound {
 			var iamBindingResource smith_v1.Resource
@@ -162,20 +174,30 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	}
 
 	var parametersFrom []sc_v1b1.ParametersFromSource
-	computeSpec, err := constructComputeSpec(stateResource.Spec)
+	var computeSpec StateComputeSpec
+	err = json.Unmarshal(stateResource.Spec.Raw, &computeSpec)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "resource spec could not be decoded as expected spec")
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Wrap(err, "resource spec could not be decoded as expected spec"),
+		}
 	}
 
 	if len(resourcesWithEnvVarBindings) > 0 {
 		secretRefs, envVars, err := compute.GenerateEnvVars(computeSpec.RenameEnvVar, resourcesWithEnvVarBindings)
 		if err != nil {
-			return nil, false, err
+			// This is more likely a user error due to renames as environment variables are namespaced
+			// per resource and resource type.
+			return &wiringplugin.WiringResultFailure{
+				Error:           err,
+				IsExternalError: true,
+			}
 		}
 
 		secretResource, err := generateSecretResource(stateResource.Name, envVars, secretRefs)
 		if err != nil {
-			return nil, false, err
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 
 		secretRef := smith_v1.Reference{
@@ -201,7 +223,9 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.EC2ComputeType, stateResource.Name,
 		voyager.ServiceName(microsServiceName), true, resourcesWithIamAccessibleBindings, context, managedPolicies, assumeRoles)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error: err,
+		}
 	}
 
 	iamPluginBindingSmithResource := iam.ServiceBinding(stateResource.Name, iamPluginInstanceSmithResource.Name)
@@ -222,9 +246,13 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	}
 	references = append(references, iamRoleRef, iamInstProfRef)
 
-	serviceInstanceSpec, err := constructComputeParameters(stateResource.Spec, iamRoleRef, iamInstProfRef, microsServiceName, context.StateContext)
+	serviceInstanceSpec, external, retriable, err := constructComputeParameters(stateResource.Spec, iamRoleRef, iamInstProfRef, microsServiceName, context.StateContext)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
 	}
 	computeResource := smith_v1.Resource{
 		Name:       wiringutil.ServiceInstanceResourceName(stateResource.Name),
@@ -253,10 +281,7 @@ func WireUp(microServiceNameInSpec, ec2ComputePlanName string, stateResource *or
 	// Wire Result
 	smithResources := append(bindingResources, iamPluginInstanceSmithResource, iamPluginBindingSmithResource, computeResource)
 
-	result := &wiringplugin.WiringResult{
+	return &wiringplugin.WiringResultSuccess{
 		Resources: smithResources,
 	}
-
-	return result, false, nil
-
 }

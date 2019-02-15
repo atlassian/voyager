@@ -13,9 +13,10 @@ const (
 )
 
 func LoadFileFromTestData(filename string) ([]byte, error) {
-	body, err := ioutil.ReadFile(filepath.Join(FixturesDir, filename))
+	fullname := filepath.Join(FixturesDir, filename)
+	body, err := ioutil.ReadFile(fullname)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrapf(err, "filed to read %s", fullname)
 	}
 
 	return body, nil
@@ -27,9 +28,9 @@ func LoadIntoStructFromTestData(filename string, obj interface{}) error {
 		return errors.WithStack(err)
 	}
 
-	err = yaml.Unmarshal(body, obj)
+	err = yaml.UnmarshalStrict(body, obj)
 	if err != nil {
-		return errors.WithStack(err)
+		return errors.Wrapf(err, "failed to parse YAML from %s", filename)
 	}
 
 	return nil

@@ -52,7 +52,7 @@ func ReadConfig(configFile string) (Config, error) {
 		return config, err
 	}
 
-	err = yaml.Unmarshal(doc, &config)
+	err = yaml.UnmarshalStrict(doc, &config)
 
 	return config, err
 }

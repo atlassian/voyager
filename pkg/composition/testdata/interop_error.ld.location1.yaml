@@ -21,10 +21,8 @@ spec:
 status:
   conditions:
   - lastTransitionTime: 2018-07-11T08:49:10Z
-    lastUpdateTime: 2018-07-11T08:49:10Z
     status: "False"
     type: InProgress
   - lastTransitionTime: 2018-07-11T08:32:01Z
-    lastUpdateTime: null
     status: "False"
     type: Error

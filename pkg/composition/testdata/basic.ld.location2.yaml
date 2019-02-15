@@ -21,15 +21,12 @@ spec:
 status:
   conditions:
   - lastTransitionTime: 2018-06-27T07:18:49Z
-    lastUpdateTime: null
     status: "True"
     type: InProgress
   - lastTransitionTime: 2018-06-27T07:18:49Z
-    lastUpdateTime: 2018-06-27T07:18:49Z
     status: "False"
     type: Ready
   - lastTransitionTime: 2018-06-27T07:03:36Z
-    lastUpdateTime: 2018-06-27T07:18:49Z
     status: "True"
     type: Error
     reason: "Explosion"

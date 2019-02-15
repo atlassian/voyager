@@ -7,14 +7,15 @@ import (
 	"testing"
 
 	"github.com/atlassian/voyager/pkg/k8s"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
+	apiplatformdns "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/util/logz"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestInternalDNSAdmitFunc(t *testing.T) {
+func TestPlatformDNSAdmitFunc(t *testing.T) {
 	t.Parallel()
 	ctx := logz.CreateContextWithLogger(context.Background(), zap.NewNop())
 	microsServerMock := setupMicrosServerMock()
@@ -27,169 +28,52 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			"internaldns new.domain",
+			"platformdns new.domain",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new.domain",
-						},
-					},
+					AliasType: apiplatformdns.AliasTypeSimple,
+					Name:      "new.domain",
 				}),
 			),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
-			"internaldns multiple new.domain",
+			"platformdns registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new1.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new2.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new3.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new4.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new5.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new6.domain",
-						},
-					},
+					AliasType: apiplatformdns.AliasTypeSimple,
+					Name:      "doug.domain",
 				}),
 			),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
 			false,
 		},
 		{
-			"internaldns registered domain same user",
+			"platformdns registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "doug.domain",
-						},
-					},
-				}),
-			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
-			false,
-		},
-		{
-			"internaldns multiple with one registered domain same user",
-			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "doug.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new2.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new3.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new4.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new5.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new6.domain",
-						},
-					},
-				}),
-			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
-			false,
-		},
-		{
-			"internaldns registered domain different user",
-			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "elsie.domain",
-						},
-					},
+					AliasType: apiplatformdns.AliasTypeSimple,
+					Name:      "elsie.domain",
 				}),
 			),
 			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
 			false,
 		},
 		{
-			"internaldns multiple with one registered domain different user",
-			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "elsie.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new2.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new3.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new4.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new5.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new6.domain",
-						},
-					},
-				}),
-			),
-			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
-			false,
-		},
-		{
-			"not internaldns create",
+			"not platformdns create",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested ServiceInstance is not "PlatformDNS" type`),
 			false,
 		},
 		{
-			"not internaldns update",
+			"not platformdns update",
 			buildAdmissionReview("", k8s.ServiceInstanceGVR, admissionv1beta1.Update, buildServiceInstance(
 				t, "otherClassExternalID", "otherPlanExternalID", apiplatformdns.Spec{}),
 			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, "requested ServiceInstance is not InternalDNS type"),
+			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested ServiceInstance is not "PlatformDNS" type`),
 			false,
 		},
 		{
@@ -253,12 +137,12 @@ func TestInternalDNSAdmitFunc(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := InternalDNSAdmitFunc(ctx, microsServerMock, serviceCentralMock, tc.admissionReview)
+			got, err := PlatformDNSAdmitFunc(ctx, microsServerMock, serviceCentralMock, tc.admissionReview)
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("InternalDNSAdmitFunc() error = %v, wantErr %v", err, tc.wantErr)
+				require.Equal(t, tc.wantErr, err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("InternalDNSAdmitFunc() = %v, want %v", got, tc.want)
+				require.Equal(t, tc.want, got)
 			}
 		})
 	}

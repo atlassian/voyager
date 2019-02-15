@@ -7,7 +7,6 @@ import (
 	orchClientset "github.com/atlassian/voyager/pkg/orchestration/client"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -18,9 +17,7 @@ func StateInformer(client orchClientset.Interface, namespace string, resyncPerio
 			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
 				return states.List(options)
 			},
-			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
-				return states.Watch(options)
-			},
+			WatchFunc: states.Watch,
 		},
 		&orch_v1.State{},
 		resyncPeriod,

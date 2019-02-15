@@ -26,7 +26,7 @@ func FindSecret(namespace, name string, list []runtime.Object) *core_v1.Secret {
 func FindServiceInstance(binding *sc_v1b1.ServiceBinding, list []runtime.Object) *sc_v1b1.ServiceInstance {
 	for _, obj := range list {
 		serviceInstance, ok := obj.(*sc_v1b1.ServiceInstance)
-		if ok && serviceInstance.Namespace == binding.Namespace && serviceInstance.Name == binding.Spec.ServiceInstanceRef.Name {
+		if ok && serviceInstance.Namespace == binding.Namespace && serviceInstance.Name == binding.Spec.InstanceRef.Name {
 			return serviceInstance
 		}
 	}

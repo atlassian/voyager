@@ -165,15 +165,12 @@ spec:
 status:
   conditions:
   - lastTransitionTime: 2018-06-27T07:18:49Z
-    lastUpdateTime: 2018-06-27T07:18:49Z
     status: "False"
     type: InProgress
   - lastTransitionTime: 2018-06-27T07:18:49Z
-    lastUpdateTime: 2018-06-27T07:18:49Z
     status: "True"
     type: Ready
   - lastTransitionTime: null
-    lastUpdateTime: null
     status: "False"
     type: Error
   pluginStatuses:
@@ -190,109 +187,85 @@ status:
   resourceStatuses:
   - conditions:
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Blocked
     - lastTransitionTime: 2018-06-27T07:03:52Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:03:52Z
-      lastUpdateTime: null
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: basic-sqs--instance
   - conditions:
     - lastTransitionTime: 2018-06-27T07:03:52Z
-      lastUpdateTime: null
       status: "False"
       type: Blocked
     - lastTransitionTime: 2018-06-27T07:03:53Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:03:53Z
-      lastUpdateTime: null
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: showenv--basic-sqs--binding
   - conditions:
     - lastTransitionTime: 2018-06-27T07:03:53Z
-      lastUpdateTime: null
       status: "False"
       type: Blocked
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:03:53Z
-      lastUpdateTime: null
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: showenv--secretenvvar
   - conditions:
     - lastTransitionTime: 2018-06-27T07:03:53Z
-      lastUpdateTime: null
       status: "False"
       type: Blocked
     - lastTransitionTime: 2018-06-27T07:08:04Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:08:04Z
-      lastUpdateTime: null
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: showenv---iamrole
   - conditions:
     - lastTransitionTime: 2018-06-27T07:08:04Z
-      lastUpdateTime: null
       status: "False"
       type: Blocked
     - lastTransitionTime: 2018-06-27T07:08:04Z
-      lastUpdateTime: null
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:08:04Z
-      lastUpdateTime: null
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: showenv---iamrole-binding
   - conditions:
     - lastTransitionTime: 2018-06-27T07:08:04Z
-      lastUpdateTime: null
       status: "False"
       type: Blocked
     - lastTransitionTime: 2018-06-27T07:18:49Z
-      lastUpdateTime: 2018-06-27T07:18:49Z
       status: "False"
       type: InProgress
     - lastTransitionTime: 2018-06-27T07:18:49Z
-      lastUpdateTime: 2018-06-27T07:18:49Z
       status: "True"
       type: Ready
     - lastTransitionTime: 2018-06-27T07:03:36Z
-      lastUpdateTime: null
       status: "False"
       type: Error
     name: showenv--instance

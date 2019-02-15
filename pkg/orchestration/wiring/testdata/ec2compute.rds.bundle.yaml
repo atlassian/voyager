@@ -65,18 +65,15 @@ spec:
               MicrosVpcId: vpc-1
   - name: db--instance
     references:
-    - example: myownrds
-      name: rds--instance-metadata-name
-      path: metadata.name
-      resource: rds--instance
+    - resource: rds--instance
     spec:
       object:
         apiVersion: servicecatalog.k8s.io/v1beta1
         kind: ServiceInstance
         metadata:
-          name: db
           annotations:
             smith.atlassian.com/deletionDelay: 168h0m0s
+          name: db
         spec:
           clusterServiceClassExternalID: 8e14a988-0532-49ed-a6cd-31fa0c0fb2a8
           clusterServicePlanExternalID: 10aa2cb5-897d-43f6-b0df-ac4f8a2a758e
@@ -86,7 +83,7 @@ spec:
               env: microstestenv
             resource_name: db
             shareddb:
-              resource: '!{rds--instance-metadata-name}'
+              resource: rds
               service: test-servicename
   - name: compute--db--binding
     references:
@@ -150,15 +147,15 @@ spec:
           jsondata:
             ec2ComputeEnvVars:
               secretEnvVars:
-                PG_DB_HOST: "!{compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}"
-                PG_DB_PASSWORD: "!{compute--db--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}"
-                PG_DB_PORT: "!{compute--db--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}"
-                PG_DB_READPASSWORD: "!{compute--db--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}"
-                PG_DB_READROLE: "!{compute--db--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}"
-                PG_DB_READURL: "!{compute--db--binding-e930af844b37ad97808978a6444baa240e919b44}"
-                PG_DB_ROLE: "!{compute--db--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}"
-                PG_DB_SCHEMA: "!{compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57}"
-                PG_DB_URL: "!{compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716}"
+                PG_DB_HOST: '!{compute--db--binding-ffe7a9126d677d906a73fd41af11fd7e3cf58951}'
+                PG_DB_PASSWORD: '!{compute--db--binding-cf140bb8ad1c5cd858f6472c83f488e3614272fe}'
+                PG_DB_PORT: '!{compute--db--binding-4b244f0b12cef0a53efa81dabd78e9c74aab9d91}'
+                PG_DB_READPASSWORD: '!{compute--db--binding-7e91398c86df8189956dcf03a6bbc2474198bfcc}'
+                PG_DB_READROLE: '!{compute--db--binding-610aca4465918ad4a3ef9b7037cb31156edc494a}'
+                PG_DB_READURL: '!{compute--db--binding-e930af844b37ad97808978a6444baa240e919b44}'
+                PG_DB_ROLE: '!{compute--db--binding-41658bbfa4feee7ecf1eb388621d75eabd3e452d}'
+                PG_DB_SCHEMA: '!{compute--db--binding-d7d5e3462d005fab392535635e72832ee729af57}'
+                PG_DB_URL: '!{compute--db--binding-bbd4c344737100681d027423de8a6fe57d81b716}'
   - name: compute---iamrole
     spec:
       plugin:
@@ -173,17 +170,18 @@ spec:
           - arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
+          policySnippets: {}
           serviceEnvironment:
-            notificationEmail: an_owner@example.com
             alarmEndpoints:
-            - consumer: "pagerduty"
-              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
-              priority: "high"
-              type: "CloudWatch"
-            - consumer: "pagerduty"
-              endpoint: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312"
-              priority: "low"
-              type: "CloudWatch"
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
+            notificationEmail: an_owner@example.com
             primaryVpcEnvironment:
               appSubnets:
               - subnet-1
@@ -206,7 +204,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename-compute
-          policySnippets: {}
   - name: compute---iamrole-binding
     references:
     - name: compute---iamrole-metadata-name
@@ -247,6 +244,15 @@ spec:
           clusterServiceClassExternalName: micros
           clusterServicePlanExternalName: v2
           parameters:
+            alarmEndpoints:
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: high
+              type: CloudWatch
+            - consumer: pagerduty
+              endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
+              priority: low
+              type: CloudWatch
             autoScalingGroup:
               maxSize: 2
               minSize: 1
@@ -270,15 +276,6 @@ spec:
               envType: testenv
               region: testregion
             meaninglesskey: used as an example
-            alarmEndpoints:
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: high
-                type: CloudWatch
-              - consumer: pagerduty
-                endpoint: https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312
-                priority: low
-                type: CloudWatch
             notifications:
               email: notification@email.com
             service:

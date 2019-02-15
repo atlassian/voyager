@@ -66,7 +66,7 @@ func ConstructBinding(bindingName, namespace, secretName, instanceRefName string
 		},
 		Spec: sc_v1b1.ServiceBindingSpec{
 			SecretName: secretName,
-			ServiceInstanceRef: sc_v1b1.LocalObjectReference{
+			InstanceRef: sc_v1b1.LocalObjectReference{
 				Name: instanceRefName,
 			},
 		},

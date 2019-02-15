@@ -49,7 +49,7 @@ func NewCreator(logger *zap.Logger, client Client) *Creator {
 
 func (c *Creator) FindOrCreateService(ctx context.Context, meta *ServiceMetadata) (*BasicServiceData, error) {
 	data := meta.toServiceData(voyagerPlatform, []ServiceACL{
-		ServiceACL{
+		{
 			Environments: defaultACLEnvironment,
 			StaffIDGroup: defaultACLStaffIDGroup,
 		},

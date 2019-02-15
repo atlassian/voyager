@@ -10,7 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,9 +43,11 @@ type partialSqsAttributes struct {
 // exposing too much. This is a separate function - for the moment - because
 // it needs to understand how to wire the dependencies, which is atypical
 // for aws-osb-provider resources.
-func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) (*wiringplugin.WiringResult, bool, error) {
+func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if stateResource.Type != ResourceType {
-		return nil, false, errors.Errorf("invalid resource type: %q", stateResource.Type)
+		return &wiringplugin.WiringResultFailure{
+			Error: errors.Errorf("invalid resource type: %q", stateResource.Type),
+		}
 	}
 
 	var wiredResources []smith_v1.Resource
@@ -55,10 +57,16 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 	for _, dependency := range context.Dependencies {
 		snsShape, found, err := knownshapes.FindSnsSubscribableShape(dependency.Contract.Shapes)
 		if err != nil {
-			return nil, false, err
+			return &wiringplugin.WiringResultFailure{
+				Error: err,
+			}
 		}
 		if !found {
-			return nil, false, errors.Errorf("sqs is allowed to depend only on sns resource, but SnsSubscribableShape was not found in %q", dependency.Name)
+			// user error caused by invalid specified dependency
+			return &wiringplugin.WiringResultFailure{
+				Error:           errors.Errorf("sqs is allowed to depend only on sns resource, but SnsSubscribableShape was not found in %q", dependency.Name),
+				IsExternalError: true,
+			}
 		}
 		resourceRef := snsShape.Data.ServiceInstanceName
 		serviceBinding := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceRef)
@@ -73,9 +81,13 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		})
 	}
 
-	serviceInstance, err := constructServiceInstance(stateResource, context, references, snsSubscriptions)
+	serviceInstance, external, retriable, err := constructServiceInstance(stateResource, context, references, snsSubscriptions)
 	if err != nil {
-		return nil, false, err
+		return &wiringplugin.WiringResultFailure{
+			Error:            err,
+			IsExternalError:  external,
+			IsRetriableError: retriable,
+		}
 	}
 	wiredResources = append(wiredResources, serviceInstance)
 
@@ -86,7 +98,9 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		}
 		err := json.Unmarshal(stateResource.Spec.Raw, &spec)
 		if err != nil {
-			return nil, false, errors.WithStack(err)
+			return &wiringplugin.WiringResultFailure{
+				Error: errors.WithStack(err),
+			}
 		}
 		hasDeadLetterQueue = spec.MaxReceiveCount > 0
 	}
@@ -102,7 +116,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		envVars["DEAD_QUEUE_NAME"] = "data.dead-queue-name"
 		envVars["DEAD_QUEUE_ARN"] = "data.dead-queue-arn"
 	}
-	result := &wiringplugin.WiringResult{
+	return &wiringplugin.WiringResultSuccess{
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewBindableEnvironmentVariables(serviceInstance.Name, ResourcePrefix, envVars),
@@ -111,30 +125,28 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 		},
 		Resources: wiredResources,
 	}
-
-	return result, false, nil
 }
 
-func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, references []smith_v1.Reference, snsSubscriptions []snsSubscription) (smith_v1.Resource, error) {
-	instanceID, err := svccatentangler.InstanceID(resource.Spec)
+func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, references []smith_v1.Reference, snsSubscriptions []snsSubscription) (smith_v1.Resource, bool /* external */, bool /* retriable */, error) {
+	instanceID, err := osb.InstanceID(resource.Spec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, false, false, err
 	}
 	serviceName := context.StateContext.ServiceName
 	userServiceName, err := oap.ServiceName(resource.Spec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, false, false, err
 	}
 	if userServiceName != "" {
 		serviceName = userServiceName
 	}
-	attributes, alarms, err := constructSqsAttributes(resource, snsSubscriptions)
+	attributes, alarms, external, retriable, err := constructSqsAttributes(resource, snsSubscriptions)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, external, retriable, err
 	}
 	resourceName, err := oap.ResourceName(resource.Spec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, false, false, err
 	}
 	if resourceName == "" {
 		resourceName = string(resource.Name)
@@ -159,7 +171,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	}
 	serviceInstanceSpecBytes, err := json.Marshal(&serviceInstanceSpec)
 	if err != nil {
-		return smith_v1.Resource{}, err
+		return smith_v1.Resource{}, false, false, err
 	}
 
 	return smith_v1.Resource{
@@ -186,19 +198,20 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 				},
 			},
 		},
-	}, nil
+	}, false, false, nil
 }
 
-func constructSqsAttributes(resource *orch_v1.StateResource, subscriptions []snsSubscription) (json.RawMessage /* attributes */, json.RawMessage /* alarms */, error) {
+func constructSqsAttributes(resource *orch_v1.StateResource, subscriptions []snsSubscription) (json.RawMessage /* attributes */, json.RawMessage /* alarms */, bool /* external */, bool /* retriable */, error) {
 	// The user shouldn't be setting anything in our 'partialSqsAttributes', since
 	// _we_ control it. So let's make sure they're not and fail ASAP.
 	if resource.Spec != nil {
 		var currentPartialSpec partialSqsAttributes
 		if err := json.Unmarshal(resource.Spec.Raw, &currentPartialSpec); err != nil {
-			return nil, nil, errors.Wrap(err, "can't unmarshal state spec into JSON object")
+			return nil, nil, false, false, errors.Wrap(err, "can't unmarshal state spec into JSON object")
 		}
 		if currentPartialSpec != (partialSqsAttributes{}) {
-			return nil, nil, errors.Errorf("at least one autowired value not empty: %+v", currentPartialSpec)
+			// user error caused by invalid spec
+			return nil, nil, true, false, errors.Errorf("at least one autowired value not empty: %+v", currentPartialSpec)
 		}
 	}
 
@@ -209,23 +222,23 @@ func constructSqsAttributes(resource *orch_v1.StateResource, subscriptions []sns
 			Subscriptions: &subscriptions,
 		})
 		if err != nil {
-			return nil, nil, errors.WithStack(err)
+			return nil, nil, false, false, errors.WithStack(err)
 		}
 	}
 
 	userSpec, err := oap.FilterAttributes(resource.Spec)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, false, err
 	}
 
 	alarms, err := oap.Alarms(resource.Spec)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, false, err
 	}
 
 	sqsAttributes, err := wiringutil.Merge(subscriptionSpec, userSpec)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, false, err
 	}
 
 	var attributes []byte
@@ -234,9 +247,9 @@ func constructSqsAttributes(resource *orch_v1.StateResource, subscriptions []sns
 	} else {
 		attributes, err = json.Marshal(sqsAttributes)
 		if err != nil {
-			return nil, nil, errors.WithStack(err)
+			return nil, nil, false, false, errors.WithStack(err)
 		}
 	}
 
-	return attributes, alarms, err
+	return attributes, alarms, false, false, nil
 }

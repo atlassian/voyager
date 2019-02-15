@@ -15,7 +15,6 @@ import (
 	"github.com/atlassian/smith/pkg/specchecker"
 	"github.com/atlassian/smith/pkg/store"
 	"github.com/atlassian/voyager"
-	"github.com/atlassian/voyager/pkg/apis/formation/v1"
 	form_v1 "github.com/atlassian/voyager/pkg/apis/formation/v1"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
 	formclient_fake "github.com/atlassian/voyager/pkg/formation/client/fake"
@@ -109,20 +108,21 @@ func TestFormationWithTestData(t *testing.T) {
 		})
 	}
 }
+
 func TestCreatesStateIncludesOwnerReference(t *testing.T) {
 	t.Parallel()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test-ld",
 			UID:       "some-uid",
 			Namespace: "parent-namespace",
 		},
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "bla",
 		},
 	}
@@ -163,17 +163,17 @@ func TestCreatesStateIncludesOwnerReference(t *testing.T) {
 func TestCreatesStatePassesConfigMapName(t *testing.T) {
 	t.Parallel()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test-ld",
 			UID:       "some-uid",
 			Namespace: "parent-namespace",
 		},
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "custom-config-map",
 		},
 	}
@@ -203,10 +203,10 @@ func TestCreatesStatePassesConfigMapName(t *testing.T) {
 func TestCreatesStateMissingConfigMapName(t *testing.T) {
 	t.Parallel()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test-ld",
@@ -230,7 +230,7 @@ func TestCreatesStateMissingConfigMapName(t *testing.T) {
 func TestCreatesStateConvertsResources(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -244,7 +244,7 @@ func TestCreatesStateConvertsResources(t *testing.T) {
 		{
 			Name: "resource-3",
 			Type: "type-3",
-			DependsOn: []v1.LocationDescriptorDependency{
+			DependsOn: []form_v1.LocationDescriptorDependency{
 				{
 					Name: "resource-1",
 					Attributes: map[string]interface{}{
@@ -303,7 +303,7 @@ func TestCreatesStateConvertsResources(t *testing.T) {
 func TestUpdatesExistingStateWithNewResources(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -319,8 +319,8 @@ func TestUpdatesExistingStateWithNewResources(t *testing.T) {
 	trueVar := true
 	existingState := &orch_v1.State{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:            "test-ld",
@@ -387,7 +387,7 @@ func TestUpdatesExistingStateWithNewResources(t *testing.T) {
 func TestLocationDescriptorParsingWithReleaseTemplating(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -438,7 +438,7 @@ func TestLocationDescriptorParsingWithReleaseTemplating(t *testing.T) {
 func TestLocationDescriptorWithReleaseTemplatingUsingInvalidKey(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -472,7 +472,7 @@ func TestLocationDescriptorWithReleaseTemplatingUsingInvalidKey(t *testing.T) {
 func TestLocationDescriptorErrorPropagation(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -524,7 +524,7 @@ func TestLocationDescriptorErrorPropagation(t *testing.T) {
 func TestProcessLocationDescriptorWithMultipleTemplatingErrorsReturnsErrorList(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -571,7 +571,7 @@ func TestProcessLocationDescriptorWithMultipleTemplatingErrorsReturnsErrorList(t
 func TestMissingConfigMapWithTemplatingKeysPresentErrorIsHandled(t *testing.T) {
 	t.Parallel()
 
-	ld := createLdWithResources([]v1.LocationDescriptorResource{
+	ld := createLdWithResources([]form_v1.LocationDescriptorResource{
 		{
 			Name: "resource-1",
 			Type: "type-1",
@@ -605,18 +605,18 @@ func TestMissingConfigMapWithTemplatingKeysPresentErrorIsHandled(t *testing.T) {
 func TestErrorOnStateUpdateWhenDifferentOwner(t *testing.T) {
 	t.Parallel()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-ld",
 		},
 		// spec doesn't matter for this test
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "cm1",
-			Resources: []v1.LocationDescriptorResource{
+			Resources: []form_v1.LocationDescriptorResource{
 				{
 					Name: "resource-1",
 					Type: "type-1",
@@ -628,8 +628,8 @@ func TestErrorOnStateUpdateWhenDifferentOwner(t *testing.T) {
 
 	existingState := &orch_v1.State{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:            "test-ld",
@@ -670,17 +670,17 @@ func TestErrorOnStateUpdateWhenDifferentOwner(t *testing.T) {
 func TestDoesNotSkipStateUpdateWhenFlaggedForDeletion(t *testing.T) {
 	t.Parallel()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-ld",
 		},
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "bla",
-			ConfigMapNames: v1.LocationDescriptorConfigMapNames{
+			ConfigMapNames: form_v1.LocationDescriptorConfigMapNames{
 				Release: "releases",
 			},
 		},
@@ -690,8 +690,8 @@ func TestDoesNotSkipStateUpdateWhenFlaggedForDeletion(t *testing.T) {
 	now := meta_v1.Now()
 	existingState := &orch_v1.State{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			DeletionTimestamp: &now,
@@ -800,17 +800,17 @@ func TestHandleProcessResultHasNoUpdate(t *testing.T) {
 func TestKubeComputeDefaults(t *testing.T) {
 	t.Parallel()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceAPIVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceAPIVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test-ld",
 			UID:       "some-uid",
 			Namespace: "parent-namespace",
 		},
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "bla",
 			Resources: []form_v1.LocationDescriptorResource{
 				{
@@ -858,18 +858,18 @@ func TestByReleaseConfigMapNameIndexConstructValidIndexKey(t *testing.T) {
 	ldNamespace := "somenamespace"
 	releaseConfigMapKey := "releases"
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test-ld",
 			Namespace: ldNamespace,
 		},
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "bla",
-			ConfigMapNames: v1.LocationDescriptorConfigMapNames{
+			ConfigMapNames: form_v1.LocationDescriptorConfigMapNames{
 				Release: releaseConfigMapKey,
 			},
 		},
@@ -886,17 +886,17 @@ func TestDeletedLocationDescriptorIsSkipped(t *testing.T) {
 	ldNamespace := "somenamespace"
 	now := meta_v1.Now()
 
-	ld := &v1.LocationDescriptor{
+	ld := &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:              "test-ld",
 			Namespace:         ldNamespace,
 			DeletionTimestamp: &now,
 		},
-		Spec: v1.LocationDescriptorSpec{},
+		Spec: form_v1.LocationDescriptorSpec{},
 	}
 
 	tc := testCase{
@@ -1066,20 +1066,20 @@ func makeReleasesConfigMap(ld *form_v1.LocationDescriptor) *core_v1.ConfigMap {
 	}
 }
 
-func createLdWithResources(ldResources []v1.LocationDescriptorResource) *form_v1.LocationDescriptor {
-	return &v1.LocationDescriptor{
+func createLdWithResources(ldResources []form_v1.LocationDescriptorResource) *form_v1.LocationDescriptor {
+	return &form_v1.LocationDescriptor{
 		TypeMeta: meta_v1.TypeMeta{
-			Kind:       v1.LocationDescriptorResourceKind,
-			APIVersion: v1.LocationDescriptorResourceVersion,
+			Kind:       form_v1.LocationDescriptorResourceKind,
+			APIVersion: form_v1.LocationDescriptorResourceVersion,
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test-ld",
 			Namespace: testConfigMapNamespace,
 		},
-		Spec: v1.LocationDescriptorSpec{
+		Spec: form_v1.LocationDescriptorSpec{
 			ConfigMapName: "cm1",
 			Resources:     ldResources,
-			ConfigMapNames: v1.LocationDescriptorConfigMapNames{
+			ConfigMapNames: form_v1.LocationDescriptorConfigMapNames{
 				Release: "foobarName",
 			},
 		},
@@ -1091,7 +1091,7 @@ type testCase struct {
 	orchClientObjects []runtime.Object
 	mainClientObjects []runtime.Object
 
-	ld          *v1.LocationDescriptor
+	ld          *form_v1.LocationDescriptor
 	releaseData *core_v1.ConfigMap
 
 	test func(*testing.T, *Controller, *ctrl.ProcessContext, *testCase)

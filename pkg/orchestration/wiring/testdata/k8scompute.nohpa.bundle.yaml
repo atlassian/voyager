@@ -67,34 +67,34 @@ spec:
       name: kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0
       path: data.queue-arn
       resource: kubecompute-simple--basic--binding
-    - name: kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
-      resource: kubecompute-simple--basic--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc
       path: data.queue-name
-      modifier: bindsecret
-    - name: kubecompute-simple--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
       resource: kubecompute-simple--basic--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05
       path: data.queue-url
-      modifier: bindsecret
-    - name: kubecompute-simple--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
       resource: kubecompute-simple--basic--binding
+    - modifier: bindsecret
+      name: kubecompute-simple--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6
       path: data.queue-region
-      modifier: bindsecret
+      resource: kubecompute-simple--basic--binding
     spec:
       plugin:
         name: secret
         objectName: kubecompute-simple--secret
         spec:
           data:
-            SQS_BASIC_QUEUE_ARN: "!{kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}"
+            SQS_BASIC_QUEUE_ARN: '!{kubecompute-simple--basic--binding-481179b920f1bdecafd42139c2c417c33e7ac2e0}'
+            SQS_BASIC_QUEUE_NAME: '!{kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}'
             SQS_BASIC_QUEUE_REGION: '!{kubecompute-simple--basic--binding-bd979d387fee1cee090264d63f71958e9e6117b6}'
             SQS_BASIC_QUEUE_URL: '!{kubecompute-simple--basic--binding-a3243498a5d79ce89916b41f35d62a3d46447e05}'
-            SQS_BASIC_QUEUE_NAME: "!{kubecompute-simple--basic--binding-9bb5777ce55d593549819fefa9c511c1b35c7ffc}"
   - name: kubecompute-simple---iamrole
     references:
-    - resource: kubecompute-simple--basic--binding
+    - modifier: bindsecret
       name: kubecompute-simple--basic--binding-iamrole
       path: data.IamPolicySnippet
-      modifier: bindsecret
+      resource: kubecompute-simple--basic--binding
     spec:
       plugin:
         name: iamrole
@@ -105,6 +105,8 @@ spec:
           - arn:aws:iam::test:role/controller-role-testregion.paas-test
           computeType: kubeCompute
           oapResourceName: kubecompute-simple-iamrole
+          policySnippets:
+            basic: '!{kubecompute-simple--basic--binding-iamrole}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty
@@ -138,8 +140,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
-          policySnippets:
-            basic: '!{kubecompute-simple--basic--binding-iamrole}'
   - name: kubecompute-simple---iamrole-binding
     references:
     - name: kubecompute-simple---iamrole-metadata-name
@@ -172,7 +172,7 @@ spec:
         metadata:
           name: kubecompute-simple--pdb
         spec:
-          minAvailable: 30%
+          minAvailable: 0%
           selector:
             matchLabels:
               resourceName: kubecompute-simple
@@ -263,10 +263,14 @@ spec:
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 - name: MICROS_AWS_REGION
                   value: testregion
+                - name: MICROS_BUSINESS_UNIT
+                  value: some_unit
                 - name: MICROS_ENVTYPE
                   value: testenv
                 - name: MICROS_SERVICE
                   value: test-servicename
+                - name: MICROS_RESOURCE_OWNER
+                  value: an_owner
                 envFrom:
                 - secretRef:
                     name: '!{kubecompute-simple--secret-metadata-name}'
@@ -298,10 +302,14 @@ spec:
                   value: https://asap-distribution.us-east-1.staging.paas-inf.net/
                 - name: MICROS_AWS_REGION
                   value: testregion
+                - name: MICROS_BUSINESS_UNIT
+                  value: some_unit
                 - name: MICROS_ENVTYPE
                   value: testenv
                 - name: MICROS_SERVICE
                   value: test-servicename
+                - name: MICROS_RESOURCE_OWNER
+                  value: an_owner
                 envFrom:
                 - secretRef:
                     name: '!{kubecompute-simple--secret-metadata-name}'

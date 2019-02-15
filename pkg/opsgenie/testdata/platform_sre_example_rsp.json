@@ -1,0 +1,92 @@
+{
+  "integrations": [
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "",
+      "envType": "null",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_API",
+      "priority": "null",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "API"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+      "envType": "dev",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_CloudWatch_high_dev",
+      "priority": "high",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "CloudWatch"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+      "envType": "dev",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_CloudWatch_low_dev",
+      "priority": "low",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "CloudWatch"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+      "envType": "staging",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_CloudWatch_high_staging",
+      "priority": "high",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "CloudWatch"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+      "envType": "staging",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_CloudWatch_low_staging",
+      "priority": "low",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "CloudWatch"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+      "envType": "prod",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_CloudWatch_high_prod",
+      "priority": "high",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "CloudWatch"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+      "envType": "prod",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_CloudWatch_low_prod",
+      "priority": "low",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "CloudWatch"
+    },
+    {
+      "apiKey": "SOME-API-KEY-HERE",
+      "endpoint": "",
+      "envType": "",
+      "id": "6a34191e-a4d9-467e-a25d-e9d633fe2461",
+      "name": "micros_Platform SRE_Datadog",
+      "priority": "",
+      "teamId": "5d657d73-c6ce-46b4-add6-52f3ea70421c",
+      "teamName": "Platform SRE",
+      "type": "Datadog"
+    }
+  ]
+}

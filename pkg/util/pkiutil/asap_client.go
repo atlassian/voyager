@@ -5,12 +5,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 
-	"bitbucket.org/atlassian/go-asap"
+	asap "bitbucket.org/atlassian/go-asap"
 	"github.com/SermoDigital/jose/jws"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/validation"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 type ASAP interface {
@@ -53,8 +53,7 @@ const (
 	dataKeyForPrivateKey = "key"
 )
 
-func NewASAPClientConfigFromKubernetesSecret(secret *v1.Secret) (*ASAPClientConfig, error) {
-
+func NewASAPClientConfigFromKubernetesSecret(secret *core_v1.Secret) (*ASAPClientConfig, error) {
 	for _, field := range []string{dataKeyForPrivateKey, dataKeyForIssuer, dataKeyForID} {
 		_, ok := secret.Data[field]
 		if !ok {
@@ -139,11 +138,11 @@ func (a *ASAPClientConfig) validateKey() error {
 }
 
 func (a *ASAPClientConfig) PublicKey() (crypto.PublicKey, error) {
-	switch a.PrivateKey.(type) {
+	switch k := a.PrivateKey.(type) {
 	case *rsa.PrivateKey:
-		return a.PrivateKey.(*rsa.PrivateKey).Public(), nil
+		return k.Public(), nil
 	case *ecdsa.PrivateKey:
-		return a.PrivateKey.(*ecdsa.PrivateKey).Public(), nil
+		return k.Public(), nil
 	default:
 		return nil, errors.New("private key type is not supported (only rsa, ecdsa are supported)")
 	}
