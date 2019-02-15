@@ -9,6 +9,6 @@ spec:
   - type: GlobalEdge
     name: ingress
     spec:
-      upstream_address:
+      upstreamAddresses:
         - address: foobar.com
           region: ap-southeast-2

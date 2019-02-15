@@ -68,26 +68,73 @@ func instanceParameters(resource *orchestration.StateResource, context *wiring.W
 	}
 
 	// Pass-through SD parameters -> OSB attributes
-	var attributes Attributes
-	if err := json.Unmarshal(resource.Spec.Raw, &attributes); err != nil {
+	var spec Spec
+	if err := json.Unmarshal(resource.Spec.Raw, &spec); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	parameters := InstanceParameters{
-		ServiceName: context.StateContext.ServiceName,
-		Resource: ResourceParameters{
-			Attributes: attributes,
-		},
-	}
 
-	if len(parameters.Resource.Attributes.UpstreamAddress) == 0 {
-		return nil, errors.New("UpstreamAddress is required")
+	if len(spec.UpstreamAddresses) == 0 {
+		return nil, errors.New("UpstreamAddresses must not be empty")
 
 		// TODO: Make upstream address optional and produce it from EC2Compute / KubeIngress output
 		// 1. Find dependency of some expected shape ("UpstreamAddressProviderShape" or whatever)
 		// 2. Generate a reference to the field from that dependency to be used as an upstream address
-		// 3. set UpstreamAddress to this reference inside parameters, i.e.
-		// 	parameters.Resource.Attributes.UpstreamAddress = bla
+		// 3. set OSBUpstreamAddress to this reference inside parameters, i.e.
+		// 	parameters.Resource.OSBAttributes.OSBUpstreamAddress = bla
 	}
 
+	parameters := specToParameters(&spec, context)
 	return json.Marshal(parameters)
+}
+
+func specToParameters(spec *Spec, context *wiring.WiringContext) *OSBInstanceParameters {
+	attributes := OSBAttributes{
+		UpstreamAddress: convertUpstreamAddresses(spec.UpstreamAddresses),
+		UpstreamPort: spec.UpstreamPort,
+		UpstreamSuffix: spec.UpstreamSuffix,
+		UpstreamOnly: spec.UpstreamOnly,
+		Domain: spec.Domains,
+		Healthcheck: spec.Healthcheck,
+		Rewrite: spec.Rewrite,
+		Routes: convertRoutes(spec.Routes),
+	}
+
+	return &OSBInstanceParameters{
+		ServiceName: context.StateContext.ServiceName,
+		Resource: OSBResourceParameters{
+			Attributes: attributes,
+		},
+	}
+}
+
+func convertUpstreamAddresses(addresses []UpstreamAddress) []OSBUpstreamAddress {
+	var osbAddresses []OSBUpstreamAddress
+	for _, address := range addresses {
+		osbAddress := OSBUpstreamAddress{
+			Address: address.Address,
+			Region: address.Region,
+		}
+		osbAddresses = append(osbAddresses, osbAddress)
+	}
+	return osbAddresses
+}
+
+func convertRoutes(routes []Route) []OSBRoute {
+	var osbRoutes []OSBRoute
+	for _, route := range routes {
+		osbRoute := OSBRoute{
+			Match: OSBRouteMatch{
+				Prefix: route.Match.Prefix,
+				Regex: route.Match.Regex,
+				Path: route.Match.Path,
+				Host: route.Match.Host,
+			},
+			Route: OSBRouteAction{
+				Cluster: route.Route.Cluster,
+				PrefixRewrite: route.Route.PrefixRewrite,
+			},
+		}
+		osbRoutes = append(osbRoutes, osbRoute)
+	}
+	return osbRoutes
 }

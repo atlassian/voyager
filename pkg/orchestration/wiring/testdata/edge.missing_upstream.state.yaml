@@ -9,4 +9,4 @@ spec:
   - type: GlobalEdge
     name: ingress
     spec:
-      upstream_port: 8080
+      upstreamPort: 8080
