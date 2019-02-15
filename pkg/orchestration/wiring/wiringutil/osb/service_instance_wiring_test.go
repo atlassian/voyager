@@ -12,7 +12,7 @@ func TestInstanceId(t *testing.T) {
 	t.Parallel()
 
 	expected := "washere"
-	actual, err := instanceID(
+	actual, err := InstanceID(
 		&runtime.RawExtension{
 			Raw: []byte(`{"instanceId":"` + expected + `"}`),
 		},

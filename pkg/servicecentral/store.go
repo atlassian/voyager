@@ -181,7 +181,7 @@ func (c *Store) getServiceDataByUUID(ctx context.Context, user auth.OptionalUser
 		if httputil.IsNotFound(err) {
 			return nil, NewNotFound("service with uuid %q was not found", uuid)
 		}
-		return nil, errors.Wrapf(err, "error getting service %q", data.ServiceName)
+		return nil, errors.Wrapf(err, "error getting service %q", uuid)
 	}
 
 	return data, nil
@@ -260,7 +260,7 @@ func prepareServiceToWrite(existingData ServiceDataRead, service *creator_v1.Ser
 		// and our new set of platform tags, converted into the correct format
 		nonPlatformTags := nonPlatformTags(existingData.Tags)
 		platformTags := convertPlatformTags(service.Spec.ResourceTags)
-		sd.Tags = append(nonPlatformTags, platformTags...)
+		sd.Tags = append(nonPlatformTags, platformTags...) // nolint: gocritic
 	}
 
 	return &sd, nil

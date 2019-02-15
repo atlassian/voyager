@@ -57,7 +57,7 @@ func ServiceBinding(bindingResourceName smith_v1.ResourceName, bindingMetaName s
 					Name: bindingMetaName,
 				},
 				Spec: sc_v1b1.ServiceBindingSpec{
-					ServiceInstanceRef: sc_v1b1.LocalObjectReference{
+					InstanceRef: sc_v1b1.LocalObjectReference{
 						Name: serviceInstanceRef.Ref(),
 					},
 					SecretName: bindingMetaName,
