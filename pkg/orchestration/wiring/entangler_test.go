@@ -13,10 +13,10 @@ import (
 	smith_config "github.com/atlassian/voyager/cmd/smith/config"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util/layers"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +33,10 @@ const (
 	fixtureErrorYamlSuffix      = ".error"
 	fixtureErrorRegexYamlSuffix = ".errorregex"
 	fixtureGlob                 = "*" + fixtureStateYamlSuffix
+
+	testAccount = "testaccount"
+	testEnv     = "testenv"
+	testRegion  = "testregion"
 )
 
 func TestEntangler(t *testing.T) {
@@ -258,23 +262,16 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 	ent := Entangler{
 		Plugins: wiringPlugins,
 		ClusterLocation: voyager.ClusterLocation{
-			Account: legacy.TestAccountName,
-			Region:  legacy.TestRegion,
-			EnvType: legacy.TestEnvironment,
+			Account: testAccount,
+			Region:  testRegion,
+			EnvType: testEnv,
 		},
 		ClusterConfig: wiringplugin.ClusterConfig{
 			ClusterDomainName: "internal.ap-southeast-2.kitt-integration.kitt-inf.net",
 			KittClusterEnv:    "test",
 			Kube2iamAccount:   "test",
 		},
-		TagNames: TagNames{
-			ServiceNameTag:     "service_name",
-			BusinessUnitTag:    "business_unit",
-			ResourceOwnerTag:   "resource_owner",
-			PlatformTag:        "platform",
-			EnvironmentTypeTag: "environment_type",
-		},
-		GetLegacyConfigFunc: getTestLegacyConfig,
+		Tags: testingTags,
 	}
 	labels := state.GetLabels()
 	namespace := core_v1.Namespace{
@@ -320,11 +317,12 @@ func entangleTestFileState(t *testing.T, filePrefix string) EntangleResult {
 	err := testutil.LoadIntoStructFromTestData(filePrefix+fixtureStateYamlSuffix, state)
 	require.NoError(t, err)
 
-	return entangleTestState(t, state, registry.KnownWiringPlugins)
-}
-
-func getTestLegacyConfig(location voyager.Location) *legacy.Config {
-	return legacy.GetLegacyConfigFromMap(legacy.TestLegacyConfigs, location)
+	return entangleTestState(t, state, registry.KnownWiringPlugins(
+		testDeveloperRole,
+		testManagedPolicies,
+		testVPC,
+		testEnvironment,
+	))
 }
 
 // In order to replace all expected bundles with actual bundles:
@@ -388,4 +386,49 @@ func (p delegatingPlugin) Status(resource *orch_v1.StateResource, context *wirin
 
 func emptyStatus(resource *orch_v1.StateResource, context *wiringplugin.StatusContext) wiringplugin.StatusResult {
 	return &wiringplugin.StatusResultSuccess{}
+}
+
+func testingTags(
+	_ voyager.ClusterLocation,
+	_ wiringplugin.ClusterConfig,
+	location voyager.Location,
+	serviceName voyager.ServiceName,
+	properties orch_meta.ServiceProperties,
+) map[voyager.Tag]string {
+	tags := make(map[voyager.Tag]string)
+	tags["service_name"] = string(serviceName)
+	tags["business_unit"] = properties.BusinessUnit
+	tags["resource_owner"] = properties.ResourceOwner
+	tags["environment_type"] = string(location.EnvType)
+	tags["platform"] = "voyager"
+	tags["environment"] = "microstestenv"
+	return tags
+}
+
+func testDeveloperRole(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:role/micros-server-iam-MicrosServer-ABC"}
+}
+
+func testManagedPolicies(_ voyager.Location) []string {
+	return []string{"arn:aws:iam::123456789012:policy/SOX-DENY-IAM-CREATE-DELETE", "arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC"}
+}
+
+func testVPC(location voyager.Location) *oap.VPCEnvironment {
+	return &oap.VPCEnvironment{
+		VPCID:                 "vpc-1",
+		PrivateDNSZone:        "testregion.atl-inf.io",
+		PrivatePaasDNSZone:    "testregion.dev.paas-inf.net",
+		InstanceSecurityGroup: "sg-2",
+		JumpboxSecurityGroup:  "sg-1",
+		SSLCertificateID:      "arn:aws:acm:testregion:123456789012:certificate/253b42fa-047c-44c2-8bac-777777777777",
+		Label:                 location.Label,
+		AppSubnets:            []string{"subnet-1", "subnet-2"},
+		Zones:                 []string{"testregiona", "testregionb"},
+		Region:                location.Region,
+		EMRSubnet:             "subnet-1a",
+	}
+}
+
+func testEnvironment(_ voyager.Location) string {
+	return "microstestenv"
 }

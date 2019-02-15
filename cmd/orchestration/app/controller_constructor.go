@@ -17,7 +17,6 @@ import (
 	orchInf "github.com/atlassian/voyager/pkg/orchestration/informer"
 	orchUpdater "github.com/atlassian/voyager/pkg/orchestration/updater"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	prom_util "github.com/atlassian/voyager/pkg/util/prometheus"
 	"github.com/pkg/errors"
@@ -30,9 +29,9 @@ import (
 )
 
 type ControllerConstructor struct {
-	FlagConfigFile      string
-	GetLegacyConfigFunc func(voyager.Location) *legacy.Config
-	Plugins             map[voyager.ResourceType]wiringplugin.WiringPlugin
+	FlagConfigFile string
+	Plugins        map[voyager.ResourceType]wiringplugin.WiringPlugin
+	Tags           wiring.TagGenerator
 }
 
 func (cc *ControllerConstructor) AddFlags(flagset ctrl.FlagSet) {
@@ -88,14 +87,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 		Plugins:         cc.Plugins,
 		ClusterLocation: opts.Location.ClusterLocation(),
 		ClusterConfig:   toClusterConfig(opts.Cluster),
-		TagNames: wiring.TagNames{
-			ServiceNameTag:     opts.TagNames.ServiceName,
-			BusinessUnitTag:    opts.TagNames.BusinessUnit,
-			ResourceOwnerTag:   opts.TagNames.ResourceOwner,
-			PlatformTag:        opts.TagNames.Platform,
-			EnvironmentTypeTag: opts.TagNames.EnvironmentType,
-		},
-		GetLegacyConfigFunc: cc.GetLegacyConfigFunc,
+		Tags:            cc.Tags,
 	}
 
 	// Spec check

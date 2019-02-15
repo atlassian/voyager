@@ -39,6 +39,8 @@ type WiringPlugin struct {
 
 	OAPResourceTypeName        oap.ResourceType
 	generateServiceEnvironment ServiceEnvironmentGenerator
+
+	VPC func(location voyager.Location) *oap.VPCEnvironment
 }
 
 func Resource(resourceType voyager.ResourceType,
@@ -47,6 +49,7 @@ func Resource(resourceType voyager.ResourceType,
 	clusterServicePlanExternalID servicecatalog.PlanExternalID,
 	generateServiceEnvironment ServiceEnvironmentGenerator,
 	shapes ShapesFunc,
+	vpc func(voyager.Location) *oap.VPCEnvironment,
 ) *WiringPlugin {
 	wiringPlugin := &WiringPlugin{
 		clusterServiceClassExternalID: clusterServiceClassExternalID,
@@ -55,6 +58,7 @@ func Resource(resourceType voyager.ResourceType,
 		shapes:                        shapes,
 		OAPResourceTypeName:           oapResourceTypeName,
 		generateServiceEnvironment:    generateServiceEnvironment,
+		VPC:                           vpc,
 	}
 	return wiringPlugin
 }
@@ -148,7 +152,8 @@ func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, conte
 	}
 
 	serviceName := serviceName(userServiceName, context)
-	environment := p.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context))
+	vpc := p.VPC(context.StateContext.Location)
+	environment := p.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc))
 	return instanceSpec(serviceName, resourceName, p.OAPResourceTypeName, *environment, attributes, alarms)
 }
 
