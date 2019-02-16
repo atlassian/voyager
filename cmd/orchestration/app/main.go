@@ -83,7 +83,7 @@ func exampleVPC(location voyager.Location) *oap.VPCEnvironment {
 		AppSubnets:            strings.Split(os.Getenv("PLUGIN_APP_SUBNETS"), ","),
 		Zones:                 strings.Split(os.Getenv("PLUGIN_ZONES"), ","),
 		Region:                location.Region,
-		EMRSubnet:             os.Getenv("EMR_SUBNET"),
+		EMRSubnet:             os.Getenv("PLUGIN_EMR_SUBNET"),
 	}
 }
 
