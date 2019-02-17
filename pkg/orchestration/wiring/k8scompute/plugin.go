@@ -171,7 +171,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		}
 
 		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
-		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
+		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference.ToReference())
 		smithResources = append(smithResources, binding)
 		resourceWithEnvVarBindings = append(resourceWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
 			ResourceName:        dep.Name,
@@ -195,7 +195,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 			if iamResourceReference == resourceReference {
 				iamBindingResource = binding
 			} else {
-				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, iamResourceReference)
+				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, iamResourceReference.ToReference())
 				smithResources = append(smithResources, iamBindingResource)
 			}
 			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{

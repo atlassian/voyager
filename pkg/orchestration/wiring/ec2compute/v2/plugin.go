@@ -317,7 +317,7 @@ func (p *WiringPlugin) wireUp(microServiceNameInSpec, ec2ComputePlanName string,
 		}
 
 		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
-		bindingResource := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference)
+		bindingResource := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference.ToReference())
 		bindingResources = append(bindingResources, bindingResource)
 		resourcesWithEnvVarBindings = append(resourcesWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
 			ResourceName:        dependency.Name,
@@ -342,7 +342,7 @@ func (p *WiringPlugin) wireUp(microServiceNameInSpec, ec2ComputePlanName string,
 			if iamResourceReference == resourceReference {
 				iamBindingResource = bindingResource
 			} else {
-				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, iamResourceReference)
+				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, iamResourceReference.ToReference())
 				bindingResources = append(bindingResources, iamBindingResource)
 			}
 			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{

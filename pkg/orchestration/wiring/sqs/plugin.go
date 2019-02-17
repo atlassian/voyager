@@ -21,8 +21,6 @@ const (
 	ResourceType   voyager.ResourceType = "SQS"
 	ResourcePrefix                      = "SQS"
 
-	snsTopicArnReferenceNameSuffix = "TopicArn"
-
 	clusterServiceClassExternalName = "sqs"
 	clusterServiceClassExternalID   = "06068066-7f66-4297-8683-a1ba0a2b7401"
 	clusterServicePlanExternalID    = "56393d2c-d936-4634-a178-19f491a3551a"
@@ -68,12 +66,10 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 				IsExternalError: true,
 			}
 		}
-		resourceRef := snsShape.Data.ServiceInstanceName
-		serviceBinding := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceRef)
+		serviceBinding := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, snsShape.Data.ServiceInstanceName.ToReference())
 		wiredResources = append(wiredResources, serviceBinding)
 
-		referenceName := wiringutil.ReferenceName(serviceBinding.Name, snsTopicArnReferenceNameSuffix)
-		topicArnRef := snsShape.Data.TopicARN.ToReference(referenceName, serviceBinding.Name)
+		topicArnRef := snsShape.Data.TopicARN.ToReference(serviceBinding.Name)
 		references = append(references, topicArnRef)
 		snsSubscriptions = append(snsSubscriptions, snsSubscription{
 			TopicArn:   topicArnRef.Ref(),

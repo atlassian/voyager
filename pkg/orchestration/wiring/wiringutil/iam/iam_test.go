@@ -27,7 +27,7 @@ func TestNames(t *testing.T) {
 	protoReference := libshapes.ProtoReference{
 		Resource: "instance1",
 	}
-	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, protoReference)
+	potentiallyConflictingBinding := wiringutil.ConsumerProducerServiceBinding(computeName, someProducerName, protoReference.ToReference())
 
 	assert.NotEqual(t, potentiallyConflictingBinding.Name, iamBinding.Name)
 	assert.NotEqual(t, potentiallyConflictingBinding.Spec.Object.(meta_v1.Object).GetName(),

@@ -29,9 +29,6 @@ const (
 	// See how meta names would clash if Resource Y was named "iamrole" if there was no extra `-`?
 	// See iam_test for the test.
 	namePostfix = "-iamrole"
-
-	// This is just the local reference name
-	dependencyNamePostfix = "iamrole"
 )
 
 type ResourceWithIamAccessibleBinding struct {
@@ -47,10 +44,7 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName
 	dependencyReferences := make([]smith_v1.Reference, 0, len(iamShapedResources))
 	iamPolicyDocumentRefs := make(map[string]string, len(iamShapedResources))
 	for _, iamShapedResource := range iamShapedResources {
-		ref := iamShapedResource.BindableIamAccessibleShape.Data.IAMPolicySnippet.ToReference(
-			wiringutil.ReferenceName(iamShapedResource.BindingName, dependencyNamePostfix),
-			iamShapedResource.BindingName,
-		)
+		ref := iamShapedResource.BindableIamAccessibleShape.Data.IAMPolicySnippet.ToReference(iamShapedResource.BindingName)
 		dependencyReferences = append(dependencyReferences, ref)
 		iamPolicyDocumentRefs[string(iamShapedResource.ResourceName)] = ref.Ref()
 	}
