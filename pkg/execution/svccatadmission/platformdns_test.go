@@ -31,47 +31,8 @@ func TestPlatformDNSAdmitFunc(t *testing.T) {
 			"platformdns new.domain",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new.domain",
-						},
-					},
-				}),
-			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
-			false,
-		},
-		{
-			"platformdns multiple new.domain",
-			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new1.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new2.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new3.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new4.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new5.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new6.domain",
-						},
-					},
+					AliasType: apiplatformdns.AliasTypeSimple,
+					Name:      "new.domain",
 				}),
 			),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
@@ -81,47 +42,8 @@ func TestPlatformDNSAdmitFunc(t *testing.T) {
 			"platformdns registered domain same user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "doug.domain",
-						},
-					},
-				}),
-			),
-			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
-			false,
-		},
-		{
-			"platformdns multiple with one registered domain same user",
-			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "doug.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new2.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new3.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new4.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new5.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new6.domain",
-						},
-					},
+					AliasType: apiplatformdns.AliasTypeSimple,
+					Name:      "doug.domain",
 				}),
 			),
 			buildAdmissionResponse(true, 0, metav1.StatusReasonUnknown, nil, `requested domain name(s) allowed for use`),
@@ -131,47 +53,8 @@ func TestPlatformDNSAdmitFunc(t *testing.T) {
 			"platformdns registered domain different user",
 			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
 				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "elsie.domain",
-						},
-					},
-				}),
-			),
-			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),
-			false,
-		},
-		{
-			"platformdns multiple with one registered domain different user",
-			buildAdmissionReview(dougComputeService, k8s.ServiceInstanceGVR, admissionv1beta1.Create, buildServiceInstance(
-				t, apiplatformdns.ClusterServiceClassExternalID, apiplatformdns.ClusterServicePlanExternalID, apiplatformdns.Spec{
-					Aliases: []apiplatformdns.Alias{
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "elsie.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new2.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new3.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new4.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new5.domain",
-						},
-						{
-							AliasType: apiplatformdns.AliasTypeSimple,
-							Name:      "new6.domain",
-						},
-					},
+					AliasType: apiplatformdns.AliasTypeSimple,
+					Name:      "elsie.domain",
 				}),
 			),
 			buildAdmissionResponse(false, http.StatusForbidden, metav1.StatusReasonForbidden, nil, `requested dns alias "elsie.domain" is currently owned by "elsie" via service "elsie-compute-service", and cannot be migrated to service "doug-compute-service" owned by different owner "doug"`),

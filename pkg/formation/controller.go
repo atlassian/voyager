@@ -239,7 +239,8 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 	}
 	resourceStatuses := ld.Status.ResourceStatuses
 
-	if err != nil {
+	switch {
+	case err != nil:
 		errorCond.Status = cond_v1.ConditionTrue
 		errorCond.Message = err.Error()
 		if retriable {
@@ -248,11 +249,13 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 		} else {
 			errorCond.Reason = "TerminalError"
 		}
-	} else if len(state.Status.Conditions) == 0 {
+
+	case len(state.Status.Conditions) == 0:
 		inProgressCond.Status = cond_v1.ConditionTrue
 		inProgressCond.Reason = "WaitingOnOrchestrationConditions"
 		inProgressCond.Message = "Waiting for Orchestration to report Conditions (initial creation?)"
-	} else {
+
+	default:
 		// This just copies the status from State
 		copyCondition(state, cond_v1.ConditionInProgress, &inProgressCond)
 		copyCondition(state, cond_v1.ConditionReady, &readyCond)

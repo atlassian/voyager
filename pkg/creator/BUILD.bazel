@@ -16,7 +16,7 @@ go_library(
         "//pkg/apis/creator/v1:go_default_library",
         "//pkg/creator/luigi:go_default_library",
         "//pkg/creator/ssam:go_default_library",
-        "//pkg/orchestration/wiring/ec2compute/common:go_default_library",
+        "//pkg/orchestration/wiring/ec2compute/v2:go_default_library",
         "//pkg/pagerduty:go_default_library",
         "//pkg/servicecentral:go_default_library",
         "//pkg/util:go_default_library",

@@ -1,0 +1,14 @@
+apiVersion: orchestration.voyager.atl-paas.net/v1
+kind: State
+metadata:
+  name: state1
+  namespace: default123
+  uid: 411c0040-617e-11e7-9b57-427d691976d7
+spec:
+  resources:
+  - type: GlobalEdge
+    name: ingress
+    spec:
+      upstreamAddresses:
+        - address: foobar.com
+          region: ap-southeast-2

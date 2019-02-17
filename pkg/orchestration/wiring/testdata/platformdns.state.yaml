@@ -19,8 +19,7 @@ spec:
   - type: PlatformDNS
     name: platformdns
     spec:
-      aliases:
-        - type: Simple
-          name: foo.staging.atl-paas.net
+      type: Simple
+      name: foo.staging.atl-paas.net
     dependsOn:
       - ingress

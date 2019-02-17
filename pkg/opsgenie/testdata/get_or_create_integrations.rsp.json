@@ -1,0 +1,15 @@
+{
+  "integrations": [
+    {
+      "id": "string",
+      "name": "string",
+      "type": "string",
+      "teamId": "string",
+      "teamName": "string",
+      "priority": "string",
+      "apiKey": "string",
+      "endpoint": "string",
+      "envType": "string"
+    }
+  ]
+}

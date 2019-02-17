@@ -177,6 +177,10 @@ define gometalinter
 bazel run $(BAZEL_OPTIONS) //:gometalinter
 endef
 
+define golangcilint
+bazel run $(BAZEL_OPTIONS) //:golangcilint
+endef
+
 define buildifier-check
 bazel run $(BAZEL_OPTIONS) //:buildifier_check
 bazel run $(BAZEL_OPTIONS) //:buildifier_lint
@@ -184,7 +188,7 @@ endef
 
 .PHONY: lint
 lint:
-	$(gometalinter)
+	$(golangcilint)
 
 .PHONY: lint-fast
 lint-fast:
@@ -198,7 +202,7 @@ lint-fast-all: goimports
 .PHONY: lint-all
 lint-all: goimports
 	$(buildifier-check)
-	$(gometalinter)
+	$(golangcilint)
 
 #===============================================================================
 
@@ -233,7 +237,7 @@ all:
 	$(fmt-build-files)
 	$(buildifier-check)
 	$(bazel-test-all)
-	$(gometalinter)
+	$(golangcilint)
 	$(check-git-status)
 
 # Does what CI does. Consider (lunch or coffee) xor make pr, because lint is slooow.
@@ -246,7 +250,7 @@ all-ci:
 	$(fmt-build-files)
 	$(buildifier-check)
 	$(bazel-test-all)
-	$(gometalinter)
+	$(golangcilint)
 	$(check-git-status-in-ci)
 
 .PHONY: check-all-automagic-changes-were-commited-before-ci
@@ -265,7 +269,7 @@ build-and-test-in-ci:
 .PHONY: lint-all-in-ci
 lint-all-in-ci:
 	$(buildifier-check)
-	$(gometalinter)
+	$(golangcilint)
 
 #===============================================================================
 
@@ -340,7 +344,8 @@ generate-clients: \
 
 .PHONY: update-deployinator-spec
 update-deployinator-spec:
-	curl -s https://deployinator-trebuchet.prod.atl-paas.net/api/swagger.json | jq '.' > pkg/releases/deployinator-trebuchet.json
+	curl -Ss https://contract-testing-broker.us-east-1.prod.atl-paas.net/providers/deployinator-trebuchet/spec \
+	 | jq -r '.content' | python -m base64 -d | jq -S > pkg/releases/generated/deployinator-trebuchet.json
 
 #===============================================================================
 

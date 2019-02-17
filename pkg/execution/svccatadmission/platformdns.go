@@ -59,13 +59,8 @@ func PlatformDNSAdmitFunc(ctx context.Context, microsServerClient microsServerCl
 		if err := json.Unmarshal(serviceInstance.Spec.Parameters.Raw, &platformDNSSpec); err != nil {
 			return nil, errors.Wrapf(err, "error parsing %q spec", apiplatformdns.ResourceType)
 		}
-		if len(platformDNSSpec.Aliases) == 0 {
-			return nil, errors.Errorf("cannot process %q with empty aliases list", apiplatformdns.ResourceType)
-		}
-		domainsToCheck = make(chan string, len(platformDNSSpec.Aliases))
-		for _, alias := range platformDNSSpec.Aliases {
-			domainsToCheck <- alias.Name
-		}
+		domainsToCheck = make(chan string, 1)
+		domainsToCheck <- platformDNSSpec.Name
 	default:
 		return nil, errors.Errorf("unsupported resource, got %v", admissionRequest.Resource)
 	}

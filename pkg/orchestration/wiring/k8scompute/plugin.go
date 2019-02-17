@@ -17,6 +17,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/compute"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/iam"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/util"
 	"github.com/pkg/errors"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -98,8 +99,18 @@ func validateScaling(s Scaling) error {
 	return nil
 }
 
+func New(vpc func(location voyager.Location) *oap.VPCEnvironment) *WiringPlugin {
+	return &WiringPlugin{
+		VPC: vpc,
+	}
+}
+
+type WiringPlugin struct {
+	VPC func(location voyager.Location) *oap.VPCEnvironment
+}
+
 // WireUp is the main autowiring function for the K8SCompute resource, building a native kube deployment and HPA
-func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
+func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext) wiringplugin.WiringResult {
 	if resource.Type != apik8scompute.ResourceType {
 		return &wiringplugin.WiringResultFailure{
 			Error: errors.Errorf("invalid resource type: %q", resource.Type),
@@ -234,8 +245,17 @@ func WireUp(resource *orch_v1.StateResource, context *wiringplugin.WiringContext
 		references = append(references, secretRef)
 		smithResources = append(smithResources, secretResource)
 
-		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(iam.KubeComputeType, resource.Name,
-			context.StateContext.ServiceName, false, resourcesWithIamAccessibleBindings, context, []string{}, buildKube2iamRoles(context))
+		iamPluginInstanceSmithResource, err := iam.PluginServiceInstance(
+			iam.KubeComputeType,
+			resource.Name,
+			context.StateContext.ServiceName,
+			false,
+			resourcesWithIamAccessibleBindings,
+			context,
+			[]string{},
+			buildKube2iamRoles(context),
+			p.VPC(context.StateContext.Location),
+		)
 		if err != nil {
 			return &wiringplugin.WiringResultFailure{
 				Error: err,
@@ -550,7 +570,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	// Create WeightedPodAffinityTerms to configure antiaffinity to distibute
 	// the app to different zones, and then nodes (where possible)
 	podAffinityTerms := []core_v1.WeightedPodAffinityTerm{
-		core_v1.WeightedPodAffinityTerm{
+		{
 			Weight: 75,
 			PodAffinityTerm: core_v1.PodAffinityTerm{
 				LabelSelector: &meta_v1.LabelSelector{
@@ -559,7 +579,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 				TopologyKey: k8s.LabelZoneFailureDomain,
 			},
 		},
-		core_v1.WeightedPodAffinityTerm{
+		{
 			Weight: 50,
 			PodAffinityTerm: core_v1.PodAffinityTerm{
 				LabelSelector: &meta_v1.LabelSelector{
