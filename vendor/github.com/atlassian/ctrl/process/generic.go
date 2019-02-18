@@ -119,7 +119,7 @@ func NewGeneric(config *ctrl.Config, queue workqueue.RateLimitingInterface, work
 					Name:      "process_object_errors_total",
 					Help:      "Records the number of times an error was triggered while processing an object",
 				},
-				[]string{"controller", "object_namespace", "object", "groupkind", "retriable"},
+				[]string{"controller", "object_namespace", "object", "groupkind", "external", "retriable"},
 			)
 
 			holders[descr.Gvk] = Holder{
