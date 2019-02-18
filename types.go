@@ -54,14 +54,6 @@ func (l Location) String() string {
 // This is basically an AWS tag.
 type Tag string
 
-func TagMapToStringMap(tagMap map[Tag]string) map[string]string {
-	result := make(map[string]string, len(tagMap))
-	for k, v := range tagMap {
-		result[string(k)] = v
-	}
-	return result
-}
-
 type ResourceName string
 type ResourceType string
 
