@@ -2,6 +2,7 @@ package templating
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"github.com/atlassian/voyager/pkg/util"
@@ -106,13 +107,19 @@ func (e *SpecExpander) expandMapValue(mapVar map[string]interface{}) (interface{
 		}
 	}
 
-	for k, v := range mapVar {
+	// make sure expansion order is deterministic to ensure deterministic error messages
+	keys := make([]string, 0, len(mapVar))
+	for k := range mapVar {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
 		if k == TransformerKeywordInline {
 			// We already processed the inline keyword above
 			continue
 		}
 
-		expandedValue, err := e.expandValue(v)
+		expandedValue, err := e.expandValue(mapVar[k])
 		if err != nil {
 			errorList.Add(err)
 			if !err.CanRecover() {
@@ -243,11 +250,8 @@ func Merge(winner, loser interface{}) (interface{}, error) {
 // use in the applicable (child)map
 func FindInMapRecursive(src map[string]interface{}, keyPath []string) (interface{}, error) {
 	top := keyPath[0]
-	restOfPath := keyPath[1:]
-	var value interface{}
-	var found bool
-
-	if value, found = src[top]; !found {
+	value, found := src[top]
+	if !found {
 		var keys []string
 		for key := range src {
 			keys = append(keys, key)
@@ -256,14 +260,12 @@ func FindInMapRecursive(src map[string]interface{}, keyPath []string) (interface
 		return nil, util.NewErrVariableNotFound(strings.Join(keyPath, "."), closest)
 	}
 
+	restOfPath := keyPath[1:]
 	if len(restOfPath) == 0 {
 		return value, nil
 	}
 
-	var varMap map[string]interface{}
-	var isMap bool
-
-	varMap, isMap = value.(map[string]interface{})
+	varMap, isMap := value.(map[string]interface{})
 	if !isMap {
 		return nil, errors.New("key must refer to map")
 	}
