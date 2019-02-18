@@ -68,6 +68,7 @@ go_test(
         "//pkg/k8s:go_default_library",
         "//pkg/k8s/testing:go_default_library",
         "//pkg/k8s/updater:go_default_library",
+        "//pkg/opsgenie:go_default_library",
         "//pkg/pagerduty:go_default_library",
         "//pkg/releases:go_default_library",
         "//pkg/servicecentral:go_default_library",
