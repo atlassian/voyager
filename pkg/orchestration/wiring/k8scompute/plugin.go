@@ -356,6 +356,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	deploymentSpec := buildDeploymentSpec(context, spec, podSpec, labelMap, iamRoleRef)
 
 	// The final wired deployment object
+	deploymentMetaName := wiringutil.MetaName(resource.Name)
 	deployment := smith_v1.Resource{
 		Name:       wiringutil.ResourceName(resource.Name),
 		References: references,
@@ -366,7 +367,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 					APIVersion: apps_v1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.MetaName(resource.Name),
+					Name: deploymentMetaName,
 				},
 				Spec: deploymentSpec,
 			},
@@ -410,6 +411,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 		Contract: wiringplugin.ResourceContract{
 			Shapes: []wiringplugin.Shape{
 				knownshapes.NewSetOfPodsSelectableByLabels(deployment.Name, labelMap),
+				knownshapes.NewKubeDeployment(deployment.Name, deploymentMetaName),
 			},
 		},
 		Resources: smithResources,

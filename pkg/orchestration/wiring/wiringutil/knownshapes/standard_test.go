@@ -17,6 +17,7 @@ var (
 	_ wiringplugin.Shape = &BindableEnvironmentVariables{}
 	_ wiringplugin.Shape = &BindableIamAccessible{}
 	_ wiringplugin.Shape = &IngressEndpoint{}
+	_ wiringplugin.Shape = &KubeDeployment{}
 	_ wiringplugin.Shape = &SetOfPodsSelectableByLabels{}
 	_ wiringplugin.Shape = &SharedDb{}
 	_ wiringplugin.Shape = &SnsSubscribable{}
@@ -30,6 +31,7 @@ func TestAllKnownShapes(t *testing.T) {
 		NewBindableEnvironmentVariables(resourceName, "abc", map[string]string{"a": "b"}),
 		NewBindableIamAccessible(resourceName, "somePath"),
 		NewIngressEndpoint(resourceName),
+		NewKubeDeployment(resourceName, "abc"),
 		NewSetOfPodsSelectableByLabels(resourceName, map[string]string{"a": "b"}),
 		NewSharedDbShape(resourceName, true),
 		NewSnsSubscribable(resourceName),
