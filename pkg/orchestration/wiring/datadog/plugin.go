@@ -78,7 +78,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	message := query.generateMessage(&context.StateContext.ServiceProperties.Notifications)
 	serviceInstanceSpec := OSBInstanceParameters{
 		ServiceName: context.StateContext.ServiceName,
-		Environment: context.StateContext.Location.EnvType,
+		EnvType:     context.StateContext.Location.EnvType,
 		Region:      context.StateContext.Location.Region,
 		Label:       context.StateContext.Location.Label,
 		Attributes: AlarmAttributes{
@@ -157,8 +157,8 @@ func (q *QueryParams) generateQuery() string {
 }
 
 func (q *QueryParams) generateMessage(notificationProp *meta_orch.Notifications) string {
-	msg := fmt.Sprintf("High %s usage for deployment %s in %s %s", strings.ToUpper(string(q.AlarmType)),
-		q.KubeDeployment, q.Location.Region, q.Location.EnvType)
+	msg := fmt.Sprintf("High %s usage for deployment %s in %s %s with the namespace %s", strings.ToUpper(string(q.AlarmType)),
+		q.KubeDeployment, q.Location.Region, q.Location.EnvType, q.KubeNamespace)
 	messageType := fmt.Sprintf(" [[#is_warning]] @%s [[/is_warning]] [[#is_warning_recovery]] @%s [[/is_warning_recovery]] [[#is_alert]] @%s [[/is_alert]][[#is_alert_recovery]] @%s [[/is_alert_recovery]]",
 		notificationProp.LowPriorityPagerdutyEndpoint, notificationProp.LowPriorityPagerdutyEndpoint, notificationProp.PagerdutyEndpoint, notificationProp.PagerdutyEndpoint)
 	return msg + messageType

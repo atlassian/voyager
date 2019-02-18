@@ -25,7 +25,7 @@ type AlarmAttributes struct {
 
 type OSBInstanceParameters struct {
 	ServiceName voyager.ServiceName `json:"serviceName"`
-	Environment voyager.EnvType     `json:"environment"`
+	EnvType     voyager.EnvType     `json:"envType"`
 	Region      voyager.Region      `json:"region"`
 	Label       voyager.Label       `json:"label,omitempty"`
 	Attributes  AlarmAttributes     `json:"attributes"`
