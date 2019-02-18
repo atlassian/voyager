@@ -266,7 +266,7 @@ func prepareServiceToWrite(existingData ServiceDataRead, service *creator_v1.Ser
 	return &sd, nil
 }
 
-func (c *Store) serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
+func serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
 	var serviceUID string
 	if data.ServiceUUID != nil {
 		serviceUID = *data.ServiceUUID
