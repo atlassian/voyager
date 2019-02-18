@@ -266,7 +266,7 @@ func prepareServiceToWrite(existingData ServiceDataRead, service *creator_v1.Ser
 	return &sd, nil
 }
 
-func serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
+func (c *Store) serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
 	var serviceUID string
 	if data.ServiceUUID != nil {
 		serviceUID = *data.ServiceUUID
@@ -306,7 +306,10 @@ func serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
 		service.Spec.Metadata.PagerDuty = pagerDutyMetadata
 	}
 
-	ogMetadata, _ := GetOpsGenieAttribute(data) // Error ignored as Opsgenie team is optional
+	ogMetadata, err := GetOpsGenieAttribute(data) // Error ignored as Opsgenie team is optional
+	if err != nil {
+		c.logger.Info("unable to get Opsgenie attribute - ignoring", zap.Error(err))
+	}
 	if ogMetadata != nil {
 		service.Spec.Metadata.Opsgenie = ogMetadata
 	}
