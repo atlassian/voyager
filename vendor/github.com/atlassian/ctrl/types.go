@@ -53,7 +53,15 @@ type Constructor interface {
 
 type Interface interface {
 	Run(context.Context)
-	Process(*ProcessContext) (retriable bool, err error)
+
+	// Process is implemented by the controller and returns:
+	// - true for externalErr if the error is not an internal error
+	// - true for retriableErr if the error is a retriable error (i.e. should be
+	//   added back to the work queue). These are retried for limited number of
+	//   attempts
+	// - an error, if there is an error, or nil. If there is no error, the above
+	//   two bools (externalErr and retriableErr) are ignored.
+	Process(*ProcessContext) (externalErr bool, retriableErr bool, err error)
 }
 
 type WorkQueueProducer interface {
