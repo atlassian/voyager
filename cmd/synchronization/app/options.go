@@ -39,15 +39,16 @@ func (p *Providers) UnmarshalJSON(data []byte) error {
 	}
 
 	scURL, err := url.Parse(rawProviders.ServiceCentral)
-	p.ServiceCentralURL = scURL
 	if err != nil {
 		return errors.Wrap(err, "unable to parse Service Central URL")
 	}
+	p.ServiceCentralURL = scURL
+
 	depURL, err := url.Parse(rawProviders.Deployinator)
-	p.DeployinatorURL = depURL
 	if err != nil {
 		return errors.Wrap(err, "unable to parse Deployinator URL")
 	}
+	p.DeployinatorURL = depURL
 
 	ogUrl, err := url.Parse(rawProviders.OpsgenieIntegrationsManager)
 	if err != nil {
