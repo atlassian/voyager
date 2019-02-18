@@ -15,7 +15,6 @@ go_library(
         "//:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
-        "//pkg/orchestration/wiring/wiringutil/libshapes:go_default_library",
         "//vendor/github.com/atlassian/ctrl/apis/condition/v1:go_default_library",
         "//vendor/github.com/atlassian/smith/pkg/apis/smith/v1:go_default_library",
         "//vendor/github.com/imdario/mergo:go_default_library",

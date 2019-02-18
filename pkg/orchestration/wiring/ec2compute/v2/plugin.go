@@ -316,7 +316,7 @@ func (p *WiringPlugin) wireUp(microServiceNameInSpec, ec2ComputePlanName string,
 			}
 		}
 
-		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
+		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName.ToReference()
 		bindingResource := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceReference)
 		bindingResources = append(bindingResources, bindingResource)
 		resourcesWithEnvVarBindings = append(resourcesWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
@@ -335,19 +335,20 @@ func (p *WiringPlugin) wireUp(microServiceNameInSpec, ec2ComputePlanName string,
 			}
 		}
 		if iamFound {
-			var iamBindingResource smith_v1.Resource
-			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName
-			// Reuse the binding if the service instance name is the same, otherwise
+			var iamBindingResourceName smith_v1.ResourceName
+			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName.ToReference()
+			// Reuse the binding if the service instance name reference is the same, otherwise
 			// we'll need to do another binding
-			if iamResourceReference == resourceReference {
-				iamBindingResource = bindingResource
+			if wiringutil.IsSameTarget(iamResourceReference, resourceReference) {
+				iamBindingResourceName = bindingResource.Name
 			} else {
-				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, iamResourceReference)
+				iamBindingResource := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, iamResourceReference)
 				bindingResources = append(bindingResources, iamBindingResource)
+				iamBindingResourceName = iamBindingResource.Name
 			}
 			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
 				ResourceName:               dependency.Name,
-				BindingName:                iamBindingResource.Name,
+				BindingName:                iamBindingResourceName,
 				BindableIamAccessibleShape: *bindableIamAccessibleShape,
 			})
 		}

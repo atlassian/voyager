@@ -48,7 +48,7 @@ spec:
   - name: kubecompute-simple--basic--binding
     references:
     - example: aname
-      name: basic--instance-metadata-name
+      name: basic--instance
       path: metadata.name
       resource: basic--instance
     spec:
@@ -59,7 +59,7 @@ spec:
           name: kubecompute-simple--basic
         spec:
           instanceRef:
-            name: '!{basic--instance-metadata-name}'
+            name: '!{basic--instance}'
           secretName: kubecompute-simple--basic
   - name: kubecompute-simple--secret
     references:
@@ -92,7 +92,7 @@ spec:
   - name: kubecompute-simple---iamrole
     references:
     - modifier: bindsecret
-      name: kubecompute-simple--basic--binding-iamrole
+      name: kubecompute-simple--basic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kubecompute-simple--basic--binding
     spec:
@@ -106,7 +106,7 @@ spec:
           computeType: kubeCompute
           oapResourceName: kubecompute-simple-iamrole
           policySnippets:
-            basic: '!{kubecompute-simple--basic--binding-iamrole}'
+            basic: '!{kubecompute-simple--basic--binding-policySnippet}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty

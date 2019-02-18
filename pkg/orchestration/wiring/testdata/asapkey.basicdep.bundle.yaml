@@ -30,7 +30,7 @@ spec:
   - name: kubecompute-simple--asap--binding
     references:
     - example: aname
-      name: asap--instance-metadata-name
+      name: asap--instance
       path: metadata.name
       resource: asap--instance
     spec:
@@ -41,7 +41,7 @@ spec:
           name: kubecompute-simple--asap
         spec:
           instanceRef:
-            name: '!{asap--instance-metadata-name}'
+            name: '!{asap--instance}'
           secretName: kubecompute-simple--asap
   - name: kubecompute-simple--secret
     references:

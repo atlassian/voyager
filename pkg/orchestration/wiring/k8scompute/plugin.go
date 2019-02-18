@@ -170,7 +170,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 			}
 		}
 
-		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName
+		resourceReference := bindableEnvVarShape.Data.ServiceInstanceName.ToReference()
 		binding := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, resourceReference)
 		smithResources = append(smithResources, binding)
 		resourceWithEnvVarBindings = append(resourceWithEnvVarBindings, compute.ResourceWithEnvVarBinding{
@@ -188,19 +188,20 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 			}
 		}
 		if iamFound {
-			var iamBindingResource smith_v1.Resource
-			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName
-			// Reuse the binding if the service instance name is the same, otherwise
+			var iamBindingResourceName smith_v1.ResourceName
+			iamResourceReference := bindableIamAccessibleShape.Data.ServiceInstanceName.ToReference()
+			// Reuse the binding if the service instance name reference is the same, otherwise
 			// we'll need to do another binding
-			if iamResourceReference == resourceReference {
-				iamBindingResource = binding
+			if wiringutil.IsSameTarget(iamResourceReference, resourceReference) {
+				iamBindingResourceName = binding.Name
 			} else {
-				iamBindingResource = wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, iamResourceReference)
+				iamBindingResource := wiringutil.ConsumerProducerServiceBinding(resource.Name, dep.Name, iamResourceReference)
 				smithResources = append(smithResources, iamBindingResource)
+				iamBindingResourceName = iamBindingResource.Name
 			}
 			resourcesWithIamAccessibleBindings = append(resourcesWithIamAccessibleBindings, iam.ResourceWithIamAccessibleBinding{
 				ResourceName:               dep.Name,
-				BindingName:                iamBindingResource.Name,
+				BindingName:                iamBindingResourceName,
 				BindableIamAccessibleShape: *bindableIamAccessibleShape,
 			})
 		}

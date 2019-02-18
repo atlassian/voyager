@@ -48,7 +48,7 @@ spec:
   - name: compute--basic--binding
     references:
     - example: aname
-      name: basic--instance-metadata-name
+      name: basic--instance
       path: metadata.name
       resource: basic--instance
     spec:
@@ -59,7 +59,7 @@ spec:
           name: compute--basic
         spec:
           instanceRef:
-            name: '!{basic--instance-metadata-name}'
+            name: '!{basic--instance}'
           secretName: compute--basic
   - name: compute--secret
     references:
@@ -94,7 +94,7 @@ spec:
   - name: compute---iamrole
     references:
     - modifier: bindsecret
-      name: compute--basic--binding-iamrole
+      name: compute--basic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: compute--basic--binding
     spec:
@@ -111,7 +111,7 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
           policySnippets:
-            basic: '!{compute--basic--binding-iamrole}'
+            basic: '!{compute--basic--binding-policySnippet}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty

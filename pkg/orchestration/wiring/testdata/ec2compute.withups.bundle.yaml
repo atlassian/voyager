@@ -26,7 +26,7 @@ spec:
   - name: compute--ups--binding
     references:
     - example: aname
-      name: ups--instance-metadata-name
+      name: ups--instance
       path: metadata.name
       resource: ups--instance
     spec:
@@ -37,7 +37,7 @@ spec:
           name: compute--ups
         spec:
           instanceRef:
-            name: '!{ups--instance-metadata-name}'
+            name: '!{ups--instance}'
           secretName: compute--ups
   - name: compute--secret
     references:
