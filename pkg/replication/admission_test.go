@@ -276,6 +276,43 @@ func TestInvalidLocation(t *testing.T) {
 	require.Equal(t, rejected("", `location "foo" (region: "z", account: "a") does not exist in "staging" environment, see go/micros2-locations`), resp)
 }
 
+func TestIgnoreInvalidLocation(t *testing.T) {
+	t.Parallel()
+
+	resp, err := admitWithContextAndLogger(t, &admissionv1beta1.AdmissionRequest{
+		Operation: admissionv1beta1.Create,
+		Resource:  sdResource,
+		Object: objectToRawExtension(t, &comp_v1.ServiceDescriptor{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Annotations: map[string]string{
+					ValidateKnownLocationsKey: "false",
+				},
+			},
+			Spec: comp_v1.ServiceDescriptorSpec{
+				Locations: []comp_v1.ServiceDescriptorLocation{
+					{Name: "foo", Account: "a", Region: "z", EnvType: "staging"},
+				},
+				Config: []comp_v1.ServiceDescriptorConfigSet{
+					// must allow arbitrary vars here (but not in other places)
+					{Scope: "staging", Vars: map[string]interface{}{"foo": "bar"}},
+				},
+				ResourceGroups: []comp_v1.ServiceDescriptorResourceGroup{
+					{
+						Name:      comp_v1.ServiceDescriptorResourceGroupName("group1"),
+						Locations: []comp_v1.ServiceDescriptorLocationName{"foo"},
+						Resources: []comp_v1.ServiceDescriptorResource{
+							{Name: "foo", Type: "bar", Spec: &runtime.RawExtension{Raw: []byte(`{"a": "b"}`)}},
+						},
+					},
+				},
+			},
+		}),
+	})
+
+	require.NoError(t, err)
+	require.True(t, resp.Allowed, "validation must ignore unknown location and succeed")
+}
+
 func TestInvalidLocationMissingEnvType(t *testing.T) {
 	t.Parallel()
 

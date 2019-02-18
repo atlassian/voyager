@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -41,7 +42,8 @@ const (
 	updatedKey = "mutationTimestamp"
 	hashKey    = "mutationHash"
 
-	ReplicateKey = "replicate"
+	ReplicateKey              = "replicate"
+	ValidateKnownLocationsKey = "validateKnownLocations"
 
 	// enforce limit on the ServiceDescriptor size
 	// (since overlarge audit messages are dropped)
@@ -263,6 +265,11 @@ func (ac *AdmissionContext) validateSD(admissionRequest *admissionv1beta1.Admiss
 func (ac *AdmissionContext) validateLocationsAndTransforms(sd *comp_v1.ServiceDescriptor) RejectionMessage {
 	var rejectionMessages []string
 
+	validateKnownLocations, err := shouldValidateKnownLocations(sd)
+	if err != nil {
+		return RejectionMessage(fmt.Sprintf("failed to fetch a %q annotation: %v", ValidateKnownLocationsKey, err.Error()))
+	}
+
 	// more than one sdLocation may map to the same cluster
 	clusterLocations := make(sets.ClusterLocation)
 	for _, sdLocation := range sd.Spec.Locations {
@@ -290,6 +297,10 @@ func (ac *AdmissionContext) validateLocationsAndTransforms(sd *comp_v1.ServiceDe
 		if sdLocation.Region == "" {
 			rejectionMessages = append(rejectionMessages,
 				fmt.Sprintf("location %q (envType: %q, account: %q) is missing region, see go/micros2-locations", sdLocation.Name, sdLocation.EnvType, sdLocation.Account))
+			continue
+		}
+		if !validateKnownLocations {
+			// Ignore unknown locations
 			continue
 		}
 		if !ac.ReplicatedLocations.Has(location) {
@@ -330,6 +341,20 @@ func (ac *AdmissionContext) validateLocationsAndTransforms(sd *comp_v1.ServiceDe
 	}
 
 	return RejectionMessage(strings.Join(rejectionMessages, ", "))
+}
+
+func shouldValidateKnownLocations(sd *comp_v1.ServiceDescriptor) (bool, error) {
+	validateLocationStr, ok := sd.Annotations[ValidateKnownLocationsKey]
+	if !ok {
+		return true, nil
+	}
+
+	validateLocation, err := strconv.ParseBool(validateLocationStr)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return validateLocation, nil
 }
 
 func createAnnotationPatch(operation admissionv1beta1.Operation, newSD *comp_v1.ServiceDescriptor) ([]byte, error) {
