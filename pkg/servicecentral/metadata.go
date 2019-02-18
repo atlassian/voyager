@@ -29,8 +29,8 @@ func SetPagerDutyMetadata(serviceCentralData *ServiceDataWrite, m *creator_v1.Pa
 	return setMetadata(serviceCentralData, PagerDutyMetadataKey, m)
 }
 
-// GetOpsGenieAttribute reads the Opsgenie team attribute out of a service
-func GetOpsGenieAttribute(serviceCentralData *ServiceDataRead) (*creator_v1.OpsgenieMetadata, error) {
+// GetOpsgenieAttribute reads the Opsgenie team attribute out of a service
+func GetOpsgenieAttribute(serviceCentralData *ServiceDataRead) (*creator_v1.OpsgenieMetadata, error) {
 	attributes := serviceCentralData.Attributes
 	ogTeamAttr, found, err := findOpsgenieAttribute(attributes)
 	if err != nil || !found {

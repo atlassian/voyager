@@ -339,7 +339,6 @@ func (c *Client) DeleteService(ctx context.Context, user auth.User, serviceUUID 
 
 // GetServiceAttributes queries service central for the attributes of a given service. Can return an empty array if no attributes were found
 func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUser, serviceUUID string) ([]ServiceAttribute, error) {
-	var svcAttrResp []ServiceAttribute
 	req, err := c.rm.NewRequest(
 		pkiutil.AuthenticateWithASAP(c.asap, asapAudience, user.NameOrElse(noUser)),
 		restclient.Method(http.MethodGet),
@@ -348,28 +347,28 @@ func (c *Client) GetServiceAttributes(ctx context.Context, user auth.OptionalUse
 		restclient.Header("Accept", "application/json"),
 	)
 	if err != nil {
-		return svcAttrResp, errors.Wrap(err, "failed to create get service attributes request")
+		return nil, errors.Wrap(err, "failed to create get service attributes request")
 	}
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return svcAttrResp, errors.Wrap(err, "failed to execute get service attributes request")
+		return nil, errors.Wrap(err, "failed to execute get service attributes request")
 	}
 
 	defer util.CloseSilently(response.Body)
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return svcAttrResp, errors.Wrap(err, "failed to read response body")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	if response.StatusCode != http.StatusOK {
 		message := fmt.Sprintf("failed to get attributes for service %q. Response: %s", serviceUUID, respBody)
-		return svcAttrResp, clientError(response.StatusCode, message)
+		return nil, clientError(response.StatusCode, message)
 	}
-
+	var svcAttrResp []ServiceAttribute
 	err = json.Unmarshal(respBody, &svcAttrResp)
 	if err != nil {
-		return svcAttrResp, errors.Wrap(err, "failed to unmarshal response body")
+		return nil, errors.Wrap(err, "failed to unmarshal response body")
 	}
 
 	return svcAttrResp, nil

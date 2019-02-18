@@ -306,7 +306,7 @@ func serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
 		service.Spec.Metadata.PagerDuty = pagerDutyMetadata
 	}
 
-	ogMetadata, err := GetOpsGenieAttribute(data)
+	ogMetadata, err := GetOpsgenieAttribute(data)
 	if err != nil {
 		return nil, err
 	}
