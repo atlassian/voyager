@@ -306,9 +306,9 @@ func (c *Store) serviceDataToService(data *ServiceDataRead) (*creator_v1.Service
 		service.Spec.Metadata.PagerDuty = pagerDutyMetadata
 	}
 
-	ogMetadata, err := GetOpsGenieAttribute(data) // Error ignored as Opsgenie team is optional
+	ogMetadata, err := GetOpsGenieAttribute(data)
 	if err != nil {
-		c.logger.Info("unable to get Opsgenie attribute - ignoring", zap.Error(err))
+		return nil, err
 	}
 	if ogMetadata != nil {
 		service.Spec.Metadata.Opsgenie = ogMetadata
