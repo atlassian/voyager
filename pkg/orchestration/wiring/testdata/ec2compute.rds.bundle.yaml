@@ -88,7 +88,7 @@ spec:
   - name: compute--db--binding
     references:
     - example: aname
-      name: db--instance-metadata-name
+      name: db--instance
       path: metadata.name
       resource: db--instance
     spec:
@@ -99,7 +99,7 @@ spec:
           name: compute--db
         spec:
           instanceRef:
-            name: '!{db--instance-metadata-name}'
+            name: '!{db--instance}'
           secretName: compute--db
   - name: compute--secret
     references:

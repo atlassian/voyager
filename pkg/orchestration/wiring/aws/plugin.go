@@ -18,7 +18,6 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	"github.com/atlassian/voyager/pkg/servicecatalog"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,14 +25,22 @@ import (
 
 type ServiceEnvironmentGenerator func(env *oap.ServiceEnvironment) *oap.ServiceEnvironment
 
+// ShapesFunc is used to return a list of shapes for the resource to be used as
+// input to the wiring functions of the dependants.
+//
+// The `resource` is the orchestration level resource that was transformed into `smithResource`.
+type ShapesFunc func(resource *orch_v1.StateResource, smithResource *smith_v1.Resource, context *wiringplugin.WiringContext) ([]wiringplugin.Shape, bool /* external */, bool /* retriable */, error)
+
 type WiringPlugin struct {
 	clusterServiceClassExternalID servicecatalog.ClassExternalID
 	clusterServicePlanExternalID  servicecatalog.PlanExternalID
 	resourceType                  voyager.ResourceType
-	shapes                        svccatentangler.ShapesFunc // TODO move from svccatentangler package to this package
+	shapes                        ShapesFunc
 
 	OAPResourceTypeName        oap.ResourceType
 	generateServiceEnvironment ServiceEnvironmentGenerator
+
+	VPC func(location voyager.Location) *oap.VPCEnvironment
 }
 
 func Resource(resourceType voyager.ResourceType,
@@ -41,7 +48,8 @@ func Resource(resourceType voyager.ResourceType,
 	clusterServiceClassExternalID servicecatalog.ClassExternalID,
 	clusterServicePlanExternalID servicecatalog.PlanExternalID,
 	generateServiceEnvironment ServiceEnvironmentGenerator,
-	shapes svccatentangler.ShapesFunc,
+	shapes ShapesFunc,
+	vpc func(voyager.Location) *oap.VPCEnvironment,
 ) *WiringPlugin {
 	wiringPlugin := &WiringPlugin{
 		clusterServiceClassExternalID: clusterServiceClassExternalID,
@@ -50,6 +58,7 @@ func Resource(resourceType voyager.ResourceType,
 		shapes:                        shapes,
 		OAPResourceTypeName:           oapResourceTypeName,
 		generateServiceEnvironment:    generateServiceEnvironment,
+		VPC:                           vpc,
 	}
 	return wiringPlugin
 }
@@ -143,7 +152,8 @@ func (p *WiringPlugin) instanceParameters(resource *orch_v1.StateResource, conte
 	}
 
 	serviceName := serviceName(userServiceName, context)
-	environment := p.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context))
+	vpc := p.VPC(context.StateContext.Location)
+	environment := p.generateServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc))
 	return instanceSpec(serviceName, resourceName, p.OAPResourceTypeName, *environment, attributes, alarms)
 }
 

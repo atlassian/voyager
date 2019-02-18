@@ -91,7 +91,7 @@ func (r *API) apiResourceList(w http.ResponseWriter, req *http.Request) {
 }
 
 func NewAPI(logger *zap.Logger, router *chi.Mux, clusterInformer cache.SharedIndexInformer,
-	ASAPConfig pkiutil.ASAP, location voyager.Location, apiFile string, registry prometheus.Registerer, envWhitelist []string) (*API, error) {
+	asapConfig pkiutil.ASAP, location voyager.Location, apiFile string, registry prometheus.Registerer, envWhitelist []string) (*API, error) {
 
 	labels := []string{"status", "method", "region", "environment", "path"}
 
@@ -128,7 +128,7 @@ func NewAPI(logger *zap.Logger, router *chi.Mux, clusterInformer cache.SharedInd
 		location:    location,
 		apiSpecFile: apiFile,
 
-		asapConfig: ASAPConfig,
+		asapConfig: asapConfig,
 
 		requestDuration: requestDuration,
 		requestCounter:  requestCounter,

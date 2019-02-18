@@ -6,7 +6,6 @@ import (
 	"github.com/atlassian/voyager"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -121,12 +120,6 @@ type StateContext struct {
 	// Location is constructed from a combination of ClusterLocation and the label
 	// from the EntanglerContext.
 	Location voyager.Location
-
-	// LegacyConfig is read by a function specified in the entangler struct.
-	// TODO this is a temporary container for 'stuff that's in Micros config.js'.
-	// It needs to be migrated ... somewhere. Either to the providers, the cluster
-	// config, a configuration file, ...
-	LegacyConfig legacy.Config
 
 	ServiceName voyager.ServiceName
 

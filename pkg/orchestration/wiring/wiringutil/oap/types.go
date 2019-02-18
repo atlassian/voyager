@@ -28,7 +28,6 @@ type VPCEnvironment struct {
 	VPCID                 string         `json:"vpcId,omitempty"`
 	PrivateDNSZone        string         `json:"privateDnsZone,omitempty"`
 	PrivatePaasDNSZone    string         `json:"privatePaasDnsZone,omitempty"`
-	ServiceSecurityGroup  string         `json:"serviceSecurityGroup,omitempty"`
 	InstanceSecurityGroup string         `json:"instanceSecurityGroup,omitempty"`
 	JumpboxSecurityGroup  string         `json:"jumpboxSecurityGroup,omitempty"`
 	SSLCertificateID      string         `json:"sslCertificateId,omitempty"`

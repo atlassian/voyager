@@ -372,7 +372,7 @@ spec:
   - name: i11--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress1-metadata-endpoint
+      name: ingress1-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
       resource: ingress1
     spec:
@@ -385,16 +385,15 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo11.staging.atl-paas.net
-              type: Simple
             environmentType: testenv
+            name: foo11.staging.atl-paas.net
             serviceName: test-servicename
-            target: '!{ingress1-metadata-endpoint}'
+            target: '!{ingress1-endpoint}'
+            type: Simple
   - name: i12--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress1-metadata-endpoint
+      name: ingress1-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
       resource: ingress1
     spec:
@@ -407,16 +406,15 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo12.staging.atl-paas.net
-              type: Simple
             environmentType: testenv
+            name: foo12.staging.atl-paas.net
             serviceName: test-servicename
-            target: '!{ingress1-metadata-endpoint}'
+            target: '!{ingress1-endpoint}'
+            type: Simple
   - name: i21--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress2-metadata-endpoint
+      name: ingress2-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
       resource: ingress2
     spec:
@@ -429,16 +427,15 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo21.staging.atl-paas.net
-              type: Simple
             environmentType: testenv
+            name: foo21.staging.atl-paas.net
             serviceName: test-servicename
-            target: '!{ingress2-metadata-endpoint}'
+            target: '!{ingress2-endpoint}'
+            type: Simple
   - name: i22--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress2-metadata-endpoint
+      name: ingress2-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
       resource: ingress2
     spec:
@@ -451,10 +448,9 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            aliases:
-            - name: foo22.staging.atl-paas.net
-              type: Simple
             environmentType: testenv
+            name: foo22.staging.atl-paas.net
             serviceName: test-servicename
-            target: '!{ingress2-metadata-endpoint}'
+            target: '!{ingress2-endpoint}'
+            type: Simple
 status: {}

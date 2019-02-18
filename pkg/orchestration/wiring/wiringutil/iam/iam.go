@@ -29,9 +29,6 @@ const (
 	// See how meta names would clash if Resource Y was named "iamrole" if there was no extra `-`?
 	// See iam_test for the test.
 	namePostfix = "-iamrole"
-
-	// This is just the local reference name
-	dependencyNamePostfix = "iamrole"
 )
 
 type ResourceWithIamAccessibleBinding struct {
@@ -42,15 +39,12 @@ type ResourceWithIamAccessibleBinding struct {
 
 func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName voyager.ResourceName,
 	serviceName voyager.ServiceName, createInstanceProfile bool, iamShapedResources []ResourceWithIamAccessibleBinding,
-	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string) (smith_v1.Resource, error) {
+	context *wiringplugin.WiringContext, managedPolicies, assumeRoles []string, vpc *oap.VPCEnvironment) (smith_v1.Resource, error) {
 
 	dependencyReferences := make([]smith_v1.Reference, 0, len(iamShapedResources))
 	iamPolicyDocumentRefs := make(map[string]string, len(iamShapedResources))
 	for _, iamShapedResource := range iamShapedResources {
-		ref := iamShapedResource.BindableIamAccessibleShape.Data.IAMPolicySnippet.ToReference(
-			wiringutil.ReferenceName(iamShapedResource.BindingName, dependencyNamePostfix),
-			iamShapedResource.BindingName,
-		)
+		ref := iamShapedResource.BindableIamAccessibleShape.Data.IAMPolicySnippet.ToReference(iamShapedResource.BindingName)
 		dependencyReferences = append(dependencyReferences, ref)
 		iamPolicyDocumentRefs[string(iamShapedResource.ResourceName)] = ref.Ref()
 	}
@@ -61,7 +55,7 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName
 		CreateInstanceProfile: createInstanceProfile,
 		ManagedPolicies:       managedPolicies,
 		AssumeRoles:           assumeRoles,
-		ServiceEnvironment:    *aws.CfnServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context)),
+		ServiceEnvironment:    *aws.CfnServiceEnvironment(oap.MakeServiceEnvironmentFromContext(context, vpc)),
 		ComputeType:           computeType,
 		PolicySnippets:        iamPolicyDocumentRefs,
 	})

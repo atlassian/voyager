@@ -16,11 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const (
-	kubeIngressRefMetadata         = "metadata"
-	kubeIngressRefMetadataEndpoint = "endpoint"
-)
-
 type autowiringOnlySpec struct {
 	Target          string              `json:"target"`
 	ServiceName     voyager.ServiceName `json:"serviceName"`
@@ -158,8 +153,6 @@ func getReferences(_ *orch_v1.StateResource, context *wiringplugin.WiringContext
 		return nil, true, false, errors.Errorf("shape %q is required to create ServiceBinding for %q but was not found",
 			knownshapes.IngressEndpointShape, dependency.Name)
 	}
-	ingressEndpoint := ingressShape.Data.IngressEndpoint
-	referenceName := wiringutil.ReferenceName(ingressEndpoint.Resource, kubeIngressRefMetadata, kubeIngressRefMetadataEndpoint)
-	references = append(references, ingressEndpoint.ToReference(referenceName))
+	references = append(references, ingressShape.Data.IngressEndpoint.ToReference())
 	return references, false, false, nil
 }

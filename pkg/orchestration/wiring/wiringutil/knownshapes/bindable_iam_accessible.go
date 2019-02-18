@@ -8,7 +8,8 @@ import (
 
 const (
 	// BindableIamAccessibleShape is a When you bind to it it returns IAM policy snippet.
-	BindableIamAccessibleShape wiringplugin.ShapeName = "voyager.atl-paas.net/BindableIamAccessible"
+	BindableIamAccessibleShape          wiringplugin.ShapeName = "voyager.atl-paas.net/BindableIamAccessible"
+	iamPolicySnippetReferenceNameSuffix                        = "policySnippet"
 )
 
 // +k8s:deepcopy-gen=true
@@ -26,7 +27,7 @@ type BindableIamAccessibleData struct {
 	IAMPolicySnippet libshapes.BindingSecretProtoReference
 }
 
-func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnippetPath string) *BindableIamAccessible {
+func NewBindableIamAccessible(resourceName smith_v1.ResourceName, iamPolicySnippetPath string) *BindableIamAccessible {
 	return &BindableIamAccessible{
 		ShapeMeta: wiringplugin.ShapeMeta{
 			ShapeName: BindableIamAccessibleShape,
@@ -39,7 +40,8 @@ func NewBindableIamAccessible(resourceName smith_v1.ResourceName, IAMPolicySnipp
 					Example:  "aname",
 				}},
 			IAMPolicySnippet: libshapes.BindingSecretProtoReference{
-				Path: IAMPolicySnippetPath,
+				Path:        iamPolicySnippetPath,
+				NamePostfix: iamPolicySnippetReferenceNameSuffix,
 			},
 		},
 	}

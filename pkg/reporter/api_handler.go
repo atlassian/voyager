@@ -111,14 +111,14 @@ func (r *API) apiResourceList(w http.ResponseWriter, req *http.Request) {
 		},
 		GroupVersion: reporter_v1.ReportResourceAPIVersion,
 		APIResources: []meta_v1.APIResource{
-			meta_v1.APIResource{
+			{
 				Name:         reporter_v1.ReportResourcePlural,
 				SingularName: reporter_v1.ReportResourceSingular,
 				Namespaced:   true,
 				Kind:         reporter_v1.ReportResourceKind,
 				Verbs:        []string{"get", "list", "watch"},
 			},
-			meta_v1.APIResource{
+			{
 				Name:         reporter_v1.SummaryResourcePlural,
 				SingularName: reporter_v1.SummaryResourceSingular,
 				Namespaced:   true,
@@ -183,7 +183,7 @@ func (r *API) kubifyResponse(ctx context.Context, reports []*NamespaceReportHand
 }
 
 func NewReportingAPI(logger *zap.Logger, router *chi.Mux, informers map[schema.GroupVersionKind]cache.SharedIndexInformer,
-	ASAPConfig pkiutil.ASAP, location voyager.Location, apiFile string, registry prometheus.Registerer) (*API, error) {
+	asapConfig pkiutil.ASAP, location voyager.Location, apiFile string, registry prometheus.Registerer) (*API, error) {
 
 	labels := []string{"status", "method", "service", "namespace", "path"}
 
@@ -220,7 +220,7 @@ func NewReportingAPI(logger *zap.Logger, router *chi.Mux, informers map[schema.G
 		location:    location,
 		apiSpecFile: apiFile,
 
-		asapConfig: ASAPConfig,
+		asapConfig: asapConfig,
 		providers:  map[string]ops.ProviderInterface{},
 
 		requestDuration: requestDuration,

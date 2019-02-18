@@ -9,7 +9,6 @@ import (
 	"github.com/atlassian/voyager"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/legacy"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -22,14 +21,6 @@ import (
 var (
 	serviceBindingGVK  = sc_v1b1.SchemeGroupVersion.WithKind("ServiceBinding")
 	serviceInstanceGVK = sc_v1b1.SchemeGroupVersion.WithKind("ServiceInstance")
-)
-
-const (
-	// This is the 'old' Micros name of the environment (e.g. ddev)
-	// We hack this Atlassianism in here rather than putting in user
-	// tags in the configmap because it's at the same level as legacyConfig
-	// (i.e. want to make it obvious they should be removed at the same time).
-	legacyEnvironmentTagName = "environment"
 )
 
 // EntangleContext contains information that is required by autowiring.
@@ -68,12 +59,19 @@ type TagNames struct {
 	EnvironmentTypeTag voyager.Tag
 }
 
+type TagGenerator func(
+	clusterLocation voyager.ClusterLocation,
+	clusterConfig wiringplugin.ClusterConfig,
+	location voyager.Location,
+	serviceName voyager.ServiceName,
+	properties orch_meta.ServiceProperties,
+) map[voyager.Tag]string
+
 type Entangler struct {
-	Plugins             map[voyager.ResourceType]wiringplugin.WiringPlugin
-	ClusterLocation     voyager.ClusterLocation
-	ClusterConfig       wiringplugin.ClusterConfig
-	TagNames            TagNames
-	GetLegacyConfigFunc func(voyager.Location) *legacy.Config
+	Plugins         map[voyager.ResourceType]wiringplugin.WiringPlugin
+	ClusterLocation voyager.ClusterLocation
+	ClusterConfig   wiringplugin.ClusterConfig
+	Tags            TagGenerator
 }
 
 type wiredStateResource struct {
@@ -158,39 +156,17 @@ func (en *Entangler) Entangle(state *orch_v1.State, context *EntangleContext) En
 		Label:   context.Label,
 	}
 
-	// Atlassian Specific Things
-	legacyConfigFunc := en.GetLegacyConfigFunc
-	if legacyConfigFunc == nil {
-		return &EntangleResultFailure{
-			Error: errors.New("missing legacy config"),
-		}
-	}
-	legacyConfig := legacyConfigFunc(location)
-	if legacyConfig == nil {
-		return &EntangleResultFailure{
-			Error: errors.Errorf("no legacy config for %s", location),
-		}
-	}
-
 	tags := make(map[voyager.Tag]string)
 	for tag, val := range context.ServiceProperties.UserTags {
 		tags[tag] = val
 	}
 
-	tags[en.TagNames.ServiceNameTag] = string(context.ServiceName)
-	tags[en.TagNames.BusinessUnitTag] = context.ServiceProperties.BusinessUnit
-	tags[en.TagNames.ResourceOwnerTag] = context.ServiceProperties.ResourceOwner
-	tags[en.TagNames.EnvironmentTypeTag] = string(location.EnvType)
-	tags[en.TagNames.PlatformTag] = "voyager"
-	tags[legacyEnvironmentTagName] = legacyConfig.MicrosEnv
-
 	stateContext := wiringplugin.StateContext{
 		Location:          location,
 		ClusterConfig:     en.ClusterConfig,
-		LegacyConfig:      *legacyConfig,
 		ServiceName:       context.ServiceName,
 		ServiceProperties: context.ServiceProperties,
-		Tags:              tags,
+		Tags:              en.Tags(en.ClusterLocation, en.ClusterConfig, location, context.ServiceName, context.ServiceProperties),
 	}
 
 	// Visit vertices in sorted order

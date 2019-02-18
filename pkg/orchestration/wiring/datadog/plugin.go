@@ -12,11 +12,11 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 )
 
 const (
@@ -61,7 +61,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 }
 
 func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, kubeCompute voyager.ResourceName, kubeDeployment *knownshapes.KubeDeployment, alarmType AlarmType) (smith_v1.Resource, error) {
-	instanceID, err := svccatentangler.InstanceID(resource.Spec)
+	instanceID, err := osb.InstanceID(resource.Spec)
 	if err != nil {
 		return smith_v1.Resource{}, errors.WithStack(err)
 	}

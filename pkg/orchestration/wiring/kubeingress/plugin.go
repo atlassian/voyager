@@ -148,19 +148,17 @@ func buildIngressResourceFromSpec(serviceName smith_v1.ResourceName, resourceNam
 		IngressRuleValue: ingressRuleValue,
 	})
 
-	// internalDNS rules
+	// PlatformDNS rules
 	for _, dependency := range context.Dependants {
 		if dependency.Type == platformdns_api.ResourceType {
-			var internalDNSSpec platformdns_api.Spec
-			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &internalDNSSpec); err != nil {
+			var platformDNSSpec platformdns_api.Spec
+			if err := json.Unmarshal(dependency.Resource.Spec.Raw, &platformDNSSpec); err != nil {
 				return smith_v1.Resource{}, false, false, err
 			}
-			for _, alias := range internalDNSSpec.Aliases {
-				ingressRules = append(ingressRules, ext_v1b1.IngressRule{
-					Host:             alias.Name,
-					IngressRuleValue: ingressRuleValue,
-				})
-			}
+			ingressRules = append(ingressRules, ext_v1b1.IngressRule{
+				Host:             platformDNSSpec.Name,
+				IngressRuleValue: ingressRuleValue,
+			})
 		}
 	}
 

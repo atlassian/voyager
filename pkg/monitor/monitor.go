@@ -2,16 +2,16 @@ package monitor
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
+	cond_v1 "github.com/atlassian/ctrl/apis/condition/v1"
 	"github.com/atlassian/voyager"
 	comp_v1 "github.com/atlassian/voyager/pkg/apis/composition/v1"
 	creator_v1 "github.com/atlassian/voyager/pkg/apis/creator/v1"
+	form_v1 "github.com/atlassian/voyager/pkg/apis/formation/v1"
 	comp_v1_client "github.com/atlassian/voyager/pkg/composition/client/typed/composition/v1"
 	creator_v1_client "github.com/atlassian/voyager/pkg/creator/client/typed/creator/v1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	form_v1_client "github.com/atlassian/voyager/pkg/formation/client/typed/formation/v1"
 	sc_v1b1_client "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -20,17 +20,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const (
+	pollDelay = 5 * time.Second
+)
+
 type Monitor struct {
 	ServiceDescriptorName  string
 	Logger                 *zap.Logger
 	Location               voyager.Location
 	ExpectedProcessingTime time.Duration
 	ServiceSpec            creator_v1.ServiceSpec
-	Version                string
+	ServiceDescriptor      *comp_v1.ServiceDescriptor
 
-	ServiceDescriptorClient comp_v1_client.ServiceDescriptorInterface
-	ServiceCatalogClient    sc_v1b1_client.Interface
-	CreatorServiceClient    creator_v1_client.ServiceInterface
+	ServiceDescriptorClient  comp_v1_client.ServiceDescriptorInterface
+	ServiceCatalogClient     sc_v1b1_client.Interface
+	CreatorServiceClient     creator_v1_client.ServiceInterface
+	LocationDescriptorClient form_v1_client.LocationDescriptorInterface
 }
 
 func (m *Monitor) Run(ctx context.Context) (retErr error) {
@@ -62,80 +67,43 @@ func (m *Monitor) Run(ctx context.Context) (retErr error) {
 		}
 	}
 
-	var sd *comp_v1.ServiceDescriptor
-	sd, err = buildServiceDescriptor(m.ServiceDescriptorName, m.Location, m.Version)
-	if err != nil {
-		return err
-	}
-
-	err = m.createServiceDescriptor(ctx, sd)
+	err = m.createServiceDescriptor(ctx, m.ServiceDescriptor)
 	if err != nil {
 		return err
 	}
 
 	m.Logger.Info("Initialized ServiceDescriptor for synthetic checks")
 
-	// Wait until the corresponding ServiceInstance is created.
-	// Sleeps for a short period of time, which for now should be enough I think
-	time.Sleep(m.ExpectedProcessingTime)
-
-	err = m.verifyUpsServiceInstance(ctx, m.ServiceDescriptorName, m.Version)
+	err = wait.PollImmediate(pollDelay, m.ExpectedProcessingTime, m.verifyServiceDescriptorStatus(m.ServiceDescriptorName))
 	if err != nil {
-		m.Logger.Error("ServiceInstance verification has failed", zap.Error(err))
 		return err
 	}
 
-	m.Logger.Info("ServiceInstance verification has succeeded")
+	m.Logger.Info("ServiceDescriptor Status verification has succeeded")
 	return nil
 }
 
-func (m *Monitor) verifyUpsServiceInstance(ctx context.Context, namespace, expectedVersion string) error {
-	si, err := m.serviceInstance(ctx, string(resourceName), namespace)
-	if err != nil {
-		return errors.Wrapf(err, "could not get ServiceInstance %q", resourceName)
-	}
+func (m *Monitor) verifyServiceDescriptorStatus(name string) func() (bool, error) {
+	return func() (bool, error) {
+		var sd *comp_v1.ServiceDescriptor
 
-	err = verifySpec(si.Spec, namespace, expectedVersion)
-	if err != nil {
-		return errors.WithMessage(err, "unexpected Spec")
-	}
+		sd, err := m.ServiceDescriptorClient.Get(name, meta_v1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
 
-	err = verifyStatus(si.Status)
-	if err != nil {
-		return errors.WithMessage(err, "unexpected Status")
-	}
+		_, ready := cond_v1.FindCondition(sd.Status.Conditions, cond_v1.ConditionReady)
+		if ready == nil {
+			// Probably fine, this can trigger before the SD is processed by the cluster
+			return false, nil
+		}
 
-	return nil
-}
+		if ready.Status != cond_v1.ConditionTrue {
+			return false, nil
+		}
 
-func verifySpec(spec v1beta1.ServiceInstanceSpec, namespace, expectedVersion string) error {
-	var data map[string]string
-	err := json.Unmarshal(spec.Parameters.Raw, &data)
-	if err != nil {
-		return errors.Wrapf(err, "could not unmarshal spec's parameters")
+		return true, nil
 	}
-
-	foundVersion, ok := data[versionParameter]
-	if !ok {
-		return errors.Errorf("version parameter missing from ServiceInstance %q in %q", resourceName, namespace)
-	}
-	if foundVersion != expectedVersion {
-		return errors.Errorf("found ServiceInstance with embedded version %q but expecting %q", foundVersion, expectedVersion)
-	}
-
-	return nil
-}
-
-func verifyStatus(status v1beta1.ServiceInstanceStatus) error {
-	i, condition := findCondition(status.Conditions, sc_v1b1.ServiceInstanceConditionReady)
-	if i == -1 {
-		return errors.New("this ServiceInstance does not have any valid conditions")
-	}
-	if condition.Status != sc_v1b1.ConditionTrue {
-		return errors.Errorf("not ready - %q: %q", condition.Reason, condition.Message)
-	}
-
-	return nil
 }
 
 func (m *Monitor) cleanup(ctx context.Context, sdName string) error {
@@ -183,7 +151,7 @@ func (m *Monitor) deleteServiceDescriptor(ctx context.Context, name string) erro
 
 func (m *Monitor) waitForServiceDescriptorDeletion(ctx context.Context, name string) error {
 	client := m.ServiceDescriptorClient
-	err := wait.PollImmediate(pollDelay, serviceDescriptorDeletionTimeout, func() (bool, error) {
+	err := wait.PollImmediate(pollDelay, m.ExpectedProcessingTime, func() (bool, error) {
 		sd, err := client.Get(name, meta_v1.GetOptions{})
 		if err != nil {
 			if api_errors.IsNotFound(err) {
@@ -204,20 +172,20 @@ func (m *Monitor) waitForServiceDescriptorDeletion(ctx context.Context, name str
 }
 
 func (m *Monitor) logFailureDetails(ctx context.Context, retErr error) {
-	var serviceInstance zap.Field
-	si, err := m.serviceInstance(ctx, string(resourceName), m.ServiceDescriptorName)
-	if err != nil {
-		serviceInstance = ServiceInstanceError(errors.Wrap(err, "si"))
-	} else {
-		serviceInstance = ServiceInstance(si)
-	}
-
 	var serviceDescriptor zap.Field
 	sd, err := m.serviceDescriptor(ctx, m.ServiceDescriptorName)
 	if err != nil {
 		serviceDescriptor = ServiceDescriptorError(errors.Wrap(err, "sd"))
 	} else {
 		serviceDescriptor = ServiceDescriptor(sd)
+	}
+
+	var locationDescriptor zap.Field
+	ld, err := m.locationDescriptor(ctx, m.ServiceDescriptorName)
+	if err != nil {
+		locationDescriptor = LocationDescriptorError(errors.Wrap(err, "ld"))
+	} else {
+		locationDescriptor = LocationDescriptor(ld)
 	}
 
 	var service zap.Field
@@ -228,12 +196,7 @@ func (m *Monitor) logFailureDetails(ctx context.Context, retErr error) {
 		service = Service(srv)
 	}
 
-	m.Logger.Error("monitor job failure", serviceInstance, serviceDescriptor, service, zap.Error(retErr))
-}
-
-func (m *Monitor) serviceInstance(ctx context.Context, name, namespace string) (*v1beta1.ServiceInstance, error) {
-	client := m.ServiceCatalogClient.ServicecatalogV1beta1().ServiceInstances(namespace)
-	return client.Get(name, meta_v1.GetOptions{})
+	m.Logger.Error("monitor job failure", serviceDescriptor, locationDescriptor, service, zap.Error(retErr))
 }
 
 func (m *Monitor) serviceDescriptor(ctx context.Context, name string) (*comp_v1.ServiceDescriptor, error) {
@@ -241,17 +204,12 @@ func (m *Monitor) serviceDescriptor(ctx context.Context, name string) (*comp_v1.
 	return client.Get(name, meta_v1.GetOptions{})
 }
 
-func (m *Monitor) service(ctx context.Context, name string) (*creator_v1.Service, error) {
-	client := m.CreatorServiceClient
+func (m *Monitor) locationDescriptor(ctx context.Context, name string) (*form_v1.LocationDescriptor, error) {
+	client := m.LocationDescriptorClient
 	return client.Get(name, meta_v1.GetOptions{})
 }
 
-// Right now a ServiceInstance always has only a single ServiceInstanceCondition, but that might change in the future
-func findCondition(conditions []v1beta1.ServiceInstanceCondition, conditionType v1beta1.ServiceInstanceConditionType) (int /* index */, *v1beta1.ServiceInstanceCondition) {
-	for i, condition := range conditions {
-		if condition.Type == conditionType {
-			return i, &condition
-		}
-	}
-	return -1, nil
+func (m *Monitor) service(ctx context.Context, name string) (*creator_v1.Service, error) {
+	client := m.CreatorServiceClient
+	return client.Get(name, meta_v1.GetOptions{})
 }

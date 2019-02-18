@@ -30,7 +30,7 @@ spec:
   - name: compute--myasap--binding
     references:
     - example: aname
-      name: myasap--instance-metadata-name
+      name: myasap--instance
       path: metadata.name
       resource: myasap--instance
     spec:
@@ -41,7 +41,7 @@ spec:
           name: compute--myasap
         spec:
           instanceRef:
-            name: '!{myasap--instance-metadata-name}'
+            name: '!{myasap--instance}'
           secretName: compute--myasap
   - name: compute--secret
     references:

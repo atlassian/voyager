@@ -31,9 +31,9 @@ http_archive(
 
 http_archive(
     name = "com_github_atlassian_bazel_tools",
-    sha256 = "1f6afacd6e17d515d8aae083d21090d61a0f4b67ed7733a87e222d9cfbcf65c2",
-    strip_prefix = "bazel-tools-53556f7bd66e71e96be027306fa5b6df68060165",
-    urls = ["https://github.com/atlassian/bazel-tools/archive/53556f7bd66e71e96be027306fa5b6df68060165.tar.gz"],
+    sha256 = "d1cdb0359f800070cf1d2fb9a686a0dcb26073fbbabd03ef10a0d6f183ef5357",
+    strip_prefix = "bazel-tools-02db1d60cc5dff8ff8e9af6c5902d1f825bfc49f",
+    urls = ["https://github.com/atlassian/bazel-tools/archive/02db1d60cc5dff8ff8e9af6c5902d1f825bfc49f.tar.gz"],
 )
 
 http_archive(
@@ -70,6 +70,7 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 load("@com_github_atlassian_bazel_tools//buildozer:deps.bzl", "buildozer_dependencies")
 load("@com_github_atlassian_bazel_tools//goimports:deps.bzl", "goimports_dependencies")
 load("@com_github_atlassian_bazel_tools//gometalinter:deps.bzl", "gometalinter_dependencies")
+load("@com_github_atlassian_bazel_tools//golangcilint:deps.bzl", "golangcilint_dependencies")
 
 container_repositories()
 
@@ -86,3 +87,5 @@ buildifier_dependencies()
 buildozer_dependencies()
 
 gometalinter_dependencies()
+
+golangcilint_dependencies()

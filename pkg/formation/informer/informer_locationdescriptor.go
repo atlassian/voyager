@@ -7,7 +7,6 @@ import (
 	"github.com/atlassian/voyager/pkg/formation/client"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -18,9 +17,7 @@ func LocationDescriptorInformer(client client.Interface, namespace string, resyn
 			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
 				return lds.List(options)
 			},
-			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
-				return lds.Watch(options)
-			},
+			WatchFunc: lds.Watch,
 		},
 		&form_v1.LocationDescriptor{},
 		resync,

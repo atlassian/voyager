@@ -138,11 +138,11 @@ func (a *ASAPClientConfig) validateKey() error {
 }
 
 func (a *ASAPClientConfig) PublicKey() (crypto.PublicKey, error) {
-	switch a.PrivateKey.(type) {
+	switch k := a.PrivateKey.(type) {
 	case *rsa.PrivateKey:
-		return a.PrivateKey.(*rsa.PrivateKey).Public(), nil
+		return k.Public(), nil
 	case *ecdsa.PrivateKey:
-		return a.PrivateKey.(*ecdsa.PrivateKey).Public(), nil
+		return k.Public(), nil
 	default:
 		return nil, errors.New("private key type is not supported (only rsa, ecdsa are supported)")
 	}

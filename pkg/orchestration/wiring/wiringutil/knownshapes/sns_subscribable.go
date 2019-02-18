@@ -13,7 +13,8 @@ const (
 
 	// This has to match up with what ends up in the bind credentials for
 	// something that emits a topic.
-	snsTopicArnOutputNameKey = "TopicArn"
+	snsTopicArnOutputNameKey       = "TopicArn"
+	snsTopicArnReferenceNameSuffix = "topicArn"
 )
 
 // +k8s:deepcopy-gen=true
@@ -42,8 +43,9 @@ func NewSnsSubscribable(smithResourceName smith_v1.ResourceName) *SnsSubscribabl
 					Example:  "aname",
 				}},
 			TopicARN: libshapes.BindingSecretProtoReference{
-				Path:    fmt.Sprintf("data.%s", snsTopicArnOutputNameKey),
-				Example: `"arn:aws:sns:us-east-1:123456789012:example"`,
+				Path:        fmt.Sprintf("data.%s", snsTopicArnOutputNameKey),
+				Example:     `"arn:aws:sns:us-east-1:123456789012:example"`,
+				NamePostfix: snsTopicArnReferenceNameSuffix,
 			},
 		},
 	}

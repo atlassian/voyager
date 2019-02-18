@@ -100,21 +100,32 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		return false, nil
 	}
 
-	conflict, retriable, state, err := c.processLocationDescriptor(ctx.Logger, ld)
+	external, conflict, retriable, state, err := c.processLocationDescriptor(ctx.Logger, ld)
 	if conflict {
 		return false, nil
 	}
 
-	conflict, retriable, err = c.handleProcessResult(ctx.Logger, ld, state, retriable, err)
+	conflict, handleResultRetriable, handleResultErr := c.handleProcessResult(ctx.Logger, ld, state, retriable, err)
 	if conflict {
 		ctx.Logger.Debug("Conflict detected while handling process result", zap.Error(err))
 		return false, nil
 	}
 
-	return retriable, err
+	if err != nil {
+		if !external {
+			if handleResultErr != nil {
+				ctx.Logger.Error("Failed to set LocationDescriptor status", zap.Error(handleResultErr))
+			}
+			return handleResultRetriable || retriable, err
+		}
+
+		ctx.Logger.Info("Invalid LocationDescriptor Object", zap.Error(err))
+	}
+
+	return handleResultRetriable, handleResultErr
 }
 
-func (c *Controller) processLocationDescriptor(logger *zap.Logger, ld *form_v1.LocationDescriptor) (bool /* conflict */, bool /* retriable */, *orch_v1.State, error) {
+func (c *Controller) processLocationDescriptor(logger *zap.Logger, ld *form_v1.LocationDescriptor) (bool /* externalErr */, bool /* conflict */, bool /* retriable */, *orch_v1.State, error) {
 	name := ld.GetName()
 	logger.Sugar().Infof("Ensuring state object for service %q is present", ld.GetName())
 
@@ -122,27 +133,28 @@ func (c *Controller) processLocationDescriptor(logger *zap.Logger, ld *form_v1.L
 	configMapInterface, exists, err := c.ConfigMapInformer.GetIndexer().GetByKey(
 		ByConfigMapNameIndexKey(ld.GetNamespace(), ld.Spec.ConfigMapNames.Release))
 	if err != nil {
-		return false, false, nil, errors.WithStack(err)
+		return false, false, false, nil, errors.WithStack(err)
 	}
 	var releaseData map[string]interface{}
 	if exists {
 		configMap := configMapInterface.(*core_v1.ConfigMap)
 		releaseStr, ok := configMap.Data[releaseConfigMapDataKey]
 		if !ok {
-			return false, false, nil, errors.Errorf("release config map is missing expected data key: '%s'", releaseConfigMapDataKey)
+			// External error, even if the error is caused by composition
+			return true, false, false, nil, errors.Errorf("release config map is missing expected data key: '%s'", releaseConfigMapDataKey)
 		}
 		err = yaml.UnmarshalStrict([]byte(releaseStr), &releaseData)
 		if err != nil {
-			return false, false, nil, err
+			return false, false, false, nil, errors.WithStack(err)
 		}
 	}
 
-	resources, err := c.convertToStateResources(ld.Spec, releaseData)
+	resources, external, retriable, err := c.convertToStateResources(ld.Spec, releaseData)
 	if err != nil {
-		return false, false, nil, err
+		return external, false, retriable, nil, err
 	}
 	if ld.Spec.ConfigMapName == "" {
-		return false, false, nil, errors.New("configMapName is missing")
+		return true, false, false, nil, errors.New("configMapName is missing")
 	}
 	spec := orch_v1.StateSpec{
 		ConfigMapName: ld.Spec.ConfigMapName,
@@ -176,7 +188,7 @@ func (c *Controller) processLocationDescriptor(logger *zap.Logger, ld *form_v1.L
 		desired,
 	)
 	realState, _ := state.(*orch_v1.State)
-	return conflict, retriable, realState, err
+	return false, conflict, retriable, realState, err
 }
 
 func copyCondition(state *orch_v1.State, condType cond_v1.ConditionType, condition *cond_v1.Condition) {
@@ -209,6 +221,9 @@ func copyCondition(state *orch_v1.State, condType cond_v1.ConditionType, conditi
 	}
 }
 
+// handleProcessResult takes the the results of processing and writes it into the
+// status of the State. it does not returns the passed in error, thus allowing the
+// caller to distinguish between "Status Update Failed" vs "This was the error I passed in"
 func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.LocationDescriptor, state *orch_v1.State, retriable bool, err error) (conflictRet, retriableRet bool, e error) {
 	inProgressCond := cond_v1.Condition{
 		Type:   cond_v1.ConditionInProgress,
@@ -224,7 +239,8 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 	}
 	resourceStatuses := ld.Status.ResourceStatuses
 
-	if err != nil {
+	switch {
+	case err != nil:
 		errorCond.Status = cond_v1.ConditionTrue
 		errorCond.Message = err.Error()
 		if retriable {
@@ -233,11 +249,13 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 		} else {
 			errorCond.Reason = "TerminalError"
 		}
-	} else if len(state.Status.Conditions) == 0 {
+
+	case len(state.Status.Conditions) == 0:
 		inProgressCond.Status = cond_v1.ConditionTrue
 		inProgressCond.Reason = "WaitingOnOrchestrationConditions"
 		inProgressCond.Message = "Waiting for Orchestration to report Conditions (initial creation?)"
-	} else {
+
+	default:
 		// This just copies the status from State
 		copyCondition(state, cond_v1.ConditionInProgress, &inProgressCond)
 		copyCondition(state, cond_v1.ConditionReady, &readyCond)
@@ -267,10 +285,9 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 	if inProgressUpdated || readyUpdated || errorUpdated || resourceStatusesUpdated {
 		conflictStatus, retriableStatus, errStatus := c.setStatus(logger, ld)
 		if errStatus != nil {
-			if err != nil {
-				logger.Info("Failed to set LocationDescriptor status", zap.Error(errStatus))
-				return false, retriableStatus || retriable, err
-			}
+			return false, retriableStatus, errStatus
+		}
+		if errStatus != nil {
 			return false, retriableStatus, errStatus
 		}
 		if conflictStatus {
@@ -278,7 +295,7 @@ func (c *Controller) handleProcessResult(logger *zap.Logger, ld *form_v1.Locatio
 		}
 	}
 
-	return false, retriable, err
+	return false, false, nil
 }
 
 func (c *Controller) setStatus(logger *zap.Logger, ld *form_v1.LocationDescriptor) (conflictRet, retriableRet bool, e error) {
@@ -352,7 +369,7 @@ func (c *Controller) updateResourceStatuses(ld *form_v1.LocationDescriptor, newR
 	return false
 }
 
-func (c *Controller) convertToStateResources(ldSpec form_v1.LocationDescriptorSpec, releaseData map[string]interface{}) ([]orch_v1.StateResource, error) {
+func (c *Controller) convertToStateResources(ldSpec form_v1.LocationDescriptorSpec, releaseData map[string]interface{}) ([]orch_v1.StateResource, bool /* external */, bool /* retriable */, error) {
 	srs := make([]orch_v1.StateResource, 0, len(ldSpec.Resources))
 	releaseDataResolver := func(varName string) (interface{}, error) {
 		if releaseData == nil {
@@ -379,7 +396,7 @@ func (c *Controller) convertToStateResources(ldSpec form_v1.LocationDescriptorSp
 		}
 		defaults, err := util.ToRawExtension(getDefaults(ldr.Type, c.Location.ClusterLocation()))
 		if err != nil {
-			return nil, err
+			return nil, false, false, err
 		}
 
 		expandedSpec, errs := releaseSpecExpander.Expand(ldr.Spec)
@@ -398,10 +415,10 @@ func (c *Controller) convertToStateResources(ldSpec form_v1.LocationDescriptorSp
 	}
 
 	if errorList.HasErrors() {
-		return nil, errorList
+		return nil, true, false, errorList
 	}
 
-	return srs, nil
+	return srs, false, false, nil
 }
 
 // Hard-coded temporarily. In future, should be versioned, come from provider, etc. etc.

@@ -10,7 +10,7 @@ import (
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
-	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/svccatentangler"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/osb"
 	sc_v1b1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,8 +20,6 @@ import (
 const (
 	ResourceType   voyager.ResourceType = "SQS"
 	ResourcePrefix                      = "SQS"
-
-	snsTopicArnReferenceNameSuffix = "TopicArn"
 
 	clusterServiceClassExternalName = "sqs"
 	clusterServiceClassExternalID   = "06068066-7f66-4297-8683-a1ba0a2b7401"
@@ -68,12 +66,10 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 				IsExternalError: true,
 			}
 		}
-		resourceRef := snsShape.Data.ServiceInstanceName
-		serviceBinding := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, resourceRef)
+		serviceBinding := wiringutil.ConsumerProducerServiceBinding(stateResource.Name, dependency.Name, snsShape.Data.ServiceInstanceName.ToReference())
 		wiredResources = append(wiredResources, serviceBinding)
 
-		referenceName := wiringutil.ReferenceName(serviceBinding.Name, snsTopicArnReferenceNameSuffix)
-		topicArnRef := snsShape.Data.TopicARN.ToReference(referenceName, serviceBinding.Name)
+		topicArnRef := snsShape.Data.TopicARN.ToReference(serviceBinding.Name)
 		references = append(references, topicArnRef)
 		snsSubscriptions = append(snsSubscriptions, snsSubscription{
 			TopicArn:   topicArnRef.Ref(),
@@ -128,7 +124,7 @@ func WireUp(stateResource *orch_v1.StateResource, context *wiringplugin.WiringCo
 }
 
 func constructServiceInstance(resource *orch_v1.StateResource, context *wiringplugin.WiringContext, references []smith_v1.Reference, snsSubscriptions []snsSubscription) (smith_v1.Resource, bool /* external */, bool /* retriable */, error) {
-	instanceID, err := svccatentangler.InstanceID(resource.Spec)
+	instanceID, err := osb.InstanceID(resource.Spec)
 	if err != nil {
 		return smith_v1.Resource{}, false, false, err
 	}
