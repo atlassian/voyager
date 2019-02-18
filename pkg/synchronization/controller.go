@@ -729,10 +729,12 @@ func filterOpsgenieIntegrationsByEnv(integrations []opsgenie.Integration, envTyp
 			if integration.EnvType == opsgenie.EnvTypeProd {
 				filtered = append(filtered, integration)
 			}
-		default:
+		case voyager.EnvTypeDev:
 			if integration.EnvType == opsgenie.EnvTypeDev {
 				filtered = append(filtered, integration)
 			}
+		default:
+			return nil, errors.Errorf("unexpected envType %q when filtering Opsgenie integrations", envType)
 		}
 	}
 
