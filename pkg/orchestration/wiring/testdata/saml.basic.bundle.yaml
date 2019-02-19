@@ -130,7 +130,7 @@ spec:
         kind: ServiceAccount
         metadata:
           name: kubecompute-simple--svcacc
-  - name: kubecompute-simple--pdb
+  - name: kubecompute-simple--pdb-minavail-0
     spec:
       object:
         apiVersion: policy/v1beta1

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager"
@@ -334,9 +335,9 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	podSpec := buildPodSpec(containers, serviceAccountNameRef.Ref(), affinity)
 
 	// Add pod disruption budget
-	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
+	pdbSpec, pdbNamePostfix := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
 	pdb := smith_v1.Resource{
-		Name: wiringutil.ResourceName(resource.Name, pdbPostfix),
+		Name: wiringutil.ResourceName(resource.Name, pdbPostfix, pdbNamePostfix),
 		Spec: smith_v1.ResourceSpec{
 			Object: &policy_v1.PodDisruptionBudget{
 				TypeMeta: meta_v1.TypeMeta{
@@ -598,7 +599,7 @@ func buildAntiAffinity(labelMap map[string]string) *core_v1.PodAntiAffinity {
 	}
 }
 
-func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) policy_v1.PodDisruptionBudgetSpec {
+func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32) (policy_v1.PodDisruptionBudgetSpec, string) {
 	// Make sure we can drain nodes if the minReplicas is < 3
 	var minAvailable string
 	switch minReplicas {
@@ -609,6 +610,9 @@ func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32)
 	default:
 		minAvailable = "66%"
 	}
+	// If we start manipulating more than just minAvailable, we should do
+	// something like hash the struct values instead
+	postfix := "minavail-" + strings.Trim(minAvailable, "%")
 
 	return policy_v1.PodDisruptionBudgetSpec{
 		MinAvailable: &intstr.IntOrString{
@@ -618,7 +622,7 @@ func buildPodDisruptionBudgetSpec(labelMap map[string]string, minReplicas int32)
 		Selector: &meta_v1.LabelSelector{
 			MatchLabels: labelMap,
 		},
-	}
+	}, postfix
 }
 
 func buildHorizontalPodAutoscalerSpec(spec *Spec, deploymentName string) autoscaling_v2b1.HorizontalPodAutoscalerSpec {
