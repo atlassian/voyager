@@ -252,9 +252,11 @@ func TestCreatesLocationDescriptorNoLabel(t *testing.T) {
 			},
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			ld, ok := findCreatedLocationDescriptor(tc.formFake.Actions())
 			require.True(t, ok)
@@ -314,9 +316,11 @@ func TestCreatesLocationDescriptorWithTransformedResources(t *testing.T) {
 			},
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			ld, ok := findCreatedLocationDescriptor(tc.formFake.Actions())
 			require.True(t, ok)
@@ -368,9 +372,11 @@ func TestCreatesLocationDescriptorWithLabel(t *testing.T) {
 	tc := testCase{
 		sd: sd,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			ld, ok := findCreatedLocationDescriptor(tc.formFake.Actions())
 			require.True(t, ok)
@@ -457,9 +463,11 @@ func TestUpdatesLocationDescriptorNoLabel(t *testing.T) {
 			},
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			ld, ok := findUpdatedLocationDescriptor(tc.formFake.Actions())
 			require.True(t, ok)
@@ -541,9 +549,11 @@ func TestDoesNotSkipLocationDescriptorUpdateWhenLocationDescriptorBeingDeleted(t
 			},
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			_, ok := findCreatedLocationDescriptor(tc.formFake.Actions())
 			assert.False(t, ok)
@@ -601,9 +611,11 @@ func TestLocationDescriptorErrorsWhenDifferentOwnerReference(t *testing.T) {
 			},
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			assert.Error(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			_, ok := findCreatedLocationDescriptor(tc.formFake.Actions())
 			require.False(t, ok)
@@ -632,9 +644,11 @@ func TestSkipsLocationWhenControllerHasNamespace(t *testing.T) {
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			cntrlr.namespace = "some-random-ns"
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			_, found := findCreatedNamespace(tc.mainFake.Actions())
 			require.False(t, found)
@@ -665,8 +679,10 @@ func TestServiceDescriptorUpdatedIfStatusChanges(t *testing.T) {
 	tc := testCase{
 		sd: sd,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			// Descriptor should have updated with a bunch of statuses
 			sd, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())
@@ -702,8 +718,10 @@ func TestServiceDescriptorFinalizerAdded(t *testing.T) {
 	tc := testCase{
 		sd: sd,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			// Descriptor should have updated with a bunch of statuses
 			sd, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())
@@ -745,8 +763,10 @@ func TestDeleteServiceDescriptorFinalizerRemoved(t *testing.T) {
 	tc := testCase{
 		sd: sd,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			// Descriptor should have updated with a bunch of statuses
 			sd, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())
@@ -825,8 +845,10 @@ func TestServiceDescriptorNotUpdatedIfStatusNotChanged(t *testing.T) {
 	tc := testCase{
 		sd: sd,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			// Descriptor should have updated with a bunch of statuses
 			_, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())
@@ -1028,8 +1050,10 @@ func TestServiceDescriptorCopiesLdStatus(t *testing.T) {
 		mainClientObjects: []runtime.Object{existingNamespace, unreferencedNamespace},
 
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			// Descriptor should have updated with a bunch of statuses
 			sd, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())
@@ -1200,8 +1224,10 @@ func TestServiceDescriptorCopiesLdStatusWhenDeleting(t *testing.T) {
 				return true, nil, nil
 			})
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			// Descriptor should have updated with a bunch of statuses
 			sd, ok := findUpdatedServiceDescriptor(tc.compFake.Actions())

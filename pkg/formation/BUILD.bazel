@@ -49,6 +49,7 @@ go_test(
         "//pkg/k8s:go_default_library",
         "//pkg/orchestration/client/fake:go_default_library",
         "//pkg/orchestration/informer:go_default_library",
+        "//pkg/util:go_default_library",
         "//pkg/util/testutil:go_default_library",
         "//vendor/github.com/ash2k/stager:go_default_library",
         "//vendor/github.com/atlassian/ctrl:go_default_library",

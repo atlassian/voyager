@@ -11,6 +11,7 @@ import (
 	compclient_fake "github.com/atlassian/voyager/pkg/composition/client/fake"
 	compInf "github.com/atlassian/voyager/pkg/composition/informer"
 	k8s_testing "github.com/atlassian/voyager/pkg/k8s/testing"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
@@ -39,8 +40,10 @@ func TestCreateServiceDescriptor(t *testing.T) {
 				},
 			}
 			pctx.Object = desiredSD
-			_, err := cntrlr.Process(pctx)
+			external, retriable, err := cntrlr.Process(pctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.sdFake.Actions()
 
@@ -85,8 +88,10 @@ func TestUpdateServiceDescriptor(t *testing.T) {
 			}
 
 			pctx.Object = desiredSD
-			_, err := cntrlr.Process(pctx)
+			external, retriable, err := cntrlr.Process(pctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.sdFake.Actions()
 
@@ -122,8 +127,10 @@ func TestUpdateServiceDescriptorNoOp(t *testing.T) {
 			newSD.SetGroupVersionKind(comp_v1.ServiceDescriptorGVK)
 			pctx.Object = newSD
 
-			_, err := cntrlr.Process(pctx)
+			external, retriable, err := cntrlr.Process(pctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.sdFake.Actions()
 
@@ -171,8 +178,10 @@ func TestSkipReplicationOfExisting(t *testing.T) {
 			}
 			pctx.Object = desiredSD
 
-			_, err := cntrlr.Process(pctx)
+			external, retriable, err := cntrlr.Process(pctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.sdFake.Actions()
 
@@ -222,8 +231,10 @@ func TestSkipReplicationOfDesired(t *testing.T) {
 			}
 			pctx.Object = desiredSD
 
-			_, err := cntrlr.Process(pctx)
+			external, retriable, err := cntrlr.Process(pctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.sdFake.Actions()
 

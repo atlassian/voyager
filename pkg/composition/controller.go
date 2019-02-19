@@ -69,7 +69,7 @@ func (c *Controller) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, error) {
+func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* external */, bool /* retriable */, error) {
 	sd := ctx.Object.(*comp_v1.ServiceDescriptor)
 	serviceName := sd.Name
 	logger := ctx.Logger.With(zap.String("sd_name", sd.Name))
@@ -78,7 +78,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	// If SD is marked for deletion and SD finalizer is missing, we have nothing to do
 	if sd.ObjectMeta.DeletionTimestamp != nil && !hasServiceDescriptorFinalizer(sd) {
 		logger.Sugar().Infof("No SD finalizer for %q. Skipping", sd.Name)
-		return false, nil
+		return false, false, nil
 	}
 
 	// If SD finalizer is missing, add it and finish the processing iteration
@@ -86,7 +86,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		sd.Finalizers = addServiceDescriptorFinalizer(sd.GetFinalizers())
 		_, retriableStatus, errStatus := c.updateServiceDescriptor(logger, sd)
 		if errStatus != nil {
-			return retriableStatus, errStatus
+			return false, retriableStatus, errStatus
 		}
 	}
 
@@ -96,7 +96,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		nsServiceName, _ := deconstructNamespaceName(c.namespace)
 		if serviceName != nsServiceName {
 			logger.Sugar().Infof("Namespace %q can't possibly be created by SD %q. Skipping.", c.namespace, sd.Name)
-			return false, nil
+			return false, false, nil
 		}
 	}
 
@@ -111,15 +111,15 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 
 		conflict, handleResultRetriable, handleResultErr := c.handleProcessResult(logger, serviceName, sd, foResults, false, retriable, err)
 		if conflict {
-			return false, nil
+			return false, false, nil
 		}
 
 		// status update failed (real error)
 		if handleResultErr != nil {
-			return handleResultRetriable, handleResultErr
+			logger.Error("Failed to set Service Descriptor status", zap.Error(handleResultErr))
 		}
 
-		return false, nil
+		return true, handleResultRetriable, err
 	}
 
 	deleteFinished := true
@@ -138,7 +138,7 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		if conflict {
 			// Something ran into a conflict during processing
 			// The entire ServiceDescriptor will be processed anyway so we just exit
-			return false, nil
+			return false, false, nil
 		}
 		if processErr != nil {
 			// stop the presses
@@ -160,16 +160,16 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 
 	conflict, handleResultRetriable, handleResultErr := c.handleProcessResult(logger, serviceName, sd, foResults, deleteFinished, retriable, err)
 	if conflict {
-		return false, nil
+		return false, false, nil
 	}
 
 	if err != nil {
 		if handleResultErr != nil {
 			logger.Error("Failed to set ServiceDescriptor status", zap.Error(handleResultErr))
 		}
-		return handleResultRetriable || retriable, err
+		return false, handleResultRetriable || retriable, err
 	}
-	return handleResultRetriable, handleResultErr
+	return false, handleResultRetriable, handleResultErr
 }
 
 func (c *Controller) processFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *formationObjectResult, error) {

@@ -113,9 +113,11 @@ func TestSkipsConfigMapWhenNotServiceNamespace(t *testing.T) {
 			},
 		},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			actions := tc.mainFake.Actions()
 			_, createsFound := findCreatedConfigMap(actions, namespaceName, apisynchronization.DefaultServiceMetadataConfigMapName)
@@ -174,8 +176,10 @@ func TestCreatesConfigMapFromServiceCentralData(t *testing.T) {
 			expected := basicServiceProperties(service, voyager.EnvTypeDev)
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			actions := tc.mainFake.Actions()
 
@@ -286,8 +290,10 @@ func TestIncludesPagerDutyForClusterEnvironment(t *testing.T) {
 					cntrlr.ClusterLocation = voyager.ClusterLocation{
 						EnvType: subCase.envType,
 					}
-					_, err = cntrlr.Process(ctx)
+					external, retriable, err := cntrlr.Process(ctx)
 					require.NoError(t, err)
+					assert.False(t, external)
+					assert.False(t, retriable)
 
 					actions := tc.mainFake.Actions()
 
@@ -347,9 +353,9 @@ func TestReturnsErrorWhenPagerDutyNotPresent(t *testing.T) {
 			cntrlr.ClusterLocation = voyager.ClusterLocation{
 				EnvType: voyager.EnvTypeProduction,
 			}
-			retriable, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.Error(t, err)
-
+			assert.False(t, external) // internal error - pagerduty missing means something is wrong with creator?
 			assert.False(t, retriable)
 		},
 	}
@@ -393,9 +399,9 @@ func TestReturnsErrorWhenPagerDutyEmptyForEnvironment(t *testing.T) {
 			cntrlr.ClusterLocation = voyager.ClusterLocation{
 				EnvType: voyager.EnvTypeProduction,
 			}
-			retriable, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.Error(t, err)
-
+			assert.False(t, external) // internal error - pagerduty missing means something is wrong with creator?
 			assert.False(t, retriable)
 		},
 	}
@@ -473,8 +479,10 @@ func TestUpdatesExistingConfigMap(t *testing.T) {
 			expected := basicServiceProperties(service, voyager.EnvTypeDev)
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			actions := tc.mainFake.Actions()
 
@@ -580,8 +588,10 @@ func TestSkipsConfigMapUpdateWhenMetadataIsTheSame(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(existingService, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			actions := tc.mainFake.Actions()
 
@@ -625,9 +635,9 @@ func TestMarksRetriableWhenNotKnownService(t *testing.T) {
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(&creator_v1.Service{}, errors.Errorf("Could not find service"))
 
-			retriable, err := cntrlr.Process(ctx)
-
+			external, retriable, err := cntrlr.Process(ctx)
 			require.Error(t, err)
+			assert.False(t, external)
 			assert.True(t, retriable)
 		},
 	}
@@ -792,8 +802,10 @@ func TestCreatesDockerSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			secrets := findCreatedSecrets(tc.mainFake.Actions())
 
@@ -878,8 +890,10 @@ func TestUpdatesDockerSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			secrets := findUpdatedSecrets(tc.mainFake.Actions())
 
@@ -930,8 +944,10 @@ func TestDockerSecretNonExistent(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			assert.Error(t, err, "Should return an error as the docker secret does not exist")
+			assert.False(t, external)
+			assert.True(t, retriable)
 		},
 	}
 
@@ -976,8 +992,10 @@ func TestDockerSecretIncorrectType(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			assert.Error(t, err, "Should return an error as the docker secret is of the wrong type")
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 		},
 	}
@@ -1025,8 +1043,10 @@ func TestAddsKube2IamAnnotation(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			// Ensure the namespace is updated
 			updatedNamespaces := findUpdatedNamespaces(tc.mainFake.Actions())
@@ -1087,8 +1107,10 @@ func TestCreatesCommonSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			secrets := findCreatedSecrets(tc.mainFake.Actions())
 
@@ -1175,8 +1197,10 @@ func TestHandlesExistingCommonSecret(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			// the fact that there is no error means that it
 			// handled the already exists error
@@ -1229,8 +1253,10 @@ func TestUpdatesKube2IamAnnotation(t *testing.T) {
 			}
 			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
 
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external)
+			assert.False(t, retriable)
 
 			// Ensure the namespace is updated
 			updatedNamespaces := findUpdatedNamespaces(tc.mainFake.Actions())
