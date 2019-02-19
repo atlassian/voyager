@@ -114,7 +114,7 @@ spec:
   - name: notification-sqs--notification-sns--binding
     references:
     - example: aname
-      name: notification-sns--instance-metadata-name
+      name: notification-sns--instance
       path: metadata.name
       resource: notification-sns--instance
     spec:
@@ -125,13 +125,13 @@ spec:
           name: notification-sqs--notification-sns
         spec:
           instanceRef:
-            name: '!{notification-sns--instance-metadata-name}'
+            name: '!{notification-sns--instance}'
           secretName: notification-sqs--notification-sns
   - name: notification-sqs--instance
     references:
     - example: '"arn:aws:sns:us-east-1:123456789012:example"'
       modifier: bindsecret
-      name: notification-sqs--notification-sns--binding-TopicArn
+      name: notification-sqs--notification-sns--binding-topicArn
       path: data.TopicArn
       resource: notification-sqs--notification-sns--binding
     spec:
@@ -167,7 +167,7 @@ spec:
                 Subscriptions:
                 - attributes:
                     RawMessageDelivery: false
-                  topicArn: '!{notification-sqs--notification-sns--binding-TopicArn}'
+                  topicArn: '!{notification-sqs--notification-sns--binding-topicArn}'
                 VisibilityTimeout: 30
               name: notification-sqs
               type: sqs
@@ -365,7 +365,7 @@ spec:
   - name: ec2--asap--binding
     references:
     - example: aname
-      name: asap--instance-metadata-name
+      name: asap--instance
       path: metadata.name
       resource: asap--instance
     spec:
@@ -376,12 +376,12 @@ spec:
           name: ec2--asap
         spec:
           instanceRef:
-            name: '!{asap--instance-metadata-name}'
+            name: '!{asap--instance}'
           secretName: ec2--asap
   - name: ec2--basic--binding
     references:
     - example: aname
-      name: basic--instance-metadata-name
+      name: basic--instance
       path: metadata.name
       resource: basic--instance
     spec:
@@ -392,12 +392,12 @@ spec:
           name: ec2--basic
         spec:
           instanceRef:
-            name: '!{basic--instance-metadata-name}'
+            name: '!{basic--instance}'
           secretName: ec2--basic
   - name: ec2--files--binding
     references:
     - example: aname
-      name: files--instance-metadata-name
+      name: files--instance
       path: metadata.name
       resource: files--instance
     spec:
@@ -408,12 +408,12 @@ spec:
           name: ec2--files
         spec:
           instanceRef:
-            name: '!{files--instance-metadata-name}'
+            name: '!{files--instance}'
           secretName: ec2--files
   - name: ec2--stream--binding
     references:
     - example: aname
-      name: stream--instance-metadata-name
+      name: stream--instance
       path: metadata.name
       resource: stream--instance
     spec:
@@ -424,12 +424,12 @@ spec:
           name: ec2--stream
         spec:
           instanceRef:
-            name: '!{stream--instance-metadata-name}'
+            name: '!{stream--instance}'
           secretName: ec2--stream
   - name: ec2--dynamo-basic--binding
     references:
     - example: aname
-      name: dynamo-basic--instance-metadata-name
+      name: dynamo-basic--instance
       path: metadata.name
       resource: dynamo-basic--instance
     spec:
@@ -440,12 +440,12 @@ spec:
           name: ec2--dynamo-basic
         spec:
           instanceRef:
-            name: '!{dynamo-basic--instance-metadata-name}'
+            name: '!{dynamo-basic--instance}'
           secretName: ec2--dynamo-basic
   - name: ec2--dynamo-complex--binding
     references:
     - example: aname
-      name: dynamo-complex--instance-metadata-name
+      name: dynamo-complex--instance
       path: metadata.name
       resource: dynamo-complex--instance
     spec:
@@ -456,12 +456,12 @@ spec:
           name: ec2--dynamo-complex
         spec:
           instanceRef:
-            name: '!{dynamo-complex--instance-metadata-name}'
+            name: '!{dynamo-complex--instance}'
           secretName: ec2--dynamo-complex
   - name: ec2--datastore--binding
     references:
     - example: aname
-      name: datastore--instance-metadata-name
+      name: datastore--instance
       path: metadata.name
       resource: datastore--instance
     spec:
@@ -472,12 +472,12 @@ spec:
           name: ec2--datastore
         spec:
           instanceRef:
-            name: '!{datastore--instance-metadata-name}'
+            name: '!{datastore--instance}'
           secretName: ec2--datastore
   - name: ec2--notification-sns--binding
     references:
     - example: aname
-      name: notification-sns--instance-metadata-name
+      name: notification-sns--instance
       path: metadata.name
       resource: notification-sns--instance
     spec:
@@ -488,12 +488,12 @@ spec:
           name: ec2--notification-sns
         spec:
           instanceRef:
-            name: '!{notification-sns--instance-metadata-name}'
+            name: '!{notification-sns--instance}'
           secretName: ec2--notification-sns
   - name: ec2--notification-sqs--binding
     references:
     - example: aname
-      name: notification-sqs--instance-metadata-name
+      name: notification-sqs--instance
       path: metadata.name
       resource: notification-sqs--instance
     spec:
@@ -504,7 +504,7 @@ spec:
           name: ec2--notification-sqs
         spec:
           instanceRef:
-            name: '!{notification-sqs--instance-metadata-name}'
+            name: '!{notification-sqs--instance}'
           secretName: ec2--notification-sqs
   - name: ec2--secret
     references:
@@ -719,31 +719,31 @@ spec:
   - name: ec2---iamrole
     references:
     - modifier: bindsecret
-      name: ec2--basic--binding-iamrole
+      name: ec2--basic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--basic--binding
     - modifier: bindsecret
-      name: ec2--files--binding-iamrole
+      name: ec2--files--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--files--binding
     - modifier: bindsecret
-      name: ec2--stream--binding-iamrole
+      name: ec2--stream--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--stream--binding
     - modifier: bindsecret
-      name: ec2--dynamo-basic--binding-iamrole
+      name: ec2--dynamo-basic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--dynamo-basic--binding
     - modifier: bindsecret
-      name: ec2--dynamo-complex--binding-iamrole
+      name: ec2--dynamo-complex--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--dynamo-complex--binding
     - modifier: bindsecret
-      name: ec2--notification-sns--binding-iamrole
+      name: ec2--notification-sns--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--notification-sns--binding
     - modifier: bindsecret
-      name: ec2--notification-sqs--binding-iamrole
+      name: ec2--notification-sqs--binding-policySnippet
       path: data.IamPolicySnippet
       resource: ec2--notification-sqs--binding
     spec:
@@ -760,13 +760,13 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: ec2-iamrole
           policySnippets:
-            basic: '!{ec2--basic--binding-iamrole}'
-            dynamo-basic: '!{ec2--dynamo-basic--binding-iamrole}'
-            dynamo-complex: '!{ec2--dynamo-complex--binding-iamrole}'
-            files: '!{ec2--files--binding-iamrole}'
-            notification-sns: '!{ec2--notification-sns--binding-iamrole}'
-            notification-sqs: '!{ec2--notification-sqs--binding-iamrole}'
-            stream: '!{ec2--stream--binding-iamrole}'
+            basic: '!{ec2--basic--binding-policySnippet}'
+            dynamo-basic: '!{ec2--dynamo-basic--binding-policySnippet}'
+            dynamo-complex: '!{ec2--dynamo-complex--binding-policySnippet}'
+            files: '!{ec2--files--binding-policySnippet}'
+            notification-sns: '!{ec2--notification-sns--binding-policySnippet}'
+            notification-sqs: '!{ec2--notification-sqs--binding-policySnippet}'
+            stream: '!{ec2--stream--binding-policySnippet}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty
@@ -888,7 +888,7 @@ spec:
   - name: kc--asap--binding
     references:
     - example: aname
-      name: asap--instance-metadata-name
+      name: asap--instance
       path: metadata.name
       resource: asap--instance
     spec:
@@ -899,12 +899,12 @@ spec:
           name: kc--asap
         spec:
           instanceRef:
-            name: '!{asap--instance-metadata-name}'
+            name: '!{asap--instance}'
           secretName: kc--asap
   - name: kc--basic--binding
     references:
     - example: aname
-      name: basic--instance-metadata-name
+      name: basic--instance
       path: metadata.name
       resource: basic--instance
     spec:
@@ -915,12 +915,12 @@ spec:
           name: kc--basic
         spec:
           instanceRef:
-            name: '!{basic--instance-metadata-name}'
+            name: '!{basic--instance}'
           secretName: kc--basic
   - name: kc--files--binding
     references:
     - example: aname
-      name: files--instance-metadata-name
+      name: files--instance
       path: metadata.name
       resource: files--instance
     spec:
@@ -931,12 +931,12 @@ spec:
           name: kc--files
         spec:
           instanceRef:
-            name: '!{files--instance-metadata-name}'
+            name: '!{files--instance}'
           secretName: kc--files
   - name: kc--stream--binding
     references:
     - example: aname
-      name: stream--instance-metadata-name
+      name: stream--instance
       path: metadata.name
       resource: stream--instance
     spec:
@@ -947,12 +947,12 @@ spec:
           name: kc--stream
         spec:
           instanceRef:
-            name: '!{stream--instance-metadata-name}'
+            name: '!{stream--instance}'
           secretName: kc--stream
   - name: kc--dynamo-basic--binding
     references:
     - example: aname
-      name: dynamo-basic--instance-metadata-name
+      name: dynamo-basic--instance
       path: metadata.name
       resource: dynamo-basic--instance
     spec:
@@ -963,12 +963,12 @@ spec:
           name: kc--dynamo-basic
         spec:
           instanceRef:
-            name: '!{dynamo-basic--instance-metadata-name}'
+            name: '!{dynamo-basic--instance}'
           secretName: kc--dynamo-basic
   - name: kc--dynamo-complex--binding
     references:
     - example: aname
-      name: dynamo-complex--instance-metadata-name
+      name: dynamo-complex--instance
       path: metadata.name
       resource: dynamo-complex--instance
     spec:
@@ -979,12 +979,12 @@ spec:
           name: kc--dynamo-complex
         spec:
           instanceRef:
-            name: '!{dynamo-complex--instance-metadata-name}'
+            name: '!{dynamo-complex--instance}'
           secretName: kc--dynamo-complex
   - name: kc--datastore--binding
     references:
     - example: aname
-      name: datastore--instance-metadata-name
+      name: datastore--instance
       path: metadata.name
       resource: datastore--instance
     spec:
@@ -995,12 +995,12 @@ spec:
           name: kc--datastore
         spec:
           instanceRef:
-            name: '!{datastore--instance-metadata-name}'
+            name: '!{datastore--instance}'
           secretName: kc--datastore
   - name: kc--notification-sns--binding
     references:
     - example: aname
-      name: notification-sns--instance-metadata-name
+      name: notification-sns--instance
       path: metadata.name
       resource: notification-sns--instance
     spec:
@@ -1011,12 +1011,12 @@ spec:
           name: kc--notification-sns
         spec:
           instanceRef:
-            name: '!{notification-sns--instance-metadata-name}'
+            name: '!{notification-sns--instance}'
           secretName: kc--notification-sns
   - name: kc--notification-sqs--binding
     references:
     - example: aname
-      name: notification-sqs--instance-metadata-name
+      name: notification-sqs--instance
       path: metadata.name
       resource: notification-sqs--instance
     spec:
@@ -1027,7 +1027,7 @@ spec:
           name: kc--notification-sqs
         spec:
           instanceRef:
-            name: '!{notification-sqs--instance-metadata-name}'
+            name: '!{notification-sqs--instance}'
           secretName: kc--notification-sqs
   - name: kc--secret
     references:
@@ -1240,31 +1240,31 @@ spec:
   - name: kc---iamrole
     references:
     - modifier: bindsecret
-      name: kc--basic--binding-iamrole
+      name: kc--basic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--basic--binding
     - modifier: bindsecret
-      name: kc--files--binding-iamrole
+      name: kc--files--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--files--binding
     - modifier: bindsecret
-      name: kc--stream--binding-iamrole
+      name: kc--stream--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--stream--binding
     - modifier: bindsecret
-      name: kc--dynamo-basic--binding-iamrole
+      name: kc--dynamo-basic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--dynamo-basic--binding
     - modifier: bindsecret
-      name: kc--dynamo-complex--binding-iamrole
+      name: kc--dynamo-complex--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--dynamo-complex--binding
     - modifier: bindsecret
-      name: kc--notification-sns--binding-iamrole
+      name: kc--notification-sns--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--notification-sns--binding
     - modifier: bindsecret
-      name: kc--notification-sqs--binding-iamrole
+      name: kc--notification-sqs--binding-policySnippet
       path: data.IamPolicySnippet
       resource: kc--notification-sqs--binding
     spec:
@@ -1278,13 +1278,13 @@ spec:
           computeType: kubeCompute
           oapResourceName: kc-iamrole
           policySnippets:
-            basic: '!{kc--basic--binding-iamrole}'
-            dynamo-basic: '!{kc--dynamo-basic--binding-iamrole}'
-            dynamo-complex: '!{kc--dynamo-complex--binding-iamrole}'
-            files: '!{kc--files--binding-iamrole}'
-            notification-sns: '!{kc--notification-sns--binding-iamrole}'
-            notification-sqs: '!{kc--notification-sqs--binding-iamrole}'
-            stream: '!{kc--stream--binding-iamrole}'
+            basic: '!{kc--basic--binding-policySnippet}'
+            dynamo-basic: '!{kc--dynamo-basic--binding-policySnippet}'
+            dynamo-complex: '!{kc--dynamo-complex--binding-policySnippet}'
+            files: '!{kc--files--binding-policySnippet}'
+            notification-sns: '!{kc--notification-sns--binding-policySnippet}'
+            notification-sqs: '!{kc--notification-sqs--binding-policySnippet}'
+            stream: '!{kc--stream--binding-policySnippet}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty

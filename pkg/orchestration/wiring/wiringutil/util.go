@@ -4,9 +4,17 @@ import (
 	"reflect"
 	"strings"
 
+	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 )
+
+// IsSameTarget tests if two references refer to the same target.
+func IsSameTarget(a, b smith_v1.Reference) bool {
+	return a.Resource == b.Resource &&
+		a.Path == b.Path &&
+		a.Modifier == b.Modifier
+}
 
 // Merge two maps, only use loser's fields if those fields are missing in winner
 func Merge(winner, loser map[string]interface{}) (map[string]interface{}, error) {

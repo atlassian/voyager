@@ -4,7 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "monitor.go",
-        "objects.go",
         "zappers.go",
     ],
     importpath = "github.com/atlassian/voyager/pkg/monitor",
@@ -13,9 +12,11 @@ go_library(
         "//:go_default_library",
         "//pkg/apis/composition/v1:go_default_library",
         "//pkg/apis/creator/v1:go_default_library",
+        "//pkg/apis/formation/v1:go_default_library",
         "//pkg/composition/client/typed/composition/v1:go_default_library",
         "//pkg/creator/client/typed/creator/v1:go_default_library",
-        "//pkg/replication:go_default_library",
+        "//pkg/formation/client/typed/formation/v1:go_default_library",
+        "//vendor/github.com/atlassian/ctrl/apis/condition/v1:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1:go_default_library",
         "//vendor/github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
@@ -23,7 +24,6 @@ go_library(
         "//vendor/go.uber.org/zap/zapcore:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/wait:go_default_library",
     ],
 )

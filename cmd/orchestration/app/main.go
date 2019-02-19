@@ -13,6 +13,7 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/cmd"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/oap"
@@ -30,10 +31,10 @@ func Main() {
 		exampleManagedPolicies,
 		exampleVPC,
 		exampleEnvironment,
-	))
+	), exampleTags)
 }
 
-func CustomMain(plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
+func CustomMain(plugins map[voyager.ResourceType]wiringplugin.WiringPlugin, tags wiring.TagGenerator) {
 	rand.Seed(time.Now().UnixNano())
 	klog.InitFlags(nil)
 	cmd.RunInterruptably(func(ctx context.Context) error {
@@ -41,7 +42,7 @@ func CustomMain(plugins map[voyager.ResourceType]wiringplugin.WiringPlugin) {
 		controllers := []ctrl.Constructor{
 			&ControllerConstructor{
 				Plugins: plugins,
-				Tags:    exampleTags,
+				Tags:    tags,
 			},
 		}
 

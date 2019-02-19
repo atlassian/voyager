@@ -162,15 +162,14 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	if conflict {
 		return false, nil
 	}
-	if handleResultErr != nil {
-		if err != nil {
-			logger.Info("Failed to set ServiceDescriptor status", zap.Error(handleResultErr))
-			return handleResultRetriable || retriable, err
-		}
-		return handleResultRetriable, handleResultErr
-	}
 
-	return retriable, err
+	if err != nil {
+		if handleResultErr != nil {
+			logger.Error("Failed to set ServiceDescriptor status", zap.Error(handleResultErr))
+		}
+		return handleResultRetriable || retriable, err
+	}
+	return handleResultRetriable, handleResultErr
 }
 
 func (c *Controller) processFormationObjectDef(logger *zap.Logger, sd *comp_v1.ServiceDescriptor, formationObjectDef *FormationObjectInfo) (bool /* finished */, bool /* conflict */, bool /* retriable */, *formationObjectResult, error) {
@@ -231,9 +230,8 @@ func (c *Controller) processDeleteFormationObjectDef(logger *zap.Logger, sd *com
 }
 
 // handleProcessResult takes the the results of processing and writes it into the
-// status of the ServiceDescriptor. Contrary to prior behavior it no longer returns
-// the passed in error, thus allowing the caller to distinguish between "Status
-// Update Failed" vs "This was the error I passed in"
+// status of the State. it does not returns the passed in error, thus allowing the
+// caller to distinguish between "Status Update Failed" vs "This was the error I passed in"
 func (c *Controller) handleProcessResult(logger *zap.Logger, serviceName string, sd *comp_v1.ServiceDescriptor, foResults []formationObjectResult, deleteFinished bool, retriable bool, err error) (bool /* conflict */, bool /* retriable */, error) {
 	logger.Debug("Handling results of processing")
 

@@ -12,6 +12,7 @@ const (
 
 	kubeIngressRefMetadataEndpointPath = "metadata.annotations['atlassian\\.com/ingress\\.endpoint']"
 	kubeIngressRefExample              = "ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net"
+	kubeIngressReferenceEndpointSuffix = "endpoint"
 )
 
 // +k8s:deepcopy-gen=true
@@ -33,9 +34,10 @@ func NewIngressEndpoint(resourceName smith_v1.ResourceName) *IngressEndpoint {
 		},
 		Data: IngressEndpointData{
 			IngressEndpoint: libshapes.ProtoReference{
-				Resource: resourceName,
-				Path:     kubeIngressRefMetadataEndpointPath,
-				Example:  kubeIngressRefExample,
+				Resource:    resourceName,
+				Path:        kubeIngressRefMetadataEndpointPath,
+				Example:     kubeIngressRefExample,
+				NamePostfix: kubeIngressReferenceEndpointSuffix,
 			},
 		},
 	}

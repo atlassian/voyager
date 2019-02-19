@@ -65,7 +65,7 @@ spec:
   - name: queue1--fanouttopic--binding
     references:
     - example: aname
-      name: fanouttopic--instance-metadata-name
+      name: fanouttopic--instance
       path: metadata.name
       resource: fanouttopic--instance
     spec:
@@ -76,13 +76,13 @@ spec:
           name: queue1--fanouttopic
         spec:
           instanceRef:
-            name: '!{fanouttopic--instance-metadata-name}'
+            name: '!{fanouttopic--instance}'
           secretName: queue1--fanouttopic
   - name: queue1--instance
     references:
     - example: '"arn:aws:sns:us-east-1:123456789012:example"'
       modifier: bindsecret
-      name: queue1--fanouttopic--binding-TopicArn
+      name: queue1--fanouttopic--binding-topicArn
       path: data.TopicArn
       resource: queue1--fanouttopic--binding
     spec:
@@ -117,14 +117,14 @@ spec:
                 Subscriptions:
                 - attributes:
                     RawMessageDelivery: true
-                  topicArn: '!{queue1--fanouttopic--binding-TopicArn}'
+                  topicArn: '!{queue1--fanouttopic--binding-topicArn}'
               name: queue1
               type: sqs
             serviceName: test-servicename
   - name: queue2--fanouttopic--binding
     references:
     - example: aname
-      name: fanouttopic--instance-metadata-name
+      name: fanouttopic--instance
       path: metadata.name
       resource: fanouttopic--instance
     spec:
@@ -135,13 +135,13 @@ spec:
           name: queue2--fanouttopic
         spec:
           instanceRef:
-            name: '!{fanouttopic--instance-metadata-name}'
+            name: '!{fanouttopic--instance}'
           secretName: queue2--fanouttopic
   - name: queue2--instance
     references:
     - example: '"arn:aws:sns:us-east-1:123456789012:example"'
       modifier: bindsecret
-      name: queue2--fanouttopic--binding-TopicArn
+      name: queue2--fanouttopic--binding-topicArn
       path: data.TopicArn
       resource: queue2--fanouttopic--binding
     spec:
@@ -175,14 +175,14 @@ spec:
               attributes:
                 DelaySeconds: 1
                 Subscriptions:
-                - topicArn: '!{queue2--fanouttopic--binding-TopicArn}'
+                - topicArn: '!{queue2--fanouttopic--binding-topicArn}'
               name: queue2
               type: sqs
             serviceName: test-servicename
   - name: compute--fanouttopic--binding
     references:
     - example: aname
-      name: fanouttopic--instance-metadata-name
+      name: fanouttopic--instance
       path: metadata.name
       resource: fanouttopic--instance
     spec:
@@ -193,7 +193,7 @@ spec:
           name: compute--fanouttopic
         spec:
           instanceRef:
-            name: '!{fanouttopic--instance-metadata-name}'
+            name: '!{fanouttopic--instance}'
           secretName: compute--fanouttopic
   - name: compute--secret
     references:
@@ -223,7 +223,7 @@ spec:
   - name: compute---iamrole
     references:
     - modifier: bindsecret
-      name: compute--fanouttopic--binding-iamrole
+      name: compute--fanouttopic--binding-policySnippet
       path: data.IamPolicySnippet
       resource: compute--fanouttopic--binding
     spec:
@@ -240,7 +240,7 @@ spec:
           - arn:aws:iam::123456789012:policy/micros-iam-DefaultServicePolicy-ABC
           oapResourceName: compute-iamrole
           policySnippets:
-            fanouttopic: '!{compute--fanouttopic--binding-iamrole}'
+            fanouttopic: '!{compute--fanouttopic--binding-policySnippet}'
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty

@@ -12,9 +12,11 @@ go_library(
     deps = [
         "//:go_default_library",
         "//cmd:go_default_library",
+        "//pkg/apis/composition/v1:go_default_library",
         "//pkg/apis/creator/v1:go_default_library",
         "//pkg/composition/client:go_default_library",
         "//pkg/creator/client:go_default_library",
+        "//pkg/formation/client/typed/formation/v1:go_default_library",
         "//pkg/monitor:go_default_library",
         "//pkg/options:go_default_library",
         "//pkg/util/crash:go_default_library",

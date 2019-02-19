@@ -94,27 +94,20 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err erro
 	if conflict {
 		return false, nil
 	}
-	if processErr != nil {
-		if err != nil {
-			if !external {
-				ctx.Logger.Info("Failed to set State status", zap.Error(processErr))
-				return processRetriable || retriable, err
-			}
-			// We are going to return the error from handleProcessResult instead
-			ctx.Logger.Info("Invalid State Descriptor", zap.Error(err))
-		}
-		return processRetriable, processErr
-	}
 
 	if err != nil {
-		if external {
-			ctx.Logger.Info("Invalid State Object", zap.Error(err))
-			return false, nil
+		if !external {
+			if processErr != nil {
+				ctx.Logger.Error("Failed to set State status", zap.Error(processErr))
+			}
+			return processRetriable || retriable, err
 		}
-		return retriable, err
+
+		// External error, just log.
+		ctx.Logger.Info("Invalid State Object", zap.Error(err))
 	}
 
-	return false, nil
+	return processRetriable, processErr
 }
 
 // process processes the given State object performing autowiring for it.

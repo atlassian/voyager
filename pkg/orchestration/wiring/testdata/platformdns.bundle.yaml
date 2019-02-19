@@ -187,7 +187,7 @@ spec:
   - name: platformdns--instance
     references:
     - example: ingress-internal-01.ap-southeast-2.paas-dev1.kitt-inf.net
-      name: ingress-metadata-endpoint
+      name: ingress-endpoint
       path: metadata.annotations['atlassian\.com/ingress\.endpoint']
       resource: ingress
     spec:
@@ -200,9 +200,9 @@ spec:
           clusterServiceClassExternalID: f77e1881-36f3-42ce-9848-7a811b421dd7
           clusterServicePlanExternalID: 0a7b1d18-cf8d-461e-ad24-ee16d3da36d3
           parameters:
-            name: foo.staging.atl-paas.net
-            type: Simple
             environmentType: testenv
+            name: foo.staging.atl-paas.net
             serviceName: test-servicename
-            target: '!{ingress-metadata-endpoint}'
+            target: '!{ingress-endpoint}'
+            type: Simple
 status: {}

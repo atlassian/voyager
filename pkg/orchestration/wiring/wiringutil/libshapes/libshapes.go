@@ -5,6 +5,7 @@ import (
 
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -13,17 +14,21 @@ import (
 // construct a valid Smith reference.
 // +k8s:deepcopy-gen=true
 type ProtoReference struct {
-	Resource smith_v1.ResourceName `json:"resource"`
-	Path     string                `json:"path,omitempty"`
-	Example  interface{}           `json:"example,omitempty"`
-	Modifier string                `json:"modifier,omitempty"`
+	Resource    smith_v1.ResourceName `json:"resource"`
+	Path        string                `json:"path,omitempty"`
+	Example     interface{}           `json:"example,omitempty"`
+	Modifier    string                `json:"modifier,omitempty"`
+	NamePostfix string                `json:"namePostfix,omitempty"`
 }
 
 // ToReference should be used to augment ProtoReference with missing information to
 // get a full Reference.
-func (r *ProtoReference) ToReference(name smith_v1.ReferenceName) smith_v1.Reference {
+func (r *ProtoReference) ToReference(nameElems ...string) smith_v1.Reference {
+	if r.NamePostfix != "" {
+		nameElems = append([]string{r.NamePostfix}, nameElems...)
+	}
 	return smith_v1.Reference{
-		Name:     name,
+		Name:     wiringutil.ReferenceName(r.Resource, nameElems...),
 		Resource: r.Resource,
 		Path:     r.Path,
 		Example:  r.Example,
@@ -41,8 +46,9 @@ func (r *ProtoReference) DeepCopyInto(out *ProtoReference) {
 // BindingProtoReference is a reference to the ServiceBinding's contents.
 // +k8s:deepcopy-gen=true
 type BindingProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
+	Path        string      `json:"path,omitempty"`
+	Example     interface{} `json:"example,omitempty"`
+	NamePostfix string      `json:"namePostfix,omitempty"`
 }
 
 func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
@@ -52,9 +58,12 @@ func (r *BindingProtoReference) DeepCopyInto(out *BindingProtoReference) {
 
 // ToReference should be used to augment BindingProtoReference with missing information to
 // get a full Reference.
-func (r *BindingProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
+func (r *BindingProtoReference) ToReference(bindingResourceName smith_v1.ResourceName, nameElems ...string) smith_v1.Reference {
+	if r.NamePostfix != "" {
+		nameElems = append([]string{r.NamePostfix}, nameElems...)
+	}
 	return smith_v1.Reference{
-		Name:     name,
+		Name:     wiringutil.ReferenceName(bindingResourceName, nameElems...),
 		Resource: bindingResourceName,
 		Path:     r.Path,
 		Example:  r.Example,
@@ -64,8 +73,9 @@ func (r *BindingProtoReference) ToReference(name smith_v1.ReferenceName, binding
 // BindingProtoReference is a reference to the ServiceBinding's Secret's contents.
 // +k8s:deepcopy-gen=true
 type BindingSecretProtoReference struct {
-	Path    string      `json:"path,omitempty"`
-	Example interface{} `json:"example,omitempty"`
+	Path        string      `json:"path,omitempty"`
+	Example     interface{} `json:"example,omitempty"`
+	NamePostfix string      `json:"namePostfix,omitempty"`
 }
 
 func (r *BindingSecretProtoReference) DeepCopyInto(out *BindingSecretProtoReference) {
@@ -75,9 +85,12 @@ func (r *BindingSecretProtoReference) DeepCopyInto(out *BindingSecretProtoRefere
 
 // ToReference should be used to augment BindingSecretProtoReference with missing information to
 // get a full Reference.
-func (r *BindingSecretProtoReference) ToReference(name smith_v1.ReferenceName, bindingResourceName smith_v1.ResourceName) smith_v1.Reference {
+func (r *BindingSecretProtoReference) ToReference(bindingResourceName smith_v1.ResourceName, nameElems ...string) smith_v1.Reference {
+	if r.NamePostfix != "" {
+		nameElems = append([]string{r.NamePostfix}, nameElems...)
+	}
 	return smith_v1.Reference{
-		Name:     name,
+		Name:     wiringutil.ReferenceName(bindingResourceName, nameElems...),
 		Resource: bindingResourceName,
 		Path:     r.Path,
 		Example:  r.Example,

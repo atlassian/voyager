@@ -4,7 +4,9 @@ import (
 	"github.com/atlassian/voyager"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/asapkey"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/aws"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/datadog"
 	ec2compute_v2 "github.com/atlassian/voyager/pkg/orchestration/wiring/ec2compute/v2"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/edge"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute"
 	apik8scompute "github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/kubeingress"
@@ -42,5 +44,8 @@ func KnownWiringPlugins(
 		sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
 		asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
 		apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
+		edge.ResourceType:           wiringutil.StatusAdapter(edge.New().WireUp),
+		datadog.ResourceType:        wiringutil.TemporaryNewWiringMigrationAdapter(datadog.WireUp),
 	}
+
 }

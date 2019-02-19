@@ -8,6 +8,7 @@ import (
 	"github.com/atlassian/voyager"
 	comp_v1_client "github.com/atlassian/voyager/pkg/composition/client"
 	creator_v1_client "github.com/atlassian/voyager/pkg/creator/client"
+	form_v1_client "github.com/atlassian/voyager/pkg/formation/client/typed/formation/v1"
 	"github.com/atlassian/voyager/pkg/monitor"
 	"github.com/atlassian/voyager/pkg/util/logz"
 	sc_v1b1_client "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
@@ -73,6 +74,11 @@ func (a *App) Run(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
+	formation, err := form_v1_client.NewForConfig(a.RestConfig)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	runID := uuid.New()
 	m := &monitor.Monitor{
 		Location: voyager.Location{
@@ -84,11 +90,12 @@ func (a *App) Run(ctx context.Context) error {
 		ServiceDescriptorName:  a.Options.ServiceDescriptorName,
 		ExpectedProcessingTime: a.Options.ExpectedProcessingTime,
 		ServiceSpec:            a.Options.ServiceSpec,
-		Version:                runID,
+		ServiceDescriptor:      a.Options.ServiceDescriptor,
 
-		ServiceDescriptorClient: composition.CompositionV1().ServiceDescriptors(),
-		ServiceCatalogClient:    sc,
-		CreatorServiceClient:    creator.CreatorV1().Services(),
+		ServiceDescriptorClient:  composition.CompositionV1().ServiceDescriptors(),
+		ServiceCatalogClient:     sc,
+		CreatorServiceClient:     creator.CreatorV1().Services(),
+		LocationDescriptorClient: formation.LocationDescriptors(a.Options.ServiceDescriptorName),
 	}
 	return m.Run(ctx)
 }
