@@ -24,13 +24,13 @@ spec:
           clusterServiceClassExternalID: 277d87d1-4cf6-4d96-8bd6-3affb551f21c
           clusterServicePlanExternalID: 55beb5f4-16f0-4fe5-abcb-95e077271bde
           parameters:
-            name: test-servicename--testenv.testaccount.testregion--saml
             description: ""
-            url: 'https://my-service.prod'
+            name: test-servicename--testenv.testaccount.testregion--saml
+            url: https://my-service.prod
   - name: kubecompute-simple--saml--binding
     references:
     - example: aname
-      name: saml--instance-metadata-name
+      name: saml--instance
       path: metadata.name
       resource: saml--instance
     spec:
@@ -41,7 +41,7 @@ spec:
           name: kubecompute-simple--saml
         spec:
           instanceRef:
-            name: '!{saml--instance-metadata-name}'
+            name: '!{saml--instance}'
           secretName: kubecompute-simple--saml
   - name: kubecompute-simple--secret
     references:
@@ -72,6 +72,7 @@ spec:
           - arn:aws:iam::test:role/controller-role-testregion.paas-test
           computeType: kubeCompute
           oapResourceName: kubecompute-simple-iamrole
+          policySnippets: {}
           serviceEnvironment:
             alarmEndpoints:
             - consumer: pagerduty
@@ -105,7 +106,6 @@ spec:
               resource_owner: an_owner
               service_name: test-servicename
           serviceId: test-servicename
-          policySnippets: {}
   - name: kubecompute-simple---iamrole-binding
     references:
     - name: kubecompute-simple---iamrole-metadata-name
