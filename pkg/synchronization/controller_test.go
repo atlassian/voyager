@@ -1380,10 +1380,152 @@ func TestOpsGenieWhenNoTeam(t *testing.T) {
 	tc.run(t)
 }
 
-// TODO: expected environments
-func mockOpsgenieIntegrations() *opsgenie.IntegrationsResponse {
-	return &opsgenie.IntegrationsResponse{
-		Integrations: []opsgenie.Integration{},
+func TestBuildOpsGenieNotifications(t *testing.T) {
+	t.Parallel()
+
+	fullPagerDutyMetadata := fullPagerDutyMetadata()
+
+	envTypeCases := []struct {
+		envType              voyager.EnvType
+		pagerDutyEnvMetadata creator_v1.PagerDutyEnvMetadata
+		expectedOgInts       []opsgenie.Integration
+	}{
+		{
+			voyager.EnvTypeDev,
+			creator_v1.PagerDutyEnvMetadata{
+				Main: creator_v1.PagerDutyServiceMetadata{
+					Integrations: creator_v1.PagerDutyIntegrations{
+						CloudWatch: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: "124e0f010f214a9b9f30b768e7b18e69",
+						},
+						Generic: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: defaultPagerdutyGeneric,
+						},
+					},
+				},
+				LowPriority: creator_v1.PagerDutyServiceMetadata{
+					Integrations: creator_v1.PagerDutyIntegrations{
+						CloudWatch: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: "124e0f010f214a9b9f30b768e7b18e69",
+						},
+						Generic: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: defaultPagerdutyGeneric,
+						},
+					},
+				},
+			},
+			[]opsgenie.Integration{
+				{EnvType: opsgenie.EnvTypeDev},
+				{EnvType: opsgenie.EnvTypeGlobal},
+			},
+		},
+		{
+			voyager.EnvTypeStaging,
+			fullPagerDutyMetadata.Staging,
+			[]opsgenie.Integration{
+				{EnvType: opsgenie.EnvTypeStaging},
+				{EnvType: opsgenie.EnvTypeGlobal},
+			},
+		},
+		{
+			voyager.EnvTypeProduction,
+			fullPagerDutyMetadata.Production,
+			[]opsgenie.Integration{
+				{EnvType: opsgenie.EnvTypeProd},
+				{EnvType: opsgenie.EnvTypeGlobal},
+			},
+		},
+	}
+
+	for _, subCase := range envTypeCases {
+		t.Run(string(subCase.envType), func(t *testing.T) {
+
+			ns := &core_v1.Namespace{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.NamespaceKind,
+					APIVersion: core_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: namespaceName,
+					Labels: map[string]string{
+						voyager.ServiceNameLabel: serviceName,
+					},
+				},
+			}
+
+			tc := testCase{
+				ns:                ns,
+				mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret()},
+				test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+					service := &creator_v1.Service{
+						ObjectMeta: meta_v1.ObjectMeta{
+							Name: serviceName,
+						},
+						Spec: creator_v1.ServiceSpec{
+							ResourceOwner: "somebody",
+							BusinessUnit:  "the unit",
+							Metadata: creator_v1.ServiceMetadata{
+								PagerDuty: fullPagerDutyMetadata,
+								Opsgenie:  &creator_v1.OpsgenieMetadata{Team: "Platform SRE"},
+							},
+						},
+					}
+					expected := basicServiceProperties(service, subCase.envType)
+					//expected Pagerduty Notifications
+					cwURL, err := pagerduty.KeyToCloudWatchURL(subCase.pagerDutyEnvMetadata.Main.Integrations.CloudWatch.IntegrationKey)
+					require.NoError(t, err)
+					expected.Notifications.PagerdutyEndpoint = orch_meta.PagerDuty{
+						Generic:    subCase.pagerDutyEnvMetadata.Main.Integrations.Generic.IntegrationKey,
+						CloudWatch: cwURL,
+					}
+					cwURL, err = pagerduty.KeyToCloudWatchURL(subCase.pagerDutyEnvMetadata.LowPriority.Integrations.CloudWatch.IntegrationKey)
+					require.NoError(t, err)
+					expected.Notifications.LowPriorityPagerdutyEndpoint = orch_meta.PagerDuty{
+						Generic:    subCase.pagerDutyEnvMetadata.LowPriority.Integrations.Generic.IntegrationKey,
+						CloudWatch: cwURL,
+					}
+					//expected Opsgenie Notifications
+					expected.Notifications.OpsgenieIntegrations = subCase.expectedOgInts
+
+					tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
+					ogResp := &opsgenie.IntegrationsResponse{
+						Integrations: []opsgenie.Integration{
+							{EnvType: opsgenie.EnvTypeDev},
+							{EnvType: opsgenie.EnvTypeStaging},
+							{EnvType: opsgenie.EnvTypeProd},
+							{EnvType: opsgenie.EnvTypeGlobal},
+						},
+					}
+
+					// Return error when calling Opsgenie Integration Manager
+					tc.ogFake.On("GetOrCreateIntegrations", mock.Anything, mock.Anything).Return(ogResp, true, nil)
+
+					// make sure the controller knows we are our specific environment type
+					cntrlr.ClusterLocation = voyager.ClusterLocation{
+						EnvType: subCase.envType,
+					}
+					_, err = cntrlr.Process(ctx)
+					require.NoError(t, err)
+
+					actions := tc.mainFake.Actions()
+
+					cm, _ := findCreatedConfigMap(actions, namespaceName, apisynchronization.DefaultServiceMetadataConfigMapName)
+					require.NotNil(t, cm)
+
+					assert.Equal(t, cm.Name, apisynchronization.DefaultServiceMetadataConfigMapName)
+
+					assert.Contains(t, cm.Data, orch_meta.ConfigMapConfigKey)
+					data := cm.Data[orch_meta.ConfigMapConfigKey]
+
+					var actual orch_meta.ServiceProperties
+					err = yaml.UnmarshalStrict([]byte(data), &actual)
+					require.NoError(t, err)
+
+					assert.Equal(t, expected, actual)
+				},
+			}
+			tc.run(t)
+		})
 	}
 }
 
