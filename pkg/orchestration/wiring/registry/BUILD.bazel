@@ -19,6 +19,7 @@ go_library(
         "//pkg/orchestration/wiring/platformdns/api:go_default_library",
         "//pkg/orchestration/wiring/postgres:go_default_library",
         "//pkg/orchestration/wiring/rds:go_default_library",
+        "//pkg/orchestration/wiring/saml:go_default_library",
         "//pkg/orchestration/wiring/sqs:go_default_library",
         "//pkg/orchestration/wiring/ups:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",

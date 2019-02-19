@@ -14,6 +14,7 @@ import (
 	apiplatformdns "github.com/atlassian/voyager/pkg/orchestration/wiring/platformdns/api"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/postgres"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/rds"
+	"github.com/atlassian/voyager/pkg/orchestration/wiring/saml"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/sqs"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/ups"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
@@ -44,6 +45,7 @@ func KnownWiringPlugins(
 		sqs.ResourceType:            wiringutil.StatusAdapter(sqs.WireUp),
 		asapkey.ResourceType:        wiringutil.StatusAdapter(asapkey.New().WireUp),
 		apiplatformdns.ResourceType: wiringutil.StatusAdapter(platformdns.New().WireUp),
+		saml.ResourceType:           wiringutil.StatusAdapter(saml.New().WireUp),
 		edge.ResourceType:           wiringutil.StatusAdapter(edge.New().WireUp),
 		datadog.ResourceType:        wiringutil.TemporaryNewWiringMigrationAdapter(datadog.WireUp),
 	}
