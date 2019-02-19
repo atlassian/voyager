@@ -277,7 +277,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	}
 
 	serviceAccountResource := smith_v1.Resource{
-		Name: wiringutil.ResourceNameWithPostfix(resource.Name, serviceAccountPostFix),
+		Name: wiringutil.ResourceName(resource.Name, serviceAccountPostFix),
 		Spec: smith_v1.ResourceSpec{
 			Object: &core_v1.ServiceAccount{
 				TypeMeta: meta_v1.TypeMeta{
@@ -285,7 +285,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 					APIVersion: core_v1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.MetaNameWithPostfix(resource.Name, serviceAccountPostFix),
+					Name: wiringutil.MetaName(resource.Name, serviceAccountPostFix),
 				},
 				ImagePullSecrets: []core_v1.LocalObjectReference{{Name: apik8scompute.DockerImagePullName}},
 			},
@@ -336,7 +336,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 	// Add pod disruption budget
 	pdbSpec := buildPodDisruptionBudgetSpec(labelMap, spec.Scaling.MinReplicas)
 	pdb := smith_v1.Resource{
-		Name: wiringutil.ResourceNameWithPostfix(resource.Name, pdbPostfix),
+		Name: wiringutil.ResourceName(resource.Name, pdbPostfix),
 		Spec: smith_v1.ResourceSpec{
 			Object: &policy_v1.PodDisruptionBudget{
 				TypeMeta: meta_v1.TypeMeta{
@@ -344,7 +344,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 					APIVersion: policy_v1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.MetaNameWithPostfix(resource.Name, pdbPostfix),
+					Name: wiringutil.MetaName(resource.Name, pdbPostfix),
 				},
 				Spec: pdbSpec,
 			},
@@ -388,7 +388,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 
 		// The final wired HPA object
 		hpa := smith_v1.Resource{
-			Name:       wiringutil.ResourceNameWithPostfix(resource.Name, hpaPostfix),
+			Name:       wiringutil.ResourceName(resource.Name, hpaPostfix),
 			References: []smith_v1.Reference{deploymentNameRef},
 			Spec: smith_v1.ResourceSpec{
 				Object: &autoscaling_v2b1.HorizontalPodAutoscaler{
@@ -397,7 +397,7 @@ func (p *WiringPlugin) WireUp(resource *orch_v1.StateResource, context *wiringpl
 						APIVersion: autoscaling_v2b1.SchemeGroupVersion.String(),
 					},
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name: wiringutil.MetaNameWithPostfix(resource.Name, hpaPostfix),
+						Name: wiringutil.MetaName(resource.Name, hpaPostfix),
 					},
 					Spec: hpaSpec,
 				},
@@ -427,12 +427,12 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix),
+		Name:       wiringutil.ResourceName(compute, secretPluginNamePostfix),
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       secretplugin.PluginName,
-				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
+				ObjectName: wiringutil.MetaName(compute, secretPluginNamePostfix),
 				Spec:       secretPluginSpec,
 			},
 		},

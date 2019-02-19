@@ -24,7 +24,7 @@ const (
 	//     meta name    : {X}--{Y}
 	// ServiceBinding for compute X depending on ServiceInstance produced by IAM plugin for compute X
 	//     resource name: {X}---iamrole
-	//     meta name    : {X}---iamrole-v2
+	//     meta name    : {X}---iamrole
 	//
 	// See how meta names would clash if Resource Y was named "iamrole" if there was no extra `-`?
 	// See iam_test for the test.
@@ -64,12 +64,12 @@ func PluginServiceInstance(computeType iam_plugin.ComputeType, stateResourceName
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       wiringutil.ResourceNameWithPostfix(stateResourceName, namePostfix),
+		Name:       wiringutil.ResourceName(stateResourceName, namePostfix),
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       iamPluginTypeName,
-				ObjectName: wiringutil.MetaNameWithPostfix(stateResourceName, namePostfix),
+				ObjectName: wiringutil.MetaName(stateResourceName, namePostfix),
 				Spec:       iamRoleSpecJSONMap,
 			},
 		},

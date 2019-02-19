@@ -102,7 +102,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 	}
 
 	alarmInstanceResource := smith_v1.Resource{
-		Name: wiringutil.ConsumerProducerResourceNameWithPostfix(resource.Name, kubeCompute, string(alarmType)),
+		Name: wiringutil.ConsumerProducerResourceName(resource.Name, kubeCompute, string(alarmType)),
 		References: []smith_v1.Reference{
 			{
 				Resource: kubeDeployment.Data.DeploymentResourceName,
@@ -115,7 +115,7 @@ func constructServiceInstance(resource *orch_v1.StateResource, context *wiringpl
 					APIVersion: sc_v1b1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.ConsumerProducerMetaNameWithPostfix(resource.Name, kubeCompute, string(alarmType)),
+					Name: wiringutil.ConsumerProducerMetaName(resource.Name, kubeCompute, string(alarmType)),
 				},
 				Spec: sc_v1b1.ServiceInstanceSpec{
 					PlanReference: sc_v1b1.PlanReference{
