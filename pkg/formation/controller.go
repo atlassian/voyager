@@ -93,36 +93,32 @@ func (c *Controller) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, error) {
+func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* external */, bool /* retriable */, error) {
 	ld := ctx.Object.(*form_v1.LocationDescriptor)
 	if ld.ObjectMeta.DeletionTimestamp != nil {
 		// Marked for deletion, do nothing
-		return false, nil
+		return false, false, nil
 	}
 
 	external, conflict, retriable, state, err := c.processLocationDescriptor(ctx.Logger, ld)
 	if conflict {
-		return false, nil
+		return false, false, nil
 	}
 
 	conflict, handleResultRetriable, handleResultErr := c.handleProcessResult(ctx.Logger, ld, state, retriable, err)
 	if conflict {
 		ctx.Logger.Debug("Conflict detected while handling process result", zap.Error(err))
-		return false, nil
+		return false, false, nil
 	}
 
 	if err != nil {
-		if !external {
-			if handleResultErr != nil {
-				ctx.Logger.Error("Failed to set LocationDescriptor status", zap.Error(handleResultErr))
-			}
-			return handleResultRetriable || retriable, err
+		if handleResultErr != nil {
+			ctx.Logger.Error("Failed to set LocationDescriptor status", zap.Error(handleResultErr))
 		}
-
-		ctx.Logger.Info("Invalid LocationDescriptor Object", zap.Error(err))
+		return external, handleResultRetriable || retriable, err
 	}
 
-	return handleResultRetriable, handleResultErr
+	return false, handleResultRetriable, handleResultErr
 }
 
 func (c *Controller) processLocationDescriptor(logger *zap.Logger, ld *form_v1.LocationDescriptor) (bool /* externalErr */, bool /* conflict */, bool /* retriable */, *orch_v1.State, error) {

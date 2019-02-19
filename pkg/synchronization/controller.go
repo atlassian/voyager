@@ -118,19 +118,19 @@ func (c *Controller) Run(ctx context.Context) {
 // Process will handle any changes to namespaces and ensure we have a ConfigMap
 // with the appropriate data in place. It also ensures that roles and rolebindings
 // are created for build authentication.
-func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, error) {
+func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* external */, bool /* retriable */, error) {
 	ns := ctx.Object.(*core_v1.Namespace)
 	nsLogger := ctx.Logger.With(ctrllogz.NamespaceName(ns.Name))
 	if ns.ObjectMeta.DeletionTimestamp != nil {
 		// TODO: considering service creation, what should we do here?
 		nsLogger.Info("Already deleting namespace, skipping update")
-		return false, nil
+		return false, false, nil
 	}
 
 	serviceName, err := layers.ServiceNameFromNamespaceLabels(ns.Labels)
 	if err != nil {
 		nsLogger.Debug("Namespace doesn't have a valid service name label, skipping")
-		return false, nil
+		return false, false, nil
 	}
 
 	ctx.Logger.Sugar().Infof("Looking up service data for service %q from Service Central", serviceName)
@@ -138,10 +138,10 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 	if err != nil {
 		if servicecentral.IsNotFound(err) {
 			// no retries if SC is missing a service record
-			return false, err
+			return false, false, err
 		}
 		// should be able to retry other SC errors
-		return true, err
+		return false, true, err
 	}
 
 	operations := []func() (bool, error){
@@ -184,7 +184,10 @@ func (c *Controller) Process(ctx *ctrl.ProcessContext) (bool /* retriable */, er
 		},
 	}
 
-	return runOperations(operations)
+	retriable, err := runOperations(operations)
+
+	// Everything is an internal error in synchronization
+	return false, retriable, err
 }
 
 func runOperations(operations []func() (bool, error)) (bool, error) {

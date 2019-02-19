@@ -78,36 +78,31 @@ func (c *Controller) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err error) {
+func (c *Controller) Process(ctx *ctrl.ProcessContext) (external bool, retriable bool, err error) {
 	state := ctx.Object.(*orch_v1.State)
 	if state.ObjectMeta.DeletionTimestamp != nil {
 		// Marked for deletion, do nothing
-		return false, nil
+		return false, false, nil
 	}
 
 	bundle, external, conflict, retriable, err := c.process(ctx.Logger, state)
 	if conflict || bundle == nil && err == nil {
-		return false, nil
+		return false, false, nil
 	}
 
 	conflict, processRetriable, processErr := c.handleProcessResult(ctx.Logger, state, bundle, retriable, err)
 	if conflict {
-		return false, nil
+		return false, false, nil
 	}
 
 	if err != nil {
-		if !external {
-			if processErr != nil {
-				ctx.Logger.Error("Failed to set State status", zap.Error(processErr))
-			}
-			return processRetriable || retriable, err
+		if processErr != nil {
+			ctx.Logger.Error("Failed to set State status", zap.Error(processErr))
 		}
-
-		// External error, just log.
-		ctx.Logger.Info("Invalid State Object", zap.Error(err))
+		return external, processRetriable || retriable, err
 	}
 
-	return processRetriable, processErr
+	return false, processRetriable, processErr
 }
 
 // process processes the given State object performing autowiring for it.

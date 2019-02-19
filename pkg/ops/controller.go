@@ -28,14 +28,14 @@ func (c *Controller) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func (c *Controller) Process(ctx *ctrl.ProcessContext) (retriable bool, err error) {
+func (c *Controller) Process(ctx *ctrl.ProcessContext) (externalErr bool, retriable bool, err error) {
 	route := ctx.Object.(*ops_v1.Route)
 
 	conflict, retriable, err := c.process(route)
 	if conflict {
-		return false, nil
+		return false, false, nil
 	}
-	return retriable, err
+	return false, retriable, err
 }
 
 func (c *Controller) process(route *ops_v1.Route) (conflictRet, retriableRet bool, e error) {

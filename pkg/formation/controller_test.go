@@ -23,6 +23,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	orchclient_fake "github.com/atlassian/voyager/pkg/orchestration/client/fake"
 	orchInf "github.com/atlassian/voyager/pkg/orchestration/informer"
+	"github.com/atlassian/voyager/pkg/util"
 	"github.com/atlassian/voyager/pkg/util/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -129,9 +130,11 @@ func TestCreatesStateIncludesOwnerReference(t *testing.T) {
 	tc := testCase{
 		ld: ld,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -180,9 +183,11 @@ func TestCreatesStatePassesConfigMapName(t *testing.T) {
 	tc := testCase{
 		ld: ld,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -217,9 +222,11 @@ func TestCreatesStateMissingConfigMapName(t *testing.T) {
 	tc := testCase{
 		ld: ld,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
-			require.NoError(t, err)
+			require.EqualError(t, err, "configMapName is missing")
+			assert.True(t, external, "error should be an external error")
+			assert.False(t, retriable, "error should be an external error")
 
 			formActions := tc.formFake.Actions()
 			assert.Len(t, formActions, 3) // 0:list,1:watch,2:update
@@ -282,9 +289,11 @@ func TestCreatesStateConvertsResources(t *testing.T) {
 	tc := testCase{
 		ld: ld,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -373,9 +382,11 @@ func TestUpdatesExistingStateWithNewResources(t *testing.T) {
 		ld:                ld,
 		orchClientObjects: []runtime.Object{existingState},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -425,9 +436,11 @@ func TestLocationDescriptorParsingWithReleaseTemplating(t *testing.T) {
 		ld:          ld,
 		releaseData: makeReleasesConfigMap(ld),
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -476,9 +489,12 @@ func TestLocationDescriptorWithReleaseTemplatingUsingInvalidKey(t *testing.T) {
 		ld:          ld,
 		releaseData: makeReleasesConfigMap(ld),
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
-			require.NoError(t, err)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "variable not defined")
+			assert.True(t, external, "error should be an external error")
+			assert.False(t, retriable, "error should be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
@@ -531,10 +547,13 @@ func TestLocationDescriptorErrorPropagation(t *testing.T) {
 		ld:          ld,
 		releaseData: makeReleasesConfigMap(ld),
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			// This is a user error and is not bubbled up to ctrl
-			require.NoError(t, err)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "variable not defined")
+			assert.True(t, external, "error should be an external error")
+			assert.False(t, retriable, "error not be a retriable error")
 
 			actions := tc.formFake.Actions()
 			assert.Len(t, actions, 3) // 0:list,1:watch,2:update
@@ -592,9 +611,16 @@ func TestProcessLocationDescriptorWithMultipleTemplatingErrorsReturnsErrorList(t
 		ld:          ld,
 		releaseData: makeReleasesConfigMap(ld),
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
-			require.NoError(t, err)
+			require.Error(t, err)
+			numErrors := len(err.(*util.ErrorList).ErrorList)
+			require.Equal(t, 3, numErrors) // One error per resource
+			for _, e := range err.(*util.ErrorList).ErrorList {
+				assert.Contains(t, e.Error(), "variable not defined")
+			}
+			assert.True(t, external, "error should be an external error")
+			assert.False(t, retriable, "error should not be a retriable error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
@@ -647,10 +673,13 @@ func TestMissingConfigMapWithTemplatingKeysPresentErrorIsHandled(t *testing.T) {
 		ld:          ld,
 		releaseData: nil, // Explicitly no release data config map set..
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			// Missing configMap is an external error
-			require.NoError(t, err)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "no release data was available")
+			assert.True(t, external, "error should be an external error")
+			assert.False(t, retriable, "error not be a retriable error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
@@ -734,9 +763,11 @@ func TestErrorOnStateUpdateWhenDifferentOwner(t *testing.T) {
 		ld:                ld,
 		orchClientObjects: []runtime.Object{existingState},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.Error(t, err)
+			assert.False(t, external, "error should be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 2)
@@ -804,9 +835,11 @@ func TestDoesNotSkipStateUpdateWhenFlaggedForDeletion(t *testing.T) {
 		ld:                ld,
 		orchClientObjects: []runtime.Object{existingState},
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -905,8 +938,10 @@ func TestKubeComputeDefaults(t *testing.T) {
 	tc := testCase{
 		ld: ld,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			actions := tc.orchFake.Actions()
 			require.Len(t, actions, 3)
@@ -983,8 +1018,10 @@ func TestDeletedLocationDescriptorIsSkipped(t *testing.T) {
 	tc := testCase{
 		ld: ld,
 		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
-			_, err := cntrlr.Process(ctx)
+			external, retriable, err := cntrlr.Process(ctx)
 			require.NoError(t, err)
+			assert.False(t, external, "error should not be an external error")
+			assert.False(t, retriable, "error should not be an external error")
 
 			orchActions := tc.orchFake.Actions()
 			require.Len(t, orchActions, 2) // list + watch only
@@ -1264,5 +1301,4 @@ func (tc *testCase) run(t *testing.T) {
 	}
 
 	tc.test(t, cntrlr, pctx, tc)
-
 }

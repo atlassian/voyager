@@ -59,46 +59,47 @@ func shouldReplicate(sd *comp_v1.ServiceDescriptor) (bool, error) {
 }
 
 // TODO: We need to develop a way to reconcile clusters in the many error states we can get into
-func (c *Controller) Process(pctx *ctrl.ProcessContext) (bool /* retriable */, error) {
+func (c *Controller) Process(pctx *ctrl.ProcessContext) (bool /* external */, bool /* retriable */, error) {
 	c.logger.Sugar().Debug("Fetching remote ServiceDescriptor")
 	desired := pctx.Object.(*comp_v1.ServiceDescriptor)
 
 	c.logger.Sugar().Debugf("Testing existance of local ServiceDescriptor", desired.GetName())
 	existing, exists, err := fetchServiceDescriptor(c.localInformer, desired)
 	if err != nil {
-		return true, err
+		return false, true, err
 	}
 
 	if desired.ObjectMeta.DeletionTimestamp != nil {
 		c.logger.Sugar().Debugf("Remote ServiceDescriptor %q marked for deletion", desired.GetName())
 		if !exists {
-			return false, nil
+			return false, false, nil
 		}
 		// We don't do anything in this case yet
 		// https://extranet.atlassian.com/display/VDEV/Soft+deletes
 		c.logger.Sugar().Infof("ServiceDescriptor %q should have been deleted, but has been skipped until Soft Delete is implemented", desired.GetName())
-		return false, nil
+		return false, false, nil
 	}
 
 	// Check if we need to replicate
 	desiredShouldReplicate, err := shouldReplicate(desired)
 	if err != nil {
-		return false, err
+		// Cannot parse annotation.
+		return true, false, err
 	}
 	if !desiredShouldReplicate {
 		c.logger.Sugar().Infof("Remote ServiceDescriptor %q is explicitly marked as non-replicating and will not be copied", desired.GetName())
-		return false, nil
+		return false, false, nil
 	}
 
 	// Create the local SD
 	if exists {
 		existingShouldReplicate, shouldReplicateErr := shouldReplicate(existing)
 		if shouldReplicateErr != nil {
-			return false, shouldReplicateErr
+			return true, false, shouldReplicateErr
 		}
 		if !existingShouldReplicate {
 			c.logger.Sugar().Infof("ServiceDescriptor %q is explicitly marked as non-replicating and will not be overwritten", existing.GetName())
-			return false, nil
+			return false, false, nil
 		}
 
 		return c.updateServiceDescriptor(pctx, existing, desired)
@@ -118,32 +119,32 @@ func fetchServiceDescriptor(inf cache.SharedIndexInformer, item *comp_v1.Service
 	return nil, exists, err
 }
 
-func (c *Controller) createServiceDescriptor(pctx *ctrl.ProcessContext, desired *comp_v1.ServiceDescriptor) (bool, error) {
+func (c *Controller) createServiceDescriptor(pctx *ctrl.ProcessContext, desired *comp_v1.ServiceDescriptor) (bool /*external*/, bool /*retriable*/, error) {
 	pctx.Logger.Sugar().Infof("Creating ServiceDescriptor %q", desired.GetName())
 	_, err := c.localClient.CompositionV1().ServiceDescriptors().Create(desired)
 	if err != nil {
-		return true, err
+		return false, true, err
 	}
-	return false, nil
+	return false, false, nil
 }
 
-func (c *Controller) updateServiceDescriptor(pctx *ctrl.ProcessContext, existing, desired *comp_v1.ServiceDescriptor) (bool, error) {
+func (c *Controller) updateServiceDescriptor(pctx *ctrl.ProcessContext, existing, desired *comp_v1.ServiceDescriptor) (bool /*external*/, bool /*retriable*/, error) {
 	store := store.NewMultiBasic()
 	sc := specchecker.New(store)
 
 	_, equal, _, err := sc.CompareActualVsSpec(pctx.Logger, desired, existing)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	if equal {
 		pctx.Logger.Sugar().Infof("No updates to ServiceDescriptor %q", desired.GetName())
-		return false, nil
+		return false, false, nil
 	}
 	pctx.Logger.Sugar().Infof("Updating ServiceDescriptor %q", desired.GetName())
 
 	err = validateHash(existing)
 	if err != nil {
-		return false, errors.Errorf("aborting replication of %q due to hash check error: %q", desired.GetName(), err)
+		return true, false, errors.Errorf("aborting replication of %q due to hash check error: %q", desired.GetName(), err)
 	}
 
 	updated := existing.DeepCopy()
@@ -160,9 +161,9 @@ func (c *Controller) updateServiceDescriptor(pctx *ctrl.ProcessContext, existing
 
 	_, err = c.localClient.CompositionV1().ServiceDescriptors().Update(updated)
 	if err != nil {
-		return true, err
+		return false, true, err
 	}
-	return false, nil
+	return false, false, nil
 }
 
 func validateHash(existing *comp_v1.ServiceDescriptor) error {
