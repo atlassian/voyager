@@ -246,12 +246,12 @@ func generateSecretResource(compute voyager.ResourceName, envVars map[string]str
 	}
 
 	instanceResource := smith_v1.Resource{
-		Name:       wiringutil.ResourceNameWithPostfix(compute, secretPluginNamePostfix),
+		Name:       wiringutil.ResourceName(compute, secretPluginNamePostfix),
 		References: dependencyReferences,
 		Spec: smith_v1.ResourceSpec{
 			Plugin: &smith_v1.PluginSpec{
 				Name:       secretplugin.PluginName,
-				ObjectName: wiringutil.MetaNameWithPostfix(compute, secretPluginNamePostfix),
+				ObjectName: wiringutil.MetaName(compute, secretPluginNamePostfix),
 				Spec:       secretPluginSpec,
 			},
 		},

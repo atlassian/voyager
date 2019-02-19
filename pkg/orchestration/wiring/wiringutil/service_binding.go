@@ -13,10 +13,10 @@ import (
 //
 // This function assumes that producer exposes a single bindable ServiceInstance. If it is not the case and
 // there is a need to bind to multiple ServiceInstances produced by the same producer, construct names
-// (using ConsumerProducerResourceNameWithPostfix() and ConsumerProducerMetaNameWithPostfix() functions) with
+// (using ConsumerProducerResourceName() and ConsumerProducerMetaName() functions) with
 // different postfixes.
 func ConsumerProducerServiceBinding(consumer, producer voyager.ResourceName, serviceInstanceRef smith_v1.Reference) smith_v1.Resource {
-	bindingResourceName := ConsumerProducerResourceNameWithPostfix(consumer, producer, "binding")
+	bindingResourceName := ConsumerProducerResourceName(consumer, producer, "binding")
 	bindingMetaName := ConsumerProducerMetaName(consumer, producer)
 	return ServiceBinding(bindingResourceName, bindingMetaName, serviceInstanceRef)
 }
@@ -32,9 +32,9 @@ func ResourceInternalServiceBinding(resource voyager.ResourceName, serviceInstan
 	}
 	// ServiceBinding resource name must not clash with ServiceInstance resource name  (if same postfix is specified)
 	// hence the modified postfix
-	bindingResourceName := ResourceNameWithPostfix(resource, postfix+"-binding")
+	bindingResourceName := ResourceName(resource, postfix, "binding")
 	// ServiceBinding is named just like ServiceInstance for convenience (if same postfix is specified)
-	bindingMetaName := MetaNameWithPostfix(resource, postfix)
+	bindingMetaName := MetaName(resource, postfix)
 	return ServiceBinding(bindingResourceName, bindingMetaName, serviceInstanceRef)
 }
 

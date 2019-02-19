@@ -102,7 +102,7 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 	}
 
 	serviceResource := smith_v1.Resource{
-		Name: wiringutil.ResourceNameWithPostfix(resourceName, servicePostfix),
+		Name: wiringutil.ResourceName(resourceName, servicePostfix),
 		References: []smith_v1.Reference{
 			{
 				Resource: deploymentName,
@@ -115,7 +115,7 @@ func buildServiceResource(deploymentName smith_v1.ResourceName, selectorLabels m
 					APIVersion: core_v1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name: wiringutil.MetaNameWithPostfix(resourceName, servicePostfix),
+					Name: wiringutil.MetaName(resourceName, servicePostfix),
 				},
 				Spec: serviceSpec,
 			},

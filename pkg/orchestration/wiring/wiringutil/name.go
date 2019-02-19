@@ -42,42 +42,37 @@ func ReferenceName(producer smith_v1.ResourceName, nameElems ...string) smith_v1
 	return smith_v1.ReferenceName(strings.Join(allNameElems, "-"))
 }
 
-func ConsumerProducerResourceName(consumer, producer voyager.ResourceName) smith_v1.ResourceName {
-	return smith_v1.ResourceName(joinResourceNameParts(string(consumer), string(producer)))
+func ConsumerProducerResourceName(consumer, producer voyager.ResourceName, postfixParts ...string) smith_v1.ResourceName {
+	nameParts := append([]string{string(consumer), string(producer)}, postfixPartsToNamePart(postfixParts...)...)
+	return smith_v1.ResourceName(joinNameParts(nameParts...))
 }
 
-func ConsumerProducerResourceNameWithPostfix(consumer, producer voyager.ResourceName, postfix string) smith_v1.ResourceName {
-	return smith_v1.ResourceName(joinResourceNameParts(string(consumer), string(producer), postfix))
+func ResourceName(resource voyager.ResourceName, postfixParts ...string) smith_v1.ResourceName {
+	nameParts := append([]string{string(resource)}, postfixPartsToNamePart(postfixParts...)...)
+	return smith_v1.ResourceName(joinNameParts(nameParts...))
 }
 
-func ResourceName(resource voyager.ResourceName) smith_v1.ResourceName {
-	return smith_v1.ResourceName(resource)
+func ConsumerProducerMetaName(consumer, producer voyager.ResourceName, postfixParts ...string) string {
+	nameParts := append([]string{string(consumer), string(producer)}, postfixPartsToNamePart(postfixParts...)...)
+	return joinNameParts(nameParts...)
 }
 
-func ResourceNameWithPostfix(resource voyager.ResourceName, postfix string) smith_v1.ResourceName {
-	return smith_v1.ResourceName(joinResourceNameParts(string(resource), postfix))
+func MetaName(resource voyager.ResourceName, postfixParts ...string) string {
+	nameParts := append([]string{string(resource)}, postfixPartsToNamePart(postfixParts...)...)
+	return joinNameParts(nameParts...)
 }
 
-func ConsumerProducerMetaName(consumer, producer voyager.ResourceName) string {
-	return joinResourceNameParts(string(consumer), string(producer))
-}
-
-func ConsumerProducerMetaNameWithPostfix(consumer, producer voyager.ResourceName, postfix string) string {
-	return joinResourceNameParts(string(consumer), string(producer), postfix)
-}
-
-func MetaName(resource voyager.ResourceName) string {
-	return string(resource)
-}
-
-func MetaNameWithPostfix(resource voyager.ResourceName, postfix string) string {
-	return joinResourceNameParts(string(resource), postfix)
-}
-
-// joinResourceNameParts joins pieces of a name.
+// joinNameParts joins pieces of a name.
 // voyager.ResourceName cannot contain more than one `-` in a row so it is safe to construct
 // smith_v1.ResourceName and meta names for Kubernetes objects using `--` as a delimiter as long as one or more
 // starting parts of the name provide namespacing to avoid clashes.
-func joinResourceNameParts(parts ...string) string {
+func joinNameParts(parts ...string) string {
 	return strings.Join(parts, "--")
+}
+
+func postfixPartsToNamePart(postfixParts ...string) []string {
+	if len(postfixParts) == 0 {
+		return nil
+	}
+	return []string{strings.Join(postfixParts, "-")}
 }
