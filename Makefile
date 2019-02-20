@@ -22,7 +22,7 @@ ALL_DIRS=$(APIS_AGGREGATOR_DIR),$(APIS_COMPOSITION_DIR),$(APIS_CREATOR_DIR),$(AP
 #===============================================================================
 
 define check-git-status
-if [[ -n $$(git --no-pager status -s 2> /dev/null) ]] ;\
+if [ -n "$$(git --no-pager status -s 2> /dev/null)" ] ;\
 then \
 	echo "Git tree is not clean. Did you forget to commit some files? If you added new dependency please use dep ensure -add before creating PR." ;\
 	git --no-pager status ;\
@@ -30,7 +30,7 @@ fi
 endef
 
 define check-git-status-in-ci
-if [[ -n $$(git --no-pager status -s 2> /dev/null) ]] ;\
+if [ -n "$$(git --no-pager status -s 2> /dev/null)" ] ;\
 then \
 	echo "Git tree is not clean. Did you forget to commit some files? If you added new dependency please use dep ensure -add before creating PR." ;\
 	git --no-pager status ;\
