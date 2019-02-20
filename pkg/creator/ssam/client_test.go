@@ -227,7 +227,7 @@ func TestSSAMClientDeleteContainerSuccessTypical(t *testing.T) {
 func TestSSAMClientDeleteContainerSuccessNonCompliantName(t *testing.T) {
 	t.Parallel()
 
-	containerShortName := "whatever-2.0"  // not supposed to contain dots
+	containerShortName := "whatever-2.0" // not supposed to contain dots
 
 	// GIVEN: Setup mock server to respond with testdata/
 	handler := MockHandler(Match(AnyRequest).Respond(
