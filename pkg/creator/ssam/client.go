@@ -326,8 +326,8 @@ func (c clientImpl) DeleteContainer(ctx context.Context, containerShortName stri
 	logger.Debug("SSAM GetContainer", zappers.ContainerShortName(containerShortName))
 
 	if err := validateShortName(containerShortName); err != nil {
-		return err
-
+		logger.Warn("SSAM GetContainer name %q does not obey naming scheme, will attempt to delete anyway",
+			zappers.ContainerShortName(containerShortName))
 	}
 
 	// Delete the container

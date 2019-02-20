@@ -196,10 +196,38 @@ func TestSSAMClientPostAccessLevel(t *testing.T) {
 	assert.Contains(t, req.Header, "Authorization")
 }
 
-func TestSSAMClientDeleteContainerSuccess(t *testing.T) {
+func TestSSAMClientDeleteContainerSuccessTypical(t *testing.T) {
 	t.Parallel()
 
 	containerShortName := "whatever"
+
+	// GIVEN: Setup mock server to respond with testdata/
+	handler := MockHandler(Match(AnyRequest).Respond(
+		Status(http.StatusNoContent),
+	))
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	// GIVEN: Setup our SSAM Client
+	asapConfig := pkitest.MockASAPClientConfig(t)
+	client := NewSSAMClient(http.DefaultClient, asapConfig, parseURL(t, srv.URL))
+
+	// WHEN: Make the request
+	err := client.DeleteContainer(testutil.ContextWithLogger(t), containerShortName)
+
+	// THEN
+	require.NoError(t, err)
+	assert.Equal(t, handler.RequestSnapshots.Calls(), 1)
+	req := handler.RequestSnapshots.Snapshots[0]
+	assert.Equal(t, http.MethodDelete, req.Method)
+	assert.Equal(t, fmt.Sprintf("/api/access/containers/%s/", containerShortName), req.Path)
+	assert.Contains(t, req.Header, "Authorization")
+}
+
+func TestSSAMClientDeleteContainerSuccessNonCompliantName(t *testing.T) {
+	t.Parallel()
+
+	containerShortName := "whatever-2.0"  // not supposed to contain dots
 
 	// GIVEN: Setup mock server to respond with testdata/
 	handler := MockHandler(Match(AnyRequest).Respond(
