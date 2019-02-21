@@ -7,14 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/atlassian/voyager/pkg/opsgenie"
-
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
 	smith_config "github.com/atlassian/voyager/cmd/smith/config"
 	orch_meta "github.com/atlassian/voyager/pkg/apis/orchestration/meta"
 	orch_v1 "github.com/atlassian/voyager/pkg/apis/orchestration/v1"
+	"github.com/atlassian/voyager/pkg/opsgenie"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/registry"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringplugin"
 	"github.com/atlassian/voyager/pkg/orchestration/wiring/wiringutil/knownshapes"
