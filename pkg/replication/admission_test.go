@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -546,7 +547,7 @@ func TestBackwardsTimestamp(t *testing.T) {
 		}),
 	})
 	require.NoError(t, err)
-	require.Equal(t, rejected("", "You are attempting to override a Service Descriptor from 2009-11-10T22:00:00Z with an older version from 2009-11-10T22:00:01Z"), resp)
+	require.Equal(t, rejected("", "You are attempting to override a Service Descriptor from 2009-11-10T22:00:01Z with an older version from 2009-11-10T22:00:00Z"), resp)
 }
 
 func TestEqualTimestamp(t *testing.T) {
@@ -652,7 +653,7 @@ func TestAddAnnotationsCreate(t *testing.T) {
 	assert.Equal(t, "3a619f41b19fe334cc7330a143138b4a8b5e0bf3", value[hashKey])
 }
 
-func TestAddAnnotationsUpdateKeepsSubmittedTS(t *testing.T) {
+func TestAddAnnotationsUpdateKeepsSubmittedTSAsReplication(t *testing.T) {
 	t.Parallel()
 	resp, err := admitWithContextAndLogger(t, &admissionv1beta1.AdmissionRequest{
 		Operation: admissionv1beta1.Update,
@@ -673,6 +674,9 @@ func TestAddAnnotationsUpdateKeepsSubmittedTS(t *testing.T) {
 			},
 			Spec: getValidSdSpec(),
 		}),
+		UserInfo: authenticationv1.UserInfo{
+			Username: replicationUser,
+		},
 	})
 	require.NoError(t, err)
 	assert.True(t, resp.Allowed)
@@ -699,7 +703,7 @@ func TestEditExistingSD(t *testing.T) {
 		Object: objectToRawExtension(t, &comp_v1.ServiceDescriptor{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Annotations: map[string]string{
-					updatedKey: "2009-11-10T22:00:01Z",
+					updatedKey: "2009-11-10T22:00:00Z",
 				},
 			},
 			Spec: comp_v1.ServiceDescriptorSpec{
@@ -779,6 +783,8 @@ func TestEditExistingSD(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.True(t, resp.Allowed)
+	patches := getPatches(t, resp)
+	assert.NotEqual(t, "2009-11-10T22:00:00Z", patches[0].Value)
 }
 
 func assertSaneTime(t *testing.T, startTime time.Time, timeString string) {
