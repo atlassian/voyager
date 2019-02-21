@@ -1342,7 +1342,7 @@ spec:
         kind: ServiceAccount
         metadata:
           name: kc--svcacc
-  - name: kc--pdb
+  - name: kc--pdb-minavail-0
     spec:
       object:
         apiVersion: policy/v1beta1
