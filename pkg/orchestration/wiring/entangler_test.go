@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/atlassian/voyager/pkg/opsgenie"
+
 	smith_v1 "github.com/atlassian/smith/pkg/apis/smith/v1"
 	smith_plugin "github.com/atlassian/smith/pkg/plugin"
 	"github.com/atlassian/voyager"
@@ -302,6 +304,41 @@ func entangleTestState(t *testing.T, state *orch_v1.State, wiringPlugins map[voy
 				PagerdutyEndpoint: orch_meta.PagerDuty{
 					CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/12312312312312312312312312312312",
 					Generic:    "123123123123123",
+				},
+				OpsgenieIntegrations: []opsgenie.Integration{
+					{
+						APIKey:   "SOME-API-KEY-HERE",
+						Endpoint: "https://api.opsgenie.com/v1/json/cloudwatch?apiKey=SOME-API-KEY-HERE",
+						EnvType:  "dev",
+						ID:       "6a33291e-a4d9-467e-a25d-f9d621fe2461",
+						Name:     "micros_CloudWatch_high_dev",
+						Priority: "high",
+						TeamID:   "01101000 01101001 00100000 01101101 01101111 01101101",
+						TeamName: "Platform SRE",
+						Type:     "Cloudwatch",
+					},
+					{
+						APIKey:   "SOME-API-KEY-HERE",
+						Endpoint: "null",
+						EnvType:  "dev",
+						ID:       "6a33291e-a4d9-467e-a25d-f9d621fe2461",
+						Name:     "micros_Platform SRE_Datadog",
+						Priority: "null",
+						TeamID:   "01101000 01101001 00100000 01101101 01101111 01101101",
+						TeamName: "Platform SRE",
+						Type:     "Datadog",
+					},
+					{
+						APIKey:   "SOME-API-KEY-HERE",
+						Endpoint: "null",
+						EnvType:  "null",
+						ID:       "6a33291e-a4d9-467e-a25d-f9d621fe2461",
+						Name:     "micros_Platform SRE_API",
+						Priority: "null",
+						TeamID:   "01101000 01101001 00100000 01101101 01101111 01101101",
+						TeamName: "Platform SRE",
+						Type:     "API",
+					},
 				},
 			},
 			SSAMAccessLevel: "access-level-from-configmap",
