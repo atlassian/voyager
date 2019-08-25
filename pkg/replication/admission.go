@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	authz_v1 "k8s.io/api/authorization/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiext_v1b1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -37,6 +38,9 @@ import (
 )
 
 const (
+	// User account the replication controller uses
+	replicationUser = "system:serviceaccount:voyager:replication"
+
 	// key is the name of the annotation applied to the ServiceDescriptor
 	updatedKey = "mutationTimestamp"
 	hashKey    = "mutationHash"
@@ -184,7 +188,7 @@ func (ac *AdmissionContext) servicedescriptorMutationAdmitFunc(ctx context.Conte
 		return admissionResponse, nil
 	}
 
-	patch, err := createAnnotationPatch(admissionRequest.Operation, newSD)
+	patch, err := createAnnotationPatch(admissionRequest.Operation, newSD, admissionRequest.UserInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -332,8 +336,12 @@ func (ac *AdmissionContext) validateLocationsAndTransforms(sd *comp_v1.ServiceDe
 	return RejectionMessage(strings.Join(rejectionMessages, ", "))
 }
 
-func createAnnotationPatch(operation admissionv1beta1.Operation, newSD *comp_v1.ServiceDescriptor) ([]byte, error) {
-	ts, err := generateUpdated(operation, newSD)
+func isReplicationController(userInfo authenticationv1.UserInfo) bool {
+	return userInfo.Username == replicationUser
+}
+
+func createAnnotationPatch(operation admissionv1beta1.Operation, newSD *comp_v1.ServiceDescriptor, userInfo authenticationv1.UserInfo) ([]byte, error) {
+	ts, err := generateUpdated(isReplicationController(userInfo), operation, newSD)
 	if err != nil {
 		return nil, err
 	}
@@ -451,7 +459,7 @@ func validateTimes(new time.Time, old time.Time) RejectionMessage {
 	// The "new" object is from the past - abort!
 	if new.Before(old) {
 		return RejectionMessage(fmt.Sprintf("You are attempting to override a Service Descriptor from %s with an older version from %s",
-			new.Format(time.RFC3339), old.Format(time.RFC3339)))
+			old.Format(time.RFC3339), new.Format(time.RFC3339)))
 	}
 
 	return ""
@@ -489,16 +497,15 @@ func addAnnotation(key, value string) util.Patch {
 	}
 }
 
-func generateUpdated(operation admissionv1beta1.Operation, newSD *comp_v1.ServiceDescriptor) (time.Time, error) {
-	if operation != admissionv1beta1.Update {
-		return time.Now(), nil
+func generateUpdated(isReplication bool, operation admissionv1beta1.Operation, newSD *comp_v1.ServiceDescriptor) (time.Time, error) {
+	if isReplication {
+		ts, exists := newSD.Annotations[updatedKey]
+		if !exists {
+			return time.Now(), errors.New("replication controller must set the mutation timestamp")
+		}
+		return parseTimestamp(ts)
 	}
-	ts, exists := newSD.Annotations[updatedKey]
-	if !exists || ts == "" {
-		return time.Now(), nil
-	}
-
-	return parseTimestamp(ts)
+	return time.Now(), nil
 }
 
 func generateSpecHash(sd *comp_v1.ServiceDescriptor) (string, error) {
