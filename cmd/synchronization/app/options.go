@@ -21,15 +21,17 @@ type Options struct {
 }
 
 type Providers struct {
-	ServiceCentralURL *url.URL // we use custom json marshalling to read it
-	DeployinatorURL   *url.URL
+	ServiceCentralURL              *url.URL // we use custom json marshalling to read it
+	DeployinatorURL                *url.URL
+	OpsgenieIntegrationsManagerURL *url.URL
 }
 
 // UnmarshalJSON unmarshals our untyped config file into a typed struct including URLs
 func (p *Providers) UnmarshalJSON(data []byte) error {
 	var rawProviders struct {
-		ServiceCentral string `json:"serviceCentral"`
-		Deployinator   string `json:"deployinator"`
+		ServiceCentral              string `json:"serviceCentral"`
+		Deployinator                string `json:"deployinator"`
+		OpsgenieIntegrationsManager string `json:"opsgenieIntegrationsManager"`
 	}
 
 	if err := json.Unmarshal(data, &rawProviders); err != nil {
@@ -37,13 +39,24 @@ func (p *Providers) UnmarshalJSON(data []byte) error {
 	}
 
 	scURL, err := url.Parse(rawProviders.ServiceCentral)
-	p.ServiceCentralURL = scURL
 	if err != nil {
 		return errors.Wrap(err, "unable to parse Service Central URL")
 	}
+	p.ServiceCentralURL = scURL
+
 	depURL, err := url.Parse(rawProviders.Deployinator)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse Deployinator URL")
+	}
 	p.DeployinatorURL = depURL
-	return errors.Wrap(err, "unable to parse Deployinator URL")
+
+	ogUrl, err := url.Parse(rawProviders.OpsgenieIntegrationsManager)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse Opsgenie Integrations Manager URL")
+	}
+	p.OpsgenieIntegrationsManagerURL = ogUrl
+
+	return nil
 }
 
 func (o *Options) DefaultAndValidate() []error {
@@ -52,6 +65,10 @@ func (o *Options) DefaultAndValidate() []error {
 
 	if o.Providers.ServiceCentralURL == nil {
 		allErrors = append(allErrors, errors.New("providers.serviceCentral must be a valid URL"))
+	}
+
+	if o.Providers.OpsgenieIntegrationsManagerURL == nil {
+		allErrors = append(allErrors, errors.New("providers.OpsgenieIntegrationsManagerURL must be a valid URL"))
 	}
 
 	return allErrors

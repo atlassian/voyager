@@ -33,7 +33,7 @@ func TestGetIntegrations(t *testing.T) {
 	defer ogIntManagerMockServer.Close()
 
 	// when
-	ogIntManagerClient := mockOpsGenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
+	ogIntManagerClient := mockOpsgenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
 	_, retriable, err := ogIntManagerClient.GetOrCreateIntegrations(context.Background(), teamName)
 
 	// then
@@ -58,7 +58,7 @@ func TestGetIntegrationsTeamNotFound(t *testing.T) {
 	defer ogIntManagerMockServer.Close()
 
 	// when
-	ogIntManagerClient := mockOpsGenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
+	ogIntManagerClient := mockOpsgenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
 	_, retriable, err := ogIntManagerClient.GetOrCreateIntegrations(context.Background(), teamName)
 
 	// then
@@ -83,7 +83,7 @@ func TestGetIntegrationsRateLimited(t *testing.T) {
 	defer ogIntManagerMockServer.Close()
 
 	// when
-	ogIntManagerClient := mockOpsGenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
+	ogIntManagerClient := mockOpsgenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
 	_, retriable, err := ogIntManagerClient.GetOrCreateIntegrations(context.Background(), teamName)
 
 	// then
@@ -108,7 +108,7 @@ func TestGetIntegrationsInternalServerError(t *testing.T) {
 	defer ogIntManagerMockServer.Close()
 
 	// when
-	ogIntManagerClient := mockOpsGenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
+	ogIntManagerClient := mockOpsgenieIntegrationManagerClient(t, ogIntManagerMockServer.URL, pkitest.MockASAPClientConfig(t))
 	_, retriable, err := ogIntManagerClient.GetOrCreateIntegrations(context.Background(), teamName)
 
 	// then
@@ -117,7 +117,7 @@ func TestGetIntegrationsInternalServerError(t *testing.T) {
 	require.True(t, retriable)
 }
 
-func mockOpsGenieIntegrationManagerClient(t *testing.T, serverMockAddress string, asap pkiutil.ASAP) *Client {
+func mockOpsgenieIntegrationManagerClient(t *testing.T, serverMockAddress string, asap pkiutil.ASAP) *Client {
 	opsgenieIntegrationManagerURL, err := url.Parse(serverMockAddress)
 	require.NoError(t, err)
 	httpClient := util.HTTPClient()

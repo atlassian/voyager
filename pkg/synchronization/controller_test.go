@@ -18,6 +18,7 @@ import (
 	"github.com/atlassian/voyager/pkg/k8s"
 	k8s_testing "github.com/atlassian/voyager/pkg/k8s/testing"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
+	"github.com/atlassian/voyager/pkg/opsgenie"
 	"github.com/atlassian/voyager/pkg/pagerduty"
 	"github.com/atlassian/voyager/pkg/releases"
 	"github.com/atlassian/voyager/pkg/servicecentral"
@@ -70,6 +71,15 @@ func (m *fakeServiceCentral) ListServices(ctx context.Context, user auth.Optiona
 func (m *fakeServiceCentral) ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]creator_v1.Service, error) {
 	args := m.Called(ctx, user, modifiedSince)
 	return args.Get(0).([]creator_v1.Service), args.Error(1)
+}
+
+type fakeOpsgenie struct {
+	mock.Mock
+}
+
+func (m *fakeOpsgenie) GetOrCreateIntegrations(ctx context.Context, teamName string) (*opsgenie.IntegrationsResponse, bool /* retriable */, error) {
+	args := m.Called(ctx, teamName)
+	return args.Get(0).(*opsgenie.IntegrationsResponse), args.Bool(1), args.Error(2)
 }
 
 type fakeReleaseManagement struct {
@@ -1298,6 +1308,253 @@ func TestGenerateIamRoleGlob(t *testing.T) {
 	}
 }
 
+func TestOpsGenieWhenIntegrationManagerFails(t *testing.T) {
+	t.Parallel()
+	ns := &core_v1.Namespace{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.NamespaceKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: namespaceName,
+			Labels: map[string]string{
+				voyager.ServiceNameLabel: serviceName,
+			},
+		},
+	}
+
+	tc := testCase{
+		serviceName:       serviceNameVoy,
+		ns:                ns,
+		mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret()},
+		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+			service := &creator_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: serviceName,
+				},
+				Spec: creator_v1.ServiceSpec{
+					ResourceOwner: "somebody",
+					BusinessUnit:  "the unit",
+					LoggingID:     "some-logging-id",
+					Metadata: creator_v1.ServiceMetadata{
+						PagerDuty: &creator_v1.PagerDutyMetadata{},
+						Opsgenie:  &creator_v1.OpsgenieMetadata{Team: "Platform SRE"},
+					},
+					SSAMContainerName: "some-ssam-container",
+					ResourceTags: map[voyager.Tag]string{
+						"foo": "bar",
+						"baz": "blah",
+					},
+				},
+			}
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
+
+			var nilResp *opsgenie.IntegrationsResponse
+			// Return error when calling Opsgenie Integration Manager
+			tc.ogFake.On("GetOrCreateIntegrations", mock.Anything, mock.Anything).Return(nilResp, true, errors.New("some error"))
+
+			_, err := cntrlr.Process(ctx)
+			require.Error(t, err)
+		},
+	}
+	tc.run(t)
+}
+
+func TestOpsGenieWhenNoTeam(t *testing.T) {
+	t.Parallel()
+	ns := &core_v1.Namespace{
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       k8s.NamespaceKind,
+			APIVersion: core_v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: namespaceName,
+			Labels: map[string]string{
+				voyager.ServiceNameLabel: serviceName,
+			},
+		},
+	}
+
+	tc := testCase{
+		serviceName:       serviceNameVoy,
+		ns:                ns,
+		mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret()},
+		test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+			service := &creator_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: serviceName,
+				},
+				Spec: creator_v1.ServiceSpec{
+					ResourceOwner: "somebody",
+					BusinessUnit:  "the unit",
+					LoggingID:     "some-logging-id",
+					Metadata: creator_v1.ServiceMetadata{
+						PagerDuty: &creator_v1.PagerDutyMetadata{},
+					},
+					SSAMContainerName: "some-ssam-container",
+					ResourceTags: map[voyager.Tag]string{
+						"foo": "bar",
+						"baz": "blah",
+					},
+				},
+			}
+			tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
+			_, err := cntrlr.Process(ctx)
+			require.NoError(t, err) // Expect no error as Opsgenie team is optional
+		},
+	}
+	tc.run(t)
+}
+
+func TestBuildOpsGenieNotifications(t *testing.T) {
+	t.Parallel()
+
+	fullPagerDutyMetadata := fullPagerDutyMetadata()
+
+	envTypeCases := []struct {
+		envType              voyager.EnvType
+		pagerDutyEnvMetadata creator_v1.PagerDutyEnvMetadata
+		expectedOgInts       []opsgenie.Integration
+	}{
+		{
+			voyager.EnvTypeDev,
+			creator_v1.PagerDutyEnvMetadata{
+				Main: creator_v1.PagerDutyServiceMetadata{
+					Integrations: creator_v1.PagerDutyIntegrations{
+						CloudWatch: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: "124e0f010f214a9b9f30b768e7b18e69",
+						},
+						Generic: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: defaultPagerdutyGeneric,
+						},
+					},
+				},
+				LowPriority: creator_v1.PagerDutyServiceMetadata{
+					Integrations: creator_v1.PagerDutyIntegrations{
+						CloudWatch: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: "124e0f010f214a9b9f30b768e7b18e69",
+						},
+						Generic: creator_v1.PagerDutyIntegrationMetadata{
+							IntegrationKey: defaultPagerdutyGeneric,
+						},
+					},
+				},
+			},
+			[]opsgenie.Integration{
+				{EnvType: opsgenie.EnvTypeDev},
+				{EnvType: opsgenie.EnvTypeGlobal},
+			},
+		},
+		{
+			voyager.EnvTypeStaging,
+			fullPagerDutyMetadata.Staging,
+			[]opsgenie.Integration{
+				{EnvType: opsgenie.EnvTypeStaging},
+				{EnvType: opsgenie.EnvTypeGlobal},
+			},
+		},
+		{
+			voyager.EnvTypeProduction,
+			fullPagerDutyMetadata.Production,
+			[]opsgenie.Integration{
+				{EnvType: opsgenie.EnvTypeProd},
+				{EnvType: opsgenie.EnvTypeGlobal},
+			},
+		},
+	}
+
+	for _, subCase := range envTypeCases {
+		t.Run(string(subCase.envType), func(t *testing.T) {
+
+			ns := &core_v1.Namespace{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       k8s.NamespaceKind,
+					APIVersion: core_v1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: namespaceName,
+					Labels: map[string]string{
+						voyager.ServiceNameLabel: serviceName,
+					},
+				},
+			}
+
+			tc := testCase{
+				ns:                ns,
+				mainClientObjects: []runtime.Object{ns, existingDefaultDockerSecret()},
+				test: func(t *testing.T, cntrlr *Controller, ctx *ctrl.ProcessContext, tc *testCase) {
+					service := &creator_v1.Service{
+						ObjectMeta: meta_v1.ObjectMeta{
+							Name: serviceName,
+						},
+						Spec: creator_v1.ServiceSpec{
+							ResourceOwner: "somebody",
+							BusinessUnit:  "the unit",
+							Metadata: creator_v1.ServiceMetadata{
+								PagerDuty: fullPagerDutyMetadata,
+								Opsgenie:  &creator_v1.OpsgenieMetadata{Team: "Platform SRE"},
+							},
+						},
+					}
+					expected := basicServiceProperties(service, subCase.envType)
+					//expected Pagerduty Notifications
+					cwURL, err := pagerduty.KeyToCloudWatchURL(subCase.pagerDutyEnvMetadata.Main.Integrations.CloudWatch.IntegrationKey)
+					require.NoError(t, err)
+					expected.Notifications.PagerdutyEndpoint = orch_meta.PagerDuty{
+						Generic:    subCase.pagerDutyEnvMetadata.Main.Integrations.Generic.IntegrationKey,
+						CloudWatch: cwURL,
+					}
+					cwURL, err = pagerduty.KeyToCloudWatchURL(subCase.pagerDutyEnvMetadata.LowPriority.Integrations.CloudWatch.IntegrationKey)
+					require.NoError(t, err)
+					expected.Notifications.LowPriorityPagerdutyEndpoint = orch_meta.PagerDuty{
+						Generic:    subCase.pagerDutyEnvMetadata.LowPriority.Integrations.Generic.IntegrationKey,
+						CloudWatch: cwURL,
+					}
+					//expected Opsgenie Notifications
+					expected.Notifications.OpsgenieIntegrations = subCase.expectedOgInts
+
+					tc.scFake.On("GetService", mock.Anything, auth.NoUser(), serviceNameSc).Return(service, nil)
+					ogResp := &opsgenie.IntegrationsResponse{
+						Integrations: []opsgenie.Integration{
+							{EnvType: opsgenie.EnvTypeDev},
+							{EnvType: opsgenie.EnvTypeStaging},
+							{EnvType: opsgenie.EnvTypeProd},
+							{EnvType: opsgenie.EnvTypeGlobal},
+						},
+					}
+
+					// Return error when calling Opsgenie Integration Manager
+					tc.ogFake.On("GetOrCreateIntegrations", mock.Anything, mock.Anything).Return(ogResp, true, nil)
+
+					// make sure the controller knows we are our specific environment type
+					cntrlr.ClusterLocation = voyager.ClusterLocation{
+						EnvType: subCase.envType,
+					}
+					_, err = cntrlr.Process(ctx)
+					require.NoError(t, err)
+
+					actions := tc.mainFake.Actions()
+
+					cm, _ := findCreatedConfigMap(actions, namespaceName, apisynchronization.DefaultServiceMetadataConfigMapName)
+					require.NotNil(t, cm)
+
+					assert.Equal(t, cm.Name, apisynchronization.DefaultServiceMetadataConfigMapName)
+
+					assert.Contains(t, cm.Data, orch_meta.ConfigMapConfigKey)
+					data := cm.Data[orch_meta.ConfigMapConfigKey]
+
+					var actual orch_meta.ServiceProperties
+					err = yaml.UnmarshalStrict([]byte(data), &actual)
+					require.NoError(t, err)
+
+					assert.Equal(t, expected, actual)
+				},
+			}
+			tc.run(t)
+		})
+	}
+}
+
 func basicServiceProperties(s *creator_v1.Service, envType voyager.EnvType) orch_meta.ServiceProperties {
 	return orch_meta.ServiceProperties{
 		ResourceOwner: s.Spec.ResourceOwner,
@@ -1329,6 +1586,7 @@ type testCase struct {
 	mainFake     *kube_testing.Fake
 	compFake     *kube_testing.Fake
 	scFake       *fakeServiceCentral
+	ogFake       *fakeOpsgenie
 	releasesFake *fakeReleaseManagement
 	registry     *prometheus.Registry
 	serviceName  voyager.ServiceName
@@ -1348,6 +1606,7 @@ func (tc *testCase) run(t *testing.T) {
 	tc.compFake = &compClient.Fake
 
 	tc.scFake = new(fakeServiceCentral)
+	tc.ogFake = new(fakeOpsgenie)
 	tc.releasesFake = &fakeReleaseManagement{serviceName: tc.serviceName, serviceNames: tc.releaseDataServiceNames}
 
 	tc.registry = prometheus.NewRegistry()
@@ -1441,6 +1700,7 @@ func (tc *testCase) newController(t *testing.T, mainClient *k8s_fake.Clientset, 
 		ConfigMapInformer: configMapInformer,
 
 		ServiceCentral:    tc.scFake,
+		Opsgenie:          tc.ogFake,
 		ClusterLocation:   tc.clusterLocation,
 		ReleaseManagement: tc.releasesFake,
 

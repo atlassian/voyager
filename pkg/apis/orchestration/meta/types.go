@@ -1,6 +1,9 @@
 package meta
 
-import "github.com/atlassian/voyager"
+import (
+	"github.com/atlassian/voyager"
+	"github.com/atlassian/voyager/pkg/opsgenie"
+)
 
 const (
 	ConfigMapConfigKey = "config"
@@ -27,9 +30,10 @@ type ServiceProperties struct {
 
 // Notification is used in the ServiceProperties.
 type Notifications struct {
-	Email                        string    `json:"email"`
-	LowPriorityPagerdutyEndpoint PagerDuty `json:"lowPriority"`
-	PagerdutyEndpoint            PagerDuty `json:"main"`
+	Email                        string                 `json:"email"`
+	LowPriorityPagerdutyEndpoint PagerDuty              `json:"lowPriority"`
+	PagerdutyEndpoint            PagerDuty              `json:"main"`
+	OpsgenieIntegrations         []opsgenie.Integration `json:"opsgenieIntegrations"`
 }
 
 // PagerDuty is used in the ServiceProperties.

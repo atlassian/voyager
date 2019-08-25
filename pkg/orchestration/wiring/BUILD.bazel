@@ -34,6 +34,7 @@ go_test(
         "//cmd/smith/config:go_default_library",
         "//pkg/apis/orchestration/meta:go_default_library",
         "//pkg/apis/orchestration/v1:go_default_library",
+        "//pkg/opsgenie:go_default_library",
         "//pkg/orchestration/wiring/registry:go_default_library",
         "//pkg/orchestration/wiring/wiringplugin:go_default_library",
         "//pkg/orchestration/wiring/wiringutil/knownshapes:go_default_library",

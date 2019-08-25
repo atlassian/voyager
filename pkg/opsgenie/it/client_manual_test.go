@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	opsGenieIntManURL = "https://micros.prod.atl-paas.net"
+	opsgenieIntManURL = "https://micros.prod.atl-paas.net"
 )
 
 // NOTE: THIS WILL CREATE INTEGRATIONS IF NONE EXIST
@@ -32,7 +32,7 @@ func TestGetIntegrations(t *testing.T) {
 	require.NoError(t, asapErr)
 
 	client := util.HTTPClient()
-	c := opsgenie.New(testLogger, client, asapConfig, parseURL(t, opsGenieIntManURL))
+	c := opsgenie.New(testLogger, client, asapConfig, parseURL(t, opsgenieIntManURL))
 
 	// Get Service Attributes
 	resp, _, err := c.GetOrCreateIntegrations(ctx, "Platform SRE")

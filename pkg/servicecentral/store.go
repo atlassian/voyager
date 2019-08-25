@@ -306,6 +306,14 @@ func serviceDataToService(data *ServiceDataRead) (*creator_v1.Service, error) {
 		service.Spec.Metadata.PagerDuty = pagerDutyMetadata
 	}
 
+	ogMetadata, err := GetOpsgenieAttribute(data)
+	if err != nil {
+		return nil, err
+	}
+	if ogMetadata != nil {
+		service.Spec.Metadata.Opsgenie = ogMetadata
+	}
+
 	bambooMetadata, err := GetBambooMetadata(&data.ServiceDataWrite)
 	if err != nil {
 		return nil, err

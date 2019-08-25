@@ -17,6 +17,7 @@ import (
 	compClient "github.com/atlassian/voyager/pkg/composition/client"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
+	"github.com/atlassian/voyager/pkg/opsgenie"
 	apik8scompute "github.com/atlassian/voyager/pkg/orchestration/wiring/k8scompute/api"
 	"github.com/atlassian/voyager/pkg/pagerduty"
 	"github.com/atlassian/voyager/pkg/releases"
@@ -54,7 +55,9 @@ const (
 	// see https://github.com/jtblin/kube2iam#namespace-restrictions
 	allowedRolesAnnotation = "iam.amazonaws.com/allowed-roles"
 
-	maxSyncWorkers = 10
+	maxSyncWorkers             = 10
+	defaultPagerdutyGeneric    = "5d11612f25b840faaf77422edeff9c76"
+	defaultPagerdutyCloudwatch = "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/124e0f010f214a9b9f30b768e7b18e69"
 )
 
 const (
@@ -73,6 +76,10 @@ type ServiceMetadataStore interface {
 	ListModifiedServices(ctx context.Context, user auth.OptionalUser, modifiedSince time.Time) ([]creator_v1.Service, error)
 }
 
+type OpsgenieIntegrationManagerClient interface {
+	GetOrCreateIntegrations(ctx context.Context, teamName string) (*opsgenie.IntegrationsResponse, bool /* retriable */, error)
+}
+
 type Controller struct {
 	Logger       *zap.Logger
 	ReadyForWork func()
@@ -85,6 +92,7 @@ type Controller struct {
 	ServiceCentral    ServiceMetadataStore
 	ReleaseManagement releases.ReleaseManagementStore
 	ClusterLocation   voyager.ClusterLocation
+	Opsgenie          OpsgenieIntegrationManagerClient
 
 	RoleBindingUpdater        updater.ObjectUpdater
 	ConfigMapUpdater          updater.ObjectUpdater
@@ -407,9 +415,9 @@ func (c *Controller) createOrUpdateServiceMetadata(logger *zap.Logger, ns *core_
 		tags[k] = v
 	}
 
-	notifications, err := c.buildNotifications(serviceData.Spec)
+	notifications, retriable, err := c.buildNotifications(serviceData.Spec)
 	if err != nil {
-		return false, err
+		return retriable, err
 	}
 
 	metadata := orch_meta.ServiceProperties{
@@ -462,41 +470,73 @@ func (c *Controller) getServiceData(user auth.OptionalUser, name voyager.Service
 	return c.ServiceCentral.GetService(context.Background(), user, servicecentral.ServiceName(name))
 }
 
-func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta.Notifications, error) {
+func (c *Controller) buildNotifications(spec creator_v1.ServiceSpec) (*orch_meta.Notifications, bool /* retriable */, error) {
+	// Default pagerduty values re-used from Micros config.js
+	notifications := orch_meta.Notifications{
+		Email: spec.EmailAddress(),
+		PagerdutyEndpoint: orch_meta.PagerDuty{
+			Generic:    defaultPagerdutyGeneric,
+			CloudWatch: defaultPagerdutyCloudwatch,
+		},
+		LowPriorityPagerdutyEndpoint: orch_meta.PagerDuty{
+			Generic:    defaultPagerdutyGeneric,
+			CloudWatch: defaultPagerdutyCloudwatch,
+		},
+	}
+
 	pdEnvMetadata, ok, err := pagerDutyForEnvType(spec.Metadata.PagerDuty, c.ClusterLocation.EnvType)
 	if err != nil {
-		return nil, errors.Wrap(err, "error building notifications for servicemetadata")
+		return nil, false, errors.Wrap(err, "error building pagerduty notifications for servicemetadata")
 	}
 
 	if ok {
 		mainPD, err := convertPagerDuty(pdEnvMetadata.Main)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot convert main pagerduty entry")
+			return nil, false, errors.Wrap(err, "cannot convert main pagerduty entry")
 		}
 		lowPriPD, err := convertPagerDuty(pdEnvMetadata.LowPriority)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot convert low priority pagerduty entry")
+			return nil, false, errors.Wrap(err, "cannot convert low priority pagerduty entry")
 		}
 
-		return &orch_meta.Notifications{
-			Email:                        spec.EmailAddress(),
-			PagerdutyEndpoint:            *mainPD,
-			LowPriorityPagerdutyEndpoint: *lowPriPD,
-		}, nil
+		notifications.PagerdutyEndpoint = *mainPD
+		notifications.LowPriorityPagerdutyEndpoint = *lowPriPD
 	}
 
-	// Default values re-used from Micros config.js
-	return &orch_meta.Notifications{
-		Email: spec.EmailAddress(),
-		PagerdutyEndpoint: orch_meta.PagerDuty{
-			Generic:    "5d11612f25b840faaf77422edeff9c76",
-			CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/124e0f010f214a9b9f30b768e7b18e69",
-		},
-		LowPriorityPagerdutyEndpoint: orch_meta.PagerDuty{
-			Generic:    "5d11612f25b840faaf77422edeff9c76",
-			CloudWatch: "https://events.pagerduty.com/adapter/cloudwatch_sns/v1/124e0f010f214a9b9f30b768e7b18e69",
-		},
-	}, nil
+	ogInts, retriable, err := c.buildOpsgenieNotifications(spec.Metadata)
+	if err != nil {
+		return nil, retriable, err
+	}
+	notifications.OpsgenieIntegrations = ogInts
+
+	return &notifications, true, nil
+}
+
+func (c *Controller) buildOpsgenieNotifications(metadata creator_v1.ServiceMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
+	ogInts, retriable, err := c.getOpsgenieIntegrations(metadata.Opsgenie)
+	if err != nil {
+		return nil, retriable, errors.Wrap(err, "failed to get Opsgenie notifications")
+	}
+	envOgInts, err := filterOpsgenieIntegrationsByEnv(ogInts, c.ClusterLocation.EnvType)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to build Opsgenie notifications")
+	}
+	return envOgInts, true, nil
+}
+
+// getOpsgenieIntegrations attempts to get Opsgenie integrations from the opsgenie integration manager
+func (c *Controller) getOpsgenieIntegrations(metadata *creator_v1.OpsgenieMetadata) ([]opsgenie.Integration, bool /* retriable */, error) {
+	// Opsgenie is optional
+	if metadata == nil {
+		return nil, true, nil
+	}
+
+	resp, retriable, err := c.Opsgenie.GetOrCreateIntegrations(context.TODO(), metadata.Team)
+	if err != nil {
+		return nil, retriable, err
+	}
+
+	return resp.Integrations, true, nil
 }
 
 func (c *Controller) setupDockerSecret(logger *zap.Logger, namespaceName string) (bool /* retriable */, error) {
@@ -666,6 +706,42 @@ func pagerDutyForEnvType(pagerduty *creator_v1.PagerDutyMetadata, envType voyage
 	default:
 		return nil, false, nil
 	}
+}
+
+// filterOpsgenieIntegrationsByEnv filters a given list of integrations by the EnvType
+func filterOpsgenieIntegrationsByEnv(integrations []opsgenie.Integration, envType voyager.EnvType) ([]opsgenie.Integration, error) {
+	if len(integrations) == 0 {
+		return nil, nil // Not an error as Opsgenie is optional
+	}
+
+	filtered := make([]opsgenie.Integration, 0, 4)
+
+	for _, integration := range integrations {
+
+		if integration.EnvType == opsgenie.EnvTypeGlobal {
+			filtered = append(filtered, integration)
+			continue
+		}
+
+		switch envType {
+		case voyager.EnvTypeStaging:
+			if integration.EnvType == opsgenie.EnvTypeStaging {
+				filtered = append(filtered, integration)
+			}
+		case voyager.EnvTypeProduction:
+			if integration.EnvType == opsgenie.EnvTypeProd {
+				filtered = append(filtered, integration)
+			}
+		case voyager.EnvTypeDev:
+			if integration.EnvType == opsgenie.EnvTypeDev {
+				filtered = append(filtered, integration)
+			}
+		default:
+			return nil, errors.Errorf("unexpected envType %q when filtering Opsgenie integrations", envType)
+		}
+	}
+
+	return filtered, nil
 }
 
 func NsServiceLabelIndexFunc(obj interface{}) ([]string, error) {

@@ -7,6 +7,7 @@ import (
 	comp_v1_client "github.com/atlassian/voyager/pkg/composition/client"
 	"github.com/atlassian/voyager/pkg/k8s"
 	"github.com/atlassian/voyager/pkg/k8s/updater"
+	"github.com/atlassian/voyager/pkg/opsgenie"
 	"github.com/atlassian/voyager/pkg/releases"
 	"github.com/atlassian/voyager/pkg/releases/deployinator/client"
 	"github.com/atlassian/voyager/pkg/servicecentral"
@@ -79,6 +80,10 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 	scHTTPClient := util.HTTPClient()
 	scClient := servicecentral.NewServiceCentralClient(config.Logger, scHTTPClient, opts.ASAPClientConfig, opts.Providers.ServiceCentralURL)
 
+	// create a client for talking to Opsgenie Integration Manager
+	ogHTTPClient := util.HTTPClient()
+	ogClient := opsgenie.New(config.Logger, ogHTTPClient, opts.ASAPClientConfig, opts.Providers.OpsgenieIntegrationsManagerURL)
+
 	scErrorCounter := prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Namespace: config.AppName,
@@ -133,6 +138,7 @@ func (cc *ControllerConstructor) New(config *ctrl.Config, cctx *ctrl.Context) (*
 		ServiceCentral:    servicecentral.NewStore(config.Logger, scClient),
 		ReleaseManagement: releases.NewReleaseManagement(deployinatorHTTPClient, config.Logger),
 		ClusterLocation:   opts.Location.ClusterLocation(),
+		Opsgenie:          ogClient,
 
 		ConfigMapUpdater:          configMapObjectUpdater,
 		RoleBindingUpdater:        roleBindingObjectUpdater,
